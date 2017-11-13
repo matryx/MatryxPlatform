@@ -26,9 +26,9 @@ contract MatryxOracle {
   mapping(uint256 => bytes32) internal queryResponses;
 
   // Constructor for the Oracle (deployer specified for Alpha Matryx)
-  function MatryxOracle(address _deployer) public
+  function MatryxOracle() public
   {
-    deployer = _deployer;
+    deployer = msg.sender;
   }
 
   // Requires that the platform deployer (Nanome) is the sender
@@ -37,6 +37,11 @@ contract MatryxOracle {
   {
     require(msg.sender == deployer);
     _;
+  }
+
+  function getDeployer() public view returns (address _deployer)
+  {
+    return deployer;
   }
 
   // Uses [the user's existing]/[a new] QueryResolver,
