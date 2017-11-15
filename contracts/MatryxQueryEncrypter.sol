@@ -3,13 +3,13 @@ pragma solidity ^0.4.18;
 //
 // The lookup contract for storing both the query and responder addresses
 //
-import "./MatryxOracle.sol";
+import "./MatryxOracleMessenger.sol";
 
 // Readies and takes query results from the web client.
-contract MatryxQueryResolver {
+contract MatryxQueryEncrypter {
 
   // The owner of this contract. i.e. The single TinyOracle contract.
-  MatryxOracle owner;
+  MatryxOracleMessenger owner;
   // The address of the querier (user) for the query this resolver has been given.
   address querier;
   // The id of the query (this contract generates this value).
@@ -17,8 +17,8 @@ contract MatryxQueryResolver {
   // The response. The server 
   bytes32 response;
 
-  function MatryxQueryResolver(address _querier) public {
-    owner = MatryxOracle(msg.sender);
+  function MatryxQueryEncrypter(address _querier) public {
+    owner = MatryxOracleMessenger(msg.sender);
     querier = _querier;
   }
 
