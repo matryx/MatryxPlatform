@@ -21,7 +21,7 @@ contract MatryxOracle {
   mapping(address => MatryxQueryResolver) private queryResolvers;
   // Map from user addresses (queriers) to QueryIDs. We assume each user only
   // makes one query at a time.
-  mapping(address => uint256) private querierForQueryID;
+  mapping(uint256 => address) private queryIDForQuerier;
   // Map from QueryIDs to responses (bytes32s. aka dynamically-sized byte arrays.)
   mapping(uint256 => bytes32) internal queryResponses;
 
@@ -66,7 +66,7 @@ contract MatryxOracle {
     // Get the queryID from the QueryResolver.
     uint256 queryID = resolver.query(_query);
     // Store that id under the sender's (querier's) address.
-    querierForQueryID[msg.sender] = queryID;
+    queryIDForQuerier[queryID] = msg.sender;
 
     // Let our Alpha Matryx server know that a query has been performed!
     QueryPerformed(queryID);

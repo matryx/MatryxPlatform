@@ -4,10 +4,16 @@ import "./MatryxOracle.sol";
 
 contract MatryxPlatform is MatryxOracle {
   
-  mapping(address => bool) addressForHasMatryx;
+  mapping(address => uint256) addressForBalance;
 
-  function getResponse(uint256 queryID) public returns (bytes32)
+  function PrepareBalance() public returns (bool _success)
   {
-      return queryResponses[queryID];
+      this.Query(0x0);
+      return true;
+  }
+
+  function CheckBalance() public returns (uint256 _balance)
+  {
+  		return addressForBalance[msg.sender];
   }
 }
