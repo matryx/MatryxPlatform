@@ -11,7 +11,7 @@ contract MatryxOracle {
   // Alpha Matryx needs this address and this class to ensure the 
   // initial security of users MTX balances. Our sincere and humbled
   // apologies. 
-  address deployer;
+  address owner;
 
   // An event to let our node know that a new query has been performed.
   event QueryPerformed(uint256 id);
@@ -21,27 +21,27 @@ contract MatryxOracle {
   mapping(address => MatryxQueryResolver) private queryResolvers;
   // Map from user addresses (queriers) to QueryIDs. We assume each user only
   // makes one query at a time.
-  mapping(uint256 => address) private queryIDForQuerier;
+  mapping(address => uint256) private querierForQueryID;
   // Map from QueryIDs to responses (bytes32s. aka dynamically-sized byte arrays.)
   mapping(uint256 => bytes32) internal queryResponses;
 
-  // Constructor for the Oracle (deployer specified for Alpha Matryx)
+  // Constructor for the Oracle (owner specified for Alpha Matryx)
   function MatryxOracle() public
   {
-    deployer = msg.sender;
+    owner = msg.sender;
   }
 
-  // Requires that the platform deployer (Nanome) is the sender
+  // Requires that the platform owner (Nanome) is the sender
   // This is used to verify that we're the only ones acting as an oracle.
-  modifier submitterIsPlatformDeployer()
+  modifier submitterIsPlatformOwner()
   {
-    require(msg.sender == deployer);
+    require(msg.sender == owner);
     _;
   }
 
-  function getDeployer() public view returns (address _deployer)
+  function getOwner() public view returns (address _deployer)
   {
-    return deployer;
+    return owner;
   }
 
   // Uses [the user's existing]/[a new] QueryResolver,
@@ -66,7 +66,7 @@ contract MatryxOracle {
     // Get the queryID from the QueryResolver.
     uint256 queryID = resolver.query(_query);
     // Store that id under the sender's (querier's) address.
-    queryIDForQuerier[queryID] = msg.sender;
+    querierForQueryID[msg.sender] = queryID;
 
     // Let our Alpha Matryx server know that a query has been performed!
     QueryPerformed(queryID);
