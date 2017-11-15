@@ -1,6 +1,8 @@
 pragma solidity ^0.4.18;
 
-contract MatryxPlatform is MatryxOracle
+import "./MatryxOracleMessenger.sol";
+
+contract MatryxPlatform is MatryxOracleMessenger
 {
 
     struct Submission
@@ -41,14 +43,14 @@ contract MatryxPlatform is MatryxOracle
         _;
     }
 
-    function MatryxPlateform()
+    function MatryxPlatform() public
     {
         owner = msg.sender;
     }
 
-    function prepareBalance(uint256 toIgnore) public
+    function prepareBalance(bytes32 toIgnore) public
     {
-        this.Query(0);
+        this.Query(toIgnore);
     }
 
     function createTournament(string title, string description, uint256 bounty) owneronly public
@@ -63,18 +65,15 @@ contract MatryxPlatform is MatryxOracle
         tournamentList.push(newTournament.id);
     }
 
-    modifier senderHasMTX
+    function createSubmission(uint256 tournamentId, string title, string body, string references, string contributors) public
     {
-        var queryID = this.querierForQueryID[msg.sender];
-        require(queryID > 0x0);
-        require(this.queryResponses[queryID] > 0x0);
-        _;
-    }
-
-    function createSubmission(uint256 tournamentId, string title, string body, string references, string contributors) senderHasMTX public
-    {
+        // Require tournament exists
         Tournament storage t = tournaments[tournamentId];
         require(t.exists);
+
+        bytes32 balanceMTX = latestResponseFromOracle();
+        require(balanceMTX > 0x0);
+
         Submission memory newSubmission;
         newSubmission.tournamentId = tournamentId;
         newSubmission.id = submissionCount(tournamentId) + 42;

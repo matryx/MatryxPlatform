@@ -1,8 +1,7 @@
-var MatryxQueryResolver = artifacts.require("./MatryxQueryResolver.sol");
-var MatryxOracle = artifacts.require("./MatryxOracle.sol");
+var MatryxQueryEncrypter = artifacts.require("./MatryxQueryEncrypter.sol");
+var MatryxOracleMessenger = artifacts.require("./MatryxOracleMessenger.sol");
 var MatryxPlatform = artifacts.require("./MatryxPlatform.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(Migrations);
   deployer.deploy(MatryxPlatform);
 };

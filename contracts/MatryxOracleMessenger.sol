@@ -1,9 +1,9 @@
 pragma solidity ^0.4.18;
 
-import "./MatryxQueryResolver.sol";
+import "./MatryxQueryEncrypter.sol";
 
 // The actual part to be included in a client contract
-contract MatryxOracle {
+contract MatryxOracleMessenger {
 
   // The original deployer of this contract (A Matryx private chain.
   // It is worth mentioning that neither this oracle nor this address 
@@ -16,24 +16,24 @@ contract MatryxOracle {
   // An event to let our node know that a new query has been performed.
   event QueryPerformed(uint256 id);
 
-  // Map from user addresses to MatryxQueryResolvers. We assume each user only
+  // Map from user addresses to MatryxQueryEncrypters. We assume each user only
   // sends one query at a time.
-  mapping(address => MatryxQueryResolver) private queryResolvers;
+  mapping(address => MatryxQueryEncrypter) internal queryEncrypters;
   // Map from user addresses (queriers) to QueryIDs. We assume each user only
   // makes one query at a time.
-  mapping(address => uint256) private querierForQueryID;
+  mapping(address => uint256) internal fromQuerierToQueryID;
   // Map from QueryIDs to responses (bytes32s. aka dynamically-sized byte arrays.)
   mapping(uint256 => bytes32) internal queryResponses;
 
   // Constructor for the Oracle (owner specified for Alpha Matryx)
-  function MatryxOracle() public
+  function MatryxOracleMessenger() public
   {
     owner = msg.sender;
   }
 
   // Requires that the platform owner (Nanome) is the sender
   // This is used to verify that we're the only ones acting as an oracle.
-  modifier submitterIsPlatformOwner()
+  modifier storerIsPlatformOwner()
   {
     require(msg.sender == owner);
     _;
@@ -44,38 +44,55 @@ contract MatryxOracle {
     return owner;
   }
 
+  function latestResponseFromOracle() internal view returns (bytes32 _response)
+  {
+        uint256 queryID = fromQuerierToQueryID[msg.sender];
+        if(queryID <= 0x0)
+        {
+          return 0x0;
+        }
+
+        bytes32 response = queryResponses[queryID];
+        if(response > 0x0)
+        {
+          return response;
+        }
+        
+        return 0x0;
+  }
+
   // Uses [the user's existing]/[a new] QueryResolver,
   // depending on whether or not the user has submitted a query before.
   // Then, returns the queryID for the user to use in tracking the results
   // of their query.
   function Query(bytes32 _query) external {
-    MatryxQueryResolver resolver;
+    MatryxQueryEncrypter encrypter;
     // If there's already a queryResolver for this user
-    if(address(queryResolvers[msg.sender]) > 0x0)
+    if(address(queryEncrypters[msg.sender]) > 0x0)
     {
         // Use that one.
-        resolver = queryResolvers[msg.sender];
+        encrypter = queryEncrypters[msg.sender];
     }
     else
     {
         // Otherwise, create a new one and assign it.
-        resolver = new MatryxQueryResolver(msg.sender);
-        queryResolvers[msg.sender] = resolver;
+        encrypter = new MatryxQueryEncrypter(msg.sender);
+        queryEncrypters[msg.sender] = encrypter;
     }
 
     // Get the queryID from the QueryResolver.
-    uint256 queryID = resolver.query(_query);
+    uint256 queryID = encrypter.query(_query);
     // Store that id under the sender's (querier's) address.
-    querierForQueryID[msg.sender] = queryID;
+    fromQuerierToQueryID[msg.sender] = queryID;
 
     // Let our Alpha Matryx server know that a query has been performed!
     QueryPerformed(queryID);
   }
 
-  // (Only to be used by MatryxPlatform, TinyOracle and MatryxQueryResolver.
+  // (Only to be used by MatryxPlatform, TinyOracle and MatryxQueryEncrypter.
   // This is not a user function.)
   // This function can be called (successfully) from Nanome's private chain
-  function storeQueryResponse(uint256 _queryID, bytes32 _response) submitterIsPlatformDeployer external returns (bool success)
+  function storeQueryResponse(uint256 _queryID, bytes32 _response) storerIsPlatformOwner external returns (bool success)
   {
       // Make sure:
       // 1) The response is not empty and
