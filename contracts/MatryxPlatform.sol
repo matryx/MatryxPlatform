@@ -43,14 +43,14 @@ contract MatryxPlatform is MatryxOracleMessenger
         _;
     }
 
-    function MatryxPlatform() public
+    function MatryxPlatform()
     {
         owner = msg.sender;
     }
 
-    function prepareBalance(bytes32 toIgnore) public
+    function prepareBalance(uint256 toIgnore) public
     {
-        this.Query(toIgnore);
+        this.Query(bytes32(toIgnore));
     }
 
     function createTournament(string title, string description, uint256 bounty) owneronly public
@@ -71,8 +71,8 @@ contract MatryxPlatform is MatryxOracleMessenger
         Tournament storage t = tournaments[tournamentId];
         require(t.exists);
 
-        bytes32 balanceMTX = latestResponseFromOracle();
-        require(balanceMTX > 0x0);
+        //bytes32 balanceMTX = latestResponseFromOracle();
+        //require(balanceMTX > 0x0);
 
         Submission memory newSubmission;
         newSubmission.tournamentId = tournamentId;
