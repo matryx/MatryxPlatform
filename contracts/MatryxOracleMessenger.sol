@@ -14,7 +14,7 @@ contract MatryxOracleMessenger {
   address owner;
 
   // An event to let our node know that a new query has been performed.
-  event QueryPerformed(uint256 id);
+  event QueryPerformed(uint256 id, address sender);
 
   // Map from user addresses to MatryxQueryEncrypters. We assume each user only
   // sends one query at a time.
@@ -86,13 +86,13 @@ contract MatryxOracleMessenger {
     fromQuerierToQueryID[msg.sender] = queryID;
 
     // Let our Alpha Matryx server know that a query has been performed!
-    QueryPerformed(queryID);
+    QueryPerformed(queryID, msg.sender);
   }
 
   // (Only to be used by MatryxPlatform, TinyOracle and MatryxQueryEncrypter.
   // This is not a user function.)
   // This function can be called (successfully) from Nanome's private chain
-  function storeQueryResponse(uint256 _queryID, bytes32 _response) storerIsPlatformOwner external returns (bool success)
+  function storeQueryResponse(uint256 _queryID, bytes32 _response) storerIsPlatformOwner public returns (bool success)
   {
       // Make sure:
       // 1) The response is not empty and
