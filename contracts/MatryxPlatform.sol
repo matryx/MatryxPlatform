@@ -43,7 +43,7 @@ contract MatryxPlatform is MatryxOracleMessenger
         _;
     }
 
-    function MatryxPlatform()
+    function MatryxPlatform() public
     {
         owner = msg.sender;
     }
