@@ -36,7 +36,6 @@ contract MatryxPlatform is MatryxOracleMessenger
     mapping (uint256 => Tournament) public tournaments;
     uint256[] public tournamentList;
 
-    address owner;
     modifier owneronly()
     {
         require(msg.sender == owner);
@@ -45,7 +44,6 @@ contract MatryxPlatform is MatryxOracleMessenger
 
     function MatryxPlatform()
     {
-        owner = msg.sender;
     }
 
     function prepareBalance(uint256 toIgnore) public
