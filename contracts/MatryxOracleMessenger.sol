@@ -53,12 +53,12 @@ contract MatryxOracleMessenger {
         }
 
         bytes32 response = queryResponses[queryID];
-        if(response > 0x0)
+        if(response <= 0x0)
         {
-          return response;
+          return 0x0;
         }
         
-        return 0x0;
+        return response;
   }
 
   // Uses [the user's existing]/[a new] QueryResolver,

@@ -42,7 +42,7 @@ contract MatryxPlatform is MatryxOracleMessenger
         _;
     }
 
-    function MatryxPlatform()
+    function MatryxPlatform() public
     {
     }
 
@@ -69,8 +69,8 @@ contract MatryxPlatform is MatryxOracleMessenger
         Tournament storage t = tournaments[tournamentId];
         require(t.exists);
 
-        //bytes32 balanceMTX = latestResponseFromOracle();
-        //require(balanceMTX > 0x0);
+        bytes32 balanceMTX = latestResponseFromOracle();
+        require(balanceMTX > 0x0);
 
         Submission memory newSubmission;
         newSubmission.tournamentId = tournamentId;
