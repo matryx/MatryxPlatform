@@ -44,9 +44,9 @@ contract MatryxOracleMessenger {
     return owner;
   }
 
-  function latestResponseFromOracle() internal view returns (bytes32 _response)
+  function latestResponseFromOracle(address _sender) internal view returns (bytes32 _response)
   {
-        uint256 queryID = fromQuerierToQueryID[msg.sender];
+        uint256 queryID = fromQuerierToQueryID[_sender];
         if(queryID <= 0x0)
         {
           return 0x0;
