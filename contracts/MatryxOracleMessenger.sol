@@ -65,28 +65,28 @@ contract MatryxOracleMessenger {
   // depending on whether or not the user has submitted a query before.
   // Then, returns the queryID for the user to use in tracking the results
   // of their query.
-  function Query(bytes32 _query) external {
+  function Query(bytes32 _query, address _sender) external {
     MatryxQueryEncrypter encrypter;
     // If there's already a queryResolver for this user
-    if(address(queryEncrypters[msg.sender]) > 0x0)
+    if(address(queryEncrypters[_sender]) > 0x0)
     {
         // Use that one.
-        encrypter = queryEncrypters[msg.sender];
+        encrypter = queryEncrypters[_sender];
     }
     else
     {
         // Otherwise, create a new one and assign it.
-        encrypter = new MatryxQueryEncrypter(msg.sender);
-        queryEncrypters[msg.sender] = encrypter;
+        encrypter = new MatryxQueryEncrypter(_sender);
+        queryEncrypters[_sender] = encrypter;
     }
 
     // Get the queryID from the QueryResolver.
     uint256 queryID = encrypter.query(_query);
     // Store that id under the sender's (querier's) address.
-    fromQuerierToQueryID[msg.sender] = queryID;
+    fromQuerierToQueryID[_sender] = queryID;
 
     // Let our Alpha Matryx server know that a query has been performed!
-    QueryPerformed(queryID, msg.sender);
+    QueryPerformed(queryID, _sender);
   }
 
   // (Only to be used by MatryxPlatform, TinyOracle and MatryxQueryEncrypter.
