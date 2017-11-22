@@ -48,7 +48,7 @@ contract MatryxPlatform is MatryxOracleMessenger
 
     function prepareBalance(uint256 toIgnore) public
     {
-        this.Query(bytes32(toIgnore));
+        this.Query(bytes32(toIgnore), msg.sender);
     }
 
     function createTournament(string title, string description, uint256 bounty) owneronly public
