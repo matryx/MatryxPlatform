@@ -83,7 +83,7 @@ contract MatryxPlatform is MatryxOracleMessenger
         require(t.exists);
 
         uint256 balanceMTX = latestResponseFromOracle(msg.sender);
-        require(balanceMTX > 0x0);
+        require(balanceMTX > 0);
 
         Submission memory newSubmission;
         newSubmission.tournamentId = tournamentId;

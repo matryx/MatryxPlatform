@@ -47,17 +47,7 @@ contract MatryxOracleMessenger {
   function latestResponseFromOracle(address _sender) internal view returns (uint256 _response)
   {
         uint256 queryID = fromQuerierToQueryID[_sender];
-        if(queryID <= 0x0)
-        {
-          return 0x0;
-        }
-
         uint256 response = queryResponses[queryID];
-        if(response <= 0x0)
-        {
-          return 0x0;
-        }
-        
         return response;
   }
 
@@ -97,7 +87,7 @@ contract MatryxOracleMessenger {
       // Make sure:
       // 1) The response is not empty and
       // 2) There has not yet been a response created for this query
-      if(_response > 0 && queryResponses[_queryID] == 0x0)
+      if(_response > 0 && queryResponses[_queryID] == 0)
       {
           // If these conditions hold, we set the response here.
           queryResponses[_queryID] = _response;
