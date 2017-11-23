@@ -23,7 +23,7 @@ contract MatryxOracleMessenger {
   // makes one query at a time.
   mapping(address => uint256) internal fromQuerierToQueryID;
   // Map from QueryIDs to responses (bytes32s. aka dynamically-sized byte arrays.)
-  mapping(uint256 => bytes32) internal queryResponses;
+  mapping(uint256 => uint256) internal queryResponses;
 
   // Constructor for the Oracle (owner specified for Alpha Matryx)
   function MatryxOracleMessenger() public
@@ -44,7 +44,7 @@ contract MatryxOracleMessenger {
     return owner;
   }
 
-  function latestResponseFromOracle(address _sender) internal view returns (bytes32 _response)
+  function latestResponseFromOracle(address _sender) internal view returns (uint256 _response)
   {
         uint256 queryID = fromQuerierToQueryID[_sender];
         if(queryID <= 0x0)
@@ -52,7 +52,7 @@ contract MatryxOracleMessenger {
           return 0x0;
         }
 
-        bytes32 response = queryResponses[queryID];
+        uint256 response = queryResponses[queryID];
         if(response <= 0x0)
         {
           return 0x0;
@@ -92,7 +92,7 @@ contract MatryxOracleMessenger {
   // (Only to be used by MatryxPlatform, TinyOracle and MatryxQueryEncrypter.
   // This is not a user function.)
   // This function can be called (successfully) from Nanome's private chain
-  function storeQueryResponse(uint256 _queryID, bytes32 _response) storerIsPlatformOwner public returns (bool success)
+  function storeQueryResponse(uint256 _queryID,  uint256 _response) storerIsPlatformOwner public returns (bool success)
   {
       // Make sure:
       // 1) The response is not empty and

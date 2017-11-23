@@ -51,6 +51,19 @@ contract MatryxPlatform is MatryxOracleMessenger
         this.Query(bytes32(toIgnore), msg.sender);
     }
 
+    function balanceIsNonZero() public view returns (bool)
+    {
+        uint balance = latestResponseFromOracle(msg.sender);
+        bool nonZero = balance > 0x0;
+        return nonZero;
+    }
+
+    function getBalance() public constant returns (uint256)
+    {
+        uint256 balance = latestResponseFromOracle(msg.sender);
+        return balance;
+    }
+
     function createTournament(string title, string description, uint256 bounty) owneronly public
     {
         Tournament memory newTournament;
@@ -69,7 +82,7 @@ contract MatryxPlatform is MatryxOracleMessenger
         Tournament storage t = tournaments[tournamentId];
         require(t.exists);
 
-        bytes32 balanceMTX = latestResponseFromOracle(msg.sender);
+        uint256 balanceMTX = latestResponseFromOracle(msg.sender);
         require(balanceMTX > 0x0);
 
         Submission memory newSubmission;
