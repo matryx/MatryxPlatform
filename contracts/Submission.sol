@@ -13,6 +13,7 @@ contract Submission is Ownable {
 	bool tournamentIsClosed;
 	
 	// Submission
+	string name;
 	address public submissionOwner;
 	address[] references;
 	address[] contributors;
@@ -22,12 +23,13 @@ contract Submission is Ownable {
 	bool externallyAccessibleDuringTournament;
 
 	// Submission Constructor
-	function Submission(address _tournamentAddress, address _tournamentOwner, address _submissionOwner, string name, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, uint256 _roundEndTime) public {
+	function Submission(address _tournamentAddress, address _tournamentOwner, address _submissionOwner, string _name, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, uint256 _roundEndTime) public {
 		//Clean inputs
 		require(_submissionOwner != 0x0);
 
 		tournamentAddress = _tournamentAddress;
 		tournamentOwner = _tournamentOwner;
+		name = _name;
 		submissionOwner = _submissionOwner;
 		references = _references;
 		contributors = _contributors;

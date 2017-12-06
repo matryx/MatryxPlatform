@@ -39,7 +39,7 @@ contract Tournament is Ownable {
 
     // Tournament Constructor
     function Tournament(address _tournamentOwner, string _tournamentName, bytes32 _externalAddress, uint256 _tournamentStartTime, uint256 _roundStartTime, uint256 _roundEndTime, uint256 _reviewPeriod, 
-        uint256 _endOfTournamentTime, uint _MTXReward, uint _currentRound, uint _maxRounds) public {
+        uint256 _endOfTournamentTime, uint256 _MTXReward, uint256 _entryFee, uint _currentRound, uint _maxRounds) public {
         //Clean the inputs
         //Clean inputs
         require(_tournamentOwner != 0x0);
@@ -55,19 +55,23 @@ contract Tournament is Ownable {
         platformAddress = msg.sender;
         timeCreated = now;
 
-        //Constructor assignments
+        // Constructor assignments
+        // Identification
         tournamentOwner = _tournamentOwner;
         tournamentName = _tournamentName;
         externalAddress = _externalAddress;
+        // Timing & Rounds
         tournamentStartTime = _tournamentStartTime;
         roundStartTime = _roundStartTime;
         roundEndTime = _roundEndTime;
         reviewPeriod = _reviewPeriod;
         endOfTournamentTime = _endOfTournamentTime;
-        MTXReward = _MTXReward;
         currentRound = _currentRound;
         maxRounds = _maxRounds;
-
+        // Reward and fee
+        MTXReward = _MTXReward;
+        entryFee = _entryFee;
+        // Submission viewing
         submissionViewer = new SubmissionViewer();
     }
 
@@ -137,13 +141,13 @@ contract Tournament is Ownable {
     }
 
     // Returns true if the tournament is open
-    function tournamentOpen() public returns (bool)
+    function tournamentOpen() public view returns (bool)
     {
         return tournamentOpen;
     }
 
     // Returns the external address of the tournament
-    function getExternalAddress() public returns (bytes32)
+    function getExternalAddress() public view returns (bytes32)
     {
         return externalAddress;
     }
@@ -160,7 +164,7 @@ contract Tournament is Ownable {
     }
 
     // Updates the submissions visible via the SubmissionViewer
-    function updatePublicSubmissions() public
+    function updatePublicSubmissions() public pure
     {
         // TODO: Implement me!
         // Foreach submission made in a previous round,
@@ -213,7 +217,7 @@ contract Tournament is Ownable {
 
     // Helper function.
     // TODO: Move to library.
-    function stringIsEmpty(string _string) public returns (bool)
+    function stringIsEmpty(string _string) public pure returns (bool)
     {
         bytes memory bytesString = bytes(_string); // Uses memory
         if (bytesString.length == 0) 
