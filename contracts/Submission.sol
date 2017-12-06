@@ -1,92 +1,109 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.18;
 
 
 import './Ownable.sol';
+import './Tournament.sol';
 
 ///Creating a submission and the functionality
 contract Submission is Ownable {
 
-	//Variables involved in a Submission
-	address public tournamentOwner;
+	// Tournament identification
 	address public tournamentAddress;
+	address public tournamentOwner;
+	bool tournamentIsClosed;
+	
+	// Submission
 	address public submissionOwner;
-	string title;
-	string body; //placeholder for description or something
-	string references;
-	string contributors;
-	string ipfsHash;
+	address[] references;
+	address[] contributors;
+	bytes32 externalAddress;
 	uint256 public timeSubmitted;
-	uint256 public roundEndTime;
+	uint256 private roundEndTime;
+	bool externallyAccessibleDuringTournament;
 
+	// Submission Constructor
+	function Submission(address _tournamentAddress, address _tournamentOwner, address _submissionOwner, string name, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, uint256 _roundEndTime) public {
+		//Clean inputs
+		require(_submissionOwner != 0x0);
 
-	function getTournamentOwner() constant public returns(address){
-		return tournamentOwner;
+		tournamentAddress = _tournamentAddress;
+		tournamentOwner = _tournamentOwner;
+		submissionOwner = _submissionOwner;
+		references = _references;
+		contributors = _contributors;
+		externalAddress = _externalAddress;
+		timeSubmitted = _timeSubmitted;
+		roundEndTime = _roundEndTime;
 	}
 
-	function getTournamentAddress() constant public returns(address){
-		return tournamentAddress;
+	// ----------------- Modifiers -----------------
+
+	// A modifier to ensure that information can be obtained
+	// about this submission only when it should be (when the creator decides it can
+	// or after the tournament has been closed).
+	modifier whenAccessible()
+	{
+		// NEEDS WORK.
+		// TODO: Figure out who should set tournamentIsClosed
+		// TODO: Figure out how to make this work for multiple rounds.
+		// TODO: Figure out how to make this submission inaccessible to tournament entrants
+		// when the round this was created in is the current round
+		// (this submission should be visible to those in the tournament if
+		// it was created last round, two rounds ago, etc.)
+
+		Tournament tournament = Tournament(tournamentAddress);
+		bool senderOwnsTournament = tournament.isOwner(msg.sender);
+
+		bool externallyAccessible = externallyAccessibleDuringTournament;
+
+		// TODO: Think about this next part carefully.
+		// Who is responsible for tournamentIsClosed? This submission? The tournament?
+		// How often are users going to call the accessors of a submission? And on the other hand...
+		// How expensive would it be for the tournament owner to update all submissions?
+
+		// tl;dr Who should pay what gas:
+		//    1) tournament creator a lot, but only once? 
+		//    2) submission creators a little, but potentially many times?
+		//    3) both??
+		bool closedTournament = !tournament.tournamentOpen();
+
+		require(senderOwnsTournament || externallyAccessible || closedTournament);
+		_;
 	}
 
-	function getSubmissionOwner() constant public returns (address){
+	// ----------------- Accessor Methods -----------------
+
+	function getSubmissionOwner() constant whenAccessible public returns (address) {
 		return submissionOwner;
 	}
 
-	function getTitle() constant public returns (string){
-		return title;
-	}
-
-// Make this Ownable after testing 
-	function getBody() constant returns(string){
-		return body;
-	}
-
-	function getReferences() constant public returns(string){
+	function getReferences() constant whenAccessible public returns(address[]) {
 		return references;
 	}
 
-	function getContributors() constant public returns(string){
+	function getContributors() constant whenAccessible public returns(address[]) {
 		return contributors;
 	}
 
-	function getIpfsHash() constant public returns(string){
-		return ipfsHash;
+	function getExternalAddress() constant whenAccessible public returns(bytes32) {
+		return externalAddress;
 	}
 
-	function getTimeSubmitted() constant public returns(uint256){
+	function getTimeSubmitted() constant whenAccessible public returns(uint256) {
 		return timeSubmitted;
 	}
 
-	function getRoundEndTime() constant public returns(uint256){
-		return roundEndTime;
-	}
-
+	/*
+	TODO
+	Function - turn the submission into public when the round ends
+	Only the tournament
+	*/
 
 	//TODO setters with correct scoping
 
-
-/*
-TODO
-Function - turn the submission into public when the round ends
-Only the tournament
-*/
-function Submission(address _tournamentOwner, address _tournamentAddress, address _submissionOwner, string _title, string _body, string _references, string _contributors, 
-	string _ipfsHash, uint256 _timeSubmitted, uint256 _roundEndTime){
-	//Clean inputs
-	require(_timeSubmitted >= now);
-	require(_roundEndTime >= _timeSubmitted);
-	require(_submissionOwner != 0x0);
-
-	tournamentOwner = _tournamentOwner;
-	tournamentAddress = _tournamentAddress;
-	submissionOwner = _submissionOwner;
-	title = _title;
-	body = _body;
-	references = _references;
-	contributors = _contributors;
-	ipfsHash = _ipfsHash;
-	timeSubmitted = _timeSubmitted;
-	roundEndTime = _roundEndTime;
-
-}
+	function makeExternallyAccessibleDuringTournament() onlyOwner public
+	{
+		externallyAccessibleDuringTournament = true;
+	}
 
 }
