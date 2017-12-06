@@ -69,18 +69,18 @@ contract MatryxPlatformAlphaMain is MatryxOracleMessenger{
   function enterTournament(address _tournamentAddress) public returns (address _submissionViewer)
   {
       Tournament tournament = Tournament(_tournamentAddress);
+      // TODO: Charge the user the MTX entry fee.
       address submissionViewerAddress = tournament.enterUserInTournament(msg.sender);
       return submissionViewerAddress;
   }
 
   // ----------------- Tournament Editing Methods -----------------
   
-  //Create a new tournament if you own the contract ie: just Matrx Team for now.
-  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _tournamentStartTime, uint256 _startRoundTime, uint256 _roundEndTime, uint256 _reviewPeriod, uint256 _endOfTournamentTime, uint256 _MTXReward, uint256 _currentRound, uint256 _maxRounds) public onlyOwner returns (address)
+  //Create a new tournament if you own the contract ie: just Matryx Team for now.
+  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _tournamentStartTime, uint256 _roundStartTime, uint256 _roundEndTime, uint256 _reviewPeriod, uint256 _endOfTournamentTime, uint256 _MTXReward, uint256 _entryFee, uint256 _currentRound, uint256 _maxRounds) public onlyOwner returns (address)
   {
-    uint maxRounds = 1;
-    address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _tournamentStartTime, _startRoundTime, _roundEndTime, _reviewPeriod, _endOfTournamentTime, _MTXReward, _currentRound, _maxRounds);
-    TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _startRoundTime, _roundEndTime, _reviewPeriod, _endOfTournamentTime, _MTXReward, _currentRound, _maxRounds);
+    address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _tournamentStartTime, _roundStartTime, _roundEndTime, _reviewPeriod, _endOfTournamentTime, _MTXReward, _entryFee, _currentRound, _maxRounds);
+    TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _roundStartTime, _roundEndTime, _reviewPeriod, _endOfTournamentTime, _MTXReward, _currentRound, _maxRounds);
     allTournaments.push(newTournament);
   }
 
