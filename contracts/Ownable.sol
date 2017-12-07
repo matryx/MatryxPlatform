@@ -18,6 +18,11 @@ contract Ownable {
     owner = msg.sender;
   }
 
+  function owner() public view returns (address _owner)
+  {
+    return owner;
+  }
+
 
   /**
    * @dev Throws if called by any account other than the owner.
