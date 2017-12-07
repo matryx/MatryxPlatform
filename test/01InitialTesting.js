@@ -6,8 +6,7 @@ contract('MatryxPlatformAlphaMain', function(accounts)
     return MatryxAlpha.deployed().then(function(instance) {
       return instance.tournamentCount();
     }).then(function(count) {
-      assert.equal(count.valueOf(), 0, "The tournament count was non-zero to begin with.");
+    	assert.equal(count.valueOf(), 0, "The tournament count was non-zero to begin with.");
     });
   });
-
 });

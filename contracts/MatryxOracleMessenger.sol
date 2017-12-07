@@ -69,7 +69,7 @@ contract MatryxOracleMessenger is Ownable {
     QueryPerformed(queryID, _sender);
   }
 
-  // (Only to be used by MatryxPlatform, TinyOracle and MatryxQueryEncrypter.
+  // (Only to be used by MatryxPlatform, MatryxOracleMessenger and MatryxQueryEncrypter.
   // This is not a user function.)
   // This function can be called (successfully) from Nanome's private chain
   function storeQueryResponse(uint256 _queryID,  uint256 _response) storerIsPlatformOwner public returns (bool success)

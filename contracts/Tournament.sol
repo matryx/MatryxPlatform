@@ -38,36 +38,18 @@ contract Tournament is Ownable {
     mapping(address => bool) private isEntrant;
 
     // Tournament Constructor
-    function Tournament(address _tournamentOwner, string _tournamentName, bytes32 _externalAddress, uint256 _tournamentStartTime, uint256 _roundStartTime, uint256 _roundEndTime, uint256 _reviewPeriod, 
-        uint256 _endOfTournamentTime, uint256 _MTXReward, uint256 _entryFee, uint _currentRound, uint _maxRounds) public {
-        //Clean the inputs
+    function Tournament(address _tournamentOwner, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public {
         //Clean inputs
         require(_tournamentOwner != 0x0);
         require(!stringIsEmpty(_tournamentName));
-        require(_tournamentStartTime >= now);
-        require(_roundEndTime > now);
-        require(_reviewPeriod != 0);
-        require(_endOfTournamentTime >  now);
         require(_MTXReward > 0);
-        require(_currentRound >= 0);
-        require(_maxRounds >= 0);
-
+        
         platformAddress = msg.sender;
         timeCreated = now;
-
-        // Constructor assignments
         // Identification
         tournamentOwner = _tournamentOwner;
         tournamentName = _tournamentName;
         externalAddress = _externalAddress;
-        // Timing & Rounds
-        tournamentStartTime = _tournamentStartTime;
-        roundStartTime = _roundStartTime;
-        roundEndTime = _roundEndTime;
-        reviewPeriod = _reviewPeriod;
-        endOfTournamentTime = _endOfTournamentTime;
-        currentRound = _currentRound;
-        maxRounds = _maxRounds;
         // Reward and fee
         MTXReward = _MTXReward;
         entryFee = _entryFee;
@@ -151,6 +133,25 @@ contract Tournament is Ownable {
     {
         return externalAddress;
     }
+
+    // ----------------- Setter Methods -----------------
+
+        // TODO: Move into setters.
+
+        // require(_tournamentStartTime >= now);
+        // tournamentStartTime = _tournamentStartTime;
+        // require(_roundStartTime > now);
+        // roundStartTime = _roundStartTime;
+        // require(_roundEndTime > now);
+        // roundEndTime = _roundEndTime;
+        // require(_reviewPeriod != 0);
+        // reviewPeriod = _reviewPeriod;
+        // require(_endOfTournamentTime >  now);
+        // endOfTournamentTime = _endOfTournamentTime;
+        // require(_currentRound >= 0);
+        // currentRound = _currentRound;
+        // require(_maxRounds >= 0);
+        // maxRounds = _maxRounds;
 
     // ----------------- Tournament Administration Methods -----------------
 

@@ -10,10 +10,7 @@ import './Ownable.sol';
 //Initialize the contract
 contract MatryxPlatformAlphaMain is MatryxOracleMessenger{
 
-  event TournamentCreated(address tournamentOwner, address tournamentAddress, string tournamentName, bytes32  externalAddress, 
-    uint256  startRoundTime, uint256  roundEndTime, uint256  reviewPeriod, uint256  endOfTournamentTime,
-    uint bountyMTX, uint currentRound, uint maxRounds);
-
+  event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
 	//Initialize variables
   address[] public allTournaments; //convert into a map?
   mapping(address=>bool) tournamentExists;
@@ -46,7 +43,7 @@ contract MatryxPlatformAlphaMain is MatryxOracleMessenger{
   // ----------------- Tournament Info Methods -----------------
 
   // Gets a tournament by its address
-  function tournamentByAddress(address tournamentAddress) public returns (bytes32)
+  function tournamentByAddress(address tournamentAddress) public view returns (bytes32)
   {
       require(tournamentExists[tournamentAddress]);
       Tournament t = Tournament(tournamentAddress);
@@ -77,10 +74,10 @@ contract MatryxPlatformAlphaMain is MatryxOracleMessenger{
   // ----------------- Tournament Editing Methods -----------------
   
   //Create a new tournament if you own the contract ie: just Matryx Team for now.
-  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _tournamentStartTime, uint256 _roundStartTime, uint256 _roundEndTime, uint256 _reviewPeriod, uint256 _endOfTournamentTime, uint256 _MTXReward, uint256 _entryFee, uint256 _currentRound, uint256 _maxRounds) public onlyOwner returns (address)
+  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyOwner returns (address)
   {
-    address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _tournamentStartTime, _roundStartTime, _roundEndTime, _reviewPeriod, _endOfTournamentTime, _MTXReward, _entryFee, _currentRound, _maxRounds);
-    TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _roundStartTime, _roundEndTime, _reviewPeriod, _endOfTournamentTime, _MTXReward, _currentRound, _maxRounds);
+    address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _MTXReward, _entryFee);
     allTournaments.push(newTournament);
   }
 
