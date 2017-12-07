@@ -1,6 +1,6 @@
-var MatryxAlpha = artifacts.require("MatryxPlatformAlphaMain");
+var MatryxAlpha = artifacts.require("MatryxPlatform");
 
-contract('MatryxPlatformAlphaMain', function(accounts)
+contract('MatryxPlatform', function(accounts)
 {
 	it("The number of tournaments should be 0.", function() {
     return MatryxAlpha.deployed().then(function(instance) {

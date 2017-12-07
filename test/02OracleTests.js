@@ -1,7 +1,7 @@
 var utils = require("./utils.js");
-var MatryxAlpha = artifacts.require("MatryxPlatformAlphaMain");
+var MatryxAlpha = artifacts.require("MatryxPlatform");
 
-contract('MatryxPlatformAlphaMain', function(accounts)
+contract('MatryxPlatform', function(accounts)
 {
 
 	// it("The oracle system produces a valid query.", function()
