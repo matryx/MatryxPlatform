@@ -8,7 +8,7 @@ import './Ownable.sol';
 //import submissions contract
 
 //Initialize the contract
-contract MatryxPlatformAlphaMain is MatryxOracleMessenger{
+contract MatryxPlatform is MatryxOracleMessenger{
 
   event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
 	//Initialize variables
