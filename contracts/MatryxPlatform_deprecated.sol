@@ -2,7 +2,7 @@ pragma solidity ^0.4.18;
 
 import "./MatryxOracleMessenger.sol";
 
-contract MatryxPlatform is MatryxOracleMessenger
+contract MatryxPlatform_deprecated is MatryxOracleMessenger
 {
 
     struct Submission
@@ -42,7 +42,7 @@ contract MatryxPlatform is MatryxOracleMessenger
         _;
     }
 
-    function MatryxPlatform() public
+    function MatryxPlatform_deprecated() public
     {
     }
 

@@ -1,3 +1,3 @@
 rm -rf ./build
 truffle compile
-exec truffle develop
+truffle test --network testrpc
