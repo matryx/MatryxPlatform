@@ -8,7 +8,7 @@ import './Ownable.sol';
 //import submissions contract
 
 //Initialize the contract
-contract MatryxPlatform is MatryxOracleMessenger{
+contract MatryxPlatform is MatryxOracleMessenger {
 
   event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
 	//Initialize variables
@@ -79,6 +79,7 @@ contract MatryxPlatform is MatryxOracleMessenger{
     address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
     TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _MTXReward, _entryFee);
     allTournaments.push(newTournament);
+    tournamentExists[newTournament] = true;
   }
 
 }
