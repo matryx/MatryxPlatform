@@ -46,7 +46,7 @@ contract('MatryxPlatform', function(accounts) {
 contract('MatryxPlatform', function(accounts)
 {
 	var tournamentAddress;
-	it("The created tournament should be addressable", function() {
+	it("The created tournament should be addressable from the platform", function() {
 		return MatryxPlatform.deployed().then(function(instance) {
         return instance.createTournament("tournament", "external address", 100, 2);
     }).then(function(result)
@@ -65,6 +65,43 @@ contract('MatryxPlatform', function(accounts)
 
 contract('MatryxPlatform', function(accounts)
 {
+  it("One person becomes an entrant in a tournament", async function()
+  {
+    // get the platform
+    let platform = await MatryxPlatform.deployed();
+    // create a tournament.
+    createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
+    // get the tournament address
+    let tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
+    // create tournament from address
+    let tournament = await Tournament.at(tournamentAddress);
+
+    // become entrant in tournament
+    await platform.enterTournament(tournamentAddress);
+    let isEntrant = await tournament.isEntrant.call(accounts[0]);
+    assert.equal(isEntrant.valueOf(), true, "The first account should be entered into the tournament.")
+  })
+
+  it("Another person becomes an entrant in the tournament", async function()
+  {
+    // get the platform
+    let platform = await MatryxPlatform.deployed();
+    // create a tournament.
+    createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
+    // get the tournament address
+    let tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
+    // create tournament from address
+    let tournament = await Tournament.at(tournamentAddress);
+
+    // become entrant in tournament
+    await platform.enterTournament(tournamentAddress, {from: accounts[1]});
+    let isEntrant = await tournament.isEntrant.call(accounts[1]);
+    assert.equal(isEntrant.valueOf(), true, "The second account should be entered into the tournament.")
+  })
+});
+
+contract('MatryxPlatform', function(accounts)
+{
   it("First submission owner is tournament owner", async function() {
     // get the platform
     let platform = await MatryxPlatform.deployed();
@@ -76,7 +113,7 @@ contract('MatryxPlatform', function(accounts)
     // create tournament from address
     let tournament = await Tournament.at(tournamentAddress);
     
-    // become entrant to tournament
+    // become entrant in tournament
     await platform.enterTournament(tournamentAddress);
     await tournament.createSubmission("submission1", "external address", ["0x0"], ["0x0"]);
 
