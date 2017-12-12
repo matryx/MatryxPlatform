@@ -81,5 +81,4 @@ contract MatryxPlatform is MatryxOracleMessenger {
     allTournaments.push(newTournament);
     tournamentExists[newTournament] = true;
   }
-
 }
