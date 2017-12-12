@@ -36,7 +36,7 @@ contract Tournament is Ownable {
     mapping(address => address[]) private giveEntrantAddressGetSubmissions;
     string[] private submissionNames;
     SubmissionViewer private submissionViewer;
-    mapping(address => bool) private isEntrant;
+    mapping(address => bool) private addressToIsEntrant;
 
     // Tournament Constructor
     function Tournament(address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public {
@@ -70,7 +70,7 @@ contract Tournament is Ownable {
     // Modifier requiring function caller to be an entrant
     modifier onlyEntrant()
     {
-        bool senderIsEntrant = isEntrant[msg.sender];
+        bool senderIsEntrant = addressToIsEntrant[msg.sender];
         require(senderIsEntrant);
         _;
     }
@@ -142,6 +142,11 @@ contract Tournament is Ownable {
         return senderIsOwner;
     }
 
+    function isEntrant(address _sender) public view returns (bool)
+    {
+        return addressToIsEntrant[_sender];
+    }
+
     // Returns true if the tournament is open
     function tournamentOpen() public view returns (bool)
     {
@@ -199,7 +204,7 @@ contract Tournament is Ownable {
     // for submissions made during previous rounds of the tournament.
     function enterUserInTournament(address _entrantAddress) public onlyPlatform returns (address _submissionViewer)
     {
-        isEntrant[_entrantAddress] = true;
+        addressToIsEntrant[_entrantAddress] = true;
         return address(submissionViewer);
     }
 
@@ -243,6 +248,5 @@ contract Tournament is Ownable {
             return false;
         }
     }
-    
 
 } // end of Tournament contract
