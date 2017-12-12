@@ -55,26 +55,26 @@ contract('MatryxPlatform', function(accounts)
     }).then(function(externalAddress){
       return assert.equal(web3.toAscii(externalAddress).replace(/\u0000/g, ""), "external address");
     });
-		// createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
-		// tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
-		// //assert.equal(tournamentAddress, "0x123", "The address of the tournament is not 0x123");
-		// let externalAddress = await platform.tournamentByAddress.call(tournamentAddress);
-		// assert.equal(externalAddress, "external address", "The external address was not 'external address'");
 	})
 });
 
-contract('MatryxPlatform', function(accounts)
+contract('MatryxPlatform', async function(accounts)
 {
+  let platform;
+  let createTournamentTransaction;
+  let tournamentAddress;
+  let tournament;
+
   it("One person becomes an entrant in a tournament", async function()
   {
-    // get the platform
-    let platform = await MatryxPlatform.deployed();
+    platform = await MatryxPlatform.deployed();
     // create a tournament.
     createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
     // get the tournament address
-    let tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
+    tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
     // create tournament from address
-    let tournament = await Tournament.at(tournamentAddress);
+    tournament = await Tournament.at(tournamentAddress);
+
 
     // become entrant in tournament
     await platform.enterTournament(tournamentAddress);
@@ -84,19 +84,16 @@ contract('MatryxPlatform', function(accounts)
 
   it("Another person becomes an entrant in the tournament", async function()
   {
-    // get the platform
-    let platform = await MatryxPlatform.deployed();
-    // create a tournament.
-    createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
-    // get the tournament address
-    let tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
-    // create tournament from address
-    let tournament = await Tournament.at(tournamentAddress);
-
     // become entrant in tournament
     await platform.enterTournament(tournamentAddress, {from: accounts[1]});
     let isEntrant = await tournament.isEntrant.call(accounts[1]);
     assert.equal(isEntrant.valueOf(), true, "The second account should be entered into the tournament.")
+  })
+
+  it("The third account was not entered into the tournament", async function()
+  {
+    let isEntrant = await tournament.isEntrant.call(accounts[2]);
+    assert.equal(isEntrant.valueOf(), false, "The third account should not be entered into the tournament");
   })
 });
 
