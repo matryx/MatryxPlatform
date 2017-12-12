@@ -2,22 +2,6 @@ var MatryxPlatform = artifacts.require("MatryxPlatform");
 var TournamentContract = artifacts.require("Tournament");
 var Submission = artifacts.require("Submission");
 
-
-//TEST
-
-//TODO Move this static test information to a different file to be referenced
-let _tournamentOwner = "0x1123456789012345678901234567890123456789"
-let _tournamentName = "Design a Silly Mug"
-let _tournamentDescription = "Infuse creativity and character into making a coffee mug using Calcflow. In VR, there are no limitations... take that, Gravity! Explore the curious flexibility of parametric equations."
-let _externalAddress = "0x1123456789012345678901234567890123456789"
-let _MTXReward = 1000
-let _entryFee = 10
-
-let _name = "Submission 1"
-let _references = ["0x1","0x2"]
-let _contributors = ["0x1","0x2"]
-
-
 contract('Tournament', function(accounts) {
 
 
@@ -95,15 +79,6 @@ contract('Tournament', function(accounts) {
     //     assert.equal(numberOfSubmissions, 0)
     // })
 
-
-
-
-
-
-
-    // Get Submission details
-    // List of all submissions
-    //
 
 })
 
