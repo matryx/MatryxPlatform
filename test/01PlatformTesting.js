@@ -82,7 +82,7 @@ contract('MatryxPlatform', function(accounts)
 
     let mySubmissions = await tournament.mySubmissions.call();
     // create the submission in tournament
-    let submissionOne = Submission.at(mySubmissions[0]);
+    let submissionOne = await Submission.at(mySubmissions[0]);
     let submissionOwner = await submissionOne.getSubmissionOwner.call();
 
     // check that we're both the tournament and submission owner

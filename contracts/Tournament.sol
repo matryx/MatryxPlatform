@@ -159,7 +159,7 @@ contract Tournament is Ownable {
         return giveEntrantAddressGetSubmissions[msg.sender];
     }
 
-    function submissionCount() public returns (uint256)
+    function submissionCount() public view returns (uint256)
     {
         return submissionList.length;
     }
