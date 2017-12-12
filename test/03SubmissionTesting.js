@@ -57,7 +57,7 @@ contract('MatryxPlatform', function(accounts)
 
 	let submissionOne;
 
-	it("Tournament is open, submission is not public, creator tries to acess it", async function()
+	it("Tournament is open, submission is not public, creator tries to access it", async function()
 	{
 	    // get the platform
 	    platform = await MatryxPlatform.deployed();
@@ -86,7 +86,7 @@ contract('MatryxPlatform', function(accounts)
   	{
 	    // check accessibility on this submission for accounts[1]
 	    let isAccessible = await submissionOne.isAccessible.call(accounts[1]);
-	    assert.equal(isAccessible, false, "The submission should be inaccessible.");
+	    assert.equal(isAccessible, false, "The submission should be inaccessible to outside users.");
   	});
 
   	it("Tournament is open, submission was made public, outside user tries to access it", async function()

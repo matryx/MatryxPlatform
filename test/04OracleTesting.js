@@ -3,33 +3,21 @@ var MatryxAlpha = artifacts.require("MatryxPlatform");
 
 contract('MatryxPlatform', function(accounts)
 {
+	let platform;
+	let queryId;
+	it("The oracle system produces a valid query id.", async function()
+	{
+		platform = await MatryxAlpha.deployed();
+		let prepareBalanceTx = await platform.prepareBalance(0x0, {from: accounts[0]});
+		queryId = prepareBalanceTx.logs[0].args.id;
 
-	// it("The oracle system produces a valid query.", function()
-	// {
-	// 	return MatryxAlpha.deployed().then(function(instance)
-	// 	{
-	// 		platform = instance;
-	// 		return platform.prepareBalance.call(accounts[0]);
-	// 	});
-	// });
+		assert.notEqual(queryId.valueOf(), 0, "The query id should not be 0");
+	});
 
-	// it("The platform triggers a TournamentCreated event per tournament.", function()
-	// {
-	// 	return MatryxAlpha.deployed().then(function(instance)
-	// 	{
-	// 		platform = instance;
-	// 		var balanceQueryEvent = platform.QueryPerformed({_from:web3.eth.coinbase},{fromBlock: 0, toBlock: 'latest'});
-	// 		return platform.createTournament("new tournament", "external address", 100, 1)
-	// 		.then(() => 
-	// 			{
-	// 				// Additionally you can start watching right away, by passing a callback:
-	// 				web3.eth.filter('latest', function(error, result){
-	// 					if (!error)
-	// 					{
-	// 					  	console.log(result);
-	// 					}
-	// 				});
-	// 			});
-	// 	});
-	// });
+	it("Query id exists, platform owner tries to store value under id", async function()
+	{
+		await platform.storeQueryResponse(queryId.valueOf(), 5);
+		let balance = await platform.getBalance.call();
+		assert.equal(balance.valueOf(), 5, "Balance should be 5.");
+	});
 });
