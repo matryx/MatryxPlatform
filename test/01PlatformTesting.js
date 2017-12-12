@@ -32,14 +32,20 @@ contract('MatryxPlatform', function(accounts)
 contract('MatryxPlatform', function(accounts) {
 	let platform;
 	var createTournamentTransaction;
-	let tournamentAddress;
+  
   it("The number of tournaments should be 1", async function() {
     platform = await MatryxPlatform.new();
     createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
     let tournamentCount = await platform.tournamentCount();
-    tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
     // assert there should be one tournament
     assert.equal(tournamentCount.valueOf(), 1, "The number of tournaments should be 1.");
+  })
+
+  it("The number of tournaments should be 2", async function() {
+    createTournamentTransaction = await platform.createTournament("tournament 2", "external address", 100, 2);
+    let tournamentCount = await platform.tournamentCount.call();
+
+    assert.equal(tournamentCount.valueOf(), 2, "The number of tournaments should be 2.");
   })
 });
 
