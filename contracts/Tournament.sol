@@ -25,7 +25,7 @@ contract Tournament is Ownable {
     uint256 public endOfTournamentTime;
     uint public currentRound; //0
     uint public maxRounds = 1;
-    bool public tournamentOpen;
+    bool public tournamentOpen = true;
 
     // Reward and fee
     uint public MTXReward;
