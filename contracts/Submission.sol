@@ -14,7 +14,6 @@ contract Submission is Ownable {
 	
 	// Submission
 	string name;
-	address public submissionOwner;
 	address[] references;
 	address[] contributors;
 	bytes32 externalAddress;
@@ -26,11 +25,10 @@ contract Submission is Ownable {
 	function Submission(address _tournamentAddress, address _tournamentOwner, address _submissionOwner, string _name, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, uint256 _roundEndTime) public {
 		//Clean inputs
 		require(_submissionOwner != 0x0);
-
 		tournamentAddress = _tournamentAddress;
 		tournamentOwner = _tournamentOwner;
 		name = _name;
-		submissionOwner = _submissionOwner;
+		owner = _submissionOwner;
 		references = _references;
 		contributors = _contributors;
 		externalAddress = _externalAddress;
@@ -43,7 +41,15 @@ contract Submission is Ownable {
 	// A modifier to ensure that information can be obtained
 	// about this submission only when it should be (when the creator decides it can
 	// or after the tournament has been closed).
-	modifier whenAccessible()
+	modifier whenAccessible(address _requester)
+	{
+		require(isAccessible(_requester));
+		_;
+	}
+
+	// ----------------- Accessor Methods -----------------
+
+	function isAccessible(address _requester) public constant returns (bool)
 	{
 		// NEEDS WORK.
 		// TODO: Figure out who should set tournamentIsClosed
@@ -52,12 +58,9 @@ contract Submission is Ownable {
 		// when the round this was created in is the current round
 		// (this submission should be visible to those in the tournament if
 		// it was created last round, two rounds ago, etc.)
-
 		Tournament tournament = Tournament(tournamentAddress);
-		bool senderOwnsTournament = tournament.isOwner(msg.sender);
-
-		bool externallyAccessible = externallyAccessibleDuringTournament;
-
+		bool senderOwnsTournament = tournament.isOwner(_requester);
+		//bool externallyAccessible = externallyAccessibleDuringTournament;
 		// TODO: Think about this next part carefully.
 		// Who is responsible for tournamentIsClosed? This submission? The tournament?
 		// How often are users going to call the accessors of a submission? And on the other hand...
@@ -69,29 +72,26 @@ contract Submission is Ownable {
 		//    3) both??
 		bool closedTournament = !tournament.tournamentOpen();
 
-		require(senderOwnsTournament || externallyAccessible || closedTournament);
-		_;
+		return senderOwnsTournament || externallyAccessibleDuringTournament || closedTournament;
 	}
 
-	// ----------------- Accessor Methods -----------------
-
-	function getSubmissionOwner() constant whenAccessible public returns (address) {
-		return submissionOwner;
+	function getSubmissionOwner() constant whenAccessible(msg.sender) public returns (address) {
+		return owner;
 	}
 
-	function getReferences() constant whenAccessible public returns(address[]) {
+	function getReferences() constant whenAccessible(msg.sender) public returns(address[]) {
 		return references;
 	}
 
-	function getContributors() constant whenAccessible public returns(address[]) {
+	function getContributors() constant whenAccessible(msg.sender) public returns(address[]) {
 		return contributors;
 	}
 
-	function getExternalAddress() constant whenAccessible public returns(bytes32) {
+	function getExternalAddress() constant whenAccessible(msg.sender) public returns(bytes32) {
 		return externalAddress;
 	}
 
-	function getTimeSubmitted() constant whenAccessible public returns(uint256) {
+	function getTimeSubmitted() constant whenAccessible(msg.sender) public returns(uint256) {
 		return timeSubmitted;
 	}
 
@@ -107,5 +107,4 @@ contract Submission is Ownable {
 	{
 		externallyAccessibleDuringTournament = true;
 	}
-
 }

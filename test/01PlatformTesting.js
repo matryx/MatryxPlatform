@@ -32,7 +32,7 @@ contract('MatryxPlatform', function(accounts)
 contract('MatryxPlatform', function(accounts) {
 	let platform;
 	var createTournamentTransaction;
-  
+
   it("The number of tournaments should be 1", async function() {
     platform = await MatryxPlatform.new();
     createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
@@ -101,31 +101,4 @@ contract('MatryxPlatform', async function(accounts)
     let isEntrant = await tournament.isEntrant.call(accounts[2]);
     assert.equal(isEntrant.valueOf(), false, "The third account should not be entered into the tournament");
   })
-});
-
-contract('MatryxPlatform', function(accounts)
-{
-  it("First submission owner is tournament owner", async function() {
-    // get the platform
-    let platform = await MatryxPlatform.deployed();
-    // create a tournament
-    createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
-    // get the tournament address
-    tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
-
-    // create tournament from address
-    let tournament = await Tournament.at(tournamentAddress);
-    
-    // become entrant in tournament
-    await platform.enterTournament(tournamentAddress);
-    await tournament.createSubmission("submission1", "external address", ["0x0"], ["0x0"]);
-
-    let mySubmissions = await tournament.mySubmissions.call();
-    // create the submission in tournament
-    let submissionOne = await Submission.at(mySubmissions[0]);
-    let submissionOwner = await submissionOne.getSubmissionOwner.call();
-
-    // check that we're both the tournament and submission owner
-    assert.equal(submissionOwner, accounts[0], "The owner of the submission should be the owner of the tournament");
-  });
 });
