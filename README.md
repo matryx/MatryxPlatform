@@ -1,4 +1,4 @@
-# Matryx Alpha Source Code ![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Matryx Logo")
+# Matryx Alpha Source Code ![alt text](https://matryx.ai/static/img/Matryx_Black_Full_Logo.png "Matryx Logo")
 
 ## Introduction
 
