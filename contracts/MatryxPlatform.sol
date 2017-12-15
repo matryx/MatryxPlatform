@@ -21,7 +21,12 @@ contract MatryxPlatform is MatryxOracleMessenger {
 
   // Prepares the user's balance (allowing them to use the platform)
   function prepareBalance(uint256 toIgnore) public
-  {
+  {   
+      // Make sure that the user has not already attempted to prepare their balance
+      uint256 qID = fromQuerierToQueryID[msg.sender];
+      uint256 queryResponse = queryResponses[qID];
+      require(queryResponse == 0x0);
+
       this.Query(bytes32(toIgnore), msg.sender);
   }
 
