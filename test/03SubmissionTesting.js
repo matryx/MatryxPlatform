@@ -1,6 +1,7 @@
 let MatryxPlatform = artifacts.require("MatryxPlatform");
 let Tournament = artifacts.require("Tournament");
 let Submission = artifacts.require("Submission");
+let SubmissionViewer = artifacts.require("SubmissionViewer");
 
 contract('MatryxPlatform', function(accounts)
 {
@@ -92,3 +93,85 @@ contract('MatryxPlatform', function(accounts) {
 	})
 
 });
+
+contract('Submission', function(accounts) {
+    let platform;
+    let createTournamentTransaction;
+    let tournamentAddress;
+    let tournament;
+    let submissionOne;
+
+    it("Submission retained references", async function() {
+		// get the platform
+		platform = await MatryxPlatform.deployed();
+		// create a tournament
+		createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
+		// get the tournament address
+		tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
+
+		// create tournament from address
+		tournament = await Tournament.at(tournamentAddress);
+
+		// become entrant in tournament
+		await platform.enterTournament(tournamentAddress);
+		await tournament.createSubmission("submission1", "external address", ["0x123"], ["0x456"]);
+
+		let mySubmissions = await tournament.mySubmissions.call();
+		// create the submission in tournament
+		submissionOne = await Submission.at(mySubmissions[0]);
+		let submissionReferences = await submissionOne.getReferences.call();
+
+		// check that we're both the tournament and submission owner
+		assert.equal(submissionReferences.valueOf()[0], '0x0000000000000000000000000000000000000123', "The references for this submission were retained");
+	});
+
+	it("Submission retained contributors", async function() {
+		let submissionContributors = await submissionOne.getContributors.call();
+		assert.equal(submissionContributors.valueOf()[0], '0x0000000000000000000000000000000000000456', "The contributors of this submission were retained");
+	});
+
+	it("Submission retained external address", async function() {
+		let externalAddressBytes32 = await submissionOne.getExternalAddress.call();
+		let externalAddressString = web3.toAscii(externalAddressBytes32.valueOf());
+		let externalAddressStringNoZeros = externalAddressString.replace(/\u0000+/g, "");
+		assert.equal(externalAddressStringNoZeros, "external address", "The submission retained its external address");
+	});
+});
+
+contract('Submission', function() {
+	let platform;
+    let createTournamentTransaction;
+    let tournamentAddress;
+    let tournament;
+    let submissionViewerAddress;
+    let submissionOne;
+
+	it("Submission retained the time it was submitted", async function() {
+		// get the platform
+		platform = await MatryxPlatform.deployed();
+		// create a tournament
+		createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
+		// get the tournament address
+		tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
+
+		// create tournament from address
+		tournament = await Tournament.at(tournamentAddress);
+
+		// become entrant in tournament
+		await platform.enterTournament(tournamentAddress);
+		
+		// create a submission
+		let createSubmissionTx = await tournament.createSubmission("submission1", "external address", ["0x0"], ["0x0"]);
+		// get the transaction's block
+		let nowBlock = await web3.eth.getBlock(createSubmissionTx.receipt.blockNumber);
+		// get the timestamp of that block
+		let nowBlockTimestamp = await nowBlock.timestamp;
+		// get the submission
+		let mySubmissions = await tournament.mySubmissions.call();
+		let submissionOne = await Submission.at(mySubmissions[0]);
+		// get the timestamp on the submission
+		let timeSubmitted = await submissionOne.getTimeSubmitted.call();
+		
+		assert.equal(timeSubmitted.valueOf(), nowBlockTimestamp, "The submission retained the time it was submitted");
+	});
+})

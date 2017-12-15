@@ -221,6 +221,12 @@ contract Tournament is Ownable {
         return entryFee;
     }
 
+    // Returns the address of the submission viewer
+    function getSubmissionViewer() public view onlyEntrant returns (address _submissionViewerAddress)
+    {
+        return address(submissionViewer);
+    }
+
     // Creates a submission under this tournament
     function createSubmission(string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public onlyEntrant whileRoundOpen whileTournamentOpen returns (address _submissionAddress) {
 
