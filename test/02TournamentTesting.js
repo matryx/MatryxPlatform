@@ -39,13 +39,17 @@ contract('Tournament', function(accounts) {
         assert.equal(tournamentOpen.valueOf(), true, "The tournament should be open.");
     });
 
-    // Create a Submission
-    it("A submission was created", async function() {
-
+    it("The submission viewer exists", async function() {
         //Enter the tournament and create a submission
         await platform.enterTournament(tournamentAddress);
-        await tournament.createSubmission("submission1", "external address", ["0x0"], ["0x0"]);
+        let submissionViewerAddress = await tournament.getSubmissionViewer.call();
+        assert.isNotNull(submissionViewerAddress, "The submission viewer for this tournament should exist");
+    })
 
+    // Create a Submission
+    it("A submission was created", async function() {
+        // create submission
+        await tournament.createSubmission("submission1", "external address", ["0x0"], ["0x0"]);
         //Check to make sure the submission count is updated
         numberOfSubmissions = await tournament.submissionCount()
         assert.equal(numberOfSubmissions, 1)

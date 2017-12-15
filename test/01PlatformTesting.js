@@ -33,34 +33,56 @@ contract('MatryxPlatform', function(accounts) {
 	var createTournamentTransaction;
 
   it("The number of tournaments should be 1", async function() {
-    platform = await MatryxPlatform.new();
+    platform = await MatryxPlatform.deployed();
     createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
     let tournamentCount = await platform.tournamentCount();
     // assert there should be one tournament
     assert.equal(tournamentCount.valueOf(), 1, "The number of tournaments should be 1.");
   })
 
-  it("The number of tournaments should be 2", async function() {
-    createTournamentTransaction = await platform.createTournament("tournament 2", "external address", 100, 2);
+  it("The created tournament should be addressable from the platform", async function() {
+    
+      createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
+      var storedExternalAddress = await platform.tournamentByAddress.call(createTournamentTransaction.logs[0].args._tournamentAddress);
+      storedExternalAddress = web3.toAscii(storedExternalAddress).replace(/\u0000/g, "");
+      let externalAddressFromEvent = web3.toAscii(createTournamentTransaction.logs[0].args._externalAddress).replace(/\u0000/g, "")
+      return assert.equal(externalAddressFromEvent, storedExternalAddress);
+    });
+
+  it("The number of tournaments should be 3", async function() {
+    createTournamentTransaction = await platform.createTournament("tournament 3", "external address", 100, 2);
     let tournamentCount = await platform.tournamentCount.call();
 
-    assert.equal(tournamentCount.valueOf(), 2, "The number of tournaments should be 2.");
+    assert.equal(tournamentCount.valueOf(), 3, "The number of tournaments should be 3.");
   })
 });
 
-contract('MatryxPlatform', function(accounts)
+contract('MatryxPlatform', async function(accounts)
 {
-	var tournamentAddress;
-	it("The created tournament should be addressable from the platform", function() {
-		return MatryxPlatform.deployed().then(function(instance) {
-        return instance.createTournament("tournament", "external address", 100, 2);
-    }).then(function(result)
-    {
-      return result.logs[0].args._externalAddress;
-    }).then(function(externalAddress){
-      return assert.equal(web3.toAscii(externalAddress).replace(/\u0000/g, ""), "external address");
-    });
-	})
+  let platform;
+  let createTournamentTransaction;
+  let tournamentAddress;
+  let tournament;
+
+  var queryID;
+
+  // get the platform
+  platform = await MatryxPlatform.deployed();
+
+  it("The balance of the first account is non-zero", async function() {
+    let prepareBalanceTx = await platform.prepareBalance(0x0);
+    queryID = prepareBalanceTx.logs[0].args.id;
+    await platform.storeQueryResponse(queryID, 1);
+
+    let balanceIsNonZero = await platform.balanceIsNonZero.call();
+    assert.isTrue(balanceIsNonZero.valueOf(), "Balance should be non-zero");
+  });
+
+  it("The balance of the first account has already been set. Re-storing is unsuccessful.", async function() {
+    
+    let queryResponseStoreSuccessTx = await platform.storeQueryResponse(queryID, 5000);
+    assert.isNotNull(queryResponseStoreSuccessTx.logs['FailedToStore'], "The balance of the first account was reset");
+  })
 });
 
 contract('MatryxPlatform', async function(accounts)
@@ -72,6 +94,7 @@ contract('MatryxPlatform', async function(accounts)
 
   it("One person becomes an entrant in a tournament", async function()
   {
+    // get the platform
     platform = await MatryxPlatform.deployed();
     // create a tournament.
     createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
@@ -79,7 +102,6 @@ contract('MatryxPlatform', async function(accounts)
     tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
     // create tournament from address
     tournament = await Tournament.at(tournamentAddress);
-
 
     // become entrant in tournament
     await platform.enterTournament(tournamentAddress);
