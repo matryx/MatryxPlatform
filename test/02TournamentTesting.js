@@ -3,9 +3,10 @@ var TournamentContract = artifacts.require("Tournament");
 var Submission = artifacts.require("Submission");
 
 contract('Tournament', function(accounts) {
+    var platform;
+    var tournament;
 
-
-    it("Deploy the tournament from the platform", async function() {
+    it("Created tournament should exist", async function() {
 
         platform = await MatryxPlatform.deployed();
         // create a tournament.
@@ -25,13 +26,21 @@ contract('Tournament', function(accounts) {
     })
 
     // There should be no existing submissions
-    it("No existing Submissions", async function() {
+    it("There are no existing submissions", async function() {
         numberOfSubmissions = await tournament.submissionCount()
         assert.equal(numberOfSubmissions, 0)
     })
 
+    it("The tournament is open", async function() {
+        await tournament.openTournament();
+        // the tournament should be open 
+        let tournamentOpen = await tournament.tournamentOpen.call();
+        // assert that the tournament is open
+        assert.equal(tournamentOpen.valueOf(), true, "The tournament should be open.");
+    });
+
     // Create a Submission
-    it("Submission created", async function() {
+    it("A submission was created", async function() {
 
         //Enter the tournament and create a submission
         await platform.enterTournament(tournamentAddress);
@@ -45,6 +54,12 @@ contract('Tournament', function(accounts) {
     it("There is 1 Submissions", async function() {
         numberOfSubmissions = await tournament.submissionCount()
         assert.equal(numberOfSubmissions, 1)
+    })
+
+    // TODO: Update when logic becomes more fleshed out
+    it("Update the public submissions for the previous round", async function() {
+        await tournament.updatePublicSubmissions();
+        assert.equal(true, true, "always true for now");
     })
 
     it("This is the owner", async function() {
@@ -72,6 +87,20 @@ contract('Tournament', function(accounts) {
         assert.equal(getEntryFees, 2)
     })
 
+    // TODO: Update when logic is more fleshed out.
+    it("The tournament is closed", async function() {
+        await tournament.chooseWinner();
+        // the tournament should be open 
+        let tournamentOpen = await tournament.tournamentOpen.call();
+        // assert that the tournament is open
+        assert.equal(tournamentOpen.valueOf(), false, "The tournament should be open.");
+    });
+
+    it("String is empty", async function() {
+        let stringEmptyBool = await tournament.stringIsEmpty("");
+        assert.equal(stringEmptyBool, true, "stringIsEmpty function should say string is empty");
+    });
+
     // //TODO Migrate platformCode
     // it("Migrate to the new Platform", async function() {
     //     migratedPlatform = await tournament.upgradePlatform("0x1123456789012345678901234567890123456789")
@@ -81,5 +110,3 @@ contract('Tournament', function(accounts) {
 
 
 })
-
-
