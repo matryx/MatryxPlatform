@@ -87,7 +87,7 @@ contract Tournament is Ownable {
     modifier whileTournamentOpen()
     {
         // TODO: Implement me!
-        require(true);
+        require(tournamentOpen);
 
         /* Sam's logic
         * Logic for active vs. inactive tournaments
@@ -173,9 +173,12 @@ contract Tournament is Ownable {
 
     // TODO: Refactor so that the owner is actually the owner and not the platform.
 
-    // Called by the owner to start the tournament
-    function StartTournament() public onlyOwner
+    // Called by the owner to open the tournament
+    function openTournament() public
     {
+        // Why do we have to do this? Why can't we use
+        // the 'onlyOwner' modifier?
+        require(msg.sender == owner);
         // TODO: Implement me!
         tournamentOpen = true;
     }
@@ -189,8 +192,11 @@ contract Tournament is Ownable {
     }
 
     // To be called by the tournament owner to choose a tournament winner
-    function ChooseWinner() public onlyOwner
+    function chooseWinner() public
     {
+        // Why do we have to do this? Why can't we use
+        // the 'onlyOwner' modifier?
+        require(msg.sender == owner);
         // TODO: Implement me!
         tournamentOpen = false;
         // Tell each submission that the tournament is over?
