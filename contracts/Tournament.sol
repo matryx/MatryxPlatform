@@ -12,7 +12,7 @@ contract Tournament is Ownable {
 
     //Tournament identification
     string name;
-    address public tournamentOwner;
+    address public owner;
     string public tournamentName;
     bytes32 public externalAddress;
 
@@ -25,7 +25,7 @@ contract Tournament is Ownable {
     uint256 public endOfTournamentTime;
     uint public currentRound; //0
     uint public maxRounds = 1;
-    bool public tournamentOpen;
+    bool public tournamentOpen = true;
 
     // Reward and fee
     uint public MTXReward;
@@ -33,41 +33,28 @@ contract Tournament is Ownable {
 
     // Submission tracking
     address[] private submissionList;
+    mapping(address => address[]) private giveEntrantAddressGetSubmissions;
     string[] private submissionNames;
     SubmissionViewer private submissionViewer;
-    mapping(address => bool) private isEntrant;
+    mapping(address => bool) private addressToIsEntrant;
 
     // Tournament Constructor
-    function Tournament(address _tournamentOwner, string _tournamentName, bytes32 _externalAddress, uint256 _tournamentStartTime, uint256 _roundStartTime, uint256 _roundEndTime, uint256 _reviewPeriod, 
-        uint256 _endOfTournamentTime, uint _MTXReward, uint _currentRound, uint _maxRounds) public {
-        //Clean the inputs
+    function Tournament(address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public {
         //Clean inputs
-        require(_tournamentOwner != 0x0);
+        require(_owner != 0x0);
         require(!stringIsEmpty(_tournamentName));
-        require(_tournamentStartTime >= now);
-        require(_roundEndTime > now);
-        require(_reviewPeriod != 0);
-        require(_endOfTournamentTime >  now);
         require(_MTXReward > 0);
-        require(_currentRound >= 0);
-        require(_maxRounds >= 0);
-
+        
         platformAddress = msg.sender;
         timeCreated = now;
-
-        //Constructor assignments
-        tournamentOwner = _tournamentOwner;
+        // Identification
+        owner = _owner;
         tournamentName = _tournamentName;
         externalAddress = _externalAddress;
-        tournamentStartTime = _tournamentStartTime;
-        roundStartTime = _roundStartTime;
-        roundEndTime = _roundEndTime;
-        reviewPeriod = _reviewPeriod;
-        endOfTournamentTime = _endOfTournamentTime;
+        // Reward and fee
         MTXReward = _MTXReward;
-        currentRound = _currentRound;
-        maxRounds = _maxRounds;
-
+        entryFee = _entryFee;
+        // Submission viewing
         submissionViewer = new SubmissionViewer();
     }
 
@@ -83,7 +70,7 @@ contract Tournament is Ownable {
     // Modifier requiring function caller to be an entrant
     modifier onlyEntrant()
     {
-        bool senderIsEntrant = isEntrant[msg.sender];
+        bool senderIsEntrant = addressToIsEntrant[msg.sender];
         require(senderIsEntrant);
         _;
     }
@@ -100,7 +87,7 @@ contract Tournament is Ownable {
     modifier whileTournamentOpen()
     {
         // TODO: Implement me!
-        require(true);
+        require(tournamentOpen);
 
         /* Sam's logic
         * Logic for active vs. inactive tournaments
@@ -127,7 +114,26 @@ contract Tournament is Ownable {
          _;
     }
 
-    // ----------------- Accessor Methods -----------------
+    // ----------------- Setter Methods -----------------
+
+        // TODO: Move into setters.
+
+        // require(_tournamentStartTime >= now);
+        // tournamentStartTime = _tournamentStartTime;
+        // require(_roundStartTime > now);
+        // roundStartTime = _roundStartTime;
+        // require(_roundEndTime > now);
+        // roundEndTime = _roundEndTime;
+        // require(_reviewPeriod != 0);
+        // reviewPeriod = _reviewPeriod;
+        // require(_endOfTournamentTime >  now);
+        // endOfTournamentTime = _endOfTournamentTime;
+        // require(_currentRound >= 0);
+        // currentRound = _currentRound;
+        // require(_maxRounds >= 0);
+        // maxRounds = _maxRounds;
+
+    // ----------------- Getter Methods -----------------
 
     // Returns true if a given address is the owner (an owner...?) of this tournament
     function isOwner(address _sender) public view returns (bool)
@@ -136,31 +142,49 @@ contract Tournament is Ownable {
         return senderIsOwner;
     }
 
+    function isEntrant(address _sender) public view returns (bool)
+    {
+        return addressToIsEntrant[_sender];
+    }
+
     // Returns true if the tournament is open
-    function tournamentOpen() public returns (bool)
+    function tournamentOpen() public view returns (bool)
     {
         return tournamentOpen;
     }
 
     // Returns the external address of the tournament
-    function getExternalAddress() public returns (bytes32)
+    function getExternalAddress() public view returns (bytes32)
     {
         return externalAddress;
+    }
+
+    function mySubmissions() public view returns (address[])
+    {
+        return giveEntrantAddressGetSubmissions[msg.sender];
+    }
+
+    function submissionCount() public view returns (uint256)
+    {
+        return submissionList.length;
     }
 
     // ----------------- Tournament Administration Methods -----------------
 
     // TODO: Refactor so that the owner is actually the owner and not the platform.
 
-    // Called by the owner to start the tournament
-    function StartTournament() public onlyOwner
+    // Called by the owner to open the tournament
+    function openTournament() public
     {
+        // Why do we have to do this? Why can't we use
+        // the 'onlyOwner' modifier?
+        require(msg.sender == owner);
         // TODO: Implement me!
         tournamentOpen = true;
     }
 
     // Updates the submissions visible via the SubmissionViewer
-    function updatePublicSubmissions() public
+    function updatePublicSubmissions() public pure
     {
         // TODO: Implement me!
         // Foreach submission made in a previous round,
@@ -168,22 +192,25 @@ contract Tournament is Ownable {
     }
 
     // To be called by the tournament owner to choose a tournament winner
-    function ChooseWinner() public onlyOwner
+    function chooseWinner() public
     {
+        // Why do we have to do this? Why can't we use
+        // the 'onlyOwner' modifier?
+        require(msg.sender == owner);
         // TODO: Implement me!
         tournamentOpen = false;
         // Tell each submission that the tournament is over?
         // (See Submission::whenAccessible)
     }
 
-    // ----------------- Tournament Entry Methods -----------------
+    // ----------------- Entrant Methods -----------------
 
     // Enters the user into the tournament and returns to them
     // the address of the submissionViewer, which generates events
     // for submissions made during previous rounds of the tournament.
     function enterUserInTournament(address _entrantAddress) public onlyPlatform returns (address _submissionViewer)
     {
-        isEntrant[_entrantAddress] = true;
+        addressToIsEntrant[_entrantAddress] = true;
         return address(submissionViewer);
     }
 
@@ -194,15 +221,23 @@ contract Tournament is Ownable {
         return entryFee;
     }
 
-    // ----------------- Submission Methods -----------------
+    // Returns the address of the submission viewer
+    function getSubmissionViewer() public view onlyEntrant returns (address _submissionViewerAddress)
+    {
+        return address(submissionViewer);
+    }
 
     // Creates a submission under this tournament
     function createSubmission(string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public onlyEntrant whileRoundOpen whileTournamentOpen returns (address _submissionAddress) {
 
         uint256 timeSubmitted = now;
-        address newSubmission = new Submission(this, tournamentOwner, msg.sender, _name, _externalAddress, _references, _contributors, timeSubmitted, roundEndTime);
+        address newSubmission = new Submission(this, owner, msg.sender, _name, _externalAddress, _references, _contributors, timeSubmitted, roundEndTime);
+                                            // address,   address,      address,   string,    bytes32,         address[],    address[],    uint256,      uint256
+        submissionList.push(newSubmission);
+        submissionNames.push(_name);
+        giveEntrantAddressGetSubmissions[msg.sender].push(newSubmission);
 
-        name = _name;
+        // TODO: Loop through _contributors and add as entrant
 
         // TODO: Remove this event call and place all calls to it in updatePublicSubmissions.
         // Do this after the round logic has been ironed out.
@@ -213,7 +248,7 @@ contract Tournament is Ownable {
 
     // Helper function.
     // TODO: Move to library.
-    function stringIsEmpty(string _string) public returns (bool)
+    function stringIsEmpty(string _string) public pure returns (bool)
     {
         bytes memory bytesString = bytes(_string); // Uses memory
         if (bytesString.length == 0) 
@@ -225,6 +260,5 @@ contract Tournament is Ownable {
             return false;
         }
     }
-    
 
 } // end of Tournament contract

@@ -1,147 +1,89 @@
 pragma solidity ^0.4.18;
 
-import "./MatryxOracleMessenger.sol";
+//Import all necessary contracts
+import './MatryxOracleMessenger.sol';
+import './Tournament.sol';
+import './Ownable.sol';
 
-contract MatryxPlatform is MatryxOracleMessenger
-{
+//import submissions contract
 
-    struct Submission
-    {
-        uint256 tournamentId;
-        uint256 id;
+//Initialize the contract
+contract MatryxPlatform is MatryxOracleMessenger {
 
-        string title;
-        string body;
-        string references;
-        string contributors;
-        address author;
+  event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+	//Initialize variables
+  address[] public allTournaments; //convert into a map?
+  mapping(address=>bool) tournamentExists;
+  //TODO for when anyone can submit a tournament
+  // mapping(address => TournamentSubmitters) public submitters
 
-        bool exists;
-    }
+  // ----------------- MTX Balance Methods -----------------
 
-    struct Tournament
-    {
-        uint256 id;
+  // Prepares the user's balance (allowing them to use the platform)
+  function prepareBalance(uint256 toIgnore) public
+  {   
+      // Make sure that the user has not already attempted to prepare their balance
+      uint256 qID = fromQuerierToQueryID[msg.sender];
+      uint256 queryResponse = queryResponses[qID];
+      require(queryResponse == 0x0);
 
-        string title;
-        string description;
-        uint256 bounty;
+      this.Query(bytes32(toIgnore), msg.sender);
+  }
 
-        mapping (uint256 => Submission) submissions;
-        uint256[] submissionList;
+  // Returns whether or not the user can use the platform
+  function balanceIsNonZero() public view returns (bool)
+  {
+      uint balance = latestResponseFromOracle(msg.sender);
+      bool nonZero = balance > 0;
+      return nonZero;
+  }
 
-        bool exists;
-    }
+  // Returns the user's balance
+  function getBalance() public constant returns (uint256)
+  {
+      uint256 balance = latestResponseFromOracle(msg.sender);
+      return balance;
+  }
 
-    mapping (uint256 => Tournament) public tournaments;
-    uint256[] public tournamentList;
+  // ----------------- Tournament Info Methods -----------------
 
-    modifier owneronly()
-    {
-        require(msg.sender == owner);
-        _;
-    }
+  // Gets a tournament by its address
+  function tournamentByAddress(address tournamentAddress) public view returns (bytes32)
+  {
+      require(tournamentExists[tournamentAddress]);
+      Tournament t = Tournament(tournamentAddress);
+      bytes32 externalAddress = t.getExternalAddress();
 
-    function MatryxPlatform() public
-    {
-    }
+      return (externalAddress);
+  }
 
-    function prepareBalance(uint256 toIgnore) public
-    {
-        this.Query(bytes32(toIgnore), msg.sender);
-    }
+  // Gets the total number of tournaments
+  function tournamentCount() public constant returns (uint256)
+  {
+      return allTournaments.length;
+  }
 
-    function balanceIsNonZero() public view returns (bool)
-    {
-        uint balance = latestResponseFromOracle(msg.sender);
-        bool nonZero = balance > 0;
-        return nonZero;
-    }
+  // ----------------- Tournament Entry Methods -----------------
 
-    function getBalance() public constant returns (uint256)
-    {
-        uint256 balance = latestResponseFromOracle(msg.sender);
-        return balance;
-    }
+  // A function allowing the user to make submissions.
+  // This function charges the user MTX as an entry fee
+  // set by the tournament creator.
+  function enterTournament(address _tournamentAddress) public returns (address _submissionViewer)
+  {
+      Tournament tournament = Tournament(_tournamentAddress);
+      // TODO: Charge the user the MTX entry fee.
+      address submissionViewerAddress = tournament.enterUserInTournament(msg.sender);
+      return submissionViewerAddress;
+  }
 
-    function createTournament(string title, string description, uint256 bounty) owneronly public
-    {
-        Tournament memory newTournament;
-        newTournament.id = tournamentCount() + 42;
-        newTournament.title = title;
-        newTournament.description = description;
-        newTournament.bounty = bounty;
-        newTournament.exists = true;
-        tournaments[newTournament.id] = newTournament;
-        tournamentList.push(newTournament.id);
-    }
-
-    function createSubmission(uint256 tournamentId, string title, string body, string references, string contributors) public
-    {
-        // Require tournament exists
-        Tournament storage t = tournaments[tournamentId];
-        require(t.exists);
-
-        uint256 balanceMTX = latestResponseFromOracle(msg.sender);
-        require(balanceMTX > 0);
-
-        Submission memory newSubmission;
-        newSubmission.tournamentId = tournamentId;
-        newSubmission.id = submissionCount(tournamentId) + 42;
-        newSubmission.title = title;
-        newSubmission.body = body;
-        newSubmission.references = references;
-        newSubmission.contributors = contributors;
-        newSubmission.author = msg.sender;
-        newSubmission.exists = true;
-        t.submissions[newSubmission.id] = newSubmission;
-        t.submissionList.push(newSubmission.id);
-    }
-
-    function tournamentByIndex(uint256 idx) public constant returns (uint256, string, string, uint256)
-    {
-        require(tournamentCount() > idx);
-        Tournament memory t = tournaments[tournamentList[idx]];
-        require(t.exists);
-        return (t.id, t.title, t.description, t.bounty);
-    }
-
-    function tournamentByAddress(uint256 tournamentId) public constant returns (uint256, string, string, uint256)
-    {
-        Tournament memory t = tournaments[tournamentId];
-        require(t.exists);
-        return (t.id, t.title, t.description, t.bounty);
-    }
-
-    function tournamentCount() public constant returns (uint256)
-    {
-        return tournamentList.length;
-    }
-
-    function submissionByIndex(uint256 tournamentId, uint256 idx) public constant returns (uint256, string, string, string, string, address)
-    {
-        require(submissionCount(tournamentId) > idx);
-        Tournament storage t = tournaments[tournamentId];
-        require(t.exists);
-        Submission memory s = t.submissions[t.submissionList[idx]];
-        require(s.exists);
-        return (s.id, s.title, s.body, s.references, s.contributors, s.author);
-    }
-
-    function submissionByAddress(uint256 tournamentId, uint256 submissionId) public constant returns (uint256, string, string, string, string, address)
-    {
-        Tournament storage t = tournaments[tournamentId];
-        require(t.exists);
-        Submission memory s = t.submissions[submissionId];
-        require(s.exists);
-        return (s.id, s.title, s.body, s.references, s.contributors, s.author);
-    }
-
-    function submissionCount(uint256 tournamentId) public constant returns (uint256)
-    {
-        Tournament memory t = tournaments[tournamentId];
-        require(t.exists);
-        return t.submissionList.length;
-    }
-
+  // ----------------- Tournament Editing Methods -----------------
+  
+  //Create a new tournament if you own the contract ie: just Matryx Team for now.
+  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyOwner returns (address)
+  {
+    address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    allTournaments.push(newTournament);
+    tournamentExists[newTournament] = true;
+  }
 }

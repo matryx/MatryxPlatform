@@ -11,6 +11,7 @@ contract MatryxOracleMessenger is Ownable {
 
   event StoredResponse(uint256 storedResponse);
   event FailedToStore(uint256 newResponse, uint256 oldResponse);
+  event QueryID(uint256 id);
 
   // Map from user addresses to MatryxQueryEncrypters. We assume each user only
   // sends one query at a time.
@@ -27,11 +28,6 @@ contract MatryxOracleMessenger is Ownable {
   {
     require(msg.sender == owner);
     _;
-  }
-
-  function getOwner() public view returns (address _deployer)
-  {
-    return owner;
   }
 
   function latestResponseFromOracle(address _sender) internal view returns (uint256 _response)
@@ -69,7 +65,7 @@ contract MatryxOracleMessenger is Ownable {
     QueryPerformed(queryID, _sender);
   }
 
-  // (Only to be used by MatryxPlatform, TinyOracle and MatryxQueryEncrypter.
+  // (Only to be used by MatryxPlatform, MatryxOracleMessenger and MatryxQueryEncrypter.
   // This is not a user function.)
   // This function can be called (successfully) from Nanome's private chain
   function storeQueryResponse(uint256 _queryID,  uint256 _response) storerIsPlatformOwner public returns (bool success)
@@ -77,12 +73,16 @@ contract MatryxOracleMessenger is Ownable {
       // Make sure:
       // 1) The response is not empty and
       // 2) There has not yet been a response created for this query
-      uint256 existingResponse = queryResponses[_queryID];
+      uint256 oldQueryID = fromQuerierToQueryID[msg.sender];
+      uint256 existingResponse = queryResponses[oldQueryID];
       if(_response > 0 && existingResponse == 0)
       {
           // If these conditions hold, we set the response here.
+          fromQuerierToQueryID[msg.sender] = _queryID;
           queryResponses[_queryID] = _response;
           StoredResponse(queryResponses[_queryID]);
+          FailedToStore(_response, existingResponse);
+          QueryID(oldQueryID);
           return true;
       }
       else
