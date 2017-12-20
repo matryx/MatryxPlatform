@@ -68,12 +68,12 @@ contract MatryxPlatform is MatryxOracleMessenger {
   // A function allowing the user to make submissions.
   // This function charges the user MTX as an entry fee
   // set by the tournament creator.
-  function enterTournament(address _tournamentAddress) public returns (address _submissionViewer)
+  function enterTournament(address _tournamentAddress) public returns (bool _success)
   {
       Tournament tournament = Tournament(_tournamentAddress);
       // TODO: Charge the user the MTX entry fee.
-      address submissionViewerAddress = tournament.enterUserInTournament(msg.sender);
-      return submissionViewerAddress;
+      bool success = tournament.enterUserInTournament(msg.sender);
+      return success;
   }
 
   // ----------------- Tournament Editing Methods -----------------

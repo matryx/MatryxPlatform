@@ -1,14 +1,15 @@
 pragma solidity ^0.4.18;
 
 import './Ownable.sol';
-import './Submission.sol';
-import './SubmissionViewer.sol';
+import './Round.sol';
+import './MatryxToken.sol';
 
 ///Creating a Tournament and the functionality
-contract Tournament is Ownable {
+contract Tournament is Ownable{
 
     //Platform identification
     address public platformAddress;
+    address public matryxTokenAddress;
 
     //Tournament identification
     string name;
@@ -19,11 +20,9 @@ contract Tournament is Ownable {
     // Timing
     uint256 public timeCreated;
     uint256 public tournamentStartTime;
-    uint256 public roundStartTime;
-    uint256 public roundEndTime;
+    Round[] public rounds;
     uint256 public reviewPeriod;
     uint256 public endOfTournamentTime;
-    uint public currentRound; //0
     uint public maxRounds = 1;
     bool public tournamentOpen = true;
 
@@ -32,10 +31,8 @@ contract Tournament is Ownable {
     uint256 public entryFee;
 
     // Submission tracking
-    address[] private submissionList;
-    mapping(address => address[]) private giveEntrantAddressGetSubmissions;
-    string[] private submissionNames;
-    SubmissionViewer private submissionViewer;
+    uint256 numberOfSubmissions = 0;
+    mapping(address => SubmissionLocation[]) private giveEntrantAddressGetSubmissions;
     mapping(address => bool) private addressToIsEntrant;
 
     // Tournament Constructor
@@ -54,8 +51,24 @@ contract Tournament is Ownable {
         // Reward and fee
         MTXReward = _MTXReward;
         entryFee = _entryFee;
-        // Submission viewing
-        submissionViewer = new SubmissionViewer();
+    }
+
+    // ----------------- Structs -------------------
+
+    struct SubmissionLocation
+    {
+        uint256 roundIndex;
+        uint256 submissionIndex;
+    }
+
+    // ----------------- Events --------------------
+
+    // Fired at the end of every round, one time per submission created in that round
+    event SubmissionCreated(uint256 _roundIndex, uint256 _submissionIndex);
+
+    function TriggerSubmissionCreatedEvent(uint256 _roundIndex, uint256 _submissionIndex) public
+    {
+        SubmissionCreated(_roundIndex, _submissionIndex);
     }
 
     // ----------------- Modifiers -----------------
@@ -79,7 +92,7 @@ contract Tournament is Ownable {
     modifier whileRoundOpen()
     {
         // TODO: Implement me!
-        require(true);
+        require(rounds[rounds.length-1].acceptingSubmissions());
         _;
     }
 
@@ -159,14 +172,19 @@ contract Tournament is Ownable {
         return externalAddress;
     }
 
-    function mySubmissions() public view returns (address[])
+    function currentRound() public constant returns (uint256)
+    {
+        return rounds.length;
+    }
+
+    function mySubmissions() public view returns (SubmissionLocation[])
     {
         return giveEntrantAddressGetSubmissions[msg.sender];
     }
 
-    function submissionCount() public view returns (uint256)
+    function submissionCount() public pure returns (uint256)
     {
-        return submissionList.length;
+        // TODO: Implement me!
     }
 
     // ----------------- Tournament Administration Methods -----------------
@@ -174,8 +192,12 @@ contract Tournament is Ownable {
     // TODO: Refactor so that the owner is actually the owner and not the platform.
 
     // Called by the owner to open the tournament
-    function openTournament() public
+    function openTournament(uint256 _MTXReward) public
     {
+        uint allowedMTX = MatryxToken(matryxTokenAddress).allowance(msg.sender, this);
+        require(allowedMTX >= _MTXReward);
+        require(MatryxToken(matryxTokenAddress).transferFrom(msg.sender, this, _MTXReward));
+        MTXReward = _MTXReward;
         // Why do we have to do this? Why can't we use
         // the 'onlyOwner' modifier?
         require(msg.sender == owner);
@@ -192,26 +214,30 @@ contract Tournament is Ownable {
     }
 
     // To be called by the tournament owner to choose a tournament winner
+    // TODO: Implement me!
     function chooseWinner() public
     {
         // Why do we have to do this? Why can't we use
         // the 'onlyOwner' modifier?
         require(msg.sender == owner);
-        // TODO: Implement me!
+        
         tournamentOpen = false;
-        // Tell each submission that the tournament is over?
-        // (See Submission::whenAccessible)
     }
 
     // ----------------- Entrant Methods -----------------
 
-    // Enters the user into the tournament and returns to them
-    // the address of the submissionViewer, which generates events
-    // for submissions made during previous rounds of the tournament.
-    function enterUserInTournament(address _entrantAddress) public onlyPlatform returns (address _submissionViewer)
+    // Enters the user into the tournament and returns whether or
+    // not they were successfully entered. This method will return false
+    // in the case that the user has already entered into the tournament
+    function enterUserInTournament(address _entrantAddress) public onlyPlatform returns (bool success)
     {
+        if(addressToIsEntrant[_entrantAddress] == false)
+        {
+            return false;
+        }
+
         addressToIsEntrant[_entrantAddress] = true;
-        return address(submissionViewer);
+        return true;
     }
 
     // Returns the fee in MTX to be payed by a prospective entrant
@@ -221,29 +247,17 @@ contract Tournament is Ownable {
         return entryFee;
     }
 
-    // Returns the address of the submission viewer
-    function getSubmissionViewer() public view onlyEntrant returns (address _submissionViewerAddress)
-    {
-        return address(submissionViewer);
-    }
-
     // Creates a submission under this tournament
-    function createSubmission(string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public onlyEntrant whileRoundOpen whileTournamentOpen returns (address _submissionAddress) {
+    function createSubmission(string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public onlyEntrant whileRoundOpen whileTournamentOpen returns (SubmissionLocation _submissionLocation) {
+        uint256 currentRoundIndex = rounds.length-1;
+        Round round = rounds[currentRoundIndex];
 
-        uint256 timeSubmitted = now;
-        address newSubmission = new Submission(this, owner, msg.sender, _name, _externalAddress, _references, _contributors, timeSubmitted, roundEndTime);
-                                            // address,   address,      address,   string,    bytes32,         address[],    address[],    uint256,      uint256
-        submissionList.push(newSubmission);
-        submissionNames.push(_name);
-        giveEntrantAddressGetSubmissions[msg.sender].push(newSubmission);
+        round.createSubmission(_name, _externalAddress, msg.sender,  _references, _contributors, false);
+        numberOfSubmissions += 1;
+        SubmissionLocation memory submissionLocation = SubmissionLocation(currentRoundIndex, round.numberOfSubmissions());
+        giveEntrantAddressGetSubmissions[msg.sender].push(submissionLocation);
 
-        // TODO: Loop through _contributors and add as entrant
-
-        // TODO: Remove this event call and place all calls to it in updatePublicSubmissions.
-        // Do this after the round logic has been ironed out.
-        submissionViewer.CallSubmissionCreatedEvent(_name, externalAddress, _references, _contributors, timeSubmitted, msg.sender);
-
-        return address(newSubmission);
+        return submissionLocation;
     }
 
     // Helper function.
@@ -260,5 +274,4 @@ contract Tournament is Ownable {
             return false;
         }
     }
-
 } // end of Tournament contract
