@@ -8,6 +8,10 @@ import './MatryxToken.sol';
 contract Round is Ownable {
 	using SafeMath for uint256;
 
+
+	//TODO timing restriction for review period
+	//TODO refund system
+
 	address public tournamentAddress;
 	address public matryxToken;
 	uint256 public roundIndex;
@@ -163,6 +167,7 @@ contract Round is Ownable {
 	}
 
 	// Allows the tournament owner to choose a winning submission for the round
+	//TODO apply timing restrictions
 	function chooseWinningSubmission(uint256 _submissionIndex) public onlyOwner duringWinnerSelection
 	{
 		winningSubmissionIndex = _submissionIndex;
@@ -196,10 +201,16 @@ contract Round is Ownable {
         return submissions.length-1;
 	}
 
+	//TODO pass in a address here for where they want the money to go?
 	function withdrawReward(uint256 _submissionIndex) public afterWinnerSelected onlySubmissionAuthor(_submissionIndex)
 	{
 		uint submissionReward = submissions[_submissionIndex].balance;
 		submissions[_submissionIndex].balance = 0;
 		MatryxToken(matryxToken).transfer(msg.sender, submissionReward);
 	}
+
+	//TODO editSubmission(submission id) ownly owner
+	//TODO removeSubmission
+	//TODO getSubmissions() *get all the submission details
+	//TODO
 }
