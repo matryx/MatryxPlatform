@@ -181,6 +181,7 @@ contract Round is Ownable {
         return submissions.length-1;
 	}
 
+	//TODO pass in a address here for where they want the money to go?
 	function withdrawReward(uint256 _submissionIndex) public onlySubmissionAuthor(_submissionIndex)
 	{
 		uint submissionReward = submissions[_submissionIndex].balance;
