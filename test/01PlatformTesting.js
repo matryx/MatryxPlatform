@@ -1,6 +1,5 @@
 var MatryxPlatform = artifacts.require("MatryxPlatform");
 var Tournament = artifacts.require("Tournament");
-var Submission = artifacts.require("Submission");
 
 contract('MatryxPlatform', function(accounts){
   it("The owner of the platform should be the creator of the platform", async function() {

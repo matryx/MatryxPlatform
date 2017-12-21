@@ -92,7 +92,7 @@ contract Tournament is Ownable {
     modifier whileRoundOpen()
     {
         // TODO: Implement me!
-        require(rounds[rounds.length-1].acceptingSubmissions());
+        require(rounds[rounds.length-1].roundIsOpen());
         _;
     }
 
@@ -182,9 +182,9 @@ contract Tournament is Ownable {
         return giveEntrantAddressGetSubmissions[msg.sender];
     }
 
-    function submissionCount() public pure returns (uint256)
+    function submissionCount() public view returns (uint256)
     {
-        // TODO: Implement me!
+        return numberOfSubmissions;
     }
 
     // ----------------- Tournament Administration Methods -----------------

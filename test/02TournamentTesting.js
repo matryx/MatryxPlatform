@@ -1,6 +1,5 @@
 var MatryxPlatform = artifacts.require("MatryxPlatform");
 var TournamentContract = artifacts.require("Tournament");
-var Submission = artifacts.require("Submission");
 
 contract('Tournament', function(accounts) {
     var platform;
@@ -39,13 +38,6 @@ contract('Tournament', function(accounts) {
         assert.equal(tournamentOpen.valueOf(), true, "The tournament should be open.");
     });
 
-    it("The submission viewer exists", async function() {
-        //Enter the tournament and create a submission
-        await platform.enterTournament(tournamentAddress);
-        let submissionViewerAddress = await tournament.getSubmissionViewer.call();
-        assert.isNotNull(submissionViewerAddress, "The submission viewer for this tournament should exist");
-    })
-
     // Create a Submission
     it("A submission was created", async function() {
         // create submission
@@ -55,7 +47,7 @@ contract('Tournament', function(accounts) {
         assert.equal(numberOfSubmissions, 1)
     })
 
-    it("There is 1 Submissions", async function() {
+    it("There is 1 Submission", async function() {
         numberOfSubmissions = await tournament.submissionCount()
         assert.equal(numberOfSubmissions, 1)
     })

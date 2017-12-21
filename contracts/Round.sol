@@ -37,14 +37,15 @@ contract Round is Ownable {
 		winningSubmissionChosen = false;
 	}
 
-	struct Submission {
+	struct Submission
+	{
 		// Tournament identification
 		address tournamentAddress;
 		
 		// Submission
 		string name;
 		address author;
-		bytes32 externalAddress;
+		bytes32[] externalAddress_Versioned;
 		address[] references;
 		address[] contributors;
 		uint256 timeSubmitted;
@@ -123,6 +124,18 @@ contract Round is Ownable {
 		return (now > startTime) && (endTime > now) && (winningSubmissionChosen == false);
 	}
 
+	function getSubmissions() public constant returns (Submission[] _submissions)
+	{
+		return submissions;
+	}
+
+	function getSubmission(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (string _name, address _author, bytes32 _externalAddress, address[] _references, address[] contributors, uint256 _timeSubmitted)
+	{
+		Submission memory submission = submissions[_index];
+		uint256 externalAddressHistoryLength = submission.externalAddress_Versioned.length;
+		return (submission.name, submission.author, submission.externalAddress_Versioned[externalAddressHistoryLength-1], submission.references, submission.contributors, submission.timeSubmitted);
+	}
+
 	function getSubmissionAuthor(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (address) 
 	{
 		return submissions[_index].author;
@@ -140,7 +153,14 @@ contract Round is Ownable {
 
 	function getSubmissionExternalAddress(uint256 _index) public constant whenAccessible(msg.sender, _index) returns(bytes32)
 	{
-		return submissions[_index].externalAddress;
+		Submission memory submission = submissions[_index];
+		uint256 lengthOfSubmissionHistory = submission.externalAddress_Versioned.length;
+		return submission.externalAddress_Versioned[lengthOfSubmissionHistory-1];
+	}
+
+	function getSubmissionExternalAddress_History(uint _index) public constant whenAccessible(msg.sender, _index) returns (bytes32[])
+	{
+		return submissions[_index].externalAddress_Versioned;
 	}
 
 	function getSubmissionTimeSubmitted(uint256 _index) public constant whenAccessible(msg.sender, _index) returns(uint256)
@@ -156,6 +176,43 @@ contract Round is Ownable {
 	function numberOfSubmissions() public constant returns (uint256)
 	{
 		return submissions.length;
+	}
+
+	// ----------------- Setter Methods -----------------
+
+	function editSubmissionName(uint256 _submissionIndex, string _name) onlySubmissionAuthor(_submissionIndex) public 
+	{
+		submissions[_submissionIndex].name = _name;
+	}
+
+	function editSubmissionExternalAddress(uint256 _submissionIndex, bytes32 _externalAddress) onlySubmissionAuthor(_submissionIndex) public
+	{
+		submissions[_submissionIndex].externalAddress_Versioned.push(_externalAddress);
+	}
+
+	function addReference(uint256 _submissionIndex, address _reference) onlySubmissionAuthor(_submissionIndex) public 
+	{
+		submissions[_submissionIndex].references.push(_reference);
+	}
+
+	function removeReference(uint256 _submissionIndex, uint256 _referenceIndex) onlySubmissionAuthor(_submissionIndex) public
+	{
+		delete submissions[_submissionIndex].references[_referenceIndex];
+	}
+
+	function addContributor(uint256 _submissionIndex, address _contributor) onlySubmissionAuthor(_submissionIndex) public
+	{
+		submissions[_submissionIndex].contributors.push(_contributor);
+	}
+
+	function removeContributor(uint256 _submissionIndex, uint256 _contributorIndex) onlySubmissionAuthor(_submissionIndex) public 
+	{
+		delete submissions[_submissionIndex].contributors[_contributorIndex];
+	}
+
+	function removeSubmission(uint256 _submissionIndex) onlySubmissionAuthor(_submissionIndex) public
+	{
+		delete submissions[_submissionIndex];
 	}
 
 	// ----------------- Round Administration Methods -----------------
@@ -183,7 +240,10 @@ contract Round is Ownable {
 	function createSubmission(string _name, bytes32 _externalAddress, address _author, address[] references, address[] contributors, bool _publicallyAccessible) public duringOpenSubmission whileTournamentOpen returns (uint256 _submissionIndex)
 	{
 		uint256 timeSubmitted = now;
-        Submission memory submission = Submission(tournamentAddress, _name, _author, _externalAddress, references, contributors, timeSubmitted, _publicallyAccessible, 0);
+		bytes32[] memory externalAddress_Versioned;
+		externalAddress_Versioned[0] = _externalAddress;
+		
+        Submission memory submission = Submission(tournamentAddress, _name, _author, externalAddress_Versioned, references, contributors, timeSubmitted, _publicallyAccessible, 0);
         
         // submission bookkeeping
         submissions.push(submission);
@@ -201,7 +261,6 @@ contract Round is Ownable {
         return submissions.length-1;
 	}
 
-	//TODO pass in a address here for where they want the money to go?
 	function withdrawReward(uint256 _submissionIndex) public afterWinnerSelected onlySubmissionAuthor(_submissionIndex)
 	{
 		uint submissionReward = submissions[_submissionIndex].balance;
@@ -209,8 +268,13 @@ contract Round is Ownable {
 		MatryxToken(matryxToken).transfer(msg.sender, submissionReward);
 	}
 
-	//TODO editSubmission(submission id) ownly owner
-	//TODO removeSubmission
-	//TODO getSubmissions() *get all the submission details
-	//TODO
+	function withdrawReward(uint256 _submissionIndex, address _recipient) public afterWinnerSelected onlySubmissionAuthor(_submissionIndex)
+	{
+		uint submissionReward = submissions[_submissionIndex].balance;
+		submissions[_submissionIndex].balance = 0;
+		MatryxToken(matryxToken).transfer(_recipient, submissionReward);
+	}
+
+	// TODO getSubmissions() *get all the submission details
+	// TODO
 }
