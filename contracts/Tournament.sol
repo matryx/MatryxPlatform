@@ -264,7 +264,7 @@ contract Tournament is Ownable {
     // TODO: Move to library.
     function stringIsEmpty(string _string) public pure returns (bool)
     {
-        bytes memory bytesString = bytes(_string); // Uses memory
+        bytes memory bytesString = bytes(_string);
         if (bytesString.length == 0) 
         {
             return true;

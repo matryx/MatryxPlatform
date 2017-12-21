@@ -15,9 +15,10 @@ contract Round is Ownable {
 	address public nextRound;
 	uint256 public startTime;
 	uint256 public endTime;
-	bool public acceptingSubmissions = false;
+	uint256 public reviewPeriodEndTime;
 	uint256 public reward;
 	uint256 public winningSubmissionIndex;
+	bool public winningSubmissionChosen;
 
 	mapping(address => uint) addressToParticipantType;
  	mapping(address => Submission[]) contributorToSubmissionArray;
@@ -29,6 +30,7 @@ contract Round is Ownable {
 		tournamentAddress = _tournamentAddress;
 		roundIndex = _roundIndex;
 		reward = _reward;
+		winningSubmissionChosen = false;
 	}
 
 	struct Submission {
@@ -57,20 +59,29 @@ contract Round is Ownable {
 
 	// ----------------- Modifiers -----------------
 
-	modifier whenRoundIsOpen()
+	modifier duringOpenSubmission()
 	{
-		require(acceptingSubmissions);
+		require(now > startTime);
+		require(endTime > now);
+		require(winningSubmissionChosen == false);
 		_;
 	}
 
-	modifier afterRoundEnds()
+	modifier duringWinnerSelection()
 	{
 		require(endTime != 0);
 		require(now > endTime);
+		require(winningSubmissionChosen == false);
 		_;
 	}
 
-	modifier whenTournamentIsOpen()
+	modifier afterWinnerSelected()
+	{
+		require(winningSubmissionChosen == true);
+		_;
+	}
+
+	modifier whileTournamentOpen()
 	{
 		Tournament tournament = Tournament(tournamentAddress);
 		require(tournament.tournamentOpen());
@@ -97,12 +108,16 @@ contract Round is Ownable {
 		bool requesterIsEntrant = addressToParticipantType[_requester] != 0;
 		bool publicallyAccessible = submission.publicallyAccessibleDuringTournament;
 		bool closedTournament = !tournament.tournamentOpen();
-		bool roundIsNotLatest = roundIndex < tournament.currentRound();
 
-		return requesterOwnsTournament || publicallyAccessible || closedTournament || (requesterIsEntrant && roundIsNotLatest);
+		return requesterOwnsTournament || publicallyAccessible || closedTournament || (requesterIsEntrant && winningSubmissionChosen);
 	}
 
 	// ----------------- Getter Methods -----------------
+
+	function roundIsOpen() public constant returns (bool)
+	{
+		return (now > startTime) && (endTime > now) && (winningSubmissionChosen == false);
+	}
 
 	function getSubmissionAuthor(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (address) 
 	{
@@ -145,22 +160,22 @@ contract Round is Ownable {
 	{
 		startTime = now;
 		endTime = startTime.add(_duration);
-		acceptingSubmissions = true;
 	}
 
 	// Allows the tournament owner to choose a winning submission for the round
-	function chooseWinningSubmission(uint256 _submissionIndex) public onlyOwner afterRoundEnds
+	function chooseWinningSubmission(uint256 _submissionIndex) public onlyOwner duringWinnerSelection
 	{
-		submissions[_submissionIndex].balance.add(reward);
-		reward = 0;
 		winningSubmissionIndex = _submissionIndex;
-		acceptingSubmissions = false;
-		WinningSubmissionChosen(_submissionIndex);
+		submissions[winningSubmissionIndex].balance.add(reward);
+		WinningSubmissionChosen(winningSubmissionIndex);
+		
+		reward = 0;
+		winningSubmissionChosen = true;
 	}
 
 	// ----------------- Entrant Methods -----------------
 
-	function createSubmission(string _name, bytes32 _externalAddress, address _author, address[] references, address[] contributors, bool _publicallyAccessible) public whenRoundIsOpen whenTournamentIsOpen returns (uint256 _submissionIndex)
+	function createSubmission(string _name, bytes32 _externalAddress, address _author, address[] references, address[] contributors, bool _publicallyAccessible) public duringOpenSubmission whileTournamentOpen returns (uint256 _submissionIndex)
 	{
 		uint256 timeSubmitted = now;
         Submission memory submission = Submission(tournamentAddress, _name, _author, _externalAddress, references, contributors, timeSubmitted, _publicallyAccessible, 0);
@@ -181,7 +196,7 @@ contract Round is Ownable {
         return submissions.length-1;
 	}
 
-	function withdrawReward(uint256 _submissionIndex) public onlySubmissionAuthor(_submissionIndex)
+	function withdrawReward(uint256 _submissionIndex) public afterWinnerSelected onlySubmissionAuthor(_submissionIndex)
 	{
 		uint submissionReward = submissions[_submissionIndex].balance;
 		submissions[_submissionIndex].balance = 0;
