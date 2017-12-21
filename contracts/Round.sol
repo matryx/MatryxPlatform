@@ -154,6 +154,7 @@ contract Round is Ownable {
 		submissions[_submissionIndex].balance.add(reward);
 		reward = 0;
 		winningSubmissionIndex = _submissionIndex;
+		acceptingSubmissions = false;
 		WinningSubmissionChosen(_submissionIndex);
 	}
 

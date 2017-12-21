@@ -5,7 +5,7 @@ import './Round.sol';
 import './MatryxToken.sol';
 
 ///Creating a Tournament and the functionality
-contract Tournament is Ownable{
+contract Tournament is Ownable {
 
     //Platform identification
     address public platformAddress;
