@@ -1,6 +1,7 @@
 pragma solidity ^0.4.18;
 
 import './Ownable.sol';
+import './MatryxPlatform.sol';
 import './Round.sol';
 import './MatryxToken.sol';
 
@@ -19,10 +20,10 @@ contract Tournament is Ownable {
 
     // Timing
     uint256 public timeCreated;
-    uint256 public tournamentStartTime;
+    uint256 public tournamentOpenedTime;
     Round[] public rounds;
     uint256 public reviewPeriod;
-    uint256 public endOfTournamentTime;
+    uint256 public tournamentClosedTime;
     uint public maxRounds = 1;
     bool public tournamentOpen = true;
 
@@ -88,6 +89,12 @@ contract Tournament is Ownable {
         _;
     }
 
+    modifier platformOrOwner()
+    {
+        require((msg.sender == platformAddress)||(msg.sender == owner));
+        _;
+    }
+
     // Modifier requiring the round to be open
     modifier whileRoundOpen()
     {
@@ -105,7 +112,7 @@ contract Tournament is Ownable {
         /* Sam's logic
         * Logic for active vs. inactive tournaments
         * tournamentOpen = true;
-        * if(endOfTournamentTime <= now){
+        * if(tournamentClosedTime <= now){
         *     tournamentOpen = false;
         * }
 
@@ -131,16 +138,14 @@ contract Tournament is Ownable {
 
         // TODO: Move into setters.
 
-        // require(_tournamentStartTime >= now);
-        // tournamentStartTime = _tournamentStartTime;
+        // require(_tournamentOpenedTime >= now);
+        // tournamentOpenedTime = _tournamentOpenedTime;
         // require(_roundStartTime > now);
-        // roundStartTime = _roundStartTime;
         // require(_roundEndTime > now);
-        // roundEndTime = _roundEndTime;
         // require(_reviewPeriod != 0);
         // reviewPeriod = _reviewPeriod;
-        // require(_endOfTournamentTime >  now);
-        // endOfTournamentTime = _endOfTournamentTime;
+        // require(_tournamentClosedTime >  now);
+        // tournamentClosedTime = _tournamentClosedTime;
         // require(_currentRound >= 0);
         // currentRound = _currentRound;
         // require(_maxRounds >= 0);
@@ -194,34 +199,31 @@ contract Tournament is Ownable {
     // Called by the owner to open the tournament
     function openTournament(uint256 _MTXReward) public
     {
-        uint allowedMTX = MatryxToken(matryxTokenAddress).allowance(msg.sender, this);
-        require(allowedMTX >= _MTXReward);
-        require(MatryxToken(matryxTokenAddress).transferFrom(msg.sender, this, _MTXReward));
-        MTXReward = _MTXReward;
         // Why do we have to do this? Why can't we use
-        // the 'onlyOwner' modifier?
-        require(msg.sender == owner);
-        // TODO: Implement me!
-        tournamentOpen = true;
-    }
+        // a modifier?
+        require(msg.sender == platformAddress);
+        // TODO: Uncomment.
+        //uint allowedMTX = MatryxToken(matryxTokenAddress).allowance(msg.sender, this);
+        //require(allowedMTX >= _MTXReward);
+        //require(MatryxToken(matryxTokenAddress).transferFrom(msg.sender, this, _MTXReward));
+        MTXReward = _MTXReward;
 
-    // Updates the submissions visible via the SubmissionViewer
-    function updatePublicSubmissions() public pure
-    {
-        // TODO: Implement me!
-        // Foreach submission made in a previous round,
-        // send an event from 
+        // Implement me!
+        tournamentOpen = true;
     }
 
     // To be called by the tournament owner to choose a tournament winner
     // TODO: Implement me!
-    function chooseWinner() public
+    function chooseWinner(address _submissionAddress) public platformOrOwner
     {
         // Why do we have to do this? Why can't we use
         // the 'onlyOwner' modifier?
-        require(msg.sender == owner);
-        
         tournamentOpen = false;
+
+        // TODO: Uncomment.
+        //uint allowedMTX = MatryxToken(matryxTokenAddress).allowance(this, rounds[currentRound()]);
+        //require(MatryxToken(matryxTokenAddress).transfer(_submissionAddress, allowedMTX));
+        (MatryxPlatform(platformAddress)).invokeTournamentClosedEvent(this, _submissionAddress);
     }
 
     // ----------------- Entrant Methods -----------------
@@ -231,7 +233,7 @@ contract Tournament is Ownable {
     // in the case that the user has already entered into the tournament
     function enterUserInTournament(address _entrantAddress) public onlyPlatform returns (bool success)
     {
-        if(addressToIsEntrant[_entrantAddress] == false)
+        if(addressToIsEntrant[_entrantAddress] == true)
         {
             return false;
         }

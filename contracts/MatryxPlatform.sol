@@ -10,12 +10,41 @@ import './Ownable.sol';
 //Initialize the contract
 contract MatryxPlatform is MatryxOracleMessenger {
 
-  event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-	//Initialize variables
+  //Initialize variables
   address[] public allTournaments; //convert into a map?
   mapping(address=>bool) tournamentExists;
   //TODO for when anyone can submit a tournament
   // mapping(address => TournamentSubmitters) public submitters
+
+  // ----------------- Events ------------------------------
+
+  event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentClosed(address _tournamentAddress, address _winningSubmissionAddress);
+
+  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament(msg.sender)
+  {
+    TournamentOpened(_owner, _tournamentAddress, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+  }
+
+  function invokeTournamentClosedEvent(address _tournamentAddress, address _winningSubmissionAddress) public onlyTournament(msg.sender)
+  {
+    TournamentClosed(_tournamentAddress, _winningSubmissionAddress);
+  }
+
+  // ----------------- Modifiers ---------------------------
+
+  modifier onlyTournament(address _sender)
+  {
+    require(tournamentExists[_sender]);
+    _;
+  }
+
+  modifier onlyTournamentOwner(address _tournament)
+  {
+    require(tournamentIsMine(_tournament));
+    _;
+  }
 
   // ----------------- MTX Balance Methods -----------------
 
@@ -63,6 +92,12 @@ contract MatryxPlatform is MatryxOracleMessenger {
       return allTournaments.length;
   }
 
+  function tournamentIsMine(address _tournamentAddress) public constant returns (bool)
+  {
+    require(tournamentExists[_tournamentAddress]);
+    return Tournament(_tournamentAddress).getOwner() == msg.sender;
+  }
+
   // ----------------- Tournament Entry Methods -----------------
 
   // A function allowing the user to make submissions.
@@ -83,7 +118,14 @@ contract MatryxPlatform is MatryxOracleMessenger {
   {
     address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
     TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    
+    // update data structures
     allTournaments.push(newTournament);
     tournamentExists[newTournament] = true;
+  }
+
+  function openTournament(address _tournamentAddress, uint256 _MTXReward) public onlyTournamentOwner(_tournamentAddress)
+  {
+    Tournament(_tournamentAddress).openTournament(_MTXReward);
   }
 }

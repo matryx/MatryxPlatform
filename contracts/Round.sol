@@ -8,10 +8,8 @@ import './MatryxToken.sol';
 contract Round is Ownable {
 	using SafeMath for uint256;
 
-
 	//TODO timing restriction for review period
 	//TODO refund system
-
 	address public tournamentAddress;
 	address public matryxToken;
 	uint256 public roundIndex;
@@ -109,6 +107,7 @@ contract Round is Ownable {
 	{
 		Tournament tournament = Tournament(tournamentAddress);
 		Submission memory submission = submissions[_index];
+
 		bool requesterOwnsTournament = tournament.isOwner(_requester);
 		bool requesterIsEntrant = addressToParticipantType[_requester] != 0;
 		bool publicallyAccessible = submission.publicallyAccessibleDuringTournament;
@@ -124,6 +123,7 @@ contract Round is Ownable {
 		return (now > startTime) && (endTime > now) && (winningSubmissionChosen == false);
 	}
 
+	//TODO: Verify that inner fields are accessible
 	function getSubmissions() public constant returns (Submission[] _submissions)
 	{
 		return submissions;
@@ -261,20 +261,20 @@ contract Round is Ownable {
         return submissions.length-1;
 	}
 
-	function withdrawReward(uint256 _submissionIndex) public afterWinnerSelected onlySubmissionAuthor(_submissionIndex)
-	{
-		uint submissionReward = submissions[_submissionIndex].balance;
-		submissions[_submissionIndex].balance = 0;
-		MatryxToken(matryxToken).transfer(msg.sender, submissionReward);
-	}
+	// TODO: Uncomment.
+	// function withdrawReward(uint256 _submissionIndex) public afterWinnerSelected onlySubmissionAuthor(_submissionIndex)
+	// {
 
-	function withdrawReward(uint256 _submissionIndex, address _recipient) public afterWinnerSelected onlySubmissionAuthor(_submissionIndex)
-	{
-		uint submissionReward = submissions[_submissionIndex].balance;
-		submissions[_submissionIndex].balance = 0;
-		MatryxToken(matryxToken).transfer(_recipient, submissionReward);
-	}
-
-	// TODO getSubmissions() *get all the submission details
-	// TODO
+	// 	// uint submissionReward = submissions[_submissionIndex].balance;
+	// 	// submissions[_submissionIndex].balance = 0;
+	// 	//MatryxToken(matryxToken).transfer(msg.sender, submissionReward);
+	// } 
+	
+	// TODO: Uncomment.
+	// function withdrawReward(uint256 _submissionIndex, address _recipient) public afterWinnerSelected onlySubmissionAuthor(_submissionIndex)
+	// {
+	// 	uint submissionReward = submissions[_submissionIndex].balance;
+	// 	submissions[_submissionIndex].balance = 0;
+	// 	MatryxToken(matryxToken).transfer(_recipient, submissionReward);
+	// }
 }

@@ -31,7 +31,7 @@ contract('Tournament', function(accounts) {
     })
 
     it("The tournament is open", async function() {
-        await tournament.openTournament();
+        await tournament.openTournament(0);
         // the tournament should be open 
         let tournamentOpen = await tournament.tournamentOpen.call();
         // assert that the tournament is open
