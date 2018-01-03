@@ -13,7 +13,7 @@ Our lead Matryx Architect, Max, made a great medium article posting on how to us
 
 A link to the article directly can be found [here](https://blog.matryx.ai/matryx-alpha-a-how-to-guide-b6b5b9ffcca4)
 
-![Calcflow](google.com)
+![Calcflow](https://github.com/matryx/matryx-alpha-source/blob/master/Calcflow_mtx.gif)
 
 ## Build, Deploy, and Test the Platform
 
