@@ -9,7 +9,7 @@ The Collaborative Research and Development Engine Optimized for Virtual Reality 
 In our first iteration we focused on end-to-end development for the platform across many layers. From our Matryx ethereum private chain to our backend MatryxOracle system to our VR Interfaces. 
 In the next release, we will be working towards our long term architecture to be put in place and thoroughly tested across the full integration. 
 
-Our lead Matryx Architect, Max, made a great medium article posting on how to use the first alpha release of the Matryx Platform that focuses on integration with our Virtual Reality Mathematics tool, Calcflow.
+Our lead Matryx Architect, Max, made a great medium article posting on how to use the first alpha release of the Matryx Platform that focuses on integration with our Virtual Reality Mathematics tool, [Calcflow](http://calcflow.io/).
 
 A link to the article directly can be found [here](https://blog.matryx.ai/matryx-alpha-a-how-to-guide-b6b5b9ffcca4)
 
