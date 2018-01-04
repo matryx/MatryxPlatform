@@ -19,7 +19,9 @@ Our lead Matryx Architect, Max, made a great medium article posting on how to us
 
 A link to the article directly can be found [here](https://blog.matryx.ai/matryx-alpha-a-how-to-guide-b6b5b9ffcca4)
 
+### Calcflow
 ![Calcflow](https://github.com/matryx/matryx-alpha-source/blob/master/Calcflow_mtx.gif)
+Calcflow using Matryx gif
 
 ## Build, Deploy, and Test the Platform
 
@@ -50,7 +52,8 @@ Our team at Matryx knows that the community is what will really drive the vision
 Please read our contribution guidelines before getting started.
 
 Install npm
->`brew install npm`
+https://www.npmjs.com/get-npm?utm_source=house&utm_medium=homepage&utm_campaign=free%20orgs&utm_term=Install%20npm
+
 
 Install Truffle
 >`npm install -g truffle`
