@@ -1,4 +1,8 @@
 # Matryx Alpha Source Code v1 ![alt text](https://matryx.ai/static/img/Matryx_Black_Full_Logo.png "Matryx Logo")
+[![Travis](https://img.shields.io/travis/rust-lang/rust.svg)]()
+[![Jenkins coverage](https://img.shields.io/jenkins/c/https/jenkins.qa.ubuntu.com/view/Utopic/view/All/job/address-book-service-utopic-i386-ci.svg)]()
+[![Jenkins tests](https://img.shields.io/jenkins/t/https/jenkins.qa.ubuntu.com/view/Precise/view/All%20Precise/job/precise-desktop-amd64_default.svg)]()
+[![Telegram](https://img.shields.io/badge/chat-Telegram-blue.svg)]()
 
 ## Introduction
 
