@@ -9,6 +9,8 @@
 > [Matryx.ai](https://www.matryx.ai): 
 The Collaborative Research and Development Engine Optimized for Virtual Reality Interfaces
 
+A full description about our platform is in our [whitepaper](https://matryx.ai/matryx-whitepaper.pdf).
+
 ## How to use the platform
 In our first iteration we focused on end-to-end development for the platform across many layers. From our Matryx ethereum private chain to our backend MatryxOracle system to our VR Interfaces. 
 In the next release, we will be working towards our long term architecture to be put in place and thoroughly tested across the full integration. 
