@@ -76,6 +76,8 @@ In a separate terminal, navigate to the project directory and run the following:
 
 Make sure that the code coverage is as close to 100% as possible (99%+ is required)
 
+Please submit support related issues to the [issue tracker](https://github.com/matryx/matryx-alpha-source/issues)
+
 We look forward to seeing the community feedback and issue identifications to make this platform the long term vision we all believe in!
 
 Please take a look at our [Terms of Service](https://github.com/matryx/matryx-alpha-source/blob/master/TOS.txt) for using the platform that we have deployed
