@@ -19,9 +19,31 @@ Our lead Matryx Architect, Max, made a great medium article posting on how to us
 
 A link to the article directly can be found [here](https://blog.matryx.ai/matryx-alpha-a-how-to-guide-b6b5b9ffcca4)
 
+The Matryx platform is currently deployed on an Ethereum Private chain. In order to interact with the bounties and the alpha platform, you will need to run a node locally, as well as **_have Matryx Tokens (MTX) in your ERC20 Compatible Wallet_** such as [My Ether Wallet](https://www.myetherwallet.com/).
+ 
+ Instructions on getting the private chain synced locally can be found here:
+ * [Windows](https://github.com/matryx/matryx-alpha-source/wiki/Running-the-Matryx-Ethereum-Private-Chain-%5BWindows%5D) 
+ * [OSX](https://github.com/matryx/matryx-alpha-source/wiki/Running-the-Matryx-Ethereum-Private-Chain-%5BOSX%5D)
+ 
+### API
+TODO
+
+## Interfaces
+The are several interfaces that are being built that are designed to plug in to the Matryx Platform 
+* [Calcflow](http://calcflow.io): A Virtual Reality tool for mathematical modelling (Oculus and HTC Vive)
+* [Matryx WebApp](http://alpha.matryx.ai): A Web native application for interacting with the Matryx Platform and Marketplace
+* [MatryxCore (Coming Soon)](http://matryx.ai): A OS native application for interacting with the Matryx Platform and Marketplace (Windows, Linux, Mac OSX)
+* [Nano-one](http://store.steampowered.com/app/493430/nanoone/): A consumer Virtual Reality tool for chemical design and visualization
+* [Nano-pro](http://nanome.ai): An enterprise ready Virtual Reality Platform for Chemical and Pharmaceutical drug development
+* [Third party Interfaces](www.nanome.ai/TODO): Any third party integrated application utilizing the Matryx Platform- Contact us for details if you or your team is interested! 
+
+Additonal information on the various interfaces supporting the Matryx Platform can be found on the [Matryx Interfaces Wiki](https://github.com/matryx/matryx-alpha-source/wiki/Matryx-Interfaces)
+
+
+Below is a GIF of Matryx's Calcflow VR interface viewing Matryx tournaments on the private chain.
 ### Calcflow
 ![Calcflow](https://github.com/matryx/matryx-alpha-source/blob/master/Calcflow_mtx.gif)
-Calcflow using Matryx gif
+
 
 ## Build, Deploy, and Test the Platform
 
@@ -30,10 +52,14 @@ Specify the network configuration in the truffle.js file. Ours is originally poi
 
 Make sure your have TestRPC or Ganache-CLI installed and run it a different tab.
 
->`truffle migrate`
+```
+truffle migrate
+```
 
 This will move the platform on to your network. You can then interact with the contract by attaching to it using truffle console.
->`truffle console`
+```
+truffle console
+```
 
 From there, when you type 'MatryxPlatform', it will recognize the contract and you can start to call functions with ease.
 
@@ -44,38 +70,47 @@ An extremely important part of the platform is testing to make sure it is not co
 
 Check out our develop branch to see the latest pushes to the platform, but beware, it is an unstable build as we are actively building on it everyday.
 
-
-
 ### Contributing
 Our team at Matryx knows that the community is what will really drive the vision we all believe. So we strongly recommend that the community help us make improvements and we all make solid and sound decisions for the future direction of the platform. To report bugs with this package, please create an issue in this repository on the master branch.
 
 Please read our contribution guidelines before getting started.
 
-Install npm
-https://www.npmjs.com/get-npm?utm_source=house&utm_medium=homepage&utm_campaign=free%20orgs&utm_term=Install%20npm
+[Install npm](https://www.npmjs.com/get-npm?utm_source=house&utm_medium=homepage&utm_campaign=free%20orgs&utm_term=Install%20npm)
 
 
 Install Truffle
->`npm install -g truffle`
+```
+npm install -g truffle
+```
 
 Install Ganache-cli
->`npm install -g ganache-cli`
+```
+npm install -g ganache-cli
+```
 
 Make sure you pull the correct branch, which is called "develop"
->`git clone https://github.com/matryx/matryx-alpha-source -b develop`
+```
+git clone https://github.com/matryx/matryx-alpha-source -b develop
+```
 
 Install dependencies
->`npm install`
+```
+npm install
+```
 
 For the develop branch, make sure you install the code coverage dependency.
 
 Before running the tests, run the ganache-cli
->`ganache-cli -u 0,1,2,3,4,5`
+```
+ganache-cli -u 0,1,2,3,4,5
+```
 
 In a separate terminal, navigate to the project directory and run the following:
->`./retest.sh`
->`truffle migrate`
->`./codeCoverage.sh`
+```
+./retest.sh
+truffle migrate
+./codeCoverage.sh
+```
 
 Make sure that the code coverage is as close to 100% as possible (99%+ is required)
 
