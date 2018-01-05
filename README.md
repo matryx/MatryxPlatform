@@ -30,7 +30,7 @@ TODO
 
 ## Interfaces
 The are several interfaces that are being built that are designed to plug in to the Matryx Platform 
-* [Calcflow](http://calcflow.io): A Virtual Reality tool for mathematical modelling (Oculus and HTC Vive)
+* [Calcflow](http://calcflow.io): A Virtual Reality tool for mathematical modeling (Oculus and HTC Vive)
 * [Matryx WebApp](http://alpha.matryx.ai): A Web native application for interacting with the Matryx Platform and Marketplace
 * [MatryxCore (Coming Soon)](http://matryx.ai): A OS native application for interacting with the Matryx Platform and Marketplace (Windows, Linux, Mac OSX)
 * [Nano-one](http://store.steampowered.com/app/493430/nanoone/): A consumer Virtual Reality tool for chemical design and visualization
@@ -119,4 +119,5 @@ Please submit support related issues to the [issue tracker](https://github.com/m
 We look forward to seeing the community feedback and issue identifications to make this platform the long term vision we all believe in!
 
 Please take a look at our [Terms of Service](https://github.com/matryx/matryx-alpha-source/blob/master/TOS.txt) for using the platform that we have deployed
+
 -The Matryx Team
