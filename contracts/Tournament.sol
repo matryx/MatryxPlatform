@@ -5,7 +5,8 @@ import './MatryxPlatform.sol';
 import './Round.sol';
 import './MatryxToken.sol';
 
-///Creating a Tournament and the functionality
+/// @title Tournament - The Matryx tournament.
+/// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract Tournament is Ownable {
 
     //Platform identification
@@ -36,7 +37,6 @@ contract Tournament is Ownable {
     mapping(address => SubmissionLocation[]) private giveEntrantAddressGetSubmissions;
     mapping(address => bool) private addressToIsEntrant;
 
-    // Tournament Constructor
     function Tournament(address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public {
         //Clean inputs
         require(_owner != 0x0);
@@ -54,7 +54,9 @@ contract Tournament is Ownable {
         entryFee = _entryFee;
     }
 
-    // ----------------- Structs -------------------
+    /*
+     * Structs
+     */
 
     struct SubmissionLocation
     {
@@ -62,26 +64,33 @@ contract Tournament is Ownable {
         uint256 submissionIndex;
     }
 
-    // ----------------- Events --------------------
+    /*
+     * Events
+     */
 
     // Fired at the end of every round, one time per submission created in that round
     event SubmissionCreated(uint256 _roundIndex, uint256 _submissionIndex);
 
-    function TriggerSubmissionCreatedEvent(uint256 _roundIndex, uint256 _submissionIndex) public
+    /// @dev Allows rounds to invoke SubmissionCreated events on this tournament.
+    /// @param _roundIndex Index of the round the submission was made to.
+    /// @param _submissionIndex Index of the submission.
+    function InvokeSubmissionCreatedEvent(uint256 _roundIndex, uint256 _submissionIndex) public
     {
         SubmissionCreated(_roundIndex, _submissionIndex);
     }
 
-    // ----------------- Modifiers -----------------
+    /*
+     * Modifiers
+     */
 
-    // Modifier requiring function caller to be the platform 
+    /// @dev Requires the function caller to be the platform.
     modifier onlyPlatform()
     {
         require(platformAddress == msg.sender);
         _;
     }
 
-    // Modifier requiring function caller to be an entrant
+    /// @dev Requires the function caller to be an entrant.
     modifier onlyEntrant()
     {
         bool senderIsEntrant = addressToIsEntrant[msg.sender];
@@ -89,13 +98,14 @@ contract Tournament is Ownable {
         _;
     }
 
+    /// @dev Requires the function caller to be the platform or the owner of this tournament
     modifier platformOrOwner()
     {
         require((msg.sender == platformAddress)||(msg.sender == owner));
         _;
     }
 
-    // Modifier requiring the round to be open
+    /// @dev Requires the round to be open
     modifier whileRoundOpen()
     {
         // TODO: Implement me!
@@ -103,7 +113,7 @@ contract Tournament is Ownable {
         _;
     }
 
-    // Modifier requiring the tournament to be open
+    /// @dev Requires the tournament to be open.
     modifier whileTournamentOpen()
     {
         // TODO: Implement me!
@@ -134,88 +144,128 @@ contract Tournament is Ownable {
          _;
     }
 
-    // ----------------- Setter Methods -----------------
+    /*
+     * Setter Methods
+     */
 
-        // TODO: Move into setters.
+     // TODO: Implement setters.
 
-        // require(_tournamentOpenedTime >= now);
-        // tournamentOpenedTime = _tournamentOpenedTime;
-        // require(_roundStartTime > now);
-        // require(_roundEndTime > now);
-        // require(_reviewPeriod != 0);
-        // reviewPeriod = _reviewPeriod;
-        // require(_tournamentClosedTime >  now);
-        // tournamentClosedTime = _tournamentClosedTime;
-        // require(_currentRound >= 0);
-        // currentRound = _currentRound;
-        // require(_maxRounds >= 0);
-        // maxRounds = _maxRounds;
+    /*
+     * Access Control Methods
+     */
 
-    // ----------------- Getter Methods -----------------
-
-    // Returns true if a given address is the owner (an owner...?) of this tournament
+    /// @dev Returns whether or not the sender is the owner of this tournament.
+    /// @param _sender Explicit sender address.
+    /// @return Whether or not the sender is the owner.
     function isOwner(address _sender) public view returns (bool)
     {
         bool senderIsOwner = _sender == owner;
         return senderIsOwner;
     }
 
+    /// @dev Returns whether or not the sender is an entrant in this tournament
+    /// @param _sender Explicit sender address.
+    /// @return Whether or not the sender is an entrant in this tournament.
     function isEntrant(address _sender) public view returns (bool)
     {
         return addressToIsEntrant[_sender];
     }
 
-    // Returns true if the tournament is open
+    /// @dev Returns true if the tournament is open.
+    /// @return Whether or not the tournament is open.
     function tournamentOpen() public view returns (bool)
     {
         return tournamentOpen;
     }
 
-    // Returns the external address of the tournament
-    function getExternalAddress() public view returns (bytes32)
+    /// @dev Returns whether or not a round of this tournament is open.
+    /// @return _roundOpen Whether or not a round is open on this tournament.
+    function roundIsOpen() public view returns (bool)
+    {
+        return rounds[rounds.length-1].roundIsOpen();
+    }
+
+    /*
+     * Getter Methods
+     */
+
+    /// @dev Returns the external address of the tournament.
+    /// @return _externalAddress Off-chain content hash of tournament details (ipfs hash)
+    function getExternalAddress() public view returns (bytes32 _externalAddress)
     {
         return externalAddress;
     }
 
-    function currentRound() public constant returns (uint256)
+    /// @dev Returns the current round number.
+    /// @return _currentRound Number of the current round.
+    function currentRound() public constant returns (uint256 _currentRound)
     {
         return rounds.length;
     }
 
-    function mySubmissions() public view returns (SubmissionLocation[])
+    /// @dev Returns all of the sender's submissions to this tournament.
+    /// @return (_roundIndices[], _submissionIndices[]) Locations of the sender's submissions.
+    function mySubmissions() public view returns (uint256[] _roundIndices, uint256[] _submissionIndices)
     {
-        return giveEntrantAddressGetSubmissions[msg.sender];
+        SubmissionLocation[] memory submissionLocations = giveEntrantAddressGetSubmissions[msg.sender];
+        uint256[] memory roundIndices;
+        uint256[] memory submissionIndices;
+        for(uint256 i = 0; i < submissionLocations.length; i++)
+        {
+            roundIndices[i] = submissionLocations[i].roundIndex;
+            submissionIndices[i] = submissionLocations[i].submissionIndex;
+        }
+
+        return (roundIndices, submissionIndices);
     }
 
-    function submissionCount() public view returns (uint256)
+    /// @dev Returns all of the sender's submissions to this tournament
+    /// @param _sender Explicit sender address.
+    /// @return (_roundIndices[], _submissionIndices[]) Locations of the sender's submissions.
+    function submissionsByAddress(address _sender) public view onlyPlatform returns (uint256[] _roundIndices, uint256[] _submissionIndices)
+    {
+        SubmissionLocation[] memory submissionLocations = giveEntrantAddressGetSubmissions[_sender];
+        uint256[] memory roundIndices;
+        uint256[] memory submissionIndices;
+        for(uint256 i = 0; i < submissionLocations.length; i++)
+        {
+            roundIndices[i] = submissionLocations[i].roundIndex;
+            submissionIndices[i] = submissionLocations[i].submissionIndex;
+        }
+        
+        return (roundIndices, submissionIndices);
+    }
+
+    /// @dev Returns the number of submissions made to this tournament.
+    /// @return _submissionCount Number of submissions made to this tournament.
+    function submissionCount() public view returns (uint256 _submissionCount)
     {
         return numberOfSubmissions;
     }
 
-    // ----------------- Tournament Administration Methods -----------------
+    /*
+     * Tournament Admin Methods
+     */
 
-    // TODO: Refactor so that the owner is actually the owner and not the platform.
-
-    // Called by the owner to open the tournament
-    function openTournament(uint256 _MTXReward) public
+    /// @dev Opens this tournament up to submissions.
+    function openTournament() public
     {
         // Why do we have to do this? Why can't we use
         // a modifier?
-        require(msg.sender == platformAddress);
+        require((msg.sender == platformAddress) || (msg.sender == owner));
         // TODO: Uncomment.
         //uint allowedMTX = MatryxToken(matryxTokenAddress).allowance(msg.sender, this);
-        //require(allowedMTX >= _MTXReward);
-        //require(MatryxToken(matryxTokenAddress).transferFrom(msg.sender, this, _MTXReward));
-        MTXReward = _MTXReward;
-
+        //require(allowedMTX >= MTXReward);
+        //require(MatryxToken(matryxTokenAddress).transferFrom(msg.sender, this, MTXReward));
+        
         // Implement me!
         tournamentOpen = true;
     }
 
-    // To be called by the tournament owner to choose a tournament winner
-    // TODO: Implement me!
+    /// @dev To be called by the tournament owner to choose the winner of this tournament.
     function chooseWinner(address _submissionAddress) public platformOrOwner
     {
+        // TODO: Finish me!
         // Why do we have to do this? Why can't we use
         // the 'onlyOwner' modifier?
         tournamentOpen = false;
@@ -226,11 +276,13 @@ contract Tournament is Ownable {
         (MatryxPlatform(platformAddress)).invokeTournamentClosedEvent(this, _submissionAddress);
     }
 
-    // ----------------- Entrant Methods -----------------
+    /*
+     * Entrant Methods
+     */
 
-    // Enters the user into the tournament and returns whether or
-    // not they were successfully entered. This method will return false
-    // in the case that the user has already entered into the tournament
+    /// @dev Enters the user into the tournament.
+    /// @param _entrantAddress Address of the user to enter.
+    /// @return success Whether or not the user was entered successfully.
     function enterUserInTournament(address _entrantAddress) public onlyPlatform returns (bool success)
     {
         if(addressToIsEntrant[_entrantAddress] == true)
@@ -242,15 +294,20 @@ contract Tournament is Ownable {
         return true;
     }
 
-    // Returns the fee in MTX to be payed by a prospective entrant
-    // to the tournament
+    /// @dev Returns the fee in MTX to be payed by a prospective entrant.
+    /// @return Entry fee for this tournament.
     function getEntryFee() public view returns (uint256)
     {
         return entryFee;
     }
 
-    // Creates a submission under this tournament
-    function createSubmission(string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public onlyEntrant whileRoundOpen whileTournamentOpen returns (SubmissionLocation _submissionLocation) {
+    /// @dev Creates a submission under this tournament
+    /// @param _name Name of the submission.
+    /// @param _externalAddress Off-chain content hash of submission details (ipfs hash)
+    /// @param _references Addresses of submissions referenced in creating this submission
+    /// @param _contributors Contributors to this submission.
+    /// @return (_roundIndex, _submissionIndex) Location of this submission.
+    function createSubmission(string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public onlyEntrant whileTournamentOpen whileRoundOpen returns (uint256 _roundIndex, uint256 _submissionIndex) {
         uint256 currentRoundIndex = rounds.length-1;
         Round round = rounds[currentRoundIndex];
 
@@ -259,11 +316,13 @@ contract Tournament is Ownable {
         SubmissionLocation memory submissionLocation = SubmissionLocation(currentRoundIndex, round.numberOfSubmissions());
         giveEntrantAddressGetSubmissions[msg.sender].push(submissionLocation);
 
-        return submissionLocation;
+        return (currentRoundIndex, numberOfSubmissions-1);
     }
 
-    // Helper function.
     // TODO: Move to library.
+    /// @dev Helper function to determine string emptiness.
+    /// @param _string String to check whether is empty.
+    /// @return Returns true if string is empty.
     function stringIsEmpty(string _string) public pure returns (bool)
     {
         bytes memory bytesString = bytes(_string);
@@ -276,4 +335,4 @@ contract Tournament is Ownable {
             return false;
         }
     }
-} // end of Tournament contract
+}
