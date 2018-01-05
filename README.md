@@ -26,7 +26,44 @@ The Matryx platform is currently deployed on an Ethereum Private chain. In order
  * [OSX](https://github.com/matryx/matryx-alpha-source/wiki/Running-the-Matryx-Ethereum-Private-Chain-%5BOSX%5D)
  
 ### API
-TODO
+
+Visit the wiki for the [API Documentation](https://github.com/matryx/matryx-alpha-source/wiki/Platform-Technical-Overview-and-API#api)
+
+The Platform is deployed on our Private Ethereum Chain at address: `0x7c4970b887cfa95062ead0708267009dcd564017`
+The Platform's ABI is: [here](tbd)
+
+Method: getBalance()
+ Inputs: uint256 tournamentId, string title, string body, string references, string contributors
+ Output: uint256
+ 
+Method: createSubmission()
+  Inputs: uint256 tournamentId, string title, string body, string references, string contributors
+  Outputs: None
+  
+Method: tournamentByIndex()
+  Inputs: uint256 idx
+  Outputs: uint256, string, string, uint256
+
+Method: tournamentByAddress()
+  Inputs: uint256 tournamentId
+  Outputs: uint256, string, string, uint256
+
+Method: tournamentCount()
+  Inputs: None
+  Outputs: uint256
+
+Method: submissionByIndex()
+   Inputs: uint256 tournamentId
+  Outputs: uint256, string, string, string, string, address
+
+Method: submissionByAddress()
+   Inputs: uint256 tournamentId
+  Outputs: uint256, string, string, string, string, address
+
+Method: submissionCount()
+  Outputs: uint256
+
+
 
 ## Interfaces
 The are several interfaces that are being built that are designed to plug in to the Matryx Platform 
