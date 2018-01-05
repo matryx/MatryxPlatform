@@ -42,7 +42,7 @@ contract('MatryxPlatform', function(accounts) {
   it("The created tournament should be addressable from the platform", async function() {
     
       createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
-      var storedExternalAddress = await platform.tournamentByAddress.call(createTournamentTransaction.logs[0].args._tournamentAddress);
+      var storedExternalAddress = await platform.getTournament_ExternalAddress.call(createTournamentTransaction.logs[0].args._tournamentAddress);
       storedExternalAddress = web3.toAscii(storedExternalAddress).replace(/\u0000/g, "");
       let externalAddressFromEvent = web3.toAscii(createTournamentTransaction.logs[0].args._externalAddress).replace(/\u0000/g, "")
       return assert.equal(externalAddressFromEvent, storedExternalAddress);
