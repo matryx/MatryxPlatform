@@ -3,7 +3,8 @@ pragma solidity ^0.4.18;
 import "./Ownable.sol";
 import "./MatryxQueryEncrypter.sol";
 
-// The actual part to be included in a client contract
+/// @title MatryxOracleMessenger - An oracle system for validating MTX balances on mainnet.
+/// @author Max Howard - <max@nanome.ai>
 contract MatryxOracleMessenger is Ownable {
 
   // An event to let our node know that a new query has been performed.
@@ -30,6 +31,9 @@ contract MatryxOracleMessenger is Ownable {
     _;
   }
 
+  /// @dev Gets the latest response from the oracle (internal).
+  /// @param _sender Address of sender who we wish to receive the oracle response for.
+  /// @return _response Response from the oracle (an MTX balance).
   function latestResponseFromOracle(address _sender) internal view returns (uint256 _response)
   {
         uint256 queryID = fromQuerierToQueryID[_sender];
@@ -37,10 +41,11 @@ contract MatryxOracleMessenger is Ownable {
         return response;
   }
 
-  // Uses [the user's existing]/[a new] QueryResolver,
-  // depending on whether or not the user has submitted a query before.
-  // Then, returns the queryID for the user to use in tracking the results
-  // of their query.
+  /// @dev Uses [the user's existing]/[a new] QueryResolver,
+  //       depending on whether or not the user has submitted a query before.
+  // @param _query Bytes representing the query.
+  // @param _sender Sender of the query (ie user checking their balance).
+  // @return queryID for the Oracle to use in storing their response.
   function Query(bytes32 _query, address _sender) external {
     MatryxQueryEncrypter encrypter;
     // If there's already a queryResolver for this user
@@ -65,9 +70,10 @@ contract MatryxOracleMessenger is Ownable {
     QueryPerformed(queryID, _sender);
   }
 
-  // (Only to be used by MatryxPlatform, MatryxOracleMessenger and MatryxQueryEncrypter.
-  // This is not a user function.)
-  // This function can be called (successfully) from Nanome's private chain
+  /// @dev Stores a query response (Only to be used by MatryxPlatform, MatryxOracleMessenger and MatryxQueryEncrypter.)
+  /// @param _queryID Query ID given to the oracle by this messenger.
+  /// @param _response Response received from oracle.
+  /// @return success Whether or not the query response was stored successfully (didn't already exist).
   function storeQueryResponse(uint256 _queryID,  uint256 _response) storerIsPlatformOwner public returns (bool success)
   {
       // Make sure:

@@ -1,11 +1,9 @@
 pragma solidity ^0.4.18;
 
-//
-// The lookup contract for storing both the query and responder addresses
-//
 import "./MatryxOracleMessenger.sol";
 
-// Readies and takes query results from the web client.
+/// @title MatryxQueryEncrypter - Readies queries and takes query results from the web client.
+/// @author Max Howard - <max@nanome.ai>
 contract MatryxQueryEncrypter {
 
   // The owner of this contract. i.e. The single TinyOracle contract.
@@ -32,6 +30,9 @@ contract MatryxQueryEncrypter {
     _;
   }
 
+  /// @dev Generates a Query ID for this query and returns it.
+  /// @param _query Query being made.
+  /// @return _id Query ID generated.
   function query(bytes32 _query) owneronly public returns (uint256 _id) {
     // Set the queryID for this QueryResolver by hashing:
     // 1) The current blocknumber
@@ -44,6 +45,7 @@ contract MatryxQueryEncrypter {
     return (queryID);
   }
 
+  /// @dev Self destruct method.
   function kill() owneronly public {
     selfdestruct(msg.sender);
   }
