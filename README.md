@@ -32,37 +32,16 @@ Visit the wiki for the [API Documentation](https://github.com/matryx/matryx-alph
 The Platform is deployed on our Private Ethereum Chain at address: `0x7c4970b887cfa95062ead0708267009dcd564017`
 The Platform's ABI is: [here](tbd)
 
-Method: getBalance()
- Inputs: uint256 tournamentId, string title, string body, string references, string contributors
- Output: uint256
- 
-Method: createSubmission()
-  Inputs: uint256 tournamentId, string title, string body, string references, string contributors
-  Outputs: None
-  
-Method: tournamentByIndex()
-  Inputs: uint256 idx
-  Outputs: uint256, string, string, uint256
-
-Method: tournamentByAddress()
-  Inputs: uint256 tournamentId
-  Outputs: uint256, string, string, uint256
-
-Method: tournamentCount()
-  Inputs: None
-  Outputs: uint256
-
-Method: submissionByIndex()
-   Inputs: uint256 tournamentId
-  Outputs: uint256, string, string, string, string, address
-
-Method: submissionByAddress()
-   Inputs: uint256 tournamentId
-  Outputs: uint256, string, string, string, string, address
-
-Method: submissionCount()
-  Outputs: uint256
-
+| Method    | Inputs | Output | 
+|:----------|:-------------| ---: |
+| **`getBalance()`** | uint256 tournamentId, string title, string body, string references, string contributors | uint256 |
+| **`createSubmission()`** | uint256 tournamentId, string title, string body, string references, string contributors | None |
+| **`tournamentByIndex()`** | uint256 idx | uint256, string, string, uint256 |
+| **`tournamentByAddress()`** | uint256 tournamentId | uint256, string, string, uint256 |
+| **`tournamentCount()`** | None | uint256 |
+| **`submissionByIndex()`** | uint256 tournamentId | uint256, string, string, string, string, address |
+| **`submissionByAddress()`** | uint256 tournamentId | uint256, string, string, string, string, address |
+| **`submissionCount()`** | None | uint256 |
 
 
 ## Interfaces
