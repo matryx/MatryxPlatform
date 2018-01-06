@@ -58,7 +58,7 @@ Additonal information on the various interfaces supporting the Matryx Platform c
 
 Below is a GIF of Matryx's Calcflow VR interface viewing Matryx tournaments on the private chain.
 ### Calcflow
-![Calcflow](https://github.com/matryx/matryx-alpha-source/blob/master/Calcflow_mtx.gif)
+![Calcflow](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Calcflow_mtx.gif)
 
 
 ## Build, Deploy, and Test the Platform
