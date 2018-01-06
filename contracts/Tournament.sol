@@ -273,7 +273,8 @@ contract Tournament is Ownable {
         // TODO: Uncomment.
         //uint allowedMTX = MatryxToken(matryxTokenAddress).allowance(this, rounds[currentRound()]);
         //require(MatryxToken(matryxTokenAddress).transfer(_submissionAddress, allowedMTX));
-        (MatryxPlatform(platformAddress)).invokeTournamentClosedEvent(this, _submissionAddress);
+        MatryxPlatform platform = MatryxPlatform(platformAddress);
+        platform.invokeTournamentClosedEvent(this, _submissionAddress);
     }
 
     /*
