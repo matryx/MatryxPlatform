@@ -114,20 +114,20 @@ contract MatryxPlatform is MatryxOracleMessenger {
       return balance;
   }
 
-  // /* 
-  //  * Tournament Entry Methods
-  //  */
+  /* 
+   * Tournament Entry Methods
+   */
 
-  // /// @dev Enter the user into a tournament and charge the entry fee.
-  // /// @param _tournamentAddress Address of the tournament to enter into.
-  // /// @return _success Whether or not user was successfully entered into the tournament.
-  // function enterTournament(address _tournamentAddress) public returns (bool _success)
-  // {
-  //     Tournament tournament = Tournament(_tournamentAddress);
-  //     // TODO: Charge the user the MTX entry fee.
-  //     bool success = tournament.enterUserInTournament(msg.sender);
-  //     return success;
-  // }
+  /// @dev Enter the user into a tournament and charge the entry fee.
+  /// @param _tournamentAddress Address of the tournament to enter into.
+  /// @return _success Whether or not user was successfully entered into the tournament.
+  function enterTournament(address _tournamentAddress) public returns (bool _success)
+  {
+      Tournament tournament = Tournament(_tournamentAddress);
+      // TODO: Charge the user the MTX entry fee.
+      bool success = tournament.enterUserInTournament(msg.sender);
+      return success;
+  }
 
   /* 
    * Tournament Admin Methods
