@@ -8,15 +8,15 @@ import './MatryxToken.sol';
 /// @title Tournament - The Matryx tournament.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract Tournament is Ownable {
+    using SafeMath for uint256;
 
     //Platform identification
     address public platformAddress;
     address public matryxTokenAddress;
 
     //Tournament identification
-    string name;
+    bytes32 name;
     address public owner;
-    string public tournamentName;
     bytes32 public externalAddress;
 
     // Timing
@@ -29,7 +29,7 @@ contract Tournament is Ownable {
     bool public tournamentOpen = true;
 
     // Reward and fee
-    uint public MTXReward;
+    uint public BountyMTX;
     uint256 public entryFee;
 
     // Submission tracking
@@ -37,20 +37,20 @@ contract Tournament is Ownable {
     mapping(address => SubmissionLocation[]) private giveEntrantAddressGetSubmissions;
     mapping(address => bool) private addressToIsEntrant;
 
-    function Tournament(address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public {
+    function Tournament(address _owner, bytes32 _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public {
         //Clean inputs
         require(_owner != 0x0);
-        require(!stringIsEmpty(_tournamentName));
-        require(_MTXReward > 0);
+        require(_tournamentName != 0x0);
+        require(_BountyMTX > 0);
         
         platformAddress = msg.sender;
         timeCreated = now;
         // Identification
         owner = _owner;
-        tournamentName = _tournamentName;
+        name = _tournamentName;
         externalAddress = _externalAddress;
         // Reward and fee
-        MTXReward = _MTXReward;
+        BountyMTX = _BountyMTX;
         entryFee = _entryFee;
     }
 
@@ -67,14 +67,15 @@ contract Tournament is Ownable {
     /*
      * Events
      */
-
-    // Fired at the end of every round, one time per submission created in that round
+    event RoundCreated(uint256 _roundIndex);
+    event RoundStarted(uint256 _roundIndex);
     event SubmissionCreated(uint256 _roundIndex, uint256 _submissionIndex);
+    event RoundWinnerChosen(uint256 _submissionIndex);
 
     /// @dev Allows rounds to invoke SubmissionCreated events on this tournament.
     /// @param _roundIndex Index of the round the submission was made to.
     /// @param _submissionIndex Index of the submission.
-    function InvokeSubmissionCreatedEvent(uint256 _roundIndex, uint256 _submissionIndex) public
+    function invokeSubmissionCreatedEvent(uint256 _roundIndex, uint256 _submissionIndex) public
     {
         SubmissionCreated(_roundIndex, _submissionIndex);
     }
@@ -255,26 +256,73 @@ contract Tournament is Ownable {
         require((msg.sender == platformAddress) || (msg.sender == owner));
         // TODO: Uncomment.
         //uint allowedMTX = MatryxToken(matryxTokenAddress).allowance(msg.sender, this);
-        //require(allowedMTX >= MTXReward);
-        //require(MatryxToken(matryxTokenAddress).transferFrom(msg.sender, this, MTXReward));
+        //require(allowedMTX >= BountyMTX);
+        //require(MatryxToken(matryxTokenAddress).transferFrom(msg.sender, this, BountyMTX));
         
         // Implement me!
         tournamentOpen = true;
+        MatryxPlatform(platformAddress).invokeTournamentOpenedEvent(owner, this, name, externalAddress, BountyMTX, entryFee);
     }
 
     /// @dev To be called by the tournament owner to choose the winner of this tournament.
-    function chooseWinner(address _submissionAddress) public platformOrOwner
+    /// @param _submissionIndex Index of the winning submission
+    /// @param _startNewRoundImmediately Whether or not to start a new round now.
+    /// @param _roundDuration Duration in seconds of new round if starting immediately.
+    function closeOutRound(uint256 _submissionIndex, bool _startNewRoundImmediately, uint256 _roundDuration) public platformOrOwner
     {
-        // TODO: Finish me!
-        // Why do we have to do this? Why can't we use
-        // the 'onlyOwner' modifier?
         tournamentOpen = false;
 
+        Round round = rounds[rounds.length-1];
+        round.chooseWinningSubmission(_submissionIndex);
+        //address winningAuthor = round.getSubmissionAuthor(_submissionIndex);
+        //MatryxToken.approve(winningAuthor, round.bountyMTX);
+
+        RoundWinnerChosen(_submissionIndex);
+        
+        if(rounds.length < maxRounds)
+        {
+            createRound();
+            RoundCreated(rounds.length-1);
+
+            if(_startNewRoundImmediately)
+            {
+                startRound(_roundDuration);
+                RoundStarted(rounds.length-1);
+            }
+        }
+    }
+
+    /// @dev Creates a new round.
+    /// @return The new round's address.
+    function createRound() internal returns (address _roundAddress)
+    {
+        uint256 roundBounty = BountyMTX.div(maxRounds);
+        BountyMTX = BountyMTX - roundBounty;
+        Round round = new Round(this, roundBounty, rounds.length + 1);
+        rounds.push(round);
+
+        return round;
+    }
+
+    /// @dev Starts the latest round.
+    /// @param _duration Duration of the round in seconds.
+    function startRound(uint256 _duration) internal 
+    {
+        Round round = rounds[rounds.length-1];
+        round.Start(_duration);
+        RoundStarted(rounds.length-1);
+    }
+
+    /// @dev Closes this tournament. Allows the winning submission author to claim the tournament bounty.
+    /// @param _submissionIndex Index of submission that won the tournament.
+    function closeTournament(uint256 _submissionIndex) public onlyPlatform
+    {
+        Round round = rounds[rounds.length-1];
         // TODO: Uncomment.
-        //uint allowedMTX = MatryxToken(matryxTokenAddress).allowance(this, rounds[currentRound()]);
-        //require(MatryxToken(matryxTokenAddress).transfer(_submissionAddress, allowedMTX));
-        MatryxPlatform platform = MatryxPlatform(platformAddress);
-        platform.invokeTournamentClosedEvent(this, _submissionAddress);
+        address winningAuthor = round.getSubmissionAuthor(_submissionIndex);
+        //MatryxToken.approve(winningAuthor, BountyMTX);
+
+        tournamentOpen = false;
     }
 
     /*
@@ -318,22 +366,5 @@ contract Tournament is Ownable {
         giveEntrantAddressGetSubmissions[msg.sender].push(submissionLocation);
 
         return (currentRoundIndex, numberOfSubmissions-1);
-    }
-
-    // TODO: Move to library.
-    /// @dev Helper function to determine string emptiness.
-    /// @param _string String to check whether is empty.
-    /// @return Returns true if string is empty.
-    function stringIsEmpty(string _string) public pure returns (bool)
-    {
-        bytes memory bytesString = bytes(_string);
-        if (bytesString.length == 0) 
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
     }
 }

@@ -15,9 +15,9 @@ contract MatryxPlatform is MatryxOracleMessenger {
    * Events
    */
 
-  event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentClosed(address _tournamentAddress, address _winningSubmissionAddress);
+  event TournamentCreated(address _owner, address _tournamentAddress, bytes32 _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentOpened(address _owner, address _tournamentAddress, bytes32 _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _submissionIndex_winner);
 
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
   /// @param _owner Owner of the tournament.
@@ -26,17 +26,17 @@ contract MatryxPlatform is MatryxOracleMessenger {
   /// @param _externalAddress External address of the tournament.
   /// @param _MTXReward Reward for winning the tournament.
   /// @param _entryFee Fee for entering into the tournament.
-  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament(msg.sender)
+  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, bytes32 _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament(msg.sender)
   {
     TournamentOpened(_owner, _tournamentAddress, _tournamentName, _externalAddress, _MTXReward, _entryFee);
   }
 
   /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
-  /// @param _tournamentAddress Address of the tournament.
-  /// @param _winningSubmissionAddress Address of the winning submission.
-  function invokeTournamentClosedEvent(address _tournamentAddress, address _winningSubmissionAddress) public onlyTournament(msg.sender)
+  /// @param _finalRoundNumber Index of the round containing the winning submission.
+  /// @param _submissionIndex_winner Index of the winning submission.
+  function invokeTournamentClosedEvent(uint256 _finalRoundNumber, uint256 _submissionIndex_winner) public onlyTournament(msg.sender)
   {
-    TournamentClosed(_tournamentAddress, _winningSubmissionAddress);
+    TournamentClosed(msg.sender, _finalRoundNumber, _submissionIndex_winner);
   }
 
   /* 
@@ -114,23 +114,23 @@ contract MatryxPlatform is MatryxOracleMessenger {
       return balance;
   }
 
-  /* 
-   * Tournament Entry Functions
-   */
+  // /* 
+  //  * Tournament Entry Methods
+  //  */
 
-  /// @dev Enter the user into a tournament and charge the entry fee.
-  /// @param _tournamentAddress Address of the tournament to enter into.
-  /// @return _success Whether or not user was successfully entered into the tournament.
-  function enterTournament(address _tournamentAddress) public returns (bool _success)
-  {
-      Tournament tournament = Tournament(_tournamentAddress);
-      // TODO: Charge the user the MTX entry fee.
-      bool success = tournament.enterUserInTournament(msg.sender);
-      return success;
-  }
+  // /// @dev Enter the user into a tournament and charge the entry fee.
+  // /// @param _tournamentAddress Address of the tournament to enter into.
+  // /// @return _success Whether or not user was successfully entered into the tournament.
+  // function enterTournament(address _tournamentAddress) public returns (bool _success)
+  // {
+  //     Tournament tournament = Tournament(_tournamentAddress);
+  //     // TODO: Charge the user the MTX entry fee.
+  //     bool success = tournament.enterUserInTournament(msg.sender);
+  //     return success;
+  // }
 
   /* 
-   * Tournament Creation and Editing
+   * Tournament Admin Methods
    */
 
   /// @dev Create a new tournament.
@@ -139,7 +139,7 @@ contract MatryxPlatform is MatryxOracleMessenger {
   /// @param _MTXReward Total tournament reward in MTX.
   /// @param _entryFee Fee to charge participant upon entering into tournament.
   /// @return _tournamentAddress Address of the newly created tournament
-  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyOwner returns (address _tournamentAddress)
+  function createTournament(bytes32 _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyOwner returns (address _tournamentAddress)
   {
     address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
     TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _MTXReward, _entryFee);
@@ -157,6 +157,17 @@ contract MatryxPlatform is MatryxOracleMessenger {
   function openTournament(address _tournamentAddress) public onlyTournamentOwner(_tournamentAddress)
   {
     Tournament(_tournamentAddress).openTournament();
+  }
+
+  /// @dev Closes a tournament to submissions.
+  /// @param _tournamentAddress Address of tournament to close.
+  /// @param _submissionIndex Index of winning submission.
+  function closeTournament(address _tournamentAddress, uint256 _submissionIndex) public ifTournamentExists(_tournamentAddress) onlyTournamentOwner(_tournamentAddress)
+  {
+    Tournament tournament = Tournament(_tournamentAddress);
+    tournament.closeTournament(_submissionIndex);
+    uint256 finalRoundNumber = tournament.currentRound();
+    TournamentClosed(_tournamentAddress, finalRoundNumber, _submissionIndex);
   }
 
   /*

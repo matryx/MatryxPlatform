@@ -20,21 +20,21 @@ contract Round is Ownable {
 	uint256 public startTime;
 	uint256 public endTime;
 	uint256 public reviewPeriodEndTime;
-	uint256 public reward;
+	uint256 public bountyMTX;
 	uint256 public winningSubmissionIndex;
 	bool public winningSubmissionChosen;
 
 	mapping(address => uint) addressToParticipantType;
- 	mapping(address => Submission[]) contributorToSubmissionArray;
+ 	mapping(address => Submission) authorToSubmission;
 	mapping(bytes32 => Submission) externalAddressToSubmission;
 	Submission[] submissions;
 
 
-	function Round(address _tournamentAddress, uint256 _reward, uint256 _roundIndex) public
+	function Round(address _tournamentAddress, uint256 _bountyMTX, uint256 _roundIndex) public
 	{		
 		tournamentAddress = _tournamentAddress;
 		roundIndex = _roundIndex;
-		reward = _reward;
+		bountyMTX = _bountyMTX;
 		winningSubmissionChosen = false;
 	}
 
@@ -60,12 +60,6 @@ contract Round is Ownable {
      */
 
 	enum participantType { nonentrant, entrant, contributor, author }
-
-	/*
-     * Events
-     */
-
-	event WinningSubmissionChosen(uint256 _submissionIndex);
 
 	/*
      * Modifiers
@@ -135,6 +129,11 @@ contract Round is Ownable {
     /// @return Whether or not the submission is accessible to the requester.
 	function submissionIsAccessible(address _requester, uint256 _index) public constant returns (bool)
 	{
+		if(submissions.length - 1 < _index)
+		{
+			return false;
+		}
+
 		Tournament tournament = Tournament(tournamentAddress);
 		Submission memory submission = submissions[_index];
 
@@ -313,10 +312,9 @@ contract Round is Ownable {
 	{
 		//TODO: apply time restrictions.
 		winningSubmissionIndex = _submissionIndex;
-		submissions[winningSubmissionIndex].balance.add(reward);
-		WinningSubmissionChosen(winningSubmissionIndex);
+		submissions[winningSubmissionIndex].balance.add(bountyMTX);
 		
-		reward = 0;
+		bountyMTX = 0;
 		winningSubmissionChosen = true;
 	}
 
@@ -341,7 +339,7 @@ contract Round is Ownable {
         
         // submission bookkeeping
         submissions.push(submission);
-        contributorToSubmissionArray[msg.sender].push(submission);
+        authorToSubmission[msg.sender] = submission;
         externalAddressToSubmission[_externalAddress] = submission;
 
         // round participant bookkeeping
@@ -351,7 +349,7 @@ contract Round is Ownable {
         	addressToParticipantType[_contributors[i]] = uint(participantType.contributor);
         }
 
-        Tournament(tournamentAddress).InvokeSubmissionCreatedEvent(roundIndex, submissions.length-1);
+        Tournament(tournamentAddress).invokeSubmissionCreatedEvent(roundIndex, submissions.length-1);
         return submissions.length-1;
 	}
 
