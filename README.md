@@ -30,7 +30,7 @@ The Matryx platform is currently deployed on an Ethereum Private chain. In order
 Visit the wiki for the [API Documentation](https://github.com/matryx/matryx-alpha-source/wiki/Platform-Technical-Overview-and-API#api)
 
 The Platform is deployed on our Private Ethereum Chain at address: `0x7c4970b887cfa95062ead0708267009dcd564017`
-The Platform's ABI is: [here](tbd)
+The Platform's ABI is: [here](https://github.com/matryx/matryx-alpha-source/blob/master/platformAbi.txt)
 
 | Method    | Inputs | Output | 
 |:----------|:-------------| ---: |
