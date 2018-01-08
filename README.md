@@ -1,7 +1,7 @@
 # Matryx Alpha Source Code v1 ![alt text](https://matryx.ai/static/img/Matryx_Black_Full_Logo.png "Matryx Logo")
 [![Jenkins](https://img.shields.io/jenkins/s/https/jenkins.qa.ubuntu.com/view/Precise/view/All%20Precise/job/precise-desktop-amd64_default.svg)](http://jenkins.matryx.ai/matryx-alpha-source/build-status)
-[![Jenkins coverage](https://img.shields.io/badge/coverage-97%25-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/code-coverage)
-[![Jenkins tests](https://img.shields.io/jenkins/t/https/jenkins.qa.ubuntu.com/view/Precise/view/All%20Precise/job/precise-desktop-amd64_default.svg)](http://jenkins.matryx.ai/matryx-alpha-source/tests)
+[![Jenkins coverage](https://img.shields.io/badge/coverage-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/code-coverage)
+[![Jenkins tests](https://img.shields.io/badge/tests-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/tests)
 [![Telegram](https://img.shields.io/badge/chat-Telegram-blue.svg)](https://t.me/matryxai)
 
 ## Introduction
