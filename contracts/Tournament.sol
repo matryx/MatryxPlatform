@@ -15,7 +15,7 @@ contract Tournament is Ownable {
     address public matryxTokenAddress;
 
     //Tournament identification
-    bytes32 name;
+    string name;
     address public owner;
     bytes32 public externalAddress;
 
@@ -37,10 +37,10 @@ contract Tournament is Ownable {
     mapping(address => SubmissionLocation[]) private giveEntrantAddressGetSubmissions;
     mapping(address => bool) private addressToIsEntrant;
 
-    function Tournament(address _owner, bytes32 _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public {
+    function Tournament(address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public {
         //Clean inputs
         require(_owner != 0x0);
-        require(_tournamentName != 0x0);
+        require(!stringIsEmpty(_tournamentName));
         require(_BountyMTX > 0);
         
         platformAddress = msg.sender;
@@ -366,5 +366,22 @@ contract Tournament is Ownable {
         giveEntrantAddressGetSubmissions[msg.sender].push(submissionLocation);
 
         return (currentRoundIndex, numberOfSubmissions-1);
+    }
+
+    // TODO: Move to library.
+    /// @dev Helper function to determine string emptiness.
+    /// @param _string String to check whether is empty.
+    /// @return Returns true if string is empty.
+    function stringIsEmpty(string _string) public pure returns (bool)
+    {
+        bytes memory bytesString = bytes(_string);
+        if (bytesString.length == 0) 
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }

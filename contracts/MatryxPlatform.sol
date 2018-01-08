@@ -15,8 +15,8 @@ contract MatryxPlatform is MatryxOracleMessenger {
    * Events
    */
 
-  event TournamentCreated(address _owner, address _tournamentAddress, bytes32 _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentOpened(address _owner, address _tournamentAddress, bytes32 _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _submissionIndex_winner);
 
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
@@ -26,7 +26,7 @@ contract MatryxPlatform is MatryxOracleMessenger {
   /// @param _externalAddress External address of the tournament.
   /// @param _MTXReward Reward for winning the tournament.
   /// @param _entryFee Fee for entering into the tournament.
-  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, bytes32 _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament(msg.sender)
+  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament(msg.sender)
   {
     TournamentOpened(_owner, _tournamentAddress, _tournamentName, _externalAddress, _MTXReward, _entryFee);
   }
@@ -139,7 +139,7 @@ contract MatryxPlatform is MatryxOracleMessenger {
   /// @param _MTXReward Total tournament reward in MTX.
   /// @param _entryFee Fee to charge participant upon entering into tournament.
   /// @return _tournamentAddress Address of the newly created tournament
-  function createTournament(bytes32 _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyOwner returns (address _tournamentAddress)
+  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyOwner returns (address _tournamentAddress)
   {
     address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
     TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _MTXReward, _entryFee);
