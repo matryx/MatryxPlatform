@@ -17,7 +17,7 @@ contract MatryxPlatform is MatryxOracleMessenger {
 
   event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentClosed(address _tournamentAddress, address _winningSubmissionAddress);
+  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _winningSubmissionIndex);
 
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
   /// @param _owner Owner of the tournament.
@@ -33,10 +33,11 @@ contract MatryxPlatform is MatryxOracleMessenger {
 
   /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
   /// @param _tournamentAddress Address of the tournament.
-  /// @param _winningSubmissionAddress Address of the winning submission.
-  function invokeTournamentClosedEvent(address _tournamentAddress, address _winningSubmissionAddress) public onlyTournament(msg.sender)
+  /// @param _finalRoundNumber Index of the round containing the winning submission.
+  /// @param _winningSubmissionIndex Index of the winning submission.
+  function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _winningSubmissionIndex) public onlyTournament(msg.sender)
   {
-    TournamentClosed(_tournamentAddress, _winningSubmissionAddress);
+    TournamentClosed(_tournamentAddress, _finalRoundNumber, _winningSubmissionIndex);
   }
 
   /* 
@@ -115,7 +116,7 @@ contract MatryxPlatform is MatryxOracleMessenger {
   }
 
   /* 
-   * Tournament Entry Functions
+   * Tournament Entry Methods
    */
 
   /// @dev Enter the user into a tournament and charge the entry fee.
@@ -130,7 +131,7 @@ contract MatryxPlatform is MatryxOracleMessenger {
   }
 
   /* 
-   * Tournament Creation and Editing
+   * Tournament Admin Methods
    */
 
   /// @dev Create a new tournament.
@@ -157,6 +158,17 @@ contract MatryxPlatform is MatryxOracleMessenger {
   function openTournament(address _tournamentAddress) public onlyTournamentOwner(_tournamentAddress)
   {
     Tournament(_tournamentAddress).openTournament();
+  }
+
+  /// @dev Closes a tournament to submissions.
+  /// @param _tournamentAddress Address of tournament to close.
+  /// @param _submissionIndex Index of winning submission.
+  function closeTournament(address _tournamentAddress, uint256 _submissionIndex) public ifTournamentExists(_tournamentAddress) onlyTournamentOwner(_tournamentAddress)
+  {
+   Tournament tournament = Tournament(_tournamentAddress);
+   tournament.closeTournament(_submissionIndex);
+   uint256 finalRoundNumber = tournament.currentRound();
+   TournamentClosed(_tournamentAddress, finalRoundNumber, _submissionIndex);
   }
 
   /*
@@ -230,10 +242,10 @@ contract MatryxPlatform is MatryxOracleMessenger {
   /// @param _references Addresses of submissions referenced in creating this submission
   /// @param _contributors Contributors to this submission.
   /// @return (_roundIndex, _submissionIndex) Location of this submission.
-  function createSubmission(address _tournamentAddress, string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public ifTournamentExists(_tournamentAddress) onlyEntrant(_tournamentAddress, msg.sender) whileTournamentOpen(_tournamentAddress) whileRoundOpen(_tournamentAddress) returns (uint256 _roundIndex, uint256 _submissionIndex)
-  {
-    return Tournament(_tournamentAddress).createSubmission(_name, _externalAddress, _references, _contributors);
-  }
+  // function createSubmission(address _tournamentAddress, string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public ifTournamentExists(_tournamentAddress) onlyEntrant(_tournamentAddress, msg.sender) whileTournamentOpen(_tournamentAddress) whileRoundOpen(_tournamentAddress) returns (uint256 _roundIndex, uint256 _submissionIndex)
+  // {
+  //   return Tournament(_tournamentAddress).createSubmission(_name, _externalAddress, _references, _contributors);
+  // }
 
   /// @dev Returns the number of submissions under a given tournament.
   /// @param _tournamentAddress Address of the tournament to check.

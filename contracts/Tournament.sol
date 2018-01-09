@@ -8,6 +8,7 @@ import './MatryxToken.sol';
 /// @title Tournament - The Matryx tournament.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract Tournament is Ownable {
+    using SafeMath for uint256;
 
     //Platform identification
     address public platformAddress;
@@ -16,7 +17,6 @@ contract Tournament is Ownable {
     //Tournament identification
     string name;
     address public owner;
-    string public tournamentName;
     bytes32 public externalAddress;
 
     // Timing
@@ -29,7 +29,7 @@ contract Tournament is Ownable {
     bool public tournamentOpen = true;
 
     // Reward and fee
-    uint public MTXReward;
+    uint public BountyMTX;
     uint256 public entryFee;
 
     // Submission tracking
@@ -37,20 +37,20 @@ contract Tournament is Ownable {
     mapping(address => SubmissionLocation[]) private giveEntrantAddressGetSubmissions;
     mapping(address => bool) private addressToIsEntrant;
 
-    function Tournament(address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public {
+    function Tournament(address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public {
         //Clean inputs
         require(_owner != 0x0);
         require(!stringIsEmpty(_tournamentName));
-        require(_MTXReward > 0);
+        require(_BountyMTX > 0);
         
         platformAddress = msg.sender;
         timeCreated = now;
         // Identification
         owner = _owner;
-        tournamentName = _tournamentName;
+        name = _tournamentName;
         externalAddress = _externalAddress;
         // Reward and fee
-        MTXReward = _MTXReward;
+        BountyMTX = _BountyMTX;
         entryFee = _entryFee;
     }
 
@@ -68,13 +68,16 @@ contract Tournament is Ownable {
      * Events
      */
 
+    event RoundCreated(uint256 _roundIndex);
+    event RoundStarted(uint256 _roundIndex);
     // Fired at the end of every round, one time per submission created in that round
     event SubmissionCreated(uint256 _roundIndex, uint256 _submissionIndex);
+    event RoundWinnerChosen(uint256 _submissionIndex);
 
     /// @dev Allows rounds to invoke SubmissionCreated events on this tournament.
     /// @param _roundIndex Index of the round the submission was made to.
     /// @param _submissionIndex Index of the submission.
-    function InvokeSubmissionCreatedEvent(uint256 _roundIndex, uint256 _submissionIndex) public
+    function invokeSubmissionCreatedEvent(uint256 _roundIndex, uint256 _submissionIndex) public
     {
         SubmissionCreated(_roundIndex, _submissionIndex);
     }
@@ -255,26 +258,57 @@ contract Tournament is Ownable {
         require((msg.sender == platformAddress) || (msg.sender == owner));
         // TODO: Uncomment.
         //uint allowedMTX = MatryxToken(matryxTokenAddress).allowance(msg.sender, this);
-        //require(allowedMTX >= MTXReward);
-        //require(MatryxToken(matryxTokenAddress).transferFrom(msg.sender, this, MTXReward));
+        //require(allowedMTX >= BountyMTX);
+        //require(MatryxToken(matryxTokenAddress).transferFrom(msg.sender, this, BountyMTX));
         
         // Implement me!
         tournamentOpen = true;
+        MatryxPlatform(platformAddress).invokeTournamentOpenedEvent(owner, this, name, externalAddress, BountyMTX, entryFee);
     }
 
-    /// @dev To be called by the tournament owner to choose the winner of this tournament.
-    function chooseWinner(address _submissionAddress) public platformOrOwner
-    {
-        // TODO: Finish me!
-        // Why do we have to do this? Why can't we use
-        // the 'onlyOwner' modifier?
+    /// @dev Chooses the winner for the round.
+    /// @param _submissionIndex Index of the winning submission
+    function chooseWinner(uint256 _submissionIndex) public platformOrOwner
+     {
         tournamentOpen = false;
+ 
+        Round round = rounds[rounds.length-1];
+        round.chooseWinningSubmission(_submissionIndex);
+        //address winningAuthor = round.getSubmissionAuthor(_submissionIndex);
+        //MatryxToken.approve(winningAuthor, round.bountyMTX);
 
-        // TODO: Uncomment.
-        //uint allowedMTX = MatryxToken(matryxTokenAddress).allowance(this, rounds[currentRound()]);
-        //require(MatryxToken(matryxTokenAddress).transfer(_submissionAddress, allowedMTX));
-        MatryxPlatform platform = MatryxPlatform(platformAddress);
-        platform.invokeTournamentClosedEvent(this, _submissionAddress);
+        RoundWinnerChosen(_submissionIndex);
+    }
+
+    /// @dev Creates a new round.
+    /// @return The new round's address.
+    function createRound() public returns (address _roundAddress)
+    {
+        uint256 roundBounty = BountyMTX.div(maxRounds);
+        BountyMTX = BountyMTX - roundBounty;
+        Round round = new Round(roundBounty);
+        rounds.push(round);
+        return address(round);
+    }
+
+    /// @dev Starts the latest round.
+    /// @param _duration Duration of the round in seconds.
+    function startRound(uint256 _duration) internal 
+    {
+        Round round = rounds[rounds.length-1];
+        round.Start(_duration);
+        RoundStarted(rounds.length-1);
+    }
+
+    function closeTournament(uint256 _submissionIndex) public onlyPlatform
+    {
+        Round round = rounds[rounds.length-1];
+
+
+        address winningAuthor = round.getSubmissionAuthor(_submissionIndex);
+        //MatryxToken.approve(winningAuthor, BountyMTX);
+
+        tournamentOpen = false;
     }
 
     /*
@@ -308,17 +342,17 @@ contract Tournament is Ownable {
     /// @param _references Addresses of submissions referenced in creating this submission
     /// @param _contributors Contributors to this submission.
     /// @return (_roundIndex, _submissionIndex) Location of this submission.
-    function createSubmission(string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public onlyEntrant whileTournamentOpen whileRoundOpen returns (uint256 _roundIndex, uint256 _submissionIndex) {
-        uint256 currentRoundIndex = rounds.length-1;
-        Round round = rounds[currentRoundIndex];
+    // function createSubmission(string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public onlyEntrant whileTournamentOpen whileRoundOpen returns (uint256 _roundIndex, uint256 _submissionIndex) {
+    //     uint256 currentRoundIndex = rounds.length-1;
+    //     Round round = rounds[currentRoundIndex];
 
-        round.createSubmission(_name, _externalAddress, msg.sender,  _references, _contributors, false);
-        numberOfSubmissions += 1;
-        SubmissionLocation memory submissionLocation = SubmissionLocation(currentRoundIndex, round.numberOfSubmissions());
-        giveEntrantAddressGetSubmissions[msg.sender].push(submissionLocation);
+    //     round.createSubmission(_name, _externalAddress, msg.sender,  _references, _contributors, false);
+    //     numberOfSubmissions += 1;
+    //     SubmissionLocation memory submissionLocation = SubmissionLocation(currentRoundIndex, round.numberOfSubmissions());
+    //     giveEntrantAddressGetSubmissions[msg.sender].push(submissionLocation);
 
-        return (currentRoundIndex, numberOfSubmissions-1);
-    }
+    //     return (currentRoundIndex, numberOfSubmissions-1);
+    // }
 
     // TODO: Move to library.
     /// @dev Helper function to determine string emptiness.
