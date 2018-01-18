@@ -10,6 +10,7 @@ import './Submission.sol';
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract Round is Ownable {
 	using SafeMath for uint256;
+	using Submission for Submission.MatryxSubmission;
 
 	//TODO: time restriction on review period
 	//TODO: allow for refunds
@@ -26,12 +27,12 @@ contract Round is Ownable {
 	bool public winningSubmissionChosen;
 
 	mapping(address => uint) addressToParticipantType;
- 	mapping(address => Submission) authorToSubmission;
-	mapping(bytes32 => Submission) externalAddressToSubmission;
-	Submission[] submissions;
+ 	mapping(address => Submission.MatryxSubmission) authorToSubmission;
+	mapping(bytes32 => Submission.MatryxSubmission) externalAddressToSubmission;
+	Submission.MatryxSubmission[] submissions;
 
 	function Round(uint256 _bountyMTX) public
-	{		
+	{
 		tournamentAddress = msg.sender;
 		bountyMTX = _bountyMTX;
 		winningSubmissionChosen = false;
@@ -90,7 +91,7 @@ contract Round is Ownable {
 	/// @dev Requires that the sender be the submission's author.
 	modifier onlySubmissionAuthor(uint256 _submissionIndex)
 	{
-		require(submissions[_submissionIndex].owner() == msg.sender);
+		require(submissions[_submissionIndex].author == msg.sender);
 		_;
 	}
 
@@ -116,16 +117,9 @@ contract Round is Ownable {
 			return false;
 		}
 
-		Tournament tournament = Tournament(tournamentAddress);
-		Submission submission = submissions[_index];
+		Submission.MatryxSubmission storage submission = submissions[_index];
 
-		bool requesterOwnsTournament = tournament.isOwner(_requester);
-		bool publicallyAccessible = submission.publicallyAccessibleDuringTournament();
-		bool requesterIsEntrant = addressToParticipantType[_requester] != 0;
-		bool closedRoundAndContributorRequesting = (requesterIsEntrant && winningSubmissionChosen);
-		bool closedTournamentAndAnyoneRequesting = !tournament.tournamentOpen();
-
-		return requesterOwnsTournament || publicallyAccessible || closedTournamentAndAnyoneRequesting || closedRoundAndContributorRequesting;
+		return submission.isAccessible(_requester);
 	}
 
 	function requesterIsEntrant(address _requester) public constant returns (bool)
@@ -139,7 +133,7 @@ contract Round is Ownable {
 
 	/// @dev Returns all submissions made to this round.
 	/// @return _submissions All submissions made to this round.
-	function getSubmissions() public constant returns (Submission[] _submissions)
+	function getSubmissions() public constant returns (Submission.MatryxSubmission[] _submissions)
 	{
 		return submissions;
 	}
@@ -152,10 +146,10 @@ contract Round is Ownable {
 	/// @return _references Addresses of submissions referenced in creating this submission
     /// @return _contributors Contributors to this submission.
 	/// @return _timeSubmitted Epoch time this this submission was made.
-	function getSubmission(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (address _submissionAddress)
+	function getSubmission(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (bytes32 externalAddress_Versioned)
 	{
-		Submission submission = submissions[_index];
-		return address(submission);
+		Submission.MatryxSubmission storage submission = submissions[_index];
+		return submission.getExternalAddress();
 	}
 
 	/// @dev Returns the author of a submission.
@@ -163,7 +157,7 @@ contract Round is Ownable {
 	/// @return Address of this submission's author.
 	function getSubmissionAuthor(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (address) 
 	{
-		return submissions[_index].getOwner();
+		return submissions[_index].author;
 	}
 
 	function submissionChosen() public constant returns (bool)
@@ -224,23 +218,23 @@ contract Round is Ownable {
     /// @return (_roundIndex, _submissionIndex) Location of this submission.
 	function createSubmission(string _name, bytes32 _externalAddress, address _author, address[] _references, address[] _contributors, bool _publicallyAccessible) public duringOpenSubmission whileTournamentOpen returns (uint256 _submissionIndex)
 	{
-		uint256 timeSubmitted = now;
+		require(_author != 0x0);
 		
-        Submission submission = new Submission(tournamentAddress, _name, _author, _externalAddress, _references, _contributors, timeSubmitted, _publicallyAccessible);
+        Submission.MatryxSubmission memory submission = Submission.MatryxSubmission(tournamentAddress, this, _name, _author, _externalAddress, _references, _contributors, now, _publicallyAccessible, 0);
         
         // submission bookkeeping
         submissions.push(submission);
         authorToSubmission[msg.sender] = submission;
         externalAddressToSubmission[_externalAddress] = submission;
 
-        //round participant bookkeeping
+        // round participant bookkeeping
         addressToParticipantType[_author] = uint(participantType.author);
         for(uint256 i = 0; i < _contributors.length; i++)
         {
         	addressToParticipantType[_contributors[i]] = uint(participantType.contributor);
         }
 
-        //Tournament(tournamentAddress).invokeSubmissionCreatedEvent(roundIndex, submissions.length-1);
+        Tournament(tournamentAddress).invokeSubmissionCreatedEvent(roundIndex, submissions.length-1);
         return submissions.length-1;
 	}
 

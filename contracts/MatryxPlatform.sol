@@ -50,36 +50,6 @@ contract MatryxPlatform is MatryxOracleMessenger {
     _;
   }
 
-  modifier onlyTournamentOwner(address _tournament)
-  {
-    require(getTournament_IsMine(_tournament));
-    _;
-  }
-
-  modifier ifTournamentExists(address _tournamentAddress)
-  {
-    require(tournamentExists[_tournamentAddress]);
-    _;
-  }
-
-  modifier onlyEntrant(address _tournamentAddress, address _sender)
-  {
-    require(Tournament(_tournamentAddress).isEntrant(_sender));
-    _;
-  }
-
-  modifier whileTournamentOpen(address _tournamentAddress)
-  {
-    require(Tournament(_tournamentAddress).tournamentOpen());
-    _;
-  }
-
-  modifier whileRoundOpen(address _tournamentAddress)
-  {
-    require(Tournament(_tournamentAddress).roundIsOpen());
-    _;
-  }
-
   /* 
    * MTX Balance Methods
    */
@@ -152,25 +122,6 @@ contract MatryxPlatform is MatryxOracleMessenger {
     return newTournament;
   }
 
-  /// @dev Open a tournament to submissions.
-  /// @param _tournamentAddress Address of the tournament to open.
-  /// @return _tournamentAddress Address of the newly created tournament
-  function openTournament(address _tournamentAddress) public onlyTournamentOwner(_tournamentAddress)
-  {
-    Tournament(_tournamentAddress).openTournament();
-  }
-
-  /// @dev Closes a tournament to submissions.
-  /// @param _tournamentAddress Address of tournament to close.
-  /// @param _submissionIndex Index of winning submission.
-  function closeTournament(address _tournamentAddress, uint256 _submissionIndex) public ifTournamentExists(_tournamentAddress) onlyTournamentOwner(_tournamentAddress)
-  {
-   Tournament tournament = Tournament(_tournamentAddress);
-   tournament.closeTournament(_submissionIndex);
-   uint256 finalRoundNumber = tournament.currentRound();
-   TournamentClosed(_tournamentAddress, finalRoundNumber, _submissionIndex);
-  }
-
   /*
    * Access Control Methods
    */
@@ -184,75 +135,11 @@ contract MatryxPlatform is MatryxOracleMessenger {
     return Tournament(_tournamentAddress).getOwner() == msg.sender;
   }
 
-  /// @dev Returns whether or not a tournament is open.
-  /// @param _tournamentAddress Address of the tournament to check.
-  /// @return _isOpen Whether or not the tournament is open
-  function getTournament_IsOpen(address _tournamentAddress) public ifTournamentExists(_tournamentAddress) view returns (bool _isOpen)
-  {
-      return Tournament(_tournamentAddress).tournamentOpen();
-  }
-
-  /// @dev Returns whether or not a round of the tournament is open.
-  /// @param _tournamentAddress Address of the tournament to check.
-  /// @return _roundOpen Whether or not a round is open on this tournament.
-  function getTournament_RoundOpen(address _tournamentAddress) public ifTournamentExists(_tournamentAddress) view returns (bool _roundOpen)
-  {
-    return Tournament(_tournamentAddress).roundIsOpen();
-  }
-
-  /* 
-   * Tournament Getters
-   */
-
   /// @dev Returns the total number of tournaments
   /// @return _tournamentCount Total number of tournaments.
   function tournamentCount() public constant returns (uint256 _tournamentCount)
   {
       return allTournaments.length;
-  }
-
-  /// @dev Returns the external address of a tournament
-  /// @param _tournamentAddress Address of the tournament to use.
-  /// @return _externalAddress External address of the tournament.
-  function getTournament_ExternalAddress(address _tournamentAddress) public ifTournamentExists(_tournamentAddress) view returns (bytes32 _externalAddress)
-  {
-      return Tournament(_tournamentAddress).getExternalAddress();
-  }
-
-  /* 
-   * Round Getters
-   */
-
-  /// @dev Returns the current round number.
-  /// @param _tournamentAddress Address of the tournament to use.
-  /// @return _currentRound Number of the current round.
-  function getTournament_CurrentRound(address _tournamentAddress) public ifTournamentExists(_tournamentAddress) view returns (uint256 _currentRound)
-  {
-      return Tournament(_tournamentAddress).currentRound();
-  }
-
-  /* 
-   * Submission Methods
-   */
-
-  /// @dev Create a submission under the given tournament.
-  /// @param _tournamentAddress Address of the tournament to submit to.
-  /// @param _name Name of the submission
-  /// @param _externalAddress Off-chain content hash of submission (ipfs hash)
-  /// @param _references Addresses of submissions referenced in creating this submission
-  /// @param _contributors Contributors to this submission.
-  /// @return (_roundIndex, _submissionIndex) Location of this submission.
-  // function createSubmission(address _tournamentAddress, string _name, bytes32 _externalAddress, address[] _references, address[] _contributors) public ifTournamentExists(_tournamentAddress) onlyEntrant(_tournamentAddress, msg.sender) whileTournamentOpen(_tournamentAddress) whileRoundOpen(_tournamentAddress) returns (uint256 _roundIndex, uint256 _submissionIndex)
-  // {
-  //   return Tournament(_tournamentAddress).createSubmission(_name, _externalAddress, _references, _contributors);
-  // }
-
-  /// @dev Returns the number of submissions under a given tournament.
-  /// @param _tournamentAddress Address of the tournament to check.
-  /// @return _submissionCount Number of submissions.
-  function submissionCount(address _tournamentAddress) public view returns (uint256 _submissionCount)
-  {
-      return Tournament(_tournamentAddress).submissionCount();
   }
 
 }

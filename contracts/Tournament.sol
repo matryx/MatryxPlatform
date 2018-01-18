@@ -309,6 +309,7 @@ contract Tournament is Ownable {
         //MatryxToken.approve(winningAuthor, BountyMTX);
 
         tournamentOpen = false;
+        MatryxPlatform(platformAddress).invokeTournamentClosedEvent(this, rounds.length, _submissionIndex);
     }
 
     /*
