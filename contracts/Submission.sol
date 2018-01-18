@@ -1,98 +1,91 @@
 pragma solidity ^0.4.18;
 
-
 import './Ownable.sol';
 import './Tournament.sol';
+import './Round.sol';
 
-///Creating a submission and the functionality
-contract Submission is Ownable {
+library Submission {
 
-	// Tournament identification
-	address public tournamentAddress;
-	address public tournamentOwner;
-	bool tournamentIsClosed;
-	
-	// Submission
-	string name;
-	address[] references;
-	address[] contributors;
-	bytes32 externalAddress;
-	uint256 public timeSubmitted;
-	uint256 private roundEndTime;
-	bool externallyAccessibleDuringTournament;
+	struct MatryxSubmission
+	{
+		// Tournament identification
+		address tournamentAddress;
+		address roundAddress;
+		
+		// Submission
+		string name;
+		address author;
+		bytes32 externalAddress;
+		address[] references;
+		address[] contributors;
+		uint256 timeSubmitted;
+		bool publicallyAccessibleDuringTournament;
 
-	// Submission Constructor
-	function Submission(address _tournamentAddress, address _tournamentOwner, address _submissionOwner, string _name, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, uint256 _roundEndTime) public {
-		//Clean inputs
-		require(_submissionOwner != 0x0);
-		tournamentAddress = _tournamentAddress;
-		tournamentOwner = _tournamentOwner;
-		name = _name;
-		owner = _submissionOwner;
-		references = _references;
-		contributors = _contributors;
-		externalAddress = _externalAddress;
-		timeSubmitted = _timeSubmitted;
-		roundEndTime = _roundEndTime;
+		uint256 balance;
 	}
+	/*
+	 * Modifiers 
+	 */
 
-	// ----------------- Modifiers -----------------
+	 modifier onlyAuthor(MatryxSubmission storage self) {
+    	require(msg.sender == self.author);
+    	_;
+  	}
 
 	// A modifier to ensure that information can be obtained
 	// about this submission only when it should be (when the creator decides it can
 	// or after the tournament has been closed).
-	modifier whenAccessible(address _requester)
+	modifier whenAccessible(MatryxSubmission storage self, address _requester)
 	{
-		require(isAccessible(_requester));
+		require(isAccessible(self, _requester));
 		_;
 	}
 
-	// ----------------- Accessor Methods -----------------
-
-	function isAccessible(address _requester) public constant returns (bool)
+	modifier onlyRound(MatryxSubmission storage self)
 	{
-		// NEEDS WORK.
-		// TODO: Figure out who should set tournamentIsClosed
-		// TODO: Figure out how to make this work for multiple rounds.
-		// TODO: Figure out how to make this submission inaccessible to tournament entrants
-		// when the round this was created in is the current round
-		// (this submission should be visible to those in the tournament if
-		// it was created last round, two rounds ago, etc.)
-		Tournament tournament = Tournament(tournamentAddress);
-		bool senderOwnsTournament = tournament.isOwner(_requester);
-		//bool externallyAccessible = externallyAccessibleDuringTournament;
-		// TODO: Think about this next part carefully.
-		// Who is responsible for tournamentIsClosed? This submission? The tournament?
-		// How often are users going to call the accessors of a submission? And on the other hand...
-		// How expensive would it be for the tournament owner to update all submissions?
-
-		// tl;dr Who should pay what gas:
-		//    1) tournament creator a lot, but only once? 
-		//    2) submission creators a little, but potentially many times?
-		//    3) both??
-		bool closedTournament = !tournament.tournamentOpen();
-
-		return senderOwnsTournament || externallyAccessibleDuringTournament || closedTournament;
+		require(msg.sender == self.roundAddress);
+		_;
 	}
 
-	function getSubmissionOwner() constant whenAccessible(msg.sender) public returns (address) {
-		return owner;
+	/*
+	 * Getters
+	 */
+
+	function isAccessible(MatryxSubmission storage self, address _requester) public constant returns (bool)
+	{
+		Tournament tournament = Tournament(self.tournamentAddress);
+
+		bool requesterOwnsTournament = tournament.isOwner(_requester);
+		bool requesterOwnsSubmission = _requester == self.author;
+		bool externallyAccessible = self.publicallyAccessibleDuringTournament;
+		bool requesterIsEntrant = Round(self.roundAddress).requesterIsEntrant(_requester);
+		bool winningSubmissionChosen = Round(self.roundAddress).submissionChosen();
+		bool closedRoundAndEntrantRequesting = (requesterIsEntrant && winningSubmissionChosen);
+		bool closedTournamentAndAnyoneRequesting = !tournament.tournamentOpen();
+
+		return requesterOwnsTournament || requesterOwnsSubmission || externallyAccessible || closedTournamentAndAnyoneRequesting || closedRoundAndEntrantRequesting;
 	}
 
-	function getReferences() constant whenAccessible(msg.sender) public returns(address[]) {
-		return references;
+	function getReferences(MatryxSubmission storage self) constant whenAccessible(self, msg.sender) public returns(address[]) {
+		return self.references;
 	}
 
-	function getContributors() constant whenAccessible(msg.sender) public returns(address[]) {
-		return contributors;
+	function getContributors(MatryxSubmission storage self) constant whenAccessible(self, msg.sender) public returns(address[]) {
+		return self.contributors;
 	}
 
-	function getExternalAddress() constant whenAccessible(msg.sender) public returns(bytes32) {
-		return externalAddress;
+	function getExternalAddress(MatryxSubmission storage self) constant whenAccessible(self, msg.sender) public returns (bytes32)
+	{
+		return self.externalAddress;
 	}
 
-	function getTimeSubmitted() constant whenAccessible(msg.sender) public returns(uint256) {
-		return timeSubmitted;
+	function getVersionCount(MatryxSubmission storage self) public view returns (uint256)
+	{
+		return self.externalAddress.length;
+	}
+
+	function getTimeSubmitted(MatryxSubmission storage self) constant whenAccessible(self, msg.sender) public returns(uint256) {
+		return self.timeSubmitted;
 	}
 
 	/*
@@ -101,10 +94,66 @@ contract Submission is Ownable {
 	Only the tournament
 	*/
 
-	//TODO setters with correct scoping
+	/*
+	 * Setters
+	 */
 
-	function makeExternallyAccessibleDuringTournament() onlyOwner public
+	function makeExternallyAccessibleDuringTournament(MatryxSubmission storage self) onlyAuthor(self) public
 	{
-		externallyAccessibleDuringTournament = true;
+		self.publicallyAccessibleDuringTournament = true;
 	}
+
+    /// @dev Edit the title of a submission (callable only by submission's owner).
+    /// @param _name New name for the submission.
+	function updateName(MatryxSubmission storage self, string _name) onlyAuthor(self) public 
+	{
+		self.name = _name;
+	}
+
+	/// @dev Update the external address of a submission (callable only by submission's owner).
+    /// @param _externalAddress New content hash for the body of the submission.
+	function updateExternalAddress(MatryxSubmission storage self, bytes32 _externalAddress) onlyAuthor(self) public
+	{
+		self.externalAddress = _externalAddress;
+	}
+
+	/// @dev Add a missing reference to a submission (callable only by submission's owner).
+    /// @param _reference Address of additional reference to include.
+	function addReference(MatryxSubmission storage self, address _reference) onlyAuthor(self) public 
+	{
+		self.references.push(_reference);
+	}
+
+	/// @dev Remove an erroneous reference to a submission (callable only by submission's owner).
+    /// @param _referenceIndex Index of reference to remove.
+	function removeReference(MatryxSubmission storage self, uint256 _referenceIndex) onlyAuthor(self) public
+	{
+		delete self.references[_referenceIndex];
+	}
+
+	/// @dev Add a contributor to a submission (callable only by submission's owner).
+    /// @param _contributor Address of contributor to add to the submission.
+	function addContributor(MatryxSubmission storage self, address _contributor) onlyAuthor(self) public
+	{
+		self.contributors.push(_contributor);
+	}
+
+	/// @dev Remove a contributor from a submission (callable only by submission's owner).
+    /// @param _contributorIndex Index of the contributor to remove from the submission.
+	function removeContributor(MatryxSubmission storage self, uint256 _contributorIndex) onlyAuthor(self) public 
+	{
+		delete self.contributors[_contributorIndex];
+	}
+
+	function setBalance(MatryxSubmission storage self, uint256 _bounty) public onlyRound(self)
+	{
+		self.balance = _bounty;
+	}
+
+	/// @dev Removes a submission from this round (callable only by submission's owner).
+    /// @param _submissionIndex Index of the submission to remove.
+	// function delete(uint256 _submissionIndex) onlyAuthor public
+	// {
+	// 	selfdestruct();
+	// }
 }
