@@ -16,6 +16,40 @@ contract('MatryxPlatform', function(accounts){
   });
 });
 
+contract('MatryxPlatform', async function(accounts) {
+
+  let platform = await MatryxPlatform.new();
+  createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
+  tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
+  let tournament = await Tournament.at(tournamentAddress);
+
+  it("Tournament.openTournament should invoke a TournamentOpened event.", async function() {
+
+    // Start watching the platform events before we induce the one we're looking for.
+    platform.TournamentOpened().watch((error, result) => {
+                if (!error) {
+                        assert.equal(result.args._tournamentName, "tournament", "The name of the tournament should be 'justOpenedTournament'");
+                } else {
+                        assert.false();
+                }
+    });
+
+    let openTournamentTx = await tournament.openTournament();
+  });
+
+  it("Tournament.chooseWinner should invoke a TournmamentClosed event.", async function() {
+    platform.TournamentClosed().watch((error, result) => {
+      if(!error) {
+        assert.equal(result.args._submissionIndex_winner, 123, "The winning submission index should be 123");
+      } else {
+        assert.false();
+      }
+    });
+
+    let closeTournamentTx = await tournament.chooseWinner(1, 1);
+  });
+});
+
 contract('MatryxPlatform', function(accounts)
 {
 	it("The number of tournaments should be 0.", function() {
