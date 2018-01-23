@@ -11,18 +11,18 @@ var MatryxSubmissionFactory = artifacts.require('./factories/MatryxSubmissionFac
 module.exports = function(deployer) {
 	deployer.deploy(SafeMath).then(() =>
 	{
-		deployer.deploy(Strings).then(() =>
+		return deployer.deploy(Strings).then(() =>
 		{
-			deployer.deploy(MatryxSubmissionFactory).then(() => 
+			return deployer.deploy(MatryxSubmissionFactory).then(() => 
 			{
 				deployer.link(SafeMath, MatryxRoundFactory);
-				deployer.deploy(MatryxRoundFactory, MatryxSubmissionFactory.address).then(() => 
+				return deployer.deploy(MatryxRoundFactory, MatryxSubmissionFactory.address).then(() => 
 				{
 					deployer.link(SafeMath, MatryxTournamentFactory);
 					deployer.link(Strings, MatryxTournamentFactory);
-					deployer.deploy(MatryxTournamentFactory, MatryxRoundFactory.address).then(() =>
+					return deployer.deploy(MatryxTournamentFactory, MatryxRoundFactory.address).then(() =>
 					{
-						deployer.deploy(MatryxPlatform, MatryxTournamentFactory.address);
+						return deployer.deploy(MatryxPlatform, MatryxTournamentFactory.address);
 					});
 				});
 			});
