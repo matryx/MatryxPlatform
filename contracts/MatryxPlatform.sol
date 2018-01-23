@@ -1,15 +1,22 @@
 pragma solidity ^0.4.18;
 
 import './MatryxOracleMessenger.sol';
-import './Tournament.sol';
+import '../interfaces/factories/IMatryxTournamentFactory.sol';
+import '../interfaces/IMatryxTournament.sol';
 import './Ownable.sol';
 
 /// @title MatryxPlatform - The Matryx platform contract.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract MatryxPlatform is MatryxOracleMessenger {
 
+  address matryxTournamentFactoryAddress;
   address[] public allTournaments;
   mapping(address=>bool) tournamentExists;
+
+  function MatryxPlatform(address _matryxTournamentFactoryAddress) public
+  {
+    matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
+  }
 
   /*
    * Events
@@ -94,7 +101,7 @@ contract MatryxPlatform is MatryxOracleMessenger {
   /// @return _success Whether or not user was successfully entered into the tournament.
   function enterTournament(address _tournamentAddress) public returns (bool _success)
   {
-      Tournament tournament = Tournament(_tournamentAddress);
+      IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
       // TODO: Charge the user the MTX entry fee.
       bool success = tournament.enterUserInTournament(msg.sender);
       return success;
@@ -112,7 +119,8 @@ contract MatryxPlatform is MatryxOracleMessenger {
   /// @return _tournamentAddress Address of the newly created tournament
   function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyOwner returns (address _tournamentAddress)
   {
-    address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
+    address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
     TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _MTXReward, _entryFee);
     
     // update data structures
@@ -132,7 +140,8 @@ contract MatryxPlatform is MatryxOracleMessenger {
   function getTournament_IsMine(address _tournamentAddress) public constant returns (bool _isMine)
   {
     require(tournamentExists[_tournamentAddress]);
-    return Tournament(_tournamentAddress).getOwner() == msg.sender;
+    Ownable tournament = Ownable(_tournamentAddress);
+    return (tournament.getOwner() == msg.sender);
   }
 
   /// @dev Returns the total number of tournaments
