@@ -19,4 +19,5 @@ interface IMatryxTournament
     function closeTournament(uint256 _submissionIndex) public;
     function enterUserInTournament(address _entrantAddress) public returns (bool success);
     function getEntryFee() public view returns (uint256);
+    function createSubmission(string _name, bytes32 _externalAddress, address _author, address[] _references, address[] _contributors, bool _publicallyAccessible) public returns (uint256 _submissionIndex);
 }

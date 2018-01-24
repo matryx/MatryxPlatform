@@ -22,7 +22,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     //Tournament identification
     string name;
-    address public owner;
     bytes32 public externalAddress;
 
     // Timing and State
@@ -43,14 +42,14 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     mapping(address => SubmissionLocation[]) private giveEntrantAddressGetSubmissions;
     mapping(address => bool) private addressToIsEntrant;
 
-    function MatryxTournament(address _matryxRoundFactoryAddress, address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public {
+    function MatryxTournament(address _platformAddress, address _matryxRoundFactoryAddress, address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public {
         //Clean inputs
         require(_owner != 0x0);
         require(!_tournamentName.toSlice().empty());
         require(_BountyMTX > 0);
         require(_matryxRoundFactoryAddress != 0x0);
         
-        platformAddress = msg.sender;
+        platformAddress = _platformAddress;
         matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
 
         timeCreated = now;
@@ -97,7 +96,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev Requires the function caller to be the platform.
     modifier onlyPlatform()
     {
-        require(platformAddress == msg.sender);
+        require(msg.sender == platformAddress);
         _;
     }
 
@@ -121,6 +120,14 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     {
         // TODO: Finish me!
         require(tournamentOpen);
+        _;
+    }
+
+    modifier whileRoundAcceptingSubmissions()
+    {
+        require(rounds.length > 0);
+        IMatryxRound currentRound = IMatryxRound(rounds[rounds.length-1]);
+        require(currentRound.isOpen());
         _;
     }
 
@@ -163,7 +170,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function roundIsOpen() public view returns (bool)
     {
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
-        return round.roundIsOpen();
+        return round.isOpen();
     }
 
     /*
@@ -229,11 +236,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      */
 
     /// @dev Opens this tournament up to submissions.
-    function openTournament() public
+    function openTournament() public platformOrOwner
     {
-        // Why do we have to do this? Why can't we use
-        // a modifier?
-        require((msg.sender == platformAddress) || (msg.sender == owner));
         // TODO: Uncomment.
         //uint allowedMTX = IMatryxToken(matryxTokenAddress).allowance(msg.sender, this);
         //require(allowedMTX >= BountyMTX);
@@ -250,8 +254,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @param _submissionIndex Index of the winning submission
     function chooseWinner(uint256 _submissionIndex) public platformOrOwner
     {
+        require(_submissionIndex > (rounds.length-1));
         tournamentOpen = false;
- 
+        
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         round.chooseWinningSubmission(_submissionIndex);
         //address winningAuthor = round.getSubmissionAuthor(_submissionIndex);
@@ -322,5 +327,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function getEntryFee() public view returns (uint256)
     {
         return entryFee;
+    }
+
+    function createSubmission(string _name, bytes32 _externalAddress, address _author, address[] _references, address[] _contributors, bool _publicallyAccessible) public returns (uint256 _submissionIndex)
+    {
+        IMatryxRound currentRound = IMatryxRound(rounds[rounds.length-1]);
+        return currentRound.createSubmission(_name, _externalAddress, _author, _references, _contributors, _publicallyAccessible);
+        numberOfSubmissions += 1;
     }
 }

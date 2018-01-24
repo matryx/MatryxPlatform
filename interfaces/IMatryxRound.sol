@@ -2,7 +2,7 @@ pragma solidity ^0.4.18;
 
 interface IMatryxRound
 {
-	function roundIsOpen() public constant returns (bool);
+	function isOpen() public constant returns (bool);
 	function submissionIsAccessible(address _requester, uint256 _index) public constant returns (bool);
 	function requesterIsEntrant(address _requester) public constant returns (bool);
 	function getSubmissions() public constant returns (address[] _submissions);

@@ -22,7 +22,10 @@ module.exports = function(deployer) {
 					deployer.link(Strings, MatryxTournamentFactory);
 					return deployer.deploy(MatryxTournamentFactory, MatryxRoundFactory.address).then(() =>
 					{
-						return deployer.deploy(MatryxPlatform, MatryxTournamentFactory.address);
+						return deployer.deploy(MatryxPlatform, MatryxTournamentFactory.address).then(() =>
+						{
+							MatryxTournamentFactory.deployed().then((instance) => instance.setPlatform(MatryxPlatform.address));
+						});
 					});
 				});
 			});

@@ -1,13 +1,14 @@
 pragma solidity ^0.4.18;
 
 import './MatryxOracleMessenger.sol';
+import '../interfaces/IMatryxPlatform.sol';
 import '../interfaces/factories/IMatryxTournamentFactory.sol';
 import '../interfaces/IMatryxTournament.sol';
 import './Ownable.sol';
 
 /// @title MatryxPlatform - The Matryx platform contract.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
-contract MatryxPlatform is MatryxOracleMessenger {
+contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   address matryxTournamentFactoryAddress;
   address[] public allTournaments;
