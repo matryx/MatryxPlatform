@@ -26,7 +26,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _winningSubmissionIndex);
-
+  event QueryID(string queryID);
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
   /// @param _owner Owner of the tournament.
   /// @param _tournamentAddress Address of the tournament.
@@ -79,8 +79,12 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   function balanceIsNonZero() public view returns (bool)
   {
       uint balance = latestResponseFromOracle(msg.sender);
-      bool nonZero = balance > 0;
-      return nonZero;
+      return balance != 0;
+  }
+
+  function returnTrue() public constant returns (bool)
+  {
+    return true;
   }
 
   // Returns the user's balance
@@ -150,6 +154,11 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   function tournamentCount() public constant returns (uint256 _tournamentCount)
   {
       return allTournaments.length;
+  }
+
+  function getTournamentAtIndex(uint256 _index) public constant returns (address _tournamentAddress)
+  {
+    return allTournaments[_index];
   }
 
 }

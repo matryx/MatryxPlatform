@@ -25,8 +25,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	function MatryxSubmission(address _tournamentAddress, address _roundAddress, address _submissionAuthor, string _name, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, bool _publicallyAccessibleDuringTournament) public
 	{
 		require(_submissionAuthor != 0x0);
-		bytes memory bytesName = bytes(_name);
-		require(bytesName.length > 0);
+		
 
 		tournamentAddress = _tournamentAddress;
 		roundAddress = _roundAddress;

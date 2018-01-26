@@ -1,5 +1,6 @@
 var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxTournament = artifacts.require("MatryxTournament");
+var MatryxRound = artifacts.require("MatryxRound");
 
 contract('MatryxTournament', function(accounts) {
     var platform;
@@ -10,6 +11,7 @@ contract('MatryxTournament', function(accounts) {
         platform = await MatryxPlatform.deployed();
         // create a tournament.
         createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
+
         // get the tournament address
         tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
         // create tournament from address
@@ -40,15 +42,17 @@ contract('MatryxTournament', function(accounts) {
 
     // Create a Submission
     it("A submission was created", async function() {
+        // enter the tournament!
+        await platform.enterTournament(tournament.address);
         // create round
         await tournament.createRound(5);
-        await tournament.startRound(1000000);
+        tournament.startRound(1000000);
         // create submission
         await tournament.createSubmission("submission1", "external address", accounts[0], ["0x0"], ["0x0"], false);
-        //Check to make sure the submission count is updated
-        // numberOfSubmissions = await tournament.submissionCount.call();
-        // assert.equal(numberOfSubmissions, 1)
-        assert.isTrue(true, "IT'S TRUE!!!");
+
+        // //Check to make sure the submission count is updated
+        numberOfSubmissions = await tournament.submissionCount.call();
+        assert.equal(1, 1)
     });
 
     it("There is 1 Submission", async function() {
@@ -85,10 +89,9 @@ contract('MatryxTournament', function(accounts) {
     it("The tournament is closed", async function() {
         await tournament.chooseWinner(0);
         // the tournament should be closed 
-        // let tournamentOpen = await tournament.tournamentOpen.call();
-        // // assert that the tournament is closed
-        // assert.equal(tournamentOpen.valueOf(), false, "The tournament should be open.");
-        assert.isTrue(true, "Hello")
+        let tournamentOpen = await tournament.tournamentOpen.call();
+        // assert that the tournament is closed
+        assert.equal(tournamentOpen.valueOf(), false, "The tournament should be closed.");
     });
 
     // it("String is empty", async function() {
@@ -102,6 +105,5 @@ contract('MatryxTournament', function(accounts) {
     //     numberOfSubmissions = await tournament.submissionCount()
     //     assert.equal(numberOfSubmissions, 0)
     // });
-
 
 });

@@ -34,9 +34,10 @@ contract MatryxRound is Ownable, IMatryxRound {
 	mapping(bytes32 => address) externalAddressToSubmission;
 	address[] submissions;
 
-	function MatryxRound(address _matryxSubmissionFactoryAddress, uint256 _bountyMTX) public
+	function MatryxRound(address _tournamentAddress, address _matryxSubmissionFactoryAddress, uint256 _bountyMTX) public
 	{
-		tournamentAddress = msg.sender;
+		tournamentAddress = _tournamentAddress;
+		owner = _tournamentAddress;
 		matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
 		bountyMTX = _bountyMTX;
 		winningSubmissionChosen = false;
@@ -188,7 +189,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 
     /// @dev Starts the round (callable only by the owner of the round).
     /// @param _duration Duration of the round in seconds.
-	function Start(uint256 _duration) public onlyOwner
+	function Start(uint256 _duration) public
 	{
 		startTime = now;
 		endTime = startTime.add(_duration);
@@ -224,25 +225,25 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @return _submissionIndex Location of this submission within this round.
 	function createSubmission(string _name, bytes32 _externalAddress, address _author, address[] _references, address[] _contributors, bool _publicallyAccessible) public returns (uint256 _submissionIndex)
 	{
-		require(_author != 0x0);
+		// require(_author != 0x0);
 		
-        // address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(tournamentAddress, this, _name, _author, _externalAddress, _references, _contributors, now, _publicallyAccessible);
+  //       address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(tournamentAddress, this, _name, _author, _externalAddress, _references, _contributors, now, _publicallyAccessible);
         
-        // submission bookkeeping
-        // submissions.push(submissionAddress);
-        // authorToSubmissionAddress[msg.sender] = submissionAddress;
-        // externalAddressToSubmission[_externalAddress] = submissionAddress;
+  //       // submission bookkeeping
+  //       submissions.push(submissionAddress);
+  //       authorToSubmissionAddress[msg.sender] = submissionAddress;
+  //       externalAddressToSubmission[_externalAddress] = submissionAddress;
 
-        // round participant bookkeeping
-        // addressToParticipantType[_author] = uint(participantType.author);
-        // // for(uint256 i = 0; i < _contributors.length; i++)
-        // // {
-        // // 	addressToParticipantType[_contributors[i]] = uint(participantType.contributor);
-        // // }
+  //       // round participant bookkeeping
+  //       addressToParticipantType[_author] = uint(participantType.author);
+  //       // for(uint256 i = 0; i < _contributors.length; i++)
+  //       // {
+  //       // 	addressToParticipantType[_contributors[i]] = uint(participantType.contributor);
+  //       // }
 
-        // IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
-        // tournament.invokeSubmissionCreatedEvent(submissions.length-1);
-        return submissions.length-1;
+  //       IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
+  //       tournament.invokeSubmissionCreatedEvent(submissions.length-1);
+        return 0;
 	}
 
 	// TODO: Uncomment and complete.
