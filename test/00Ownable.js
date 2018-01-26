@@ -8,7 +8,7 @@ contract('Ownable', function(accounts){
       ownable = await Ownable.new({from: accounts[0]});
       // get the owner
       owner = await ownable.getOwner.call();
-      // test if the owner is who it should be
+      // test if the owner is who they should be
       assert.equal(owner.valueOf(), accounts[0], "The owner of the contract should be " + accounts[0]); 
   });
 });

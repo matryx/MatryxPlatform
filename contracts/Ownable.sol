@@ -22,6 +22,12 @@ contract Ownable {
     return owner;
   }
 
+  function isOwner(address _sender) public view returns (bool _isOwner)
+  {
+    bool senderIsOwner = (owner == _sender);
+    return senderIsOwner;
+  }
+
   /**
    * @dev Throws if called by any account other than the owner.
    */

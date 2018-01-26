@@ -1,5 +1,5 @@
 let MatryxPlatform = artifacts.require("MatryxPlatform");
-let Tournament = artifacts.require("Tournament");
+let MatryxTournament = artifacts.require("MatryxTournament");
 
 // contract('MatryxPlatform', function(accounts)
 // {

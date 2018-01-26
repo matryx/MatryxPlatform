@@ -11,6 +11,7 @@ contract MatryxOracleMessenger is Ownable {
   event QueryPerformed(uint256 id, address sender);
 
   event StoredResponse(uint256 storedResponse);
+  event ObtainedResponse(uint256 response);
   event FailedToStore(uint256 newResponse, uint256 oldResponse);
   event QueryID(uint256 id);
 

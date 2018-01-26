@@ -1,21 +1,24 @@
 pragma solidity ^0.4.18;
 
-import './math/SafeMath.sol';
+import '../libraries/math/SafeMath.sol';
+import '../interfaces/IMatryxTournament.sol';
+import '../interfaces/IMatryxRound.sol';
+import '../interfaces/factories/IMatryxSubmissionFactory.sol';
+import '../interfaces/IMatryxSubmission.sol';
 import './Ownable.sol';
-import './Tournament.sol';
-import './MatryxToken.sol';
-import './Submission.sol';
 
-/// @title Round - A round within a Matryx tournament.
+/// @title MatryxRound - A round within a Matryx tournament.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
-contract Round is Ownable {
+contract MatryxRound is Ownable, IMatryxRound {
 	using SafeMath for uint256;
-	using Submission for Submission.MatryxSubmission;
 
 	//TODO: time restriction on review period
 	//TODO: allow for refunds
+
 	address public tournamentAddress;
-	address public matryxToken;
+	address public matryxSubmissionFactoryAddress;
+	address public matryxTokenAddress;
+
 	uint256 public roundIndex;
 	address public previousRound;
 	address public nextRound;
@@ -27,13 +30,15 @@ contract Round is Ownable {
 	bool public winningSubmissionChosen;
 
 	mapping(address => uint) addressToParticipantType;
- 	mapping(address => Submission.MatryxSubmission) authorToSubmission;
-	mapping(bytes32 => Submission.MatryxSubmission) externalAddressToSubmission;
-	Submission.MatryxSubmission[] submissions;
+ 	mapping(address => address) authorToSubmissionAddress;
+	mapping(bytes32 => address) externalAddressToSubmission;
+	address[] submissions;
 
-	function Round(uint256 _bountyMTX) public
+	function MatryxRound(address _tournamentAddress, address _matryxSubmissionFactoryAddress, uint256 _bountyMTX) public
 	{
-		tournamentAddress = msg.sender;
+		tournamentAddress = _tournamentAddress;
+		owner = _tournamentAddress;
+		matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
 		bountyMTX = _bountyMTX;
 		winningSubmissionChosen = false;
 	}
@@ -51,9 +56,7 @@ contract Round is Ownable {
     /// @dev Requires that this round is in the open submission state.
 	modifier duringOpenSubmission()
 	{
-		require(now > startTime);
-		require(endTime > now);
-		require(winningSubmissionChosen == false);
+		require(isOpen());
 		_;
 	}
 
@@ -76,7 +79,7 @@ contract Round is Ownable {
 	/// @dev Requires that this round's tournament is open.
 	modifier whileTournamentOpen()
 	{
-		Tournament tournament = Tournament(tournamentAddress);
+		IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
 		require(tournament.tournamentOpen());
 		_;
 	}
@@ -84,14 +87,14 @@ contract Round is Ownable {
 	/// @dev Requires that the desired submission is accessible to the requester.
 	modifier whenAccessible(address _requester, uint256 _index)
 	{
-		require(submissions[_index].isAccessible(_requester));
+		require(IMatryxSubmission(submissions[_index]).isAccessible(_requester));
 		_;
 	}
 
 	/// @dev Requires that the sender be the submission's author.
 	modifier onlySubmissionAuthor(uint256 _submissionIndex)
 	{
-		require(submissions[_submissionIndex].author == msg.sender);
+		require(IMatryxSubmission(submissions[_submissionIndex]).getAuthor() == msg.sender);
 		_;
 	}
 
@@ -101,9 +104,9 @@ contract Round is Ownable {
 
      /// @dev Returns whether or not this round is open to new submissions.
      /// @return Whether or not this round is open to submissions.
-    function roundIsOpen() public constant returns (bool)
+    function isOpen() public constant returns (bool)
 	{
-		return (now > startTime) && (endTime > now) && (winningSubmissionChosen == false);
+		return (startTime < now) && (now < endTime) && (winningSubmissionChosen == false);
 	}
 
 	/// @dev Returns whether or not the submission is accessible to the requester.
@@ -117,7 +120,7 @@ contract Round is Ownable {
 			return false;
 		}
 
-		Submission.MatryxSubmission storage submission = submissions[_index];
+		IMatryxSubmission submission = IMatryxSubmission(submissions[_index]);
 
 		return submission.isAccessible(_requester);
 	}
@@ -133,7 +136,7 @@ contract Round is Ownable {
 
 	/// @dev Returns all submissions made to this round.
 	/// @return _submissions All submissions made to this round.
-	function getSubmissions() public constant returns (Submission.MatryxSubmission[] _submissions)
+	function getSubmissions() public constant returns (address[] _submissions)
 	{
 		return submissions;
 	}
@@ -148,7 +151,7 @@ contract Round is Ownable {
 	/// @return _timeSubmitted Epoch time this this submission was made.
 	function getSubmission(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (bytes32 externalAddress_Versioned)
 	{
-		Submission.MatryxSubmission storage submission = submissions[_index];
+		IMatryxSubmission submission = IMatryxSubmission(submissions[_index]);
 		return submission.getExternalAddress();
 	}
 
@@ -157,7 +160,8 @@ contract Round is Ownable {
 	/// @return Address of this submission's author.
 	function getSubmissionAuthor(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (address) 
 	{
-		return submissions[_index].author;
+		IMatryxSubmission submission = IMatryxSubmission(submissions[_index]);
+		return submission.getAuthor();
 	}
 
 	function submissionChosen() public constant returns (bool)
@@ -185,7 +189,7 @@ contract Round is Ownable {
 
     /// @dev Starts the round (callable only by the owner of the round).
     /// @param _duration Duration of the round in seconds.
-	function Start(uint256 _duration) public onlyOwner
+	function Start(uint256 _duration) public
 	{
 		startTime = now;
 		endTime = startTime.add(_duration);
@@ -195,12 +199,15 @@ contract Round is Ownable {
     /// @param _submissionIndex Index of the winning submission.
 	function chooseWinningSubmission(uint256 _submissionIndex) public onlyOwner duringWinnerSelection
 	{
+		require(_submissionIndex < submissions.length);
 		//TODO: apply time restrictions.
 		winningSubmissionIndex = _submissionIndex;
 
 		uint256 tempBalance = bountyMTX;
 		bountyMTX = 0;
-		submissions[winningSubmissionIndex].setBalance(tempBalance);
+
+		IMatryxSubmission winningSubmission = IMatryxSubmission(submissions[winningSubmissionIndex]);
+		winningSubmission.setBalance(tempBalance);
 		
 		winningSubmissionChosen = true;
 	}
@@ -215,27 +222,28 @@ contract Round is Ownable {
     /// @param _author Author of this submission.
     /// @param _references Addresses of submissions referenced in creating this submission
     /// @param _contributors Contributors to this submission.
-    /// @return (_roundIndex, _submissionIndex) Location of this submission.
-	function createSubmission(string _name, bytes32 _externalAddress, address _author, address[] _references, address[] _contributors, bool _publicallyAccessible) public duringOpenSubmission whileTournamentOpen returns (uint256 _submissionIndex)
+    /// @return _submissionIndex Location of this submission within this round.
+	function createSubmission(string _name, bytes32 _externalAddress, address _author, address[] _references, address[] _contributors, bool _publicallyAccessible) public returns (uint256 _submissionIndex)
 	{
-		require(_author != 0x0);
+		// require(_author != 0x0);
 		
-        Submission.MatryxSubmission memory submission = Submission.MatryxSubmission(tournamentAddress, this, _name, _author, _externalAddress, _references, _contributors, now, _publicallyAccessible, 0);
+  //       address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(tournamentAddress, this, _name, _author, _externalAddress, _references, _contributors, now, _publicallyAccessible);
         
-        // submission bookkeeping
-        submissions.push(submission);
-        authorToSubmission[msg.sender] = submission;
-        externalAddressToSubmission[_externalAddress] = submission;
+  //       // submission bookkeeping
+  //       submissions.push(submissionAddress);
+  //       authorToSubmissionAddress[msg.sender] = submissionAddress;
+  //       externalAddressToSubmission[_externalAddress] = submissionAddress;
 
-        // round participant bookkeeping
-        addressToParticipantType[_author] = uint(participantType.author);
-        for(uint256 i = 0; i < _contributors.length; i++)
-        {
-        	addressToParticipantType[_contributors[i]] = uint(participantType.contributor);
-        }
+  //       // round participant bookkeeping
+  //       addressToParticipantType[_author] = uint(participantType.author);
+  //       // for(uint256 i = 0; i < _contributors.length; i++)
+  //       // {
+  //       // 	addressToParticipantType[_contributors[i]] = uint(participantType.contributor);
+  //       // }
 
-        Tournament(tournamentAddress).invokeSubmissionCreatedEvent(roundIndex, submissions.length-1);
-        return submissions.length-1;
+  //       IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
+  //       tournament.invokeSubmissionCreatedEvent(submissions.length-1);
+        return 0;
 	}
 
 	// TODO: Uncomment and complete.
@@ -244,7 +252,7 @@ contract Round is Ownable {
 
 	// 	// uint submissionReward = submissions[_submissionIndex].balance;
 	// 	// submissions[_submissionIndex].balance = 0;
-	// 	//MatryxToken(matryxToken).transfer(msg.sender, submissionReward);
+	// 	//MatryxToken(matryxTokenAddress).transfer(msg.sender, submissionReward);
 	// } 
 	
 	// TODO: Uncomment and complete.
@@ -252,6 +260,6 @@ contract Round is Ownable {
 	// {
 	// 	uint submissionReward = submissions[_submissionIndex].balance;
 	// 	submissions[_submissionIndex].balance = 0;
-	// 	MatryxToken(matryxToken).transfer(_recipient, submissionReward);
+	// 	MatryxToken(matryxTokenAddress).transfer(_recipient, submissionReward);
 	// }
 }
