@@ -48,8 +48,7 @@ contract('MatryxTournament', function(accounts) {
         await tournament.createRound(5);
         tournament.startRound(1000000);
         // create submission
-        await tournament.createSubmission("submission1", "external address", accounts[0], ["0x0"], ["0x0"], false);
-
+        await tournament.createSubmission("submission1", accounts[0], "external address", ["0x0"], ["0x0"], false);
         // //Check to make sure the submission count is updated
         numberOfSubmissions = await tournament.submissionCount.call();
         assert.equal(1, 1)
