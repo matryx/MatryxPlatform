@@ -1,7 +1,10 @@
+require('babel-register');
+require('babel-polyfill');
+require('babel-preset-env');
+
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
   // to customize your Truffle configuration!
-
 	networks: 
 	{
 	  	development: 

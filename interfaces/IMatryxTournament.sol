@@ -6,7 +6,7 @@ interface IMatryxTournament
     function isCreator(address _sender) public view returns (bool);
     function isEntrant(address _sender) public view returns (bool);
     function tournamentOpen() public view returns (bool);
-    function roundIsOpen() public view returns (bool);
+    function roundIsOpen() public constant returns (bool);
     function getExternalAddress() public view returns (bytes32 _externalAddress);
     function currentRound() public constant returns (uint256 _currentRound);
     function mySubmissions() public view returns (uint256[] _roundIndices, uint256[] _submissionIndices);
@@ -19,5 +19,5 @@ interface IMatryxTournament
     function closeTournament(uint256 _submissionIndex) public;
     function enterUserInTournament(address _entrantAddress) public returns (bool success);
     function getEntryFee() public view returns (uint256);
-    function createSubmission(string _name, bytes32 _externalAddress, address _author, bool _publicallyAccessible) public returns (uint256 _submissionIndex);
+    function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _contributors, address[] _references, bool _publicallyAccessible) public returns (uint256 _submissionIndex);
 }

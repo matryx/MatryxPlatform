@@ -22,7 +22,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	uint256 balance;
 
-	function MatryxSubmission(address _tournamentAddress, address _roundAddress, address _submissionAuthor, string _name, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, bool _publicallyAccessibleDuringTournament) public
+	function MatryxSubmission(address _tournamentAddress, address _roundAddress, string _name, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, bool _publicallyAccessibleDuringTournament) public
 	{
 		require(_submissionAuthor != 0x0);
 		

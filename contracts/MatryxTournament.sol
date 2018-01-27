@@ -169,7 +169,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Returns whether or not a round of this tournament is open.
     /// @return _roundOpen Whether or not a round is open on this tournament.
-    function roundIsOpen() public view returns (bool)
+    function roundIsOpen() public constant returns (bool)
     {
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         return round.isOpen();
@@ -335,13 +335,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return entryFee;
     }
 
-    function createSubmission(string _name, bytes32 _externalAddress, address _author, bool _publicallyAccessible) public returns (uint256 _submissionIndex)
+    function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _contributors, address[] _references, bool _publicallyAccessible) public returns (uint256 _submissionIndex)
     {
-        // CurrentRound(rounds.length-1);
-        // IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
-        // uint256 submissionIndex = round.createSubmission(_name, _externalAddress, _author, _references, _contributors, _publicallyAccessible);
-        // numberOfSubmissions += 1;
-        // return submissionIndex;
-        return 0;
+        CurrentRound(rounds.length-1);
+        IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
+        uint256 submissionIndex = round.createSubmission(_name, _author, _externalAddress, _references, _contributors, _publicallyAccessible);
+        numberOfSubmissions += 1;
+        return submissionIndex;
     }
 }
