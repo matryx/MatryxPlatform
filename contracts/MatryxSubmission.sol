@@ -74,12 +74,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		bool requesterOwnsTournament = ownableTournament.isOwner(_requester);
 		bool requesterOwnsSubmission = _requester == author;
 		bool externallyAccessible = publicallyAccessibleDuringTournament;
-		bool requesterIsEntrant = IMatryxRound(roundAddress).requesterIsEntrant(_requester);
+		bool requesterIsContributor = IMatryxRound(roundAddress).requesterIsContributor(_requester);
 		bool winningSubmissionChosen = IMatryxRound(roundAddress).submissionChosen();
-		bool closedRoundAndEntrantRequesting = (requesterIsEntrant && winningSubmissionChosen);
+		bool closedRoundAndContributorRequesting = (requesterIsContributor && winningSubmissionChosen);
 		bool closedTournamentAndAnyoneRequesting = !tournament.tournamentOpen();
 
-		return requesterOwnsTournament || requesterOwnsSubmission || externallyAccessible || closedTournamentAndAnyoneRequesting || closedRoundAndEntrantRequesting;
+		return requesterOwnsTournament || requesterOwnsSubmission || externallyAccessible || closedTournamentAndAnyoneRequesting || closedRoundAndContributorRequesting;
 	}
 
 	function getName() constant whenAccessible(msg.sender) public returns(string) {

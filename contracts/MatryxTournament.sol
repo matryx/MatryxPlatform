@@ -278,7 +278,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         BountyMTX = BountyMTX.sub(_bountyMTX);
 
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
-        address newRoundAddress = roundFactory.createRound(this, _bountyMTX);
+        address newRoundAddress = roundFactory.createRound(this, msg.sender, _bountyMTX);
 
         rounds.push(newRoundAddress);
         return address(newRoundAddress);
@@ -295,7 +295,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     // @dev Closes the tournament.
     // @param _submissionIndex Index of the winning submission.
-    function closeTournament(uint256 _submissionIndex) public onlyPlatform
+    function closeTournament(uint256 _submissionIndex) public onlyOwner
     {
         require(_submissionIndex < numberOfSubmissions);
 
@@ -335,6 +335,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return entryFee;
     }
 
+    // TODO: Add back modifiers!
     function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _contributors, address[] _references, bool _publicallyAccessible) public returns (uint256 _submissionIndex)
     {
         CurrentRound(rounds.length-1);

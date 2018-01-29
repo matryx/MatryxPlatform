@@ -23,7 +23,7 @@ contract('MatryxTournament', function(accounts) {
             tournamentExists = false
         }
 
-        assert.equal(tournamentExists, true)
+        assert.equal(tournamentExists, true);
     });
 
     // There should be no existing submissions
@@ -46,7 +46,8 @@ contract('MatryxTournament', function(accounts) {
         await platform.enterTournament(tournament.address);
         // create round
         await tournament.createRound(5);
-        tournament.startRound(1000000);
+
+        tournament.startRound(3);
         // create submission
         await tournament.createSubmission("submission1", accounts[0], "external address", ["0x0"], ["0x0"], false);
         // //Check to make sure the submission count is updated

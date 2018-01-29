@@ -34,10 +34,10 @@ contract MatryxRound is Ownable, IMatryxRound {
 	mapping(bytes32 => address) externalAddressToSubmission;
 	address[] submissions;
 
-	function MatryxRound(address _tournamentAddress, address _matryxSubmissionFactoryAddress, uint256 _bountyMTX) public
+	function MatryxRound(address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, uint256 _bountyMTX) public
 	{
 		tournamentAddress = _tournamentAddress;
-		owner = _tournamentAddress;
+		owner = _owner;
 		matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
 		bountyMTX = _bountyMTX;
 		winningSubmissionChosen = false;
@@ -91,6 +91,13 @@ contract MatryxRound is Ownable, IMatryxRound {
 		_;
 	}
 
+	/// @dev Requires the function caller to be the platform or the owner of this tournament
+	modifier tournamentOrOwner()
+    {
+        require((msg.sender == tournamentAddress)||(msg.sender == owner));
+        _;
+    }
+
 	/// @dev Requires that the sender be the submission's author.
 	modifier onlySubmissionAuthor(uint256 _submissionIndex)
 	{
@@ -129,7 +136,10 @@ contract MatryxRound is Ownable, IMatryxRound {
 		return submission.isAccessible(_requester);
 	}
 
-	function requesterIsEntrant(address _requester) public constant returns (bool)
+	/// @dev Returns true if the sender is an entrant in this round.
+	/// @param _requester Address being tested.
+	/// @return Whether or not the requester is a contributor in this round.
+	function requesterIsContributor(address _requester) public constant returns (bool)
 	{
 		return addressToParticipantType[_requester] != 0;
 	}
@@ -168,6 +178,8 @@ contract MatryxRound is Ownable, IMatryxRound {
 		return submission.getAuthor();
 	}
 
+	/// @dev Returns whether or not a winning submission has been chosen.
+	/// @return Whether or not a submission has been chosen.
 	function submissionChosen() public constant returns (bool)
 	{
 		return winningSubmissionChosen;
@@ -201,7 +213,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	/// @dev Choose a winning submission for the round (callable only by the owner of the round).
     /// @param _submissionIndex Index of the winning submission.
-	function chooseWinningSubmission(uint256 _submissionIndex) public onlyOwner duringWinnerSelection
+	function chooseWinningSubmission(uint256 _submissionIndex) public tournamentOrOwner duringWinnerSelection
 	{
 		require(_submissionIndex < submissions.length);
 		//TODO: apply time restrictions.

@@ -106,16 +106,15 @@ contract('MatryxPlatform', async function(accounts)
   it("The balance of the first account is non-zero", async function() {
     let prepareBalanceTx = await platform.prepareBalance(0x0);
     queryID = prepareBalanceTx.logs[0].args.id;
-    await platform.storeQueryResponse(queryID, 1);
-
+    let storeQueryResponseTx = await platform.storeQueryResponse(queryID, 1);
+    //let response = storeQueryResponseTx.logs[0].args.storedResponse;
     let balanceIsNonZero = await platform.balanceIsNonZero();
-    console.log("balance not zero?: " + balanceIsNonZero);
-    // assert.isTrue(balanceIsNonZero.valueOf(), "Balance should be non-zero");
-    //assert.isTrue(balance != 0, true, "Balance should be non-zero");
+    // console.log("balance not zero?: " + balanceIsNonZero);
+    assert.isTrue(balanceIsNonZero.valueOf(), "Balance should be non-zero");
   })
 
-  it("The balance of the first account has already been set. Re-storing is unsuccessful.", async function() {
-    let queryResponseStoreSuccessTx = await platform.storeQueryResponse(queryID, 5000);
+  it("The balance of the first account has already been set. Re-storing is unsuccessful", async function() {
+    let queryResponseStoreSuccessTx = await platform.storeQueryResponse(queryID, 5);
     assert.isNotNull(queryResponseStoreSuccessTx.logs['FailedToStore'], "The balance of the first account was reset");
   })
 });
