@@ -83,13 +83,6 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       return balance != 0;
   }
 
-  function returnTrue() public constant returns (bool)
-  {
-    return true;
-  }
-
-  // Returns the user's balance
-
   /// @dev Returns the user's balance
   /// @return Sender's MTX balance.
   function getBalance() public constant returns (uint256)

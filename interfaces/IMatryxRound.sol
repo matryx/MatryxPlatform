@@ -6,7 +6,7 @@ interface IMatryxRound
 	function submissionIsAccessible(address _requester, uint256 _index) public constant returns (bool);
 	function requesterIsContributor(address _requester) public constant returns (bool);
 	function getSubmissions() public constant returns (address[] _submissions);
-	function getSubmission(uint256 _index) public constant returns (bytes32 externalAddress_Versioned);
+	function getSubmissionBody(uint256 _index) public constant returns (bytes32 externalAddress_Versioned);
 	function getSubmissionAuthor(uint256 _index) public constant returns (address) ;
 	function submissionChosen() public constant returns (bool);
 	function getWinningSubmissionIndex() public constant returns (uint256);

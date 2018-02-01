@@ -63,8 +63,8 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @dev Requires that this round is in the winner selection state.
 	modifier duringWinnerSelection()
 	{
-		require(endTime != 0);
-		require(now > endTime);
+		//require(endTime != 0);
+		require(now >= endTime);
 		require(winningSubmissionChosen == false);
 		_;
 	}
@@ -113,8 +113,8 @@ contract MatryxRound is Ownable, IMatryxRound {
      /// @return Whether or not this round is open to submissions.
     function isOpen() public constant returns (bool)
 	{
-		bool roundStartedBeforeNow = startTime < now;
-		bool roundEndsAfterNow = now < endTime;
+		bool roundStartedBeforeNow = startTime <= now;
+		bool roundEndsAfterNow = now <= endTime;
 		bool winningSubmissionNotYetChosen = !winningSubmissionChosen;
 		bool result = roundStartedBeforeNow && roundEndsAfterNow && winningSubmissionNotYetChosen;
 		return result;
@@ -155,6 +155,10 @@ contract MatryxRound is Ownable, IMatryxRound {
 		return submissions;
 	}
 
+	function getSubmissionAddress(uint256 _index) public constant returns (address _submissionAddress)
+	{
+	}
+
 	/// @dev Returns the contents of a submission.
 	/// @param _index Index of the requested submission.
 	/// @return _name Name of the submission.
@@ -163,7 +167,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @return _references Addresses of submissions referenced in creating this submission
     /// @return _contributors Contributors to this submission.
 	/// @return _timeSubmitted Epoch time this this submission was made.
-	function getSubmission(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (bytes32 externalAddress_Versioned)
+	function getSubmissionBody(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (bytes32 externalAddress_Versioned)
 	{
 		IMatryxSubmission submission = IMatryxSubmission(submissions[_index]);
 		return submission.getExternalAddress();
@@ -213,7 +217,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	/// @dev Choose a winning submission for the round (callable only by the owner of the round).
     /// @param _submissionIndex Index of the winning submission.
-	function chooseWinningSubmission(uint256 _submissionIndex) public tournamentOrOwner duringWinnerSelection
+	function chooseWinningSubmission(uint256 _submissionIndex) public tournamentOrOwner whileTournamentOpen duringWinnerSelection
 	{
 		require(_submissionIndex < submissions.length);
 		//TODO: apply time restrictions.
@@ -239,7 +243,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @param _references Addresses of submissions referenced in creating this submission
     /// @param _contributors Contributors to this submission.
     /// @return _submissionIndex Location of this submission within this round.
-	function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessible) public returns (uint256 _submissionIndex)
+	function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessible) public whileTournamentOpen duringOpenSubmission returns (uint256 _submissionIndex)
 	{
 		require(_author != 0x0);
 		

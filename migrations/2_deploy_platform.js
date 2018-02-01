@@ -1,12 +1,12 @@
 var SafeMath = artifacts.require("../libraries/math/SafeMath.sol");
 var Strings = artifacts.require("../libraries/strings/strings.sol");
 
-var MatryxPlatform = artifacts.require("./MatryxPlatform.sol");
-var MatryxTournament = artifacts.require("./MatryxTournament.sol");
-var MatryxRound = artifacts.require('./MatryxRound.sol');
-var MatryxTournamentFactory = artifacts.require('./MatryxTournamentFactory.sol');
-var MatryxRoundFactory = artifacts.require('./factories/MatryxRoundFactory.sol');
-var MatryxSubmissionFactory = artifacts.require('./factories/MatryxSubmissionFactory.sol');
+var MatryxPlatform = artifacts.require("MatryxPlatform");
+var MatryxTournament = artifacts.require("MatryxTournament");
+var MatryxRound = artifacts.require("MatryxRound");
+var MatryxTournamentFactory = artifacts.require("MatryxTournamentFactory");
+var MatryxRoundFactory = artifacts.require("MatryxRoundFactory");
+var MatryxSubmissionFactory = artifacts.require("MatryxSubmissionFactory");
 
 module.exports = function(deployer) {
 	deployer.deploy(SafeMath).then(() =>
@@ -24,7 +24,7 @@ module.exports = function(deployer) {
 					{
 						return deployer.deploy(MatryxPlatform, MatryxTournamentFactory.address).then(() =>
 						{
-							MatryxTournamentFactory.deployed().then((instance) => instance.setPlatform(MatryxPlatform.address));
+							return MatryxTournamentFactory.deployed().then((instance) => instance.setPlatform(MatryxPlatform.address));
 						});
 					});
 				});

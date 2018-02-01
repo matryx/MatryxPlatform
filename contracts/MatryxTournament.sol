@@ -30,7 +30,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     address[] public rounds;
     uint256 public reviewPeriod;
     uint256 public tournamentClosedTime;
-    uint public maxRounds = 1;
+    uint public maxRounds = 5;
     bool public tournamentOpen = false;
 
     // Reward and fee
@@ -188,9 +188,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Returns the current round number.
     /// @return _currentRound Number of the current round.
-    function currentRound() public constant returns (uint256 _currentRound)
+    function currentRound() public constant returns (uint256 _currentRound, address _currentRoundAddress)
     {
-        return rounds.length;
+        return (rounds.length, rounds[rounds.length-1]);
     }
 
     /// @dev Returns all of the sender's submissions to this tournament.
@@ -212,7 +212,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev Returns all of the sender's submissions to this tournament
     /// @param _sender Explicit sender address.
     /// @return (_roundIndices[], _submissionIndices[]) Locations of the sender's submissions.
-    function submissionsByAddress(address _sender) public view onlyPlatform returns (uint256[] _roundIndices, uint256[] _submissionIndices)
+    function submissionsByContributorAddress(address _sender) public view onlyPlatform returns (uint256[] _roundIndices, uint256[] _submissionIndices)
     {
         SubmissionLocation[] memory submissionLocations = giveEntrantAddressGetSubmissions[_sender];
         uint256[] memory roundIndices;
@@ -252,23 +252,24 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         platform.invokeTournamentOpenedEvent(owner, this, name, externalAddress, BountyMTX, entryFee);
     }
 
-    /// @dev Chooses the winner for the round.
+    /// @dev Chooses the winner for the round. If this is the last round, closes the tournament.
     /// @param _submissionIndex Index of the winning submission
-    function chooseWinner(uint256 _submissionIndex) public platformOrOwner
+    function chooseWinner(uint256 _submissionIndex) public platformOrOwner whileTournamentOpen
     {
-        // require(_submissionIndex > (rounds.length-1));
-        tournamentOpen = false;
-        
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         round.chooseWinningSubmission(_submissionIndex);
+        RoundWinnerChosen(_submissionIndex);
+
         //address winningAuthor = round.getSubmissionAuthor(_submissionIndex);
         //IMatryxToken.approve(winningAuthor, round.bountyMTX);
 
-        RoundWinnerChosen(_submissionIndex);
-
-        //TODO: Add logic to check if is the last round.
-        //If so, invoke an event on the platform signaling
-        //that the tournament has closed.
+        if(rounds.length == maxRounds)
+        {
+            tournamentOpen = false;
+            IMatryxPlatform platform = IMatryxPlatform(platformAddress);
+            platform.invokeTournamentClosedEvent(this, rounds.length, _submissionIndex);
+            // IMatryxToken.approve(winningAuthor, tournament.BountyMTX);
+        }
     }
 
     /// @dev Creates a new round.
@@ -297,11 +298,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     // @param _submissionIndex Index of the winning submission.
     function closeTournament(uint256 _submissionIndex) public onlyOwner
     {
-        require(_submissionIndex < numberOfSubmissions);
-
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
+        round.chooseWinningSubmission(_submissionIndex);
+        RoundWinnerChosen(_submissionIndex);
 
-        address winningAuthor = round.getSubmissionAuthor(_submissionIndex);
+        //address winningAuthor = round.getSubmissionAuthor(_submissionIndex);
         //IMatryxToken.approve(winningAuthor, BountyMTX);
 
         tournamentOpen = false;
@@ -336,7 +337,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     }
 
     // TODO: Add back modifiers!
-    function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _contributors, address[] _references, bool _publicallyAccessible) public returns (uint256 _submissionIndex)
+    function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _contributors, address[] _references, bool _publicallyAccessible) public onlyEntrant whileTournamentOpen returns (uint256 _submissionIndex)
     {
         CurrentRound(rounds.length-1);
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);

@@ -8,9 +8,9 @@ interface IMatryxTournament
     function tournamentOpen() public view returns (bool);
     function roundIsOpen() public constant returns (bool);
     function getExternalAddress() public view returns (bytes32 _externalAddress);
-    function currentRound() public constant returns (uint256 _currentRound);
+    function currentRound() public constant returns (uint256 _currentRound, address _currentRoundAddress);
     function mySubmissions() public view returns (uint256[] _roundIndices, uint256[] _submissionIndices);
-    function submissionsByAddress(address _sender) public view returns (uint256[] _roundIndices, uint256[] _submissionIndices);
+    function submissionsByContributorAddress(address _sender) public view returns (uint256[] _roundIndices, uint256[] _submissionIndices);
     function submissionCount() public view returns (uint256 _submissionCount);
     function openTournament() public;
     function chooseWinner(uint256 _submissionIndex) public;

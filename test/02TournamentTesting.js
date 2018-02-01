@@ -5,6 +5,7 @@ var MatryxRound = artifacts.require("MatryxRound");
 contract('MatryxTournament', function(accounts) {
     var platform;
     var tournament;
+    var round;
 
     it("Created tournament should exist", async function() {
 
@@ -17,13 +18,13 @@ contract('MatryxTournament', function(accounts) {
         // create tournament from address
         tournament = await MatryxTournament.at(tournamentAddress);
 
-        if(tournament){
+        if(tournament) {
             tournamentExists = true
         } else{
             tournamentExists = false
         }
 
-        assert.equal(tournamentExists, true);
+        assert.equal(tournamentExists, true)
     });
 
     // There should be no existing submissions
@@ -47,12 +48,17 @@ contract('MatryxTournament', function(accounts) {
         // create round
         await tournament.createRound(5);
 
-        tournament.startRound(3);
+        let roundAddress = await tournament.rounds.call(0);
+        round = MatryxRound.at(roundAddress);
+
+        round.Start(0);
+
+        //tournament.startRound(10);
         // create submission
         await tournament.createSubmission("submission1", accounts[0], "external address", ["0x0"], ["0x0"], false);
         // //Check to make sure the submission count is updated
         numberOfSubmissions = await tournament.submissionCount.call();
-        assert.equal(1, 1)
+        assert.equal(numberOfSubmissions, 1, "The number of submissions should equal one.");
     });
 
     it("There is 1 Submission", async function() {
@@ -89,9 +95,9 @@ contract('MatryxTournament', function(accounts) {
     it("The tournament is closed", async function() {
         await tournament.chooseWinner(0);
         // the tournament should be closed 
-        let tournamentOpen = await tournament.tournamentOpen.call();
+        let roundOpen = await round.isOpen();
         // assert that the tournament is closed
-        assert.equal(tournamentOpen.valueOf(), false, "The tournament should be closed.");
+        assert.equal(roundOpen.valueOf(), false, "The round should be closed.");
     });
 
     // it("String is empty", async function() {

@@ -1,5 +1,6 @@
-let MatryxPlatform = artifacts.require("MatryxPlatform");
-let MatryxTournament = artifacts.require("MatryxTournament");
+// let MatryxPlatform = artifacts.require("MatryxPlatform");
+// let MatryxTournament = artifacts.require("MatryxTournament");
+// let MatryxRound = artifacts.require("MatryxRound");
 
 // contract('MatryxPlatform', function(accounts)
 // {
@@ -18,18 +19,26 @@ let MatryxTournament = artifacts.require("MatryxTournament");
 
 // 		// create tournament from address
 // 		tournament = await Tournament.at(tournamentAddress);
+// 		//
+// 		await tournament.createRound(4);
+// 		await tournament.startRound(1);
 
-// 		// become entrant in tournament
-// 		await platform.enterTournament(tournamentAddress);
-// 		await tournament.createSubmission("submission1", "external address", ["0x0"], ["0x0"]);
+// 		let currentRound = await tournament.currentRound.call();
 
-// 		let mySubmissions = await tournament.mySubmissions.call();
-// 		// create the submission in tournament
-// 		let submissionOne = await Submission.at(mySubmissions[0]);
-// 		let submissionOwner = await submissionOne.getSubmissionOwner.call();
+// 		console.log("current round: " + currentRound);
 
-// 		// check that we're both the tournament and submission owner
-// 		assert.equal(submissionOwner, accounts[0], "The owner of the submission should be the owner of the tournament");
+// 		// // become entrant in tournament
+// 		// await platform.enterTournament(tournamentAddress);
+// 		// await tournament.createSubmission("submission1", "external address", ["0x0"], ["0x0"]);
+
+// 		// let mySubmissions = await tournament.mySubmissions.call();
+// 		// // create the submission in tournament
+// 		// let submissionOne = await Submission.at(mySubmissions[0]);
+// 		// let submissionOwner = await submissionOne.getSubmissionOwner.call();
+
+// 		// // check that we're both the tournament and submission owner
+// 		// assert.equal(submissionOwner, accounts[0], "The owner of the submission should be the owner of the tournament");
+// 		assert.isTrue(true, "this is true");
 // 	});
 
 //     it("Submission two owner is submission creator", async function() {

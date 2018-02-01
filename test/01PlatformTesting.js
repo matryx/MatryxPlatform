@@ -1,27 +1,24 @@
 var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxTournament = artifacts.require("MatryxTournament");
+var MatryxRound = artifacts.require("MatryxRound");
 
 contract('MatryxPlatform', function(accounts){
+
+  let platform;
+  let tournament;
+
   it("The owner of the platform should be the creator of the platform", async function() {
-      let platform = await MatryxPlatform.deployed();
+      platform = await MatryxPlatform.deployed();
       // create a tournament
       createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
       // get the tournament address
       tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
       // create tournament from address
-      let tournament = await MatryxTournament.at(tournamentAddress);
+      tournament = await MatryxTournament.at(tournamentAddress);
 
       let creatorIsOwner = await tournament.isOwner.call(accounts[0]);
       assert(creatorIsOwner.valueOf(), true, "The owner and creator of the tournament should be the same"); 
   });
-});
-
-contract('MatryxPlatform', async function(accounts) {
-
-  let platform = await MatryxPlatform.new();
-  createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
-  tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
-  let tournament = await MatryxTournament.at(tournamentAddress);
 
   it("Tournament.openTournament should invoke a TournamentOpened event.", async function() {
 
@@ -40,13 +37,19 @@ contract('MatryxPlatform', async function(accounts) {
   it("Tournament.chooseWinner should invoke a TournmamentClosed event.", async function() {
     platform.TournamentClosed().watch((error, result) => {
       if(!error) {
-        assert.equal(result.args._submissionIndex_winner, 123, "The winning submission index should be 123");
+        assert.equal(result.args._winningSubmissionIndex, 1, "The winning submission index should be 123");
       } else {
         assert.false();
       }
     });
 
-    let closeTournamentTx = await tournament.chooseWinner(1, 1);
+    await platform.enterTournament(tournament.address);
+    await tournament.createRound(5);
+    let roundAddress = await tournament.rounds.call(0);
+    let round = await MatryxRound.at(roundAddress);
+    await round.Start(0);
+    await tournament.createSubmission("submission1", accounts[0], "external address", ["0x0"], ["0x0"], false);
+    let closeTournamentTx = await tournament.chooseWinner(0);
   });
 });
 
@@ -86,7 +89,6 @@ contract('MatryxPlatform', function(accounts) {
   it("The number of tournaments should be 2", async function() {
     createTournamentTransaction = await platform.createTournament("tournament 2", "external address", 100, 2);
     let tournamentCount = await platform.tournamentCount.call();
-
     assert.equal(tournamentCount.valueOf(), 2, "The number of tournaments should be 2.");
   })
 });
@@ -109,14 +111,14 @@ contract('MatryxPlatform', async function(accounts)
     let storeQueryResponseTx = await platform.storeQueryResponse(queryID, 1);
     //let response = storeQueryResponseTx.logs[0].args.storedResponse;
     let balanceIsNonZero = await platform.balanceIsNonZero();
-    // console.log("balance not zero?: " + balanceIsNonZero);
+    console.log("balance not zero?: " + balanceIsNonZero);
     assert.isTrue(balanceIsNonZero.valueOf(), "Balance should be non-zero");
-  })
+  });
 
   it("The balance of the first account has already been set. Re-storing is unsuccessful", async function() {
     let queryResponseStoreSuccessTx = await platform.storeQueryResponse(queryID, 5);
     assert.isNotNull(queryResponseStoreSuccessTx.logs['FailedToStore'], "The balance of the first account was reset");
-  })
+  });
 });
 
 contract('MatryxPlatform', async function(accounts)
@@ -142,7 +144,7 @@ contract('MatryxPlatform', async function(accounts)
     await platform.enterTournament(tournamentAddress);
     let isEntrant = await tournament.isEntrant.call(accounts[0]);
     assert.equal(isEntrant.valueOf(), true, "The first account should be entered into the tournament.")
-  })
+  });
 
   it("Another person becomes an entrant in the tournament", async function()
   {
@@ -157,4 +159,5 @@ contract('MatryxPlatform', async function(accounts)
     let isEntrant = await tournament.isEntrant.call(accounts[2]);
     assert.equal(isEntrant.valueOf(), false, "The third account should not be entered into the tournament");
   })
+
 });
