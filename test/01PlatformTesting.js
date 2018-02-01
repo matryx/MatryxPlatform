@@ -53,20 +53,17 @@ contract('MatryxPlatform', function(accounts){
   });
 });
 
-contract('MatryxPlatform', function(accounts)
-{
-	it("The number of tournaments should be 0.", function() {
-    return MatryxPlatform.deployed().then(function(instance) {
-      return instance.tournamentCount();
-    }).then(function(count) {
-    	assert.equal(count.valueOf(), 0, "The tournament count was non-zero to begin with.");
-    });
-  });
-});
-
 contract('MatryxPlatform', function(accounts) {
 	let platform;
 	var createTournamentTransaction;
+
+  it("The number of tournaments should be 0.", function() {
+    return MatryxPlatform.deployed().then(function(instance) {
+      return instance.tournamentCount();
+    }).then(function(count) {
+      assert.equal(count.valueOf(), 0, "The tournament count was non-zero to begin with.");
+    });
+  });
 
   it("The number of tournaments should be 1", async function() {
     platform = await MatryxPlatform.deployed();
