@@ -36,6 +36,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		references = _references;
 		contributors = _contributors;
 		timeSubmitted = _timeSubmitted;
+		publicallyAccessibleDuringTournament = _publicallyAccessibleDuringTournament;
 	}
 
 	/*
@@ -79,7 +80,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		bool closedRoundAndContributorRequesting = (requesterIsContributor && winningSubmissionChosen);
 		bool closedTournamentAndAnyoneRequesting = !tournament.tournamentOpen();
 
-		return requesterOwnsTournament || requesterOwnsSubmission || externallyAccessible || closedTournamentAndAnyoneRequesting || closedRoundAndContributorRequesting;
+		return requesterOwnsTournament || requesterOwnsSubmission || externallyAccessible || closedRoundAndContributorRequesting || closedTournamentAndAnyoneRequesting;
 	}
 
 	function getName() constant whenAccessible(msg.sender) public returns(string) {

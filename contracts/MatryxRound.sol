@@ -32,6 +32,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	mapping(address => uint) addressToParticipantType;
  	mapping(address => address) authorToSubmissionAddress;
 	mapping(bytes32 => address) externalAddressToSubmission;
+	mapping(address => bool)  submissionExists;
 	address[] submissions;
 
 	function MatryxRound(address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, uint256 _bountyMTX) public
@@ -70,9 +71,15 @@ contract MatryxRound is Ownable, IMatryxRound {
 	}
 
 	/// @dev Requires that a winner has been selected for this round.
-	modifier afterWinnerSelected()
+	// modifier afterWinnerSelected()
+	// {
+	// 	require(winningSubmissionChosen == true);
+	// 	_;
+	// }
+
+	modifier onlyTournament()
 	{
-		require(winningSubmissionChosen == true);
+		require(msg.sender == tournamentAddress);
 		_;
 	}
 
@@ -99,11 +106,11 @@ contract MatryxRound is Ownable, IMatryxRound {
     }
 
 	/// @dev Requires that the sender be the submission's author.
-	modifier onlySubmissionAuthor(uint256 _submissionIndex)
-	{
-		require(IMatryxSubmission(submissions[_submissionIndex]).getAuthor() == msg.sender);
-		_;
-	}
+	// modifier onlySubmissionAuthor(uint256 _submissionIndex)
+	// {
+	// 	require(IMatryxSubmission(submissions[_submissionIndex]).getAuthor() == msg.sender);
+	// 	_;
+	// }
 
 	/*
      * Access Control Methods
@@ -121,20 +128,26 @@ contract MatryxRound is Ownable, IMatryxRound {
 	}
 
 	/// @dev Returns whether or not the submission is accessible to the requester.
-	/// @param _requester Address requesting the submission
 	/// @param _index Index of the submission being requested.
     /// @return Whether or not the submission is accessible to the requester.
-	function submissionIsAccessible(address _requester, uint256 _index) public constant returns (bool)
+	function submissionIsAccessible(uint256 _index) public constant returns (bool)
 	{
-		if(submissions.length - 1 < _index)
-		{
-			return false;
-		}
+		require(_index < submissions.length);
 
 		IMatryxSubmission submission = IMatryxSubmission(submissions[_index]);
-
-		return submission.isAccessible(_requester);
+		return submission.isAccessible(msg.sender);
 	}
+
+	/// @dev Returns whether or not the submission is accessible to the requester.
+	/// @param _submissionAddress Address of the submission being requested.
+    /// @return Whether or not the submission is accessible to the requester.
+	// function submissionIsAccessible(address _submissionAddress) public constant returns (bool)
+	// {
+	// 	require(submissionExists[_submissionAddress]);
+
+	// 	IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
+	// 	return submission.isAccessible(msg.sender);
+	// }
 
 	/// @dev Returns true if the sender is an entrant in this round.
 	/// @param _requester Address being tested.
@@ -157,6 +170,9 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	function getSubmissionAddress(uint256 _index) public constant returns (address _submissionAddress)
 	{
+		require(_index < submissions.length);
+
+		return submissions[_index];
 	}
 
 	/// @dev Returns the contents of a submission.
@@ -243,7 +259,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @param _references Addresses of submissions referenced in creating this submission
     /// @param _contributors Contributors to this submission.
     /// @return _submissionIndex Location of this submission within this round.
-	function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessible) public whileTournamentOpen duringOpenSubmission returns (uint256 _submissionIndex)
+	function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessible) public onlyTournament whileTournamentOpen duringOpenSubmission returns (uint256 _submissionIndex)
 	{
 		require(_author != 0x0);
 		
@@ -252,6 +268,7 @@ contract MatryxRound is Ownable, IMatryxRound {
         
         //submission bookkeeping
         submissions.push(submissionAddress);
+        submissionExists[submissionAddress] = true;
         authorToSubmissionAddress[msg.sender] = submissionAddress;
         externalAddressToSubmission[_externalAddress] = submissionAddress;
 

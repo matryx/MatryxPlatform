@@ -56,6 +56,7 @@ contract('MatryxPlatform', function(accounts){
 contract('MatryxPlatform', function(accounts) {
 	let platform;
 	var createTournamentTransaction;
+  var tournamentAddress;
 
   it("The number of tournaments should be 0.", function() {
     return MatryxPlatform.deployed().then(function(instance) {
@@ -68,6 +69,8 @@ contract('MatryxPlatform', function(accounts) {
   it("The number of tournaments should be 1", async function() {
     platform = await MatryxPlatform.deployed();
     createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
+    tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
+
     let tournamentCount = await platform.tournamentCount();
     // assert there should be one tournament
     assert.equal(tournamentCount.valueOf(), 1, "The number of tournaments should be 1.");
@@ -87,6 +90,16 @@ contract('MatryxPlatform', function(accounts) {
     createTournamentTransaction = await platform.createTournament("tournament 2", "external address", 100, 2);
     let tournamentCount = await platform.tournamentCount.call();
     assert.equal(tournamentCount.valueOf(), 2, "The number of tournaments should be 2.");
+  })
+
+  it("The first tournament should be mine", async function() {
+    let firstTournamentIsMine = await platform.getTournament_IsMine.call(tournamentAddress);
+    assert.isTrue(firstTournamentIsMine, "The first tournament does not belong to accounts[0]");
+  })
+
+  it("The address of the first tournament should be the TournamentCreated event address", async function() {
+    let lookupFirstTournamentAddress = await platform.getTournamentAtIndex.call(0);
+    assert.equal(tournamentAddress, lookupFirstTournamentAddress.valueOf(), "Addresses inconsistent for tournament.");
   })
 });
 

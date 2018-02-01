@@ -151,7 +151,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   function getTournamentAtIndex(uint256 _index) public constant returns (address _tournamentAddress)
   {
-    require(_index > 0);
+    require(_index >= 0);
     require(_index < allTournaments.length);
     return allTournaments[_index];
   }
