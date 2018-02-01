@@ -47,7 +47,7 @@ contract MatryxOracleMessenger is Ownable {
   // @param _query Bytes representing the query.
   // @param _sender Sender of the query (ie user checking their balance).
   // @return queryID for the Oracle to use in storing their response.
-  function Query(bytes32 _query, address _sender) external returns (uint256) {
+  function Query(bytes32 _query, address _sender) external {
     MatryxQueryEncrypter encrypter;
     // If there's already a queryResolver for this user
     if(address(queryEncrypters[_sender]) > 0x0)
@@ -69,7 +69,6 @@ contract MatryxOracleMessenger is Ownable {
 
     // Let our Alpha Matryx server know that a query has been performed!
     QueryPerformed(queryID, _sender);
-    return queryID;
   }
 
   /// @dev Stores a query response (Only to be used by MatryxPlatform, MatryxOracleMessenger and MatryxQueryEncrypter.)

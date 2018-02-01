@@ -71,8 +71,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       uint256 queryResponse = queryResponses[qID];
       require(queryResponse == 0x0);
 
-      uint256 queryID = this.Query(bytes32(_toIgnore), msg.sender);
-      QueryID(queryID);
+      this.Query(bytes32(_toIgnore), msg.sender);
   }
 
   /// @dev Returns whether or not the user can use the platform.
