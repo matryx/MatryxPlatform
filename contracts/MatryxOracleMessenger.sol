@@ -11,6 +11,7 @@ contract MatryxOracleMessenger is Ownable {
   event QueryPerformed(uint256 id, address sender);
 
   event StoredResponse(uint256 storedResponse);
+  event ObtainedResponse(uint256 response);
   event FailedToStore(uint256 newResponse, uint256 oldResponse);
   event QueryID(uint256 id);
 
@@ -87,16 +88,14 @@ contract MatryxOracleMessenger is Ownable {
           fromQuerierToQueryID[msg.sender] = _queryID;
           queryResponses[_queryID] = _response;
           StoredResponse(queryResponses[_queryID]);
-          FailedToStore(_response, existingResponse);
-          QueryID(oldQueryID);
           return true;
       }
       else
       {
-        // Otherwise, we do nothing with the response,
-        // and return false (unsuccessful storage of response).
-        FailedToStore(_response, queryResponses[_queryID]);
-        return false;
+          // Otherwise, we do nothing with the response,
+          // and return false (unsuccessful storage of response).
+          FailedToStore(_response, queryResponses[_queryID]);
+          return false;
       }
   }
 }

@@ -3,7 +3,7 @@ pragma solidity ^0.4.18;
 /**
  * Matryx Ethereum token interface.
  */
-interface MatryxToken {
+interface IMatryxToken {
   function balanceOf(address who) public constant returns (uint256);
   function allowance(address owner, address spender) public constant returns (uint256);
   function transferFrom(address from, address to, uint256 value) public returns (bool);

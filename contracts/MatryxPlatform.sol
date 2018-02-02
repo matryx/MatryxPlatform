@@ -1,15 +1,23 @@
 pragma solidity ^0.4.18;
 
 import './MatryxOracleMessenger.sol';
-import './Tournament.sol';
+import '../interfaces/IMatryxPlatform.sol';
+import '../interfaces/factories/IMatryxTournamentFactory.sol';
+import '../interfaces/IMatryxTournament.sol';
 import './Ownable.sol';
 
 /// @title MatryxPlatform - The Matryx platform contract.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
-contract MatryxPlatform is MatryxOracleMessenger {
+contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
+  address matryxTournamentFactoryAddress;
   address[] public allTournaments;
   mapping(address=>bool) tournamentExists;
+
+  function MatryxPlatform(address _matryxTournamentFactoryAddress) public
+  {
+    matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
+  }
 
   /*
    * Events
@@ -18,7 +26,7 @@ contract MatryxPlatform is MatryxOracleMessenger {
   event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _winningSubmissionIndex);
-
+  event QueryID(string queryID);
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
   /// @param _owner Owner of the tournament.
   /// @param _tournamentAddress Address of the tournament.
@@ -71,11 +79,8 @@ contract MatryxPlatform is MatryxOracleMessenger {
   function balanceIsNonZero() public view returns (bool)
   {
       uint balance = latestResponseFromOracle(msg.sender);
-      bool nonZero = balance > 0;
-      return nonZero;
+      return balance != 0;
   }
-
-  // Returns the user's balance
 
   /// @dev Returns the user's balance
   /// @return Sender's MTX balance.
@@ -94,7 +99,7 @@ contract MatryxPlatform is MatryxOracleMessenger {
   /// @return _success Whether or not user was successfully entered into the tournament.
   function enterTournament(address _tournamentAddress) public returns (bool _success)
   {
-      Tournament tournament = Tournament(_tournamentAddress);
+      IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
       // TODO: Charge the user the MTX entry fee.
       bool success = tournament.enterUserInTournament(msg.sender);
       return success;
@@ -112,7 +117,8 @@ contract MatryxPlatform is MatryxOracleMessenger {
   /// @return _tournamentAddress Address of the newly created tournament
   function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyOwner returns (address _tournamentAddress)
   {
-    address newTournament = new Tournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
+    address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
     TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _MTXReward, _entryFee);
     
     // update data structures
@@ -132,7 +138,8 @@ contract MatryxPlatform is MatryxOracleMessenger {
   function getTournament_IsMine(address _tournamentAddress) public constant returns (bool _isMine)
   {
     require(tournamentExists[_tournamentAddress]);
-    return Tournament(_tournamentAddress).getOwner() == msg.sender;
+    Ownable tournament = Ownable(_tournamentAddress);
+    return (tournament.getOwner() == msg.sender);
   }
 
   /// @dev Returns the total number of tournaments
@@ -140,6 +147,13 @@ contract MatryxPlatform is MatryxOracleMessenger {
   function tournamentCount() public constant returns (uint256 _tournamentCount)
   {
       return allTournaments.length;
+  }
+
+  function getTournamentAtIndex(uint256 _index) public constant returns (address _tournamentAddress)
+  {
+    require(_index >= 0);
+    require(_index < allTournaments.length);
+    return allTournaments[_index];
   }
 
 }
