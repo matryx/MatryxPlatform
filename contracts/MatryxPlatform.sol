@@ -13,6 +13,8 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   address matryxTournamentFactoryAddress;
   address[] public allTournaments;
   mapping(address=>bool) tournamentExists;
+  mapping(address=>address[]) entrantToTournamentArray;
+  mapping(address=>address[]) authorToSubmissionArray;
 
   function MatryxPlatform(address _matryxTournamentFactoryAddress) public
   {
@@ -102,6 +104,10 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
       // TODO: Charge the user the MTX entry fee.
       bool success = tournament.enterUserInTournament(msg.sender);
+      if(success)
+      {
+        updateMyTournaments(msg.sender, _tournamentAddress);
+      }
       return success;
   }
 
@@ -115,7 +121,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @param _MTXReward Total tournament reward in MTX.
   /// @param _entryFee Fee to charge participant upon entering into tournament.
   /// @return _tournamentAddress Address of the newly created tournament
-  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyOwner returns (address _tournamentAddress)
+  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public returns (address _tournamentAddress)
   {
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
     address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
@@ -126,6 +132,16 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     tournamentExists[newTournament] = true;
 
     return newTournament;
+  }
+
+  function updateMyTournaments(address _author, address _tournament) internal
+  {
+    entrantToTournamentArray[_author].push(_tournament);
+  }
+
+  function updateMySubmissions(address _author, address _submission) public onlyTournament(msg.sender)
+  {
+    authorToSubmissionArray[_author].push(_submission);
   }
 
   /*
@@ -156,4 +172,19 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return allTournaments[_index];
   }
 
+  /*
+   * Getter Methods
+   */
+
+   /// @dev Returns addresses for submissions the sender has created.
+   /// @return Address array representing submissions.
+   function myTournaments() public constant returns (address[])
+   {
+      return entrantToTournamentArray[msg.sender];
+   }
+
+   function mySubmissions() public constant returns (address[])
+   {
+    return authorToSubmissionArray[msg.sender];
+   }
 }

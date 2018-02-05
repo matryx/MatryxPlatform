@@ -6,14 +6,12 @@ import "./MatryxOracleMessenger.sol";
 /// @author Max Howard - <max@nanome.ai>
 contract MatryxQueryEncrypter {
 
-  // The owner of this contract. i.e. The single TinyOracle contract.
+  // The owner of this contract. i.e. The single MatryxOracleMessenger contract.
   MatryxOracleMessenger owner;
   // The address of the querier (user) for the query this resolver has been given.
   address querier;
   // The id of the query (this contract generates this value).
   uint256 queryID;
-  // The response. The server 
-  bytes32 response;
 
   function MatryxQueryEncrypter(address _querier) public {
     owner = MatryxOracleMessenger(msg.sender);
@@ -25,15 +23,10 @@ contract MatryxQueryEncrypter {
     _;
   }
 
-  modifier querierOnly {
-    require(msg.sender == querier);
-    _;
-  }
-
   /// @dev Generates a Query ID for this query and returns it.
   /// @param _query Query being made.
   /// @return _id Query ID generated.
-  function query(bytes32 _query) owneronly public returns (uint256 _id) {
+  function generateQueryID(bytes32 _query) owneronly public returns (uint256 _id) {
     // Set the queryID for this QueryResolver by hashing:
     // 1) The current blocknumber
     // 2) The time
@@ -41,12 +34,7 @@ contract MatryxQueryEncrypter {
     // 4) The sender of the query.
     queryID = uint256(keccak256(block.number, now, _query, msg.sender));
 
-    // Return to the MatryxOracle the queryID we just created.
+    // Return to the MatryxOracleMessenger the queryID we just created.
     return (queryID);
-  }
-
-  /// @dev Self destruct method.
-  function kill() owneronly public {
-    selfdestruct(msg.sender);
   }
 }

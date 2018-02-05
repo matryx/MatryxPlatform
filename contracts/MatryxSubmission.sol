@@ -12,7 +12,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	address public roundAddress;
 	
 	// Submission
-	string name;
+	string title;
 	address author;
 	bytes32 externalAddress;
 	address[] references;
@@ -20,17 +20,15 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	uint256 timeSubmitted;
 	bool public publicallyAccessibleDuringTournament;
 
-	uint256 balance;
-
-	function MatryxSubmission(address _tournamentAddress, address _roundAddress, string _name, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, bool _publicallyAccessibleDuringTournament) public
+	function MatryxSubmission(address _tournamentAddress, address _roundAddress, string _title, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, bool _publicallyAccessibleDuringTournament) public
 	{
 		require(_submissionAuthor != 0x0);
 		
-
 		tournamentAddress = _tournamentAddress;
 		roundAddress = _roundAddress;
 
-		name = _name;
+		title = _title;
+		owner = _submissionAuthor;
 		author = _submissionAuthor;
 		externalAddress = _externalAddress;
 		references = _references;
@@ -74,17 +72,18 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 		bool requesterOwnsTournament = ownableTournament.isOwner(_requester);
 		bool requesterOwnsSubmission = _requester == author;
+		bool requesterIsRound = _requester == roundAddress;
 		bool externallyAccessible = publicallyAccessibleDuringTournament;
 		bool requesterIsContributor = IMatryxRound(roundAddress).requesterIsContributor(_requester);
 		bool winningSubmissionChosen = IMatryxRound(roundAddress).submissionChosen();
 		bool closedRoundAndContributorRequesting = (requesterIsContributor && winningSubmissionChosen);
 		bool closedTournamentAndAnyoneRequesting = !tournament.tournamentOpen();
 
-		return requesterOwnsTournament || requesterOwnsSubmission || externallyAccessible || closedRoundAndContributorRequesting || closedTournamentAndAnyoneRequesting;
+		return requesterOwnsTournament || requesterOwnsSubmission || requesterIsRound || externallyAccessible || closedRoundAndContributorRequesting || closedTournamentAndAnyoneRequesting;
 	}
 
-	function getName() constant whenAccessible(msg.sender) public returns(string) {
-		return name;
+	function getTitle() constant whenAccessible(msg.sender) public returns(string) {
+		return title;
 	}
 
 	function getAuthor() constant whenAccessible(msg.sender) public returns(address) {
@@ -124,10 +123,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	}
 
     /// @dev Edit the title of a submission (callable only by submission's owner).
-    /// @param _name New name for the submission.
-	function updateName(string _name) onlyAuthor public 
+    /// @param _title New title for the submission.
+	function updateTitle(string _title) onlyAuthor public 
 	{
-		name = _name;
+		title = _title;
 	}
 
 	/// @dev Update the external address of a submission (callable only by submission's owner).
@@ -165,9 +164,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		delete contributors[_contributorIndex];
 	}
 
-	function setBalance(uint256 _bounty) public onlyRound
+	function getBalance() public returns (uint256)
 	{
-		balance = _bounty;
+		IMatryxRound round = IMatryxRound(roundAddress);
+		uint256 _balance = round.getBalance(this);
+		return _balance;
 	}
 
 	/// @dev Removes a submission from this round (callable only by submission's owner).

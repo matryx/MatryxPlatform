@@ -37,7 +37,7 @@ contract('MatryxPlatform', function(accounts){
   it("Tournament.chooseWinner should invoke a TournmamentClosed event.", async function() {
     platform.TournamentClosed().watch((error, result) => {
       if(!error) {
-        assert.equal(result.args._winningSubmissionIndex, 1, "The winning submission index should be 123");
+        assert.equal(result.args._winningSubmissionIndex.valueOf(), 0, "The winning submission index should be 1");
       } else {
         assert.false();
       }

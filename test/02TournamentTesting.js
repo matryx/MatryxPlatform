@@ -1,11 +1,12 @@
 var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxTournament = artifacts.require("MatryxTournament");
 var MatryxRound = artifacts.require("MatryxRound");
+var Ownable = artifacts.require("Ownable");
 
 contract('MatryxTournament', function(accounts) {
-    var platform;
-    var tournament;
-    var round;
+    let platform;
+    let tournament;
+    let round;
 
     it("Created tournament should exist", async function() {
 
@@ -17,6 +18,7 @@ contract('MatryxTournament', function(accounts) {
         tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
         // create tournament from address
         tournament = await MatryxTournament.at(tournamentAddress);
+        await tournament.setNumberOfRounds(1);
 
         if(tournament) {
             tournamentExists = true
@@ -41,8 +43,7 @@ contract('MatryxTournament', function(accounts) {
         assert.equal(tournamentOpen.valueOf(), true, "The tournament should be open.");
     });
 
-    // Create a Submission
-    it("A submission was created", async function() {
+    it("A round is open", async function() {
         // enter the tournament!
         await platform.enterTournament(tournament.address);
         // create round
@@ -53,12 +54,31 @@ contract('MatryxTournament', function(accounts) {
 
         round.Start(0);
 
-        //tournament.startRound(10);
+        let roundOpen = await tournament.roundIsOpen.call();
+        assert.isTrue(roundOpen, "No round is open");
+    })
+
+    it("The current round is accurate", async function() {
+        let currentRound = await tournament.currentRound.call();
+        assert.equal(currentRound, "1,"+round.address, "Current round is incorrect");
+    })
+
+    // Create a Submission
+    it("A submission was created", async function() {
         // create submission
         await tournament.createSubmission("submission1", accounts[0], "external address", ["0x0"], ["0x0"], false);
         // //Check to make sure the submission count is updated
         numberOfSubmissions = await tournament.submissionCount.call();
-        assert.equal(numberOfSubmissions, 1, "The number of submissions should equal one.");
+        assert.equal(numberOfSubmissions, 1, "The number of submissions should equal one");
+    });
+
+    it("I can retrieve my personal submissions", async function() {
+        let mySubmissions = await tournament.mySubmissions.call();
+        let submissionAddress = await round.getSubmissionAddress.call(0);
+        let submissionAsOwnable = Ownable.at(submissionAddress.valueOf());
+
+        let submissionIsMine = await submissionAsOwnable.isOwner.call(accounts[0]);
+        assert.isTrue(submissionIsMine, "A submission given in mySubmissions is not one of my submissions.");
     });
 
     it("There is 1 Submission", async function() {
