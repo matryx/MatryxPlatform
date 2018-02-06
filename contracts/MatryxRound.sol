@@ -34,6 +34,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	mapping(bytes32 => address) externalAddressToSubmission;
 	mapping(address => bool)  submissionExists;
 	address[] submissions;
+	mapping(address => uint256) submissionToBalance;
 
 	function MatryxRound(address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, uint256 _bountyMTX) public
 	{
@@ -175,7 +176,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 		return submissions[_index];
 	}
 
-	/// @dev Returns the contents of a submission.
+	/// @dev Returns a hash of the contents of a submission.
 	/// @param _index Index of the requested submission.
 	/// @return _name Name of the submission.
 	/// @return _author Author of the submission.
@@ -183,7 +184,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @return _references Addresses of submissions referenced in creating this submission
     /// @return _contributors Contributors to this submission.
 	/// @return _timeSubmitted Epoch time this this submission was made.
-	function getSubmissionBody(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (bytes32 externalAddress_Versioned)
+	function getSubmissionBody(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (bytes32 externalAddress)
 	{
 		IMatryxSubmission submission = IMatryxSubmission(submissions[_index]);
 		return submission.getExternalAddress();
@@ -196,6 +197,14 @@ contract MatryxRound is Ownable, IMatryxRound {
 	{
 		IMatryxSubmission submission = IMatryxSubmission(submissions[_index]);
 		return submission.getAuthor();
+	}
+
+	/// @dev Returns the balance of a particular submission
+	/// @param _submissionAddress Address of the submission
+	/// @return Balance of the bounty 
+	function getBalance(address _submissionAddress) public returns (uint256)
+	{
+		return submissionToBalance[_submissionAddress];
 	}
 
 	/// @dev Returns whether or not a winning submission has been chosen.
@@ -227,6 +236,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @param _duration Duration of the round in seconds.
 	function Start(uint256 _duration) public
 	{
+		require(startTime == 0);
 		startTime = now;
 		endTime = startTime.add(_duration);
 	}
@@ -239,13 +249,18 @@ contract MatryxRound is Ownable, IMatryxRound {
 		//TODO: apply time restrictions.
 		winningSubmissionIndex = _submissionIndex;
 
-		uint256 tempBalance = bountyMTX;
+		submissionToBalance[submissions[_submissionIndex]] = bountyMTX;
 		bountyMTX = 0;
-
-		IMatryxSubmission winningSubmission = IMatryxSubmission(submissions[winningSubmissionIndex]);
-		winningSubmission.setBalance(tempBalance);
-		
 		winningSubmissionChosen = true;
+	}
+
+	/// @dev Award bounty to a submission. Called by tournament to close a tournament after a 
+	/// round winner has been chosen.
+	/// @param _submissionIndex Index of the tournament winning submission.
+	/// @param _remainingBounty Bounty to award the submission.
+	function awardBounty(uint256 _submissionIndex, uint256 _remainingBounty) public onlyTournament
+	{
+		submissionToBalance[submissions[_submissionIndex]] += _remainingBounty;
 	}
 
 	/*
@@ -253,18 +268,17 @@ contract MatryxRound is Ownable, IMatryxRound {
      */
 
     /// @dev Create a new submission.
-    /// @param _name Name of the submission.
+    /// @param _title Title of the submission.
     /// @param _externalAddress Off-chain content hash of submission details (ipfs hash)
     /// @param _author Author of this submission.
     /// @param _references Addresses of submissions referenced in creating this submission
     /// @param _contributors Contributors to this submission.
     /// @return _submissionIndex Location of this submission within this round.
-	function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessible) public onlyTournament whileTournamentOpen duringOpenSubmission returns (uint256 _submissionIndex)
+	function createSubmission(string _title, address _author, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessible) public onlyTournament whileTournamentOpen duringOpenSubmission returns (address _submissionAddress)
 	{
 		require(_author != 0x0);
 		
-		// This causes a revert.
-        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(tournamentAddress, this, _name, _author, _externalAddress, _references, _contributors, now, _publicallyAccessible);
+        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(tournamentAddress, this, _title, _author, _externalAddress, _references, _contributors, now, _publicallyAccessible);
         
         //submission bookkeeping
         submissions.push(submissionAddress);
@@ -274,30 +288,31 @@ contract MatryxRound is Ownable, IMatryxRound {
 
         // round participant bookkeeping
         addressToParticipantType[_author] = uint(participantType.author);
+        // TODO: Uncomment and test.
         // for(uint256 i = 0; i < _contributors.length; i++)
         // {
         // 	addressToParticipantType[_contributors[i]] = uint(participantType.contributor);
         // }
 
         IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
-        tournament.invokeSubmissionCreatedEvent(submissions.length-1);
-        return submissions.length-1;
+        tournament.invokeSubmissionCreatedEvent(submissionAddress);
+        return submissionAddress;
 	}
 
 	// TODO: Uncomment and complete.
 	// function withdrawReward(uint256 _submissionIndex) public afterWinnerSelected onlySubmissionAuthor(_submissionIndex)
 	// {
 
-	// 	// uint submissionReward = submissions[_submissionIndex].balance;
-	// 	// submissions[_submissionIndex].balance = 0;
+	// 	// uint submissionReward = submissionToBalance[submissions[_submissionIndex]];
+	// 	// submissionToBalance[submissions[_submissionIndex]] = 0;
 	// 	//MatryxToken(matryxTokenAddress).transfer(msg.sender, submissionReward);
 	// } 
 	
 	// TODO: Uncomment and complete.
 	// function withdrawReward(uint256 _submissionIndex, address _recipient) public afterWinnerSelected onlySubmissionAuthor(_submissionIndex)
 	// {
-	// 	uint submissionReward = submissions[_submissionIndex].balance;
-	// 	submissions[_submissionIndex].balance = 0;
+	// 	uint submissionReward = submissionToBalance[submissions[_submissionIndex]];
+	// 	submissionToBalance[submissions[_submissionIndex]] = 0;
 	// 	MatryxToken(matryxTokenAddress).transfer(_recipient, submissionReward);
 	// }
 }

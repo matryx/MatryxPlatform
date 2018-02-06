@@ -24,14 +24,6 @@ contract MatryxOracleMessenger is Ownable {
   // Map from QueryIDs to responses (bytes32s. aka dynamically-sized byte arrays.)
   mapping(uint256 => uint256) internal queryResponses;
 
-  // Requires that the platform owner (Nanome) is the sender
-  // This is used to verify that we're the only ones acting as an oracle.
-  modifier storerIsPlatformOwner()
-  {
-    require(msg.sender == owner);
-    _;
-  }
-
   /// @dev Gets the latest response from the oracle (internal).
   /// @param _sender Address of sender who we wish to receive the oracle response for.
   /// @return _response Response from the oracle (an MTX balance).
@@ -62,8 +54,8 @@ contract MatryxOracleMessenger is Ownable {
         queryEncrypters[_sender] = encrypter;
     }
 
-    // Get the queryID from the QueryResolver.
-    uint256 queryID = encrypter.query(_query);
+    // Get the queryID from the MatryxQueryEncrypter.
+    uint256 queryID = encrypter.generateQueryID(_query);
     // Store that id under the sender's (querier's) address.
     fromQuerierToQueryID[_sender] = queryID;
 
@@ -75,7 +67,7 @@ contract MatryxOracleMessenger is Ownable {
   /// @param _queryID Query ID given to the oracle by this messenger.
   /// @param _response Response received from oracle.
   /// @return success Whether or not the query response was stored successfully (didn't already exist).
-  function storeQueryResponse(uint256 _queryID,  uint256 _response) storerIsPlatformOwner public returns (bool success)
+  function storeQueryResponse(uint256 _queryID,  uint256 _response) onlyOwner public returns (bool success)
   {
       // Make sure:
       // 1) The response is not empty and
