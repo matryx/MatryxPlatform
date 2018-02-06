@@ -43,16 +43,22 @@ contract('MatryxTournament', function(accounts) {
         assert.equal(tournamentOpen.valueOf(), true, "The tournament should be open.");
     });
 
-    it("A round is open", async function() {
-        // enter the tournament!
+    if("A user cannot enter a tournament twice", async function() {
+        // enter the tournament
         await platform.enterTournament(tournament.address);
+
+        let successInEnteringTournamentTwice = await platform.enterTournament.call(tournament.address);
+        assert.isFalse(successInEnteringTournamentTwice, "Able to enter a tournament twice");
+    });
+
+    it("A round is open", async function() {
         // create round
         await tournament.createRound(5);
 
         let roundAddress = await tournament.rounds.call(0);
         round = MatryxRound.at(roundAddress);
 
-        round.Start(0);
+        tournament.startRound(0);
 
         let roundOpen = await tournament.roundIsOpen.call();
         assert.isTrue(roundOpen, "No round is open");

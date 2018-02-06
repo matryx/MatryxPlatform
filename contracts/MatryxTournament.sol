@@ -84,8 +84,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     event SubmissionCreated(uint256 _roundIndex, address _submissionAddress);
     event RoundWinnerChosen(uint256 _submissionIndex);
 
-    event CurrentRound(uint256 _roundIndex);
-
     /// @dev Allows rounds to invoke SubmissionCreated events on this tournament.
     /// @param _submissionAddress Address of the submission.
     function invokeSubmissionCreatedEvent(address _submissionAddress) public
@@ -325,7 +323,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _contributors, address[] _references, bool _publicallyAccessible) public onlyEntrant whileTournamentOpen returns (address _submissionAddress)
     {
-        CurrentRound(rounds.length-1);
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         address submissionAddress = round.createSubmission(_name, _author, _externalAddress, _references, _contributors, _publicallyAccessible);
 
