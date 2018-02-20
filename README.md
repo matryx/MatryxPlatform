@@ -1,4 +1,4 @@
-# Matryx Alpha Source Code v1 ![logo](matryx_logo_w.png)
+# Matryx Alpha Source Code v1 ![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/matryx_logo_w.png)
 [![Jenkins](https://img.shields.io/jenkins/s/https/jenkins.qa.ubuntu.com/view/Precise/view/All%20Precise/job/precise-desktop-amd64_default.svg)](http://jenkins.matryx.ai/matryx-alpha-source/build-status)
 [![Jenkins coverage](https://img.shields.io/badge/coverage-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/code-coverage)
 [![Jenkins tests](https://img.shields.io/badge/tests-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/tests)
