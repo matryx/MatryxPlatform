@@ -1,5 +1,8 @@
 pragma solidity ^0.4.18;
 
+import '../interfaces/IMatryxToken.sol';
+import '../interfaces/IMatryxPeer.sol';
+import '../interfaces/IMatryxPlatform.sol';
 import '../interfaces/IMatryxTournament.sol';
 import '../interfaces/IMatryxRound.sol';
 import '../interfaces/IMatryxSubmission.sol';
@@ -8,6 +11,7 @@ import './Ownable.sol';
 contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	// Parent identification
+	address public platformAddress;
 	address public tournamentAddress;
 	address public roundAddress;
 	
@@ -16,14 +20,41 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	address author;
 	bytes32 externalAddress;
 	address[] references;
+
+	// Tracks the normalized trust gained through peers approving this submission
+	mapping(address=>uint256) authorToApprovalTrustGiven;
+	uint256 approvalTrust;
+	uint256 totalPossibleTrust;
+	address[] approvingPeers;
+
+	// Tracks the proportion of references this submission has approved
+	mapping(address=>uint256_optional) missingReferenceToIndex;
+	address[] missingReferences;
+	mapping(address=>ReferenceInfo) addressToReferenceInfo;
+	uint256 approvedReferences;
+	uint256 totalReferenceCount;
+
+	struct ReferenceInfo
+	{
+		bool flaggedAsMissing;
+		bool isIncluded;
+	}
+
+	struct uint256_optional
+	{
+		bool exists;
+		uint256 value;
+	}
+
 	address[] contributors;
 	uint256 timeSubmitted;
 	bool public publicallyAccessibleDuringTournament;
 
-	function MatryxSubmission(address _tournamentAddress, address _roundAddress, string _title, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, bool _publicallyAccessibleDuringTournament) public
+	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, bool _publicallyAccessibleDuringTournament) public
 	{
 		require(_submissionAuthor != 0x0);
 		
+		platformAddress = _platformAddress;
 		tournamentAddress = _tournamentAddress;
 		roundAddress = _roundAddress;
 
@@ -41,9 +72,20 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	 * Modifiers 
 	 */
 
-	 modifier onlyAuthor() {
+	modifier onlyAuthor() {
     	require(msg.sender == author);
     	_;
+  	}
+
+  	modifier onlyPlatform() {
+  		require(msg.sender == platformAddress);
+  		_;
+  	}
+
+  	modifier owningPeer(address _reference)
+  	{
+  		require(IMatryxPlatform(platformAddress).peerExistsAndOwnsSubmission(msg.sender, _reference));
+  		_;
   	}
 
 	// A modifier to ensure that information can be obtained
@@ -55,25 +97,34 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		_;
 	}
 
+	modifier duringOpenSubmission()
+	{
+		IMatryxRound round = IMatryxRound(roundAddress);
+		require(round.isOpen());
+		_;
+	}
+
 	/*
-	 * Getters
+	 * Getter Methods
 	 */
 
 	function isAccessible(address _requester) public constant returns (bool)
 	{
-		IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
+		IMatryxRound round = IMatryxRound(roundAddress);
 		Ownable ownableTournament = Ownable(tournamentAddress);
 
+		bool isPlatform = msg.sender == IMatryxTournament(tournamentAddress).getPlatform();
 		bool requesterOwnsTournament = ownableTournament.isOwner(_requester);
 		bool requesterOwnsSubmission = _requester == author;
 		bool requesterIsRound = _requester == roundAddress;
 		bool externallyAccessible = publicallyAccessibleDuringTournament;
-		bool requesterIsContributor = IMatryxRound(roundAddress).requesterIsContributor(_requester);
-		bool winningSubmissionChosen = IMatryxRound(roundAddress).submissionChosen();
-		bool closedRoundAndContributorRequesting = (requesterIsContributor && winningSubmissionChosen);
-		bool closedTournamentAndAnyoneRequesting = !tournament.tournamentOpen();
+		bool duringReviewPeriod = IMatryxRound(roundAddress).isInReview();
+		bool requesterIsEntrant = IMatryxTournament(tournamentAddress).isEntrant(_requester);
+		bool roundInReviewAndEntrantRequesting = (duringReviewPeriod && requesterIsEntrant);
+		bool tournamentInReviewAndEntrantRequesting = IMatryxTournament(tournamentAddress).isInReview() && requesterIsEntrant;
+		bool roundClosed = !round.isOpen();
 
-		return requesterOwnsTournament || requesterOwnsSubmission || requesterIsRound || externallyAccessible || closedRoundAndContributorRequesting || closedTournamentAndAnyoneRequesting;
+		return isPlatform || requesterOwnsTournament || requesterOwnsSubmission || requesterIsRound || externallyAccessible || roundInReviewAndEntrantRequesting || tournamentInReviewAndEntrantRequesting || roundClosed;
 	}
 
 	function getTitle() constant whenAccessible(msg.sender) public returns(string) {
@@ -102,13 +153,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	}
 
 	/*
-	TODO
-	Function - turn the submission into public when the round ends
-	Only the tournament
-	*/
-
-	/*
-	 * Setters
+	 * Setter Methods
 	 */
 
 	function makeExternallyAccessibleDuringTournament() onlyAuthor public
@@ -118,14 +163,14 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     /// @dev Edit the title of a submission (callable only by submission's owner).
     /// @param _title New title for the submission.
-	function updateTitle(string _title) onlyAuthor public 
+	function updateTitle(string _title) onlyAuthor duringOpenSubmission public 
 	{
 		title = _title;
 	}
 
 	/// @dev Update the external address of a submission (callable only by submission's owner).
     /// @param _externalAddress New content hash for the body of the submission.
-	function updateExternalAddress(bytes32 _externalAddress) onlyAuthor public
+	function updateExternalAddress(bytes32 _externalAddress) onlyAuthor duringOpenSubmission public
 	{
 		externalAddress = _externalAddress;
 	}
@@ -134,7 +179,9 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @param _reference Address of additional reference to include.
 	function addReference(address _reference) onlyAuthor public 
 	{
+		IMatryxPlatform(platformAddress).handleReferenceForSubmission(_reference);
 		references.push(_reference);
+		addressToReferenceInfo[_reference].isIncluded = true;
 	}
 
 	/// @dev Remove an erroneous reference to a submission (callable only by submission's owner).
@@ -142,6 +189,86 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	function removeReference(uint256 _referenceIndex) onlyAuthor public
 	{
 		delete references[_referenceIndex];
+		addressToReferenceInfo[references[_referenceIndex]].isIncluded = false;
+		// TODO: Handle affect on reference approval trust
+	}
+
+	function receiveReferenceRequest(address _requestingSubmission) public onlyPlatform
+	{
+		totalReferenceCount = totalReferenceCount.add(1);
+	}
+
+	function cancelReferenceRequest(address _requestingSubmission) public onlyPlatform
+	{
+		totalReferenceCount = totalReferenceCount.sub(1);
+	}
+
+	/// @dev Called by the owner of _reference when this submission is approved to list _reference
+	/// as a reference.
+	/// _reference Reference being approved by msg.sender.
+	function approveReference(address _reference) public owningPeer(_reference)
+	{
+		// TODO: Add a way of undoing this reference approval.
+		// Maybe like removeReferenceApproval
+
+		require(addressToReferenceInfo[_reference].isIncluded == false);
+
+		IMatryxPeer peer = IMatryxPeer(msg.sender);
+		uint256 peersReputation = peer.getReputation();
+		
+		if(authorToApprovalTrustGiven[msg.sender] == 0x0)
+		{	
+			approvingPeers.push(msg.sender);
+			totalPossibleTrust = totalPossibleTrust.add(peer.getReputation());
+		}
+		else
+		{
+			approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
+		}
+
+		uint256 peersReferencesInThisSubmission = peer.getTotalReferenceCount(this);
+		uint256 trustToAdd = peersReputation.div(peersReferencesInThisSubmission);
+		approvalTrust = approvalTrust.add(trustToAdd);
+
+		approvedReferences = approvedReferences.add(1);
+		if(missingReferenceToIndex[_reference].exists)
+		{
+			delete missingReferences[missingReferenceToIndex[_reference].value];
+		}
+	}
+
+	/// @dev Called by the owner of _reference when this submission does not list _reference
+	/// as a reference.
+	/// @param _reference Missing reference in this submission.
+	function flagMissingReference(address _reference) public owningPeer(_reference)
+	{
+		// TODO: Add a way of undoing this missing reference flag.
+		// Maybe like removeMissingReferenceFlag
+
+		require(addressToReferenceInfo[_reference].flaggedAsMissing == false);
+		require(addressToReferenceInfo[_reference].isIncluded == false);
+		addressToReferenceInfo[_reference].flaggedAsMissing == true;
+		
+		IMatryxPeer peer = IMatryxPeer(msg.sender);
+
+		if(authorToApprovalTrustGiven[msg.sender] == 0x0)
+		{
+			approvingPeers.push(msg.sender);
+			totalPossibleTrust = totalPossibleTrust.add(peer.getReputation());
+		}
+		else
+		{
+			approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
+		}
+
+		uint256 peersReferencesInThisSubmission = peer.getTotalReferenceCount(this);
+		uint256 trustToAdd = peersReputation.div(peersReferencesInThisSubmission);
+		approvalTrust = approvalTrust.add(trustToAdd);
+
+		totalReferenceCount = totalReferenceCount.add(1);
+
+		missingReferences.push(_reference);
+		missingReferenceToIndex(_reference) = uint256_optional(true, missingReferences.length-1);
 	}
 
 	/// @dev Add a contributor to a submission (callable only by submission's owner).
@@ -149,6 +276,9 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	function addContributor(address _contributor) onlyAuthor public
 	{
 		contributors.push(_contributor);
+
+		IMatryxRound round = IMatryxRound(roundAddress);
+		round.setParticipantType(_contributor, 2);
 	}
 
 	/// @dev Remove a contributor from a submission (callable only by submission's owner).
@@ -163,6 +293,68 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		IMatryxRound round = IMatryxRound(roundAddress);
 		uint256 _balance = round.getBalance(this);
 		return _balance;
+	}
+
+	function withdrawReward() public onlyOwner
+	{
+		uint submissionReward = getBalance();
+		IMatryxRound round = IMatryxRound(roundAddress);
+		IMatryxToken token = IMatryxToken(round.getTokenAddress());
+
+		// transfer amount calculated as:
+		// normalizedTrustInSubmission * 
+		// proportionReferenceApprovalsGivenForSubmissionsReferencingThisSubmission *
+		// 0.5 * 
+		// submissionReward
+		uint256 transferAmount = approvalTrust.div(totalPossibleTrust);
+		transferAmount = transferAmount.mul(approvedReferences);
+		transferAmount = transferAmount.div(totalReferenceCount);
+		transferAmount = transferAmount.div(2);
+		transferAmount = transferAmount.mul(submissionReward);
+
+		// TODO: Add minimum MTX check.
+		// If it passes, just give the owner the remaining amount
+
+		token.transfer(msg.sender, transferAmount);
+
+		uint256 remainingReward = submissionReward.sub(transferAmount);
+
+		// TODO: Weight by author's reputation
+		for(uint i = 0; i < references.length; i++)
+		{
+			token.transfer(_references[i], remainingReward.div(references.length));
+		}
+
+	}
+	
+	function withdrawReward(address _recipient) public onlyOwner
+	{
+		uint submissionReward = getBalance();
+		IMatryxRound round = IMatryxRound(roundAddress);
+		IMatryxToken token = IMatryxToken(round.getTokenAddress());
+
+		// transfer amount calculated as:
+		// normalizedTrustInSubmission * 
+		// proportionReferenceApprovalsGivenForSubmissionsReferencingThisSubmission *
+		// 0.5 * 
+		// submissionReward
+		uint256 transferAmount = approvalTrust.div(totalPossibleTrust);
+		transferAmount = transferAmount.mul(approvedReferences);
+		transferAmount = transferAmount.div(totalReferenceCount);
+		transferAmount = transferAmount.div(2);
+		transferAmount = transferAmount.mul(submissionReward);
+
+		// TODO: Add minimum MTX check.
+		// If it passes, just give the recipient the remaining amount
+
+		token.transfer(_recipient, transferAmount);
+
+		// TODO: Weight by author's reputation
+		for(uint i = 0; i < references.length; i++)
+		{
+			token.transfer(_references[i], remainingReward.div(references.length));
+		}
+
 	}
 
 	/// @dev Removes a submission from this round (callable only by submission's owner).

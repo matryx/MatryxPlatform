@@ -1,24 +1,39 @@
 pragma solidity ^0.4.18;
 
 import './MatryxOracleMessenger.sol';
+import '../interfaces/IMatryxToken.sol';
+import '../interfaces/IMatryxPeer.sol';
 import '../interfaces/IMatryxPlatform.sol';
+import '../interfaces/factories/IMatryxPeerFactory.sol';
 import '../interfaces/factories/IMatryxTournamentFactory.sol';
 import '../interfaces/IMatryxTournament.sol';
+import '../interfaces/IMatryxSubmission.sol';
 import './Ownable.sol';
 
 /// @title MatryxPlatform - The Matryx platform contract.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
+  address public matryxTokenAddress;
+  address matryxPeerFactoryAddress;
   address matryxTournamentFactoryAddress;
   address[] public allTournaments;
+  // TODO: condense bool mappings using struct
+  mapping(address=>bool) peerExists;
+  mapping(address=>address) ownerToPeer;
+  mapping(address=>mapping(address=>bool)) peerToOwnsSubmission;
   mapping(address=>bool) tournamentExists;
+  mapping(address=>bool) submissionExists;
+
   mapping(address=>address[]) entrantToTournamentArray;
   mapping(address=>address[]) authorToSubmissionArray;
 
-  function MatryxPlatform(address _matryxTournamentFactoryAddress) public
+  function MatryxPlatform(address _matryxTokenAddress, address _matryxTournamentFactoryAddress) public
   {
     matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
+    matryxTokenAddress = _matryxTokenAddress;
+    
+    IMatryxTournamentFactory(_matryxTournamentFactoryAddress).setPlatform(this);
   }
 
   /*
@@ -60,6 +75,18 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     _;
   }
 
+  modifier onlySubmission(address _sender)
+  {
+    require(submissionExists[_sender]);
+    _;
+  }
+
+  modifier onlyPeerLinked(address _sender)
+  {
+    require(hasPeer(_sender));
+    _;
+  }
+
   /* 
    * MTX Balance Methods
    */
@@ -92,6 +119,46 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       return balance;
   }
 
+  /*
+   * State Maintenance Methods
+   */
+
+  function handleReferencesForSubmission(address[] _references) public onlySubmission returns (bool) 
+  {
+    for(uint256 i = 0; i < _references.length; i++)
+    {
+      address _referenceAddress = _references[i];
+
+      if(!submissionExists[_referenceAddress])
+      {
+        return false;
+      }
+
+      IMatryxSubmission submission = IMatryxSubmission(_referenceAddress);
+      address author = submission.getAuthor();
+      address peerAddress = ownerToPeer[author];
+      require(peerAddress != 0x0);
+
+      IMatryxPeer peer = IMatryxPeer(peerAddress);
+
+      peer.invokeReferenceRequestEvent(msg.sender, _referenceAddress);
+      submission.receiveReferenceRequest(msg.sender);
+    }
+  }
+
+  function handleReferenceForSubmission(address _reference) public onlySubmission returns (bool)
+  {
+      require(isSubmission[_reference]);
+      IMatryxSubmission submission = IMatryxSubmission(_reference);
+      address author = submission.getAuthor();
+      address peerAddress = ownerToPeer[author];
+      require(peerAddress != 0x0);
+
+      IMatryxPeer peer = IMatryxPeer(peerAddress);
+      peer.invokeReferenceRequestEvent(msg.sender, _reference);
+      submission.receiveReferenceRequest(msg.sender);
+  }
+
   /* 
    * Tournament Entry Methods
    */
@@ -99,14 +166,16 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @dev Enter the user into a tournament and charge the entry fee.
   /// @param _tournamentAddress Address of the tournament to enter into.
   /// @return _success Whether or not user was successfully entered into the tournament.
-  function enterTournament(address _tournamentAddress) public returns (bool _success)
+  function enterTournament(address _tournamentAddress) public onlyPeerLinked(msg.sender) returns (bool _success)
   {
+      require(tournamentExists[_tournamentAddress]);
+
       IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
-      // TODO: Charge the user the MTX entry fee.
+
       bool success = tournament.enterUserInTournament(msg.sender);
       if(success)
       {
-        updateMyTournaments(msg.sender, _tournamentAddress);
+        updateUsersTournaments(msg.sender, _tournamentAddress);
       }
       return success;
   }
@@ -118,14 +187,24 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @dev Create a new tournament.
   /// @param _tournamentName Name of the new tournament.
   /// @param _externalAddress Off-chain content hash of tournament details (ipfs hash)
-  /// @param _MTXReward Total tournament reward in MTX.
+  /// @param _BountyMTX Total tournament reward in MTX.
   /// @param _entryFee Fee to charge participant upon entering into tournament.
   /// @return _tournamentAddress Address of the newly created tournament
-  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public returns (address _tournamentAddress)
+  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
   {
+    IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
+    // Check that the platform has a sufficient allowance to
+    // transfer the reward from the tournament creator to itself
+    uint256 tournamentsAllowance = matryxToken.allowance(msg.sender, this);
+    require(tournamentsAllowance >= _BountyMTX);
+
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-    address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
-    TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _BountyMTX, _entryFee, _reviewPeriod);
+    TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
+
+    // Transfer the MTX reward to the tournament.
+    bool transferSuccess = matryxToken.transferFrom(msg.sender, newTournament, _BountyMTX);
+    require(transferSuccess);
     
     // update data structures
     allTournaments.push(newTournament);
@@ -134,19 +213,58 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return newTournament;
   }
 
-  function updateMyTournaments(address _author, address _tournament) internal
+  function updateUsersTournaments(address _author, address _tournament) internal
   {
     entrantToTournamentArray[_author].push(_tournament);
   }
 
-  function updateMySubmissions(address _author, address _submission) public onlyTournament(msg.sender)
+  function updateSubmissions(address _author, address _submission) public onlyTournament(msg.sender)
   {
     authorToSubmissionArray[_author].push(_submission);
+    peerToOwnsSubmission[ownerToPeer[_author]][_submission] = true;
+    submissionExists[_submission] = true;
   }
 
   /*
    * Access Control Methods
    */
+
+  function createPeer() public returns (address)
+  {
+    IMatryxPeerFactory peerFactory = IMatryxPeerFactory(matryxPeerFactoryAddress);
+    address peer = peerFactory.createPeer(msg.sender);
+    peerExists[peer] = true;
+    ownerToPeer[msg.sender] = peer;
+  }
+
+  function isPeer(address _peerAddress) public constant returns (bool)
+  {
+    return peerExists[_peerAddress];
+  }
+
+  function hasPeer(address _sender) public returns (bool)
+  {
+    return (ownerToPeer[_sender] != 0x0);
+  }
+
+  function peerExistsAndOwnsSubmission(address _peer, address _reference) returns (bool)
+  {
+    bool isAPeer = peerExists[_peer];
+    bool referenceIsSubmission = submissionExists[_reference];
+    bool peerOwnsSubmission = peerToOwnsSubmission[_peer][_reference];
+
+    return isAPeer && referenceIsSubmission && peerOwnsSubmission;
+  }
+
+  function peerAddress(address _sender) public constant returns (address)
+  {
+    return ownerToPeer[_sender];
+  }
+
+  function isSubmission(address _submissionAddress) public constant returns (bool)
+  {
+    return submissionExists[_submissionAddress];
+  }
 
   /// @dev Returns whether or not the given tournament belongs to the sender.
   /// @param _tournamentAddress Address of the tournament to check.
@@ -157,6 +275,27 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     Ownable tournament = Ownable(_tournamentAddress);
     return (tournament.getOwner() == msg.sender);
   }
+
+  /*
+   * Getter Methods
+   */
+
+   function getTokenAddress() public constant returns (address)
+   {
+      return matryxTokenAddress;
+   }
+
+   /// @dev Returns addresses for submissions the sender has created.
+   /// @return Address array representing submissions.
+   function myTournaments() public constant returns (address[])
+   {
+      return entrantToTournamentArray[msg.sender];
+   }
+
+   function mySubmissions() public constant returns (address[])
+   {
+    return authorToSubmissionArray[msg.sender];
+   }
 
   /// @dev Returns the total number of tournaments
   /// @return _tournamentCount Total number of tournaments.
@@ -171,20 +310,4 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     require(_index < allTournaments.length);
     return allTournaments[_index];
   }
-
-  /*
-   * Getter Methods
-   */
-
-   /// @dev Returns addresses for submissions the sender has created.
-   /// @return Address array representing submissions.
-   function myTournaments() public constant returns (address[])
-   {
-      return entrantToTournamentArray[msg.sender];
-   }
-
-   function mySubmissions() public constant returns (address[])
-   {
-    return authorToSubmissionArray[msg.sender];
-   }
 }
