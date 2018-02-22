@@ -166,16 +166,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
       * State Maintenance Methods
       */
 
-    function handleReferencesForSubmission(address _submissionAddress, address[] _references) public onlyRound
-    {
-        IMatryxPlatform(platformAddress).handleReferencesForSubmission(_submissionAddress, _references);
-    }
-
-    function handleReferenceForSubmission(address _submissionAddress, address _reference) public onlyRound
-    {
-        IMatryxPlatform(platformAddress).handleReferenceForSubmission(_submissionAddress, _reference);
-    }
-
     /*
      * Access Control Methods
      */

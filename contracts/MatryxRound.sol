@@ -125,11 +125,6 @@ contract MatryxRound is Ownable, IMatryxRound {
 	 * State Maintenance Methods
 	 */
 
-	function sendReferenceRequestToPeer(address _reference) public onlySubmission
-	{
-		IMatryxTournament(tournamentAddress).handleReferenceForSubmission(msg.sender, _reference);
-	}
-
 	/*
      * Access Control Methods
      */
@@ -331,11 +326,7 @@ contract MatryxRound is Ownable, IMatryxRound {
         	addressToParticipantType[_contributors[i]] = uint(participantType.contributor);
         }
 
-        // for each reference, send a reference approval request
-        IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
-        tournament.handleReferencesForSubmission(submissionAddress, _references);
-
-        tournament.invokeSubmissionCreatedEvent(submissionAddress);
+        IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);
         return submissionAddress;
 	}
 }

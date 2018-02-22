@@ -75,9 +75,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     _;
   }
 
-  modifier onlySubmission(address _sender)
+  modifier onlySubmission
   {
-    require(submissionExists[_sender]);
+    require(submissionExists[msg.sender]);
     _;
   }
 
@@ -142,13 +142,13 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       IMatryxPeer peer = IMatryxPeer(peerAddress);
 
       peer.invokeReferenceRequestEvent(msg.sender, _referenceAddress);
-      submission.receiveReferenceRequest(msg.sender);
+      submission.receiveReferenceRequest();
     }
   }
 
   function handleReferenceForSubmission(address _reference) public onlySubmission returns (bool)
   {
-      require(isSubmission[_reference]);
+      require(isSubmission(_reference));
       IMatryxSubmission submission = IMatryxSubmission(_reference);
       address author = submission.getAuthor();
       address peerAddress = ownerToPeer[author];
@@ -156,7 +156,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
       IMatryxPeer peer = IMatryxPeer(peerAddress);
       peer.invokeReferenceRequestEvent(msg.sender, _reference);
-      submission.receiveReferenceRequest(msg.sender);
+      submission.receiveReferenceRequest();
   }
 
   /* 
@@ -247,7 +247,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return (ownerToPeer[_sender] != 0x0);
   }
 
-  function peerExistsAndOwnsSubmission(address _peer, address _reference) returns (bool)
+  function peerExistsAndOwnsSubmission(address _peer, address _reference) public returns (bool)
   {
     bool isAPeer = peerExists[_peer];
     bool referenceIsSubmission = submissionExists[_reference];

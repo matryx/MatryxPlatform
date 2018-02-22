@@ -14,8 +14,8 @@ interface IMatryxSubmission
 	function updateExternalAddress(bytes32 _externalAddress) public;
 	function addReference(address _reference) public;
 	function removeReference(uint256 _referenceIndex) public;
-	function receiveReferenceRequest(address _requestingSubmission) public;
-	function cancelReferenceRequest(address _requestingSubmission) public;
+	function receiveReferenceRequest() public;
+	function cancelReferenceRequest() public;
 	function approveReference(address _reference) public;
 	function flagMissingReference(address _reference) public;
 	function addContributor(address _contributor) public;

@@ -1,5 +1,6 @@
 pragma solidity ^0.4.18;
 
+import '../libraries/math/SafeMath.sol';
 import '../interfaces/IMatryxToken.sol';
 import '../interfaces/IMatryxPeer.sol';
 import '../interfaces/IMatryxPlatform.sol';
@@ -9,6 +10,7 @@ import '../interfaces/IMatryxSubmission.sol';
 import './Ownable.sol';
 
 contract MatryxSubmission is Ownable, IMatryxSubmission {
+	using SafeMath for uint256;
 
 	// Parent identification
 	address public platformAddress;
@@ -66,6 +68,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		contributors = _contributors;
 		timeSubmitted = _timeSubmitted;
 		publicallyAccessibleDuringTournament = _publicallyAccessibleDuringTournament;
+
+		IMatryxPlatform(platformAddress).handleReferencesForSubmission(references);
 	}
 
 	/*
@@ -193,12 +197,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		// TODO: Handle affect on reference approval trust
 	}
 
-	function receiveReferenceRequest(address _requestingSubmission) public onlyPlatform
+	function receiveReferenceRequest() public onlyPlatform
 	{
 		totalReferenceCount = totalReferenceCount.add(1);
 	}
 
-	function cancelReferenceRequest(address _requestingSubmission) public onlyPlatform
+	function cancelReferenceRequest() public onlyPlatform
 	{
 		totalReferenceCount = totalReferenceCount.sub(1);
 	}
@@ -250,6 +254,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		addressToReferenceInfo[_reference].flaggedAsMissing == true;
 		
 		IMatryxPeer peer = IMatryxPeer(msg.sender);
+		uint256 peersReputation = peer.getReputation();
 
 		if(authorToApprovalTrustGiven[msg.sender] == 0x0)
 		{
@@ -268,7 +273,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		totalReferenceCount = totalReferenceCount.add(1);
 
 		missingReferences.push(_reference);
-		missingReferenceToIndex(_reference) = uint256_optional(true, missingReferences.length-1);
+		missingReferenceToIndex[_reference] = uint256_optional(true, missingReferences.length-1);
 	}
 
 	/// @dev Add a contributor to a submission (callable only by submission's owner).
@@ -317,12 +322,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 		token.transfer(msg.sender, transferAmount);
 
-		uint256 remainingReward = submissionReward.sub(transferAmount);
-
 		// TODO: Weight by author's reputation
+		uint256 remainingReward = submissionReward.sub(transferAmount);
+		uint256 diviedReward = remainingReward.div(references.length);
 		for(uint i = 0; i < references.length; i++)
 		{
-			token.transfer(_references[i], remainingReward.div(references.length));
+			token.transfer(references[i], diviedReward);
 		}
 
 	}
@@ -350,11 +355,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		token.transfer(_recipient, transferAmount);
 
 		// TODO: Weight by author's reputation
+		uint256 remainingReward = submissionReward.sub(transferAmount);
+		uint256 diviedReward = remainingReward.div(references.length);
 		for(uint i = 0; i < references.length; i++)
 		{
-			token.transfer(_references[i], remainingReward.div(references.length));
+			token.transfer(references[i], diviedReward);
 		}
-
 	}
 
 	/// @dev Removes a submission from this round (callable only by submission's owner).

@@ -14,7 +14,7 @@ interface IMatryxPlatform
 	function updateSubmissions(address _author, address _submission) public;
 	function isPeer(address _peerAddress) public constant returns (bool);
 	function hasPeer(address _sender) public returns (bool);
-	function peerExistsAndOwnsSubmission(address _peer, address _reference) returns (bool);
+	function peerExistsAndOwnsSubmission(address _peer, address _reference) public returns (bool);
 	function peerAddress(address _sender) public constant returns (address);
 	function isSubmission(address _submissionAddress) public constant returns (bool);
 	function getTournament_IsMine(address _tournamentAddress) public constant returns (bool _isMine);

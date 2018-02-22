@@ -2,7 +2,6 @@ pragma solidity ^0.4.18;
 
 interface IMatryxRound
 {
-	function sendReferenceRequestToPeer(address _reference) public;
 	function isOpen() public constant returns (bool);
 	function isInReview() public constant returns (bool);
 	function submissionIsAccessible(uint256 _index) public constant returns (bool);
