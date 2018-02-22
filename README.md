@@ -1,4 +1,4 @@
-# Matryx Alpha Source Code - Develop Branch ![alt text](https://matryx.ai/static/img/Matryx_Black_Full_Logo.png "Matryx Logo")
+# Matryx Alpha Source Code - Develop Branch ![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
 [![Jenkins](https://img.shields.io/jenkins/s/https/jenkins.qa.ubuntu.com/view/Precise/view/All%20Precise/job/precise-desktop-amd64_default.svg)](http://jenkins.matryx.ai/matryx-alpha-source/build-status)
 [![Jenkins coverage](https://img.shields.io/badge/coverage-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/code-coverage)
 [![Jenkins tests](https://img.shields.io/badge/tests-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/tests)
