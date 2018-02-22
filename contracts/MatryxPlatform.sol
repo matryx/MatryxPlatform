@@ -28,12 +28,11 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   mapping(address=>address[]) entrantToTournamentArray;
   mapping(address=>address[]) authorToSubmissionArray;
 
-  function MatryxPlatform(address _matryxTokenAddress, address _matryxTournamentFactoryAddress) public
+  function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress) public
   {
-    matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
     matryxTokenAddress = _matryxTokenAddress;
-    
-    IMatryxTournamentFactory(_matryxTournamentFactoryAddress).setPlatform(this);
+    matryxPeerFactoryAddress = _matryxPeerFactoryAddress;
+    matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
   }
 
   /*

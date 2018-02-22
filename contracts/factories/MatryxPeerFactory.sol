@@ -3,13 +3,14 @@ pragma solidity ^0.4.18;
 import '../MatryxPeer.sol';
 import '../../libraries/math/SafeMath.sol';
 
-contract MatryxPeerFactory {
+contract MatryxPeerFactory is Ownable {
 	using SafeMath for uint256;
 
 	address public platformAddress;
 	uint256 public peerCount;
 
-	function MatryxPeerFactory(address _platformAddress) public {
+	function setPlatform(address _platformAddress) public onlyOwner
+	{
 		platformAddress = _platformAddress;
 	}
 
