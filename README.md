@@ -139,3 +139,7 @@ We look forward to seeing the community feedback and issue identifications to ma
 Please take a look at our [Terms of Service](https://github.com/matryx/matryx-alpha-source/blob/master/TOS.txt) for using the platform that we have deployed
 
 -The Matryx Team
+
+
+If you like Matryx, please consider donating ETH to 0xe665Dd2C090c7ceFD5C40cb9de00830108A62785
+
