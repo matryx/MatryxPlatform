@@ -13,7 +13,6 @@ import './Ownable.sol';
 contract MatryxRound is Ownable, IMatryxRound {
 	using SafeMath for uint256;
 
-	//TODO: time restriction on review period
 	//TODO: allow for refunds
 
 	address public platformAddress;
@@ -31,11 +30,12 @@ contract MatryxRound is Ownable, IMatryxRound {
 	uint256 public winningSubmissionIndex;
 	bool public winningSubmissionChosen;
 
-	mapping(address => uint) addressToParticipantType;
- 	mapping(address => address) authorToSubmissionAddress;
-	mapping(bytes32 => address) externalAddressToSubmission;
-	mapping(address => bool)  submissionExists;
+	mapping(address=>uint) addressToParticipantType;
+ 	mapping(address=>address) authorToSubmissionAddress;
+	mapping(bytes32=>address) externalAddressToSubmission;
+	mapping(address=>uint256_optional) addressToSubmissionIndex;
 	address[] submissions;
+	uint256 numberSubmissionsRemoved;
 
 	function MatryxRound(address _matryxTokenAddress, address _platformAddress, address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, uint256 _bountyMTX) public
 	{
@@ -47,6 +47,16 @@ contract MatryxRound is Ownable, IMatryxRound {
 		bountyMTX = _bountyMTX;
 		winningSubmissionChosen = false;
 	}
+
+	/*
+	 * Structs
+	 */
+
+	struct uint256_optional
+    {
+        bool exists;
+        uint256 value;
+    }
 
     /*
      * Enums
@@ -82,7 +92,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	modifier onlySubmission()
 	{
-		require(submissionExists[msg.sender]);
+		require(addressToSubmissionIndex[msg.sender].exists);
 		_;
 	}
 
@@ -125,6 +135,22 @@ contract MatryxRound is Ownable, IMatryxRound {
 	 * State Maintenance Methods
 	 */
 
+	function removeSubmission(address _author, bytes32 externalAddress) public onlySubmission returns (bool)
+	{
+		if(addressToSubmissionIndex[msg.sender].exists)
+		{
+			delete authorToSubmissionAddress[_author];
+			delete externalAddressToSubmission[externalAddress];
+			delete submissions[addressToSubmissionIndex[msg.sender].value];
+
+			numberSubmissionsRemoved = numberSubmissionsRemoved.add(1);
+
+			return true;
+		}
+
+		return false;
+	}
+
 	/*
      * Access Control Methods
      */
@@ -165,7 +191,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @return Whether or not the submission is accessible to the requester.
 	// function submissionIsAccessible(address _submissionAddress) public constant returns (bool)
 	// {
-	// 	require(submissionExists[_submissionAddress]);
+	// 	require(addressToSubmissionIndex[_submissionAddress]);
 
 	// 	IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
 	// 	return submission.isAccessible(msg.sender);
@@ -256,7 +282,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @return Number of submissions made to this round.
 	function numberOfSubmissions() public constant returns (uint256)
 	{
-		return submissions.length;
+		return submissions.length - numberSubmissionsRemoved;
 	}
 
 	/*
@@ -314,8 +340,8 @@ contract MatryxRound is Ownable, IMatryxRound {
         address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(platformAddress, tournamentAddress, this, _title, _author, _externalAddress, _references, _contributors, now, _publicallyAccessible);
         
         //submission bookkeeping
+        addressToSubmissionIndex[submissionAddress] = uint256_optional({exists:true, value: submissions.length});
         submissions.push(submissionAddress);
-        submissionExists[submissionAddress] = true;
         authorToSubmissionAddress[msg.sender] = submissionAddress;
         externalAddressToSubmission[_externalAddress] = submissionAddress;
 

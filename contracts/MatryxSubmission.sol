@@ -36,18 +36,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	uint256 approvedReferences;
 	uint256 totalReferenceCount;
 
-	struct ReferenceInfo
-	{
-		bool flaggedAsMissing;
-		bool isIncluded;
-	}
-
-	struct uint256_optional
-	{
-		bool exists;
-		uint256 value;
-	}
-
 	address[] contributors;
 	uint256 timeSubmitted;
 	bool public publicallyAccessibleDuringTournament;
@@ -70,6 +58,22 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		publicallyAccessibleDuringTournament = _publicallyAccessibleDuringTournament;
 
 		IMatryxPlatform(platformAddress).handleReferencesForSubmission(references);
+	}
+
+	/*
+	 * Structs
+	 */
+
+	struct ReferenceInfo
+	{
+		bool flaggedAsMissing;
+		bool isIncluded;
+	}
+
+	struct uint256_optional
+	{
+		bool exists;
+		uint256 value;
 	}
 
 	/*
@@ -362,10 +366,13 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		}
 	}
 
-	/// @dev Removes a submission from this round (callable only by submission's owner).
-    /// @param _submissionIndex Index of the submission to remove.
-	// function suicide(uint256 _submissionIndex) onlyAuthor public
-	// {
-	// 	selfdestruct();
-	// }
+	// @dev Removes a submission from this round (callable only by submission's owner).
+    // @param _submissionIndex Index of the submission to remove.
+	function selfdestruct(address _recipient) onlyAuthor public
+	{
+		IMatryxPlatform(platformAddress).removeSubmission(author);
+		IMatryxTournament(tournamentAddress).removeSubmission(author);
+		IMatryxRound(roundAddress).removeSubmission(author, externalAddress);
+		selfdestruct(author);
+	}
 }

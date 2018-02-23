@@ -27,12 +27,23 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   mapping(address=>address[]) entrantToTournamentArray;
   mapping(address=>address[]) authorToSubmissionArray;
+  mapping(address=>mapping(address=>uint256_optional))  authorToSubmissionToSubmissionIndex;
 
   function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress) public
   {
     matryxTokenAddress = _matryxTokenAddress;
     matryxPeerFactoryAddress = _matryxPeerFactoryAddress;
     matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
+  }
+
+  /*
+   * Structs
+   */
+
+  struct uint256_optional
+  {
+    bool exists;
+    uint256 value;
   }
 
   /*
@@ -50,7 +61,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @param _externalAddress External address of the tournament.
   /// @param _MTXReward Reward for winning the tournament.
   /// @param _entryFee Fee for entering into the tournament.
-  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament(msg.sender)
+  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
   {
     TournamentOpened(_owner, _tournamentAddress, _tournamentName, _externalAddress, _MTXReward, _entryFee);
   }
@@ -59,7 +70,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @param _tournamentAddress Address of the tournament.
   /// @param _finalRoundNumber Index of the round containing the winning submission.
   /// @param _winningSubmissionIndex Index of the winning submission.
-  function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _winningSubmissionIndex) public onlyTournament(msg.sender)
+  function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _winningSubmissionIndex) public onlyTournament
   {
     TournamentClosed(_tournamentAddress, _finalRoundNumber, _winningSubmissionIndex);
   }
@@ -68,9 +79,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    * Modifiers
    */
 
-  modifier onlyTournament(address _sender)
+  modifier onlyTournament
   {
-    require(tournamentExists[_sender]);
+    require(tournamentExists[msg.sender]);
     _;
   }
 
@@ -130,6 +141,8 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
       if(!submissionExists[_referenceAddress])
       {
+        // TODO: Introduce uint error codes
+        // for returning things like "Reference is not submission"
         return false;
       }
 
@@ -167,6 +180,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @return _success Whether or not user was successfully entered into the tournament.
   function enterTournament(address _tournamentAddress) public onlyPeerLinked(msg.sender) returns (bool _success)
   {
+      // TODO: Consider scheme: 
+      // submission owner: peer linked account
+      // submission author: peer
       require(tournamentExists[_tournamentAddress]);
 
       IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
@@ -212,16 +228,36 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return newTournament;
   }
 
+  /*
+   * State Maintenance Methods
+   */ 
+
   function updateUsersTournaments(address _author, address _tournament) internal
   {
     entrantToTournamentArray[_author].push(_tournament);
   }
 
-  function updateSubmissions(address _author, address _submission) public onlyTournament(msg.sender)
+  function updateSubmissions(address _author, address _submission) public onlyTournament
   {
+    authorToSubmissionToSubmissionIndex[_author][_submission] = uint256_optional({exists:true, value:authorToSubmissionArray[_author].length});
     authorToSubmissionArray[_author].push(_submission);
     peerToOwnsSubmission[ownerToPeer[_author]][_submission] = true;
     submissionExists[_submission] = true;
+  }
+
+  function removeSubmission(address _author) public onlySubmission returns (bool)
+  {
+    require(peerToOwnsSubmission[ownerToPeer[_author]][msg.sender]);
+    
+    if(submissionExists[msg.sender])
+    {
+      submissionExists[msg.sender] = false;
+      delete authorToSubmissionArray[_author][authorToSubmissionToSubmissionIndex[_author][msg.sender].value];
+      delete authorToSubmissionToSubmissionIndex[_author][msg.sender];
+      return true;
+    }
+    
+    return false;
   }
 
   /*

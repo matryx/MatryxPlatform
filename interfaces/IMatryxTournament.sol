@@ -3,6 +3,7 @@ pragma solidity ^0.4.18;
 interface IMatryxTournament
 {
 	function invokeSubmissionCreatedEvent(address _submissionAddress) public;
+    function removeSubmission(address _author) public returns (bool);
     function isEntrant(address _sender) public view returns (bool);
     function isOpen() public view returns (bool);
     function isInReview() public view returns (bool);

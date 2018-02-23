@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 
 interface IMatryxRound
 {
+	function removeSubmission(address _author, bytes32 externalAddress) public returns (bool);
 	function isOpen() public constant returns (bool);
 	function isInReview() public constant returns (bool);
 	function submissionIsAccessible(uint256 _index) public constant returns (bool);
@@ -19,6 +20,4 @@ interface IMatryxRound
 	function awardBounty(uint256 _submissionIndex, uint256 _remainingBounty) public;
 	function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessible) public returns (address _submissionAddress);
 	function getBalance(address _submissionAddress) public returns (uint256);
-	//function withdrawReward(uint256 _submissionIndex) public;
-	//function withdrawReward(uint256 _submissionIndex, address _recipient) public;
 }

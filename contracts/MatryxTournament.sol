@@ -43,8 +43,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     // Submission tracking
     uint256 numberOfSubmissions = 0;
-    mapping(address => address[]) private entrantToSubmissions;
-    mapping(address => bool) private addressToIsEntrant;
+    mapping(address=>address[]) private entrantToSubmissions;
+    mapping(address=>mapping(address=>uint256_optional)) private entrantToSubmissionToSubmissionIndex;
+    mapping(address=>bool) private addressToIsEntrant;
     address[] private allEntrants;
 
     function MatryxTournament(address _platformAddress, address _matryxTokenAddress, address _matryxRoundFactoryAddress, address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public {
@@ -74,6 +75,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Structs
      */
 
+    struct uint256_optional
+    {
+        bool exists;
+        uint256 value;
+    }
+
     struct SubmissionLocation
     {
         uint256 roundIndex;
@@ -84,7 +91,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Events
      */
 
-    event RoundCreated(uint256 _roundIndex);
     event RoundStarted(uint256 _roundIndex);
     // Fired at the end of every round, one time per submission created in that round
     event SubmissionCreated(uint256 _roundIndex, address _submissionAddress);
@@ -111,6 +117,19 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     modifier onlyRound()
     {
         require(isRound[msg.sender]);
+        _;
+    }
+
+    modifier onlySubmission(address _author)
+    {
+        // If the submission does not exist,
+        // the address of the submission we return will not be msg.sender
+        // It will either be 
+        // 1) The first submission, or
+        // 2) all 0s from having deleted it previously.
+        uint256 indexOfSubmission = entrantToSubmissionToSubmissionIndex[_author][msg.sender].value;
+        address submissionAddress = entrantToSubmissions[_author][indexOfSubmission];
+        require(submissionAddress == msg.sender);
         _;
     }
 
@@ -162,9 +181,22 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         _;
     }
 
-     /*
-      * State Maintenance Methods
-      */
+    /*
+    * State Maintenance Methods
+    */
+
+    function removeSubmission(address _author) public onlySubmission(_author) returns (bool)
+    {
+        if(entrantToSubmissionToSubmissionIndex[_author][msg.sender].exists)
+        {
+            numberOfSubmissions = numberOfSubmissions.sub(1);
+            delete entrantToSubmissions[_author][entrantToSubmissionToSubmissionIndex[_author][msg.sender].value];
+            delete entrantToSubmissionToSubmissionIndex[_author][msg.sender];
+            return true;
+        }
+
+        return false;
+    }
 
     /*
      * Access Control Methods
@@ -297,6 +329,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
             tournamentOpen = false;
             IMatryxPlatform platform = IMatryxPlatform(platformAddress);
             platform.invokeTournamentClosedEvent(this, rounds.length, _submissionIndex);
+
+            for(uint256 i = 0; i < allEntrants.length; i++)
+            {
+                IMatryxToken(matryxTokenAddress).transfer(allEntrants[i], entryFee);
+            }
         }
     }
 
@@ -346,7 +383,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev Enters the user into the tournament.
     /// @param _entrantAddress Address of the user to enter.
     /// @return success Whether or not the user was entered successfully.
-    function enterUserInTournament(address _entrantAddress) public onlyPlatform returns (bool success)
+    function enterUserInTournament(address _entrantAddress) public onlyPlatform whileTournamentOpen returns (bool success)
     {
         if(addressToIsEntrant[_entrantAddress] == true)
         {
@@ -385,7 +422,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         address submissionAddress = round.createSubmission(_name, _author, _externalAddress, _references, _contributors, _publicallyAccessible);
 
-        numberOfSubmissions += 1;
+        numberOfSubmissions = numberOfSubmissions.add(1);
+        entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress] = uint256_optional({exists:true, value:entrantToSubmissions[msg.sender].length});
         entrantToSubmissions[msg.sender].push(submissionAddress);
         platform.updateSubmissions(msg.sender, submissionAddress);
         
