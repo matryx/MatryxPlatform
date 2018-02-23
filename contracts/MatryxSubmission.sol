@@ -117,18 +117,17 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		IMatryxRound round = IMatryxRound(roundAddress);
 		Ownable ownableTournament = Ownable(tournamentAddress);
 
-		bool isPlatform = msg.sender == IMatryxTournament(tournamentAddress).getPlatform();
-		bool requesterOwnsTournament = ownableTournament.isOwner(_requester);
-		bool requesterOwnsSubmission = _requester == author;
-		bool requesterIsRound = _requester == roundAddress;
-		bool externallyAccessible = publicallyAccessibleDuringTournament;
-		bool duringReviewPeriod = IMatryxRound(roundAddress).isInReview();
+		bool isPlatform = _requester == IMatryxTournament(tournamentAddress).getPlatform();
+		bool isRound = _requester == roundAddress;
+		bool ownsThisSubmission = _requester == author;
+		bool submissionExternallyAccessible = publicallyAccessibleDuringTournament;
+		bool duringReviewPeriod = IMatryxRound(roundAddress).isInReview() || IMatryxTournament(tournamentAddress).isInReview();
 		bool requesterIsEntrant = IMatryxTournament(tournamentAddress).isEntrant(_requester);
-		bool roundInReviewAndEntrantRequesting = (duringReviewPeriod && requesterIsEntrant);
-		bool tournamentInReviewAndEntrantRequesting = IMatryxTournament(tournamentAddress).isInReview() && requesterIsEntrant;
+		bool requesterOwnsTournament = ownableTournament.isOwner(_requester);
+		bool duringReviewAndRequesterInTournament = duringReviewPeriod && (requesterOwnsTournament || requesterIsEntrant);
 		bool roundClosed = !round.isOpen();
 
-		return isPlatform || requesterOwnsTournament || requesterOwnsSubmission || requesterIsRound || externallyAccessible || roundInReviewAndEntrantRequesting || tournamentInReviewAndEntrantRequesting || roundClosed;
+		return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || roundClosed;
 	}
 
 	function getTitle() constant whenAccessible(msg.sender) public returns(string) {

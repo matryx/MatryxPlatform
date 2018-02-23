@@ -129,8 +129,8 @@ contract MatryxRound is Ownable, IMatryxRound {
      * Access Control Methods
      */
 
-     /// @dev Returns whether or not this round is open to new submissions.
-     /// @return Whether or not this round is open to submissions.
+	/// @dev Returns whether or not this round is open to new submissions.
+	/// @return Whether or not this round is open to submissions.
     function isOpen() public constant returns (bool)
 	{
 		bool roundStartedBeforeNow = startTime <= now;
