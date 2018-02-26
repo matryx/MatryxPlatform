@@ -27,7 +27,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	uint256 public endTime;
 	uint256 public reviewPeriod;
 	uint256 public bountyMTX;
-	uint256 public winningSubmissionIndex;
+	address public winningSubmission;
 	bool public winningSubmissionChosen;
 
 	mapping(address=>uint) addressToParticipantType;
@@ -273,9 +273,9 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	/// @dev Returns the index of this round's winning submission.
 	/// @return Index of the winning submission.
-	function getWinningSubmissionIndex() public constant returns (uint256)
+	function getWinningSubmissionAddress() public constant returns (address)
 	{
-		return winningSubmissionIndex;
+		return winningSubmission;
 	}
 
 	/// @dev Returns the number of submissions made to this round.
@@ -300,26 +300,28 @@ contract MatryxRound is Ownable, IMatryxRound {
 	}
 
 	/// @dev Choose a winning submission for the round (callable only by the owner of the round).
-    /// @param _submissionIndex Index of the winning submission.
-	function chooseWinningSubmission(uint256 _submissionIndex) public onlyTournament duringReviewPeriod
+    /// @param _submissionAddress Index of the winning submission.
+	function chooseWinningSubmission(address _submissionAddress) public onlyTournament duringReviewPeriod
 	{
-		require(_submissionIndex < submissions.length);
+		require(addressToSubmissionIndex[_submissionAddress].exists);
 		//TODO: apply time restrictions.
-		winningSubmissionIndex = _submissionIndex;
+		winningSubmission = _submissionAddress;
 		winningSubmissionChosen = true;
 
 		IMatryxToken token = IMatryxToken(matryxTokenAddress);
-		token.transfer(submissions[_submissionIndex], bountyMTX);
+		token.transfer(_submissionAddress, bountyMTX);
 	}
 
 	/// @dev Award bounty to a submission. Called by tournament to close a tournament after a 
 	/// round winner has been chosen.
-	/// @param _submissionIndex Index of the tournament winning submission.
+	/// @param _submissionAddress Index of the tournament winning submission.
 	/// @param _remainingBounty Bounty to award the submission.
-	function awardBounty(uint256 _submissionIndex, uint256 _remainingBounty) public onlyTournament
+	function awardBounty(address _submissionAddress, uint256 _remainingBounty) public onlyTournament
 	{
+		require(addressToSubmissionIndex[_submissionAddress].exists);
+		
 		IMatryxToken token = IMatryxToken(matryxTokenAddress);
-		token.transfer(submissions[_submissionIndex], _remainingBounty);
+		token.transfer(_submissionAddress, _remainingBounty);
 	}
 
 	/*

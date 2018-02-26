@@ -21,7 +21,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     address public matryxRoundFactoryAddress;
 
     //Tournament identification
-    string name;
+    string public name;
     bytes32 public externalAddress;
 
     // Timing and State
@@ -94,7 +94,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     event RoundStarted(uint256 _roundIndex);
     // Fired at the end of every round, one time per submission created in that round
     event SubmissionCreated(uint256 _roundIndex, address _submissionAddress);
-    event RoundWinnerChosen(uint256 _submissionIndex);
+    event RoundWinnerChosen(address _submissionAddress);
 
     /// @dev Allows rounds to invoke SubmissionCreated events on this tournament.
     /// @param _submissionAddress Address of the submission.
@@ -315,20 +315,20 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     }
 
     /// @dev Chooses the winner for the round. If this is the last round, closes the tournament.
-    /// @param _submissionIndex Index of the winning submission
-    function chooseWinner(uint256 _submissionIndex) public platformOrOwner duringReviewPeriod
+    /// @param _submissionAddress Index of the winning submission
+    function chooseWinner(address _submissionAddress) public platformOrOwner duringReviewPeriod
     {
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         //address winningAuthor = round.getSubmissionAuthor(_submissionIndex);
-        round.chooseWinningSubmission(_submissionIndex);
+        round.chooseWinningSubmission(_submissionAddress);
         //IMatryxToken.approve(winningAuthor, round.bountyMTX);
-        RoundWinnerChosen(_submissionIndex);
+        RoundWinnerChosen(_submissionAddress);
 
         if(rounds.length == maxRounds)
         {
             tournamentOpen = false;
             IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-            platform.invokeTournamentClosedEvent(this, rounds.length, _submissionIndex);
+            platform.invokeTournamentClosedEvent(this, rounds.length, _submissionAddress);
 
             for(uint256 i = 0; i < allEntrants.length; i++)
             {

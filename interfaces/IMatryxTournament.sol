@@ -14,7 +14,7 @@ interface IMatryxTournament
     function mySubmissions() public view returns (address[] _submissions);
     function submissionCount() public view returns (uint256 _submissionCount);
     function openTournament() public;
-    function chooseWinner(uint256 _submissionIndex) public;
+    function chooseWinner(address _submissionAddress) public;
     function setNumberOfRounds(uint256 _newMaxRounds) public;
     function createRound(uint256 _bountyMTX) public returns (address _roundAddress);
     function startRound(uint256 _duration, uint256 _reviewPeriod) public;

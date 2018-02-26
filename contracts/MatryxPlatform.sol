@@ -50,9 +50,10 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    * Events
    */
 
-  event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _winningSubmissionIndex);
+  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress);
+  event UserEnteredTournament(address _entrant, address _tournamentAddress);
   event QueryID(string queryID);
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
   /// @param _owner Owner of the tournament.
@@ -69,10 +70,10 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
   /// @param _tournamentAddress Address of the tournament.
   /// @param _finalRoundNumber Index of the round containing the winning submission.
-  /// @param _winningSubmissionIndex Index of the winning submission.
-  function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _winningSubmissionIndex) public onlyTournament
+  /// @param _winningSubmissionAddress Address of the winning submission.
+  function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress) public onlyTournament
   {
-    TournamentClosed(_tournamentAddress, _finalRoundNumber, _winningSubmissionIndex);
+    TournamentClosed(_tournamentAddress, _finalRoundNumber, _winningSubmissionAddress);
   }
 
   /* 
@@ -191,7 +192,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       if(success)
       {
         updateUsersTournaments(msg.sender, _tournamentAddress);
+        UserEnteredTournament(msg.sender, _tournamentAddress);
       }
+
       return success;
   }
 
@@ -205,7 +208,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @param _BountyMTX Total tournament reward in MTX.
   /// @param _entryFee Fee to charge participant upon entering into tournament.
   /// @return _tournamentAddress Address of the newly created tournament
-  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
+  function createTournament(string _discipline, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
   {
     IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
     // Check that the platform has a sufficient allowance to
@@ -215,7 +218,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
     address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _BountyMTX, _entryFee, _reviewPeriod);
-    TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
+    TournamentCreated(_discipline, msg.sender, newTournament, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
 
     // Transfer the MTX reward to the tournament.
     bool transferSuccess = matryxToken.transferFrom(msg.sender, newTournament, _BountyMTX);
