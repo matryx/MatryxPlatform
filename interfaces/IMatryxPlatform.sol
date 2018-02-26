@@ -3,7 +3,7 @@ pragma solidity ^0.4.18;
 interface IMatryxPlatform
 {
 	function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public;
-	function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress) public;
+	function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress, uint256 _MTXReward) public;
 	function prepareBalance(uint256 _toIgnore) public;
 	function balanceIsNonZero() public view returns (bool);
 	function getBalance() public constant returns (uint256);

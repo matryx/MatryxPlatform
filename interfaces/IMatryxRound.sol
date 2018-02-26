@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 
 interface IMatryxRound
 {
+	function bountyMTX() public returns (uint256);
 	function removeSubmission(address _author, bytes32 externalAddress) public returns (bool);
 	function isOpen() public constant returns (bool);
 	function isInReview() public constant returns (bool);

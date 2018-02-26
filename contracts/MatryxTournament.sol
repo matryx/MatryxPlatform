@@ -315,20 +315,18 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     }
 
     /// @dev Chooses the winner for the round. If this is the last round, closes the tournament.
-    /// @param _submissionAddress Index of the winning submission
+    /// @param _submissionAddress Address of the winning submission
     function chooseWinner(address _submissionAddress) public platformOrOwner duringReviewPeriod
     {
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
-        //address winningAuthor = round.getSubmissionAuthor(_submissionIndex);
         round.chooseWinningSubmission(_submissionAddress);
-        //IMatryxToken.approve(winningAuthor, round.bountyMTX);
         RoundWinnerChosen(_submissionAddress);
 
         if(rounds.length == maxRounds)
         {
             tournamentOpen = false;
             IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-            platform.invokeTournamentClosedEvent(this, rounds.length, _submissionAddress);
+            platform.invokeTournamentClosedEvent(this, rounds.length, _submissionAddress, round.bountyMTX());
 
             for(uint256 i = 0; i < allEntrants.length; i++)
             {

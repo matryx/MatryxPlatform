@@ -52,7 +52,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress);
+  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress, uint256 _MTXReward);
   event UserEnteredTournament(address _entrant, address _tournamentAddress);
   event QueryID(string queryID);
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
@@ -71,9 +71,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @param _tournamentAddress Address of the tournament.
   /// @param _finalRoundNumber Index of the round containing the winning submission.
   /// @param _winningSubmissionAddress Address of the winning submission.
-  function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress) public onlyTournament
+  function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress, uint256 _MTXReward) public onlyTournament
   {
-    TournamentClosed(_tournamentAddress, _finalRoundNumber, _winningSubmissionAddress);
+    TournamentClosed(_tournamentAddress, _finalRoundNumber, _winningSubmissionAddress, _MTXReward);
   }
 
   /* 
