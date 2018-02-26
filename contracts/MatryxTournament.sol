@@ -326,7 +326,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         {
             tournamentOpen = false;
             IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-            platform.invokeTournamentClosedEvent(this, rounds.length, _submissionAddress, round.bountyMTX());
+            platform.invokeTournamentClosedEvent(this, rounds.length, _submissionAddress, round.getBounty());
 
             for(uint256 i = 0; i < allEntrants.length; i++)
             {
