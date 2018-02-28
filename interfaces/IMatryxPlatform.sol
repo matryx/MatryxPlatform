@@ -12,7 +12,7 @@ interface IMatryxPlatform
 	function enterTournament(address _tournamentAddress) public returns (bool _success);
 	function createTournament(string _discipline, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public returns (address _tournamentAddress);
 	function updateSubmissions(address _author, address _submission) public;
-	function removeSubmission(address _submissionAddress) public returns (bool);
+	function removeSubmission(address _submissionAddress, address _tournamentAddress) public returns (bool);
 	function isPeer(address _peerAddress) public constant returns (bool);
 	function hasPeer(address _sender) public returns (bool);
 	function peerExistsAndOwnsSubmission(address _peer, address _reference) public returns (bool);

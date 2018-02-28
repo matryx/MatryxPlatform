@@ -1,7 +1,6 @@
 pragma solidity ^0.4.18;
 
 interface IMatryxSubmission {
-	function getTournament() public returns (address);
 	function isAccessible(address _requester) public constant returns (bool);
 	function getTitle() constant public returns(string);
 	function getAuthor() constant public returns(address);

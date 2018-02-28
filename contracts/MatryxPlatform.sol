@@ -249,23 +249,23 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     submissionExists[_submission] = true;
   }
 
-  function removeSubmission(address _submissionAddress) public returns (bool)
+  function removeSubmission(address _submissionAddress, address _tournamentAddress) public returns (bool)
   {
     address peerAddress = ownerToPeer[msg.sender];
     require(peerToOwnsSubmission[peerAddress][_submissionAddress]);
+    require(tournamentExists[_tournamentAddress]);
     
     if(submissionExists[_submissionAddress])
     {
       IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
       address author = submission.getAuthor();
-      address tournamentAddress = submission.getTournament();
       uint256 submissionIndex = authorToSubmissionToSubmissionIndex[author][_submissionAddress].value;
 
       submissionExists[_submissionAddress] = false;
       delete authorToSubmissionArray[author][submissionIndex];
       delete authorToSubmissionToSubmissionIndex[author][_submissionAddress];
 
-      IMatryxTournament(tournamentAddress).removeSubmission(_submissionAddress, author);
+      IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, author);
       return true;
     }
     

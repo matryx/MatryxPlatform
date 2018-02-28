@@ -13,9 +13,9 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	using SafeMath for uint256;
 
 	// Parent identification
-	address public platformAddress;
-	address public tournamentAddress;
-	address public roundAddress;
+	address private platformAddress;
+	address private tournamentAddress;
+	address private roundAddress;
 	
 	// Submission
 	string title;
@@ -129,11 +129,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/*
 	 * Getter Methods
 	 */
-
-	 function getTournament() public returns (address)
-	 {
-	 	return tournamentAddress;
-	 }
 
 	function isAccessible(address _requester) public constant returns (bool)
 	{
@@ -351,6 +346,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		{
 			token.transfer(references[i], diviedReward);
 		}
+
 	}
 	
 	function withdrawReward(address _recipient) public ownerOrRound

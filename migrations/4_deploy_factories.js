@@ -15,7 +15,7 @@ module.exports = function(deployer) {
 		{
 			deployer.link(SafeMath, MatryxTournamentFactory);
 			deployer.link(Strings, MatryxTournamentFactory);
-			return deployer.deploy(MatryxTournamentFactory, MatryxToken.address, MatryxRoundFactory.address, {gas: 3000000}).then(() =>
+			return deployer.deploy(MatryxTournamentFactory, MatryxToken.address, MatryxRoundFactory.address).then(() =>
 			{
 				deployer.link(SafeMath, MatryxPeerFactory);
 				return deployer.deploy(MatryxPeerFactory);

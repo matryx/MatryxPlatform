@@ -51,7 +51,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function MatryxTournament(address _platformAddress, address _matryxTokenAddress, address _matryxRoundFactoryAddress, address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public {
         //Clean inputs
         require(_owner != 0x0);
-        require(!_tournamentName.toSlice().empty());
+        //require(!_tournamentName.toSlice().empty());
         require(_BountyMTX > 0);
         require(_matryxRoundFactoryAddress != 0x0);
         
