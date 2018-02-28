@@ -120,16 +120,16 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         _;
     }
 
-    modifier onlySubmission(address _author)
+    modifier onlySubmission(address _submissionAddress, address _author)
     {
         // If the submission does not exist,
         // the address of the submission we return will not be msg.sender
         // It will either be 
         // 1) The first submission, or
         // 2) all 0s from having deleted it previously.
-        uint256 indexOfSubmission = entrantToSubmissionToSubmissionIndex[_author][msg.sender].value;
+        uint256 indexOfSubmission = entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].value;
         address submissionAddress = entrantToSubmissions[_author][indexOfSubmission];
-        require(submissionAddress == msg.sender);
+        require(_submissionAddress == msg.sender);
         _;
     }
 
@@ -185,13 +185,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     * State Maintenance Methods
     */
 
-    function removeSubmission(address _author) public onlySubmission(_author) returns (bool)
+    function removeSubmission(address _submissionAddress, address _author) public onlyPlatform returns (bool)
     {
-        if(entrantToSubmissionToSubmissionIndex[_author][msg.sender].exists)
+        if(entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].exists)
         {
             numberOfSubmissions = numberOfSubmissions.sub(1);
-            delete entrantToSubmissions[_author][entrantToSubmissionToSubmissionIndex[_author][msg.sender].value];
-            delete entrantToSubmissionToSubmissionIndex[_author][msg.sender];
+            delete entrantToSubmissions[_author][entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].value];
+            delete entrantToSubmissionToSubmissionIndex[_author][_submissionAddress];
             return true;
         }
 

@@ -3,7 +3,7 @@ pragma solidity ^0.4.18;
 interface IMatryxTournament
 {
 	function invokeSubmissionCreatedEvent(address _submissionAddress) public;
-    function removeSubmission(address _author) public returns (bool);
+    function removeSubmission(address _submissionAddress, address _author) public returns (bool);
     function isEntrant(address _sender) public view returns (bool);
     function isOpen() public view returns (bool);
     function isInReview() public view returns (bool);
@@ -15,6 +15,9 @@ interface IMatryxTournament
     function submissionCount() public view returns (uint256 _submissionCount);
     function openTournament() public;
     function chooseWinner(address _submissionAddress) public;
+    function setName(string _name) public;
+    function setExternalAddress(bytes32 _externalAddress) public;
+    function setEntryFee(uint256 _entryFee) public;
     function setNumberOfRounds(uint256 _newMaxRounds) public;
     function createRound(uint256 _bountyMTX) public returns (address _roundAddress);
     function startRound(uint256 _duration, uint256 _reviewPeriod) public;

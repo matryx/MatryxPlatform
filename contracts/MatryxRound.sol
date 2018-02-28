@@ -135,16 +135,20 @@ contract MatryxRound is Ownable, IMatryxRound {
 	 * State Maintenance Methods
 	 */
 
-	function removeSubmission(address _author, bytes32 externalAddress) public onlySubmission returns (bool)
+	function removeSubmission(address _submissionAddress) public onlyTournament returns (bool)
 	{
 		if(addressToSubmissionIndex[msg.sender].exists)
 		{
-			delete authorToSubmissionAddress[_author];
+			IMatryxSubmission submission = IMatryxSubmission(submissions[addressToSubmissionIndex[_submissionAddress].value]);
+			bytes32 externalAddress = submission.getExternalAddress();
+			address author = submission.getAuthor();
+			submission.deleteSubmission();
+
+			delete authorToSubmissionAddress[author];
 			delete externalAddressToSubmission[externalAddress];
-			delete submissions[addressToSubmissionIndex[msg.sender].value];
+			delete submissions[addressToSubmissionIndex[_submissionAddress].value];
 
 			numberSubmissionsRemoved = numberSubmissionsRemoved.add(1);
-
 			return true;
 		}
 

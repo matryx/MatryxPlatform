@@ -90,6 +90,20 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
   		_;
   	}
 
+  	modifier onlyRound()
+  	{
+  		require(msg.sender == roundAddress);
+  		_;
+  	}
+
+  	modifier ownerOrRound()
+  	{
+  		bool isOwner = msg.sender == owner;
+  		bool isRound = msg.sender == roundAddress;
+  		require(isOwner || isRound);
+  		_;
+  	}
+
   	modifier owningPeer(address _reference)
   	{
   		require(IMatryxPlatform(platformAddress).peerExistsAndOwnsSubmission(msg.sender, _reference));
@@ -115,6 +129,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/*
 	 * Getter Methods
 	 */
+
+	 function getTournament() public returns (address)
+	 {
+	 	return tournamentAddress;
+	 }
 
 	function isAccessible(address _requester) public constant returns (bool)
 	{
@@ -303,7 +322,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		return _balance;
 	}
 
-	function withdrawReward() public onlyOwner
+	function withdrawReward() public ownerOrRound
 	{
 		uint submissionReward = getBalance();
 		IMatryxRound round = IMatryxRound(roundAddress);
@@ -332,10 +351,9 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		{
 			token.transfer(references[i], diviedReward);
 		}
-
 	}
 	
-	function withdrawReward(address _recipient) public onlyOwner
+	function withdrawReward(address _recipient) public ownerOrRound
 	{
 		uint submissionReward = getBalance();
 		IMatryxRound round = IMatryxRound(roundAddress);
@@ -366,13 +384,17 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		}
 	}
 
-	// @dev Removes a submission from this round (callable only by submission's owner).
-    // @param _submissionIndex Index of the submission to remove.
-	function selfdestruct(address _recipient) onlyAuthor public
+	function prepareToDelete() internal
 	{
-		IMatryxPlatform(platformAddress).removeSubmission(author);
-		IMatryxTournament(tournamentAddress).removeSubmission(author);
-		IMatryxRound(roundAddress).removeSubmission(author, externalAddress);
+		withdrawReward();
+		// TODO: Remove references on other submissions so that MTX is not burned!
+	}
+
+	// @dev Removes a submission permanently.
+ 	// @param _recipient Address to send the refunded ether to.
+	function deleteSubmission() onlyRound public
+	{
+		prepareToDelete();
 		selfdestruct(author);
 	}
 }

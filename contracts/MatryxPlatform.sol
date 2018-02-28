@@ -7,6 +7,7 @@ import '../interfaces/IMatryxPlatform.sol';
 import '../interfaces/factories/IMatryxPeerFactory.sol';
 import '../interfaces/factories/IMatryxTournamentFactory.sol';
 import '../interfaces/IMatryxTournament.sol';
+import '../interfaces/IMatryxRound.sol';
 import '../interfaces/IMatryxSubmission.sol';
 import './Ownable.sol';
 
@@ -248,15 +249,23 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     submissionExists[_submission] = true;
   }
 
-  function removeSubmission(address _author) public onlySubmission returns (bool)
+  function removeSubmission(address _submissionAddress) public returns (bool)
   {
-    require(peerToOwnsSubmission[ownerToPeer[_author]][msg.sender]);
+    address peerAddress = ownerToPeer[msg.sender];
+    require(peerToOwnsSubmission[peerAddress][_submissionAddress]);
     
-    if(submissionExists[msg.sender])
+    if(submissionExists[_submissionAddress])
     {
-      submissionExists[msg.sender] = false;
-      delete authorToSubmissionArray[_author][authorToSubmissionToSubmissionIndex[_author][msg.sender].value];
-      delete authorToSubmissionToSubmissionIndex[_author][msg.sender];
+      IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
+      address author = submission.getAuthor();
+      address tournamentAddress = submission.getTournament();
+      uint256 submissionIndex = authorToSubmissionToSubmissionIndex[author][_submissionAddress].value;
+
+      submissionExists[_submissionAddress] = false;
+      delete authorToSubmissionArray[author][submissionIndex];
+      delete authorToSubmissionToSubmissionIndex[author][_submissionAddress];
+
+      IMatryxTournament(tournamentAddress).removeSubmission(_submissionAddress, author);
       return true;
     }
     

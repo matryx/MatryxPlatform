@@ -11,11 +11,11 @@ module.exports = function(deployer) {
 	return deployer.deploy(MatryxSubmissionFactory).then(() => 
 	{
 		deployer.link(SafeMath, MatryxRoundFactory);
-		return deployer.deploy(MatryxRoundFactory, MatryxSubmissionFactory.address).then(() => 
+		return deployer.deploy(MatryxRoundFactory, MatryxToken.address, MatryxSubmissionFactory.address).then(() => 
 		{
 			deployer.link(SafeMath, MatryxTournamentFactory);
 			deployer.link(Strings, MatryxTournamentFactory);
-			return deployer.deploy(MatryxTournamentFactory, MatryxToken.address, MatryxRoundFactory.address).then(() =>
+			return deployer.deploy(MatryxTournamentFactory, MatryxToken.address, MatryxRoundFactory.address, {gas: 3000000}).then(() =>
 			{
 				deployer.link(SafeMath, MatryxPeerFactory);
 				return deployer.deploy(MatryxPeerFactory);
