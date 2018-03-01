@@ -221,7 +221,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     {
         bool tournamentEndedBeforeNow = now >= tournamentClosedTime;
         bool tournamentReviewNotOver = now <= tournamentClosedTime + reviewPeriod;
-        require(tournamentEndedBeforeNow && tournamentReviewNotOver && tournamentOpen);
+        bool inReview = (tournamentEndedBeforeNow && tournamentReviewNotOver && tournamentOpen);
+        return inReview;
     }
 
     /// @dev Returns whether or not a round of this tournament is open.
@@ -268,6 +269,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function submissionCount() public view returns (uint256 _submissionCount)
     {
         return numberOfSubmissions;
+    }
+
+    function entrantCount() public view returns (uint256 _entrantCount)
+    {
+        return allEntrants.length;
     }
 
     /*
