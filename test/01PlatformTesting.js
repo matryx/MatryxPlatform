@@ -25,7 +25,7 @@ contract('MatryxPlatform', function(accounts){
     // Start watching the platform events before we induce the one we're looking for.
     platform.TournamentOpened().watch((error, result) => {
                 if (!error) {
-                        assert.equal(result.args._tournamentName, "tournament", "The name of the tournament should be 'justOpenedTournament'");
+                        assert.equal(result.args._tournamentName, "tournament", "The name of the tournament should be 'tournament'");
                 } else {
                         assert.false();
                 }
