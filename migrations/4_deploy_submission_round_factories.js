@@ -11,15 +11,6 @@ module.exports = function(deployer) {
 	return deployer.deploy(MatryxSubmissionFactory).then(() => 
 	{
 		deployer.link(SafeMath, MatryxRoundFactory);
-		return deployer.deploy(MatryxRoundFactory, MatryxToken.address, MatryxSubmissionFactory.address).then(() => 
-		{
-			deployer.link(SafeMath, MatryxTournamentFactory);
-			deployer.link(Strings, MatryxTournamentFactory);
-			return deployer.deploy(MatryxTournamentFactory, MatryxToken.address, MatryxRoundFactory.address).then(() =>
-			{
-				deployer.link(SafeMath, MatryxPeerFactory);
-				return deployer.deploy(MatryxPeerFactory);
-			});
-		});
+		return deployer.deploy(MatryxRoundFactory, "0x89c81164a847fae12841c7d2371864c7656f91c9", MatryxSubmissionFactory.address);
 	});
 };
