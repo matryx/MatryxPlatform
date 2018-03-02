@@ -14,10 +14,11 @@ interface IMatryxTournament
     function mySubmissions() public view returns (address[]);
     function submissionCount() public view returns (uint256 _submissionCount);
     function entrantCount() public view returns (uint256 _entrantCount);
-    function setName(string _name) public;
+    function setTitle(string _name) public;
     function setExternalAddress(bytes32 _externalAddress) public;
     function setEntryFee(uint256 _entryFee) public;
     function setNumberOfRounds(uint256 _newMaxRounds) public;
+    function setDiscipline(string _discipline) public;
     function openTournament() public;
     function chooseWinner(address _submissionAddress) public;
     function createRound(uint256 _bountyMTX) public returns (address _roundAddress) ;
