@@ -222,7 +222,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     {
         bool tournamentEndedBeforeNow = now >= tournamentClosedTime;
         bool tournamentReviewNotOver = now <= tournamentClosedTime + reviewPeriod;
-        bool inReview = (tournamentEndedBeforeNow && tournamentReviewNotOver && tournamentOpen);
+        bool inReview = tournamentEndedBeforeNow && tournamentReviewNotOver;
         return inReview;
     }
 
@@ -313,22 +313,16 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      */
 
     /// @dev Opens this tournament up to submissions.
-    function openTournament() public platformOrOwner
+    function openTournament() internal platformOrOwner
     {
-        // TODO: Uncomment.
-        //uint allowedMTX = IMatryxToken(matryxTokenAddress).allowance(msg.sender, this);
-        //require(allowedMTX >= BountyMTX);
-        //require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, this, BountyMTX));
-        
         tournamentOpen = true;
-
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
         platform.invokeTournamentOpenedEvent(owner, this, title, externalAddress, BountyMTX, entryFee);
     }
 
     /// @dev Chooses the winner for the round. If this is the last round, closes the tournament.
     /// @param _submissionAddress Address of the winning submission
-    function chooseWinner(address _submissionAddress) public platformOrOwner duringReviewPeriod
+    function chooseWinner(address _submissionAddress) public platformOrOwner
     {
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         round.chooseWinningSubmission(_submissionAddress);
@@ -336,7 +330,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         if(rounds.length == maxRounds)
         {
+            require(isInReview());
             tournamentOpen = false;
+
             IMatryxPlatform platform = IMatryxPlatform(platformAddress);
             platform.invokeTournamentClosedEvent(this, rounds.length, _submissionAddress, round.getBounty());
 
@@ -383,6 +379,16 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     {
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         round.Start(_duration, _reviewPeriod);
+        if(!tournamentOpen)
+        {
+            openTournament();
+        }
+
+        if(rounds.length == maxRounds)
+        {
+            tournamentClosedTime = now + _duration;
+        }
+
         RoundStarted(rounds.length-1);
     }
 
@@ -407,7 +413,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         require(tournamentsAllowance >= entryFee);
 
         // Make the MTX transfer.
-        bool transferSuccess = matryxToken.transferFrom(msg.sender, this, entryFee);
+        bool transferSuccess = matryxToken.transferFrom(_entrantAddress, this, entryFee);
         require(transferSuccess);
 
         // Finally, change the tournament's state to reflect the user entering.

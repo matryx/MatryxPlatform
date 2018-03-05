@@ -231,6 +231,22 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
     return newTournament;
   }
+  
+  event successfulTransfer();
+  event unsuccessfulTransfer();
+  function transferMTXToAddress(address _to, uint256 _amount)
+  {
+    IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
+    bool transferSuccess = matryxToken.transferFrom(msg.sender, _to, _amount);
+    if(transferSuccess)
+    {
+      successfulTransfer();
+    }
+    else
+    {
+      unsuccessfulTransfer();
+    }
+  }
 
   /*
    * State Maintenance Methods
@@ -278,6 +294,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   function createPeer() public returns (address)
   {
+    require(ownerToPeer[msg.sender] == 0x0);
     IMatryxPeerFactory peerFactory = IMatryxPeerFactory(matryxPeerFactoryAddress);
     address peer = peerFactory.createPeer(msg.sender);
     peerExists[peer] = true;

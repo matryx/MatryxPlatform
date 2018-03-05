@@ -1,0 +1,38 @@
++=========================================================================+
+|                               Testing                                   |
++=========================================================================+
+
+platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
+web3.eth.defaultAccount = web3.eth.accounts[0]
+platform.createPeer.sendTransaction({gas: 2000000});
+token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address)
+token.setReleaseAgent(web3.eth.accounts[0])
+token.releaseTokenTransfer.sendTransaction({gas: 1000000})
+token.mint(web3.eth.accounts[0], 10000)
+token.balanceOf.call(web3.eth.accounts[0])
+token.approve(MatryxPlatform.address, 100)
+platform.createTournament.sendTransaction("math", "create a shell", "ipfs hash", 100, 2, 100000, {gas: 4000000})
+tournament = web3.eth.contract(MatryxTournament.abi).at(platform.getTournamentAtIndex.call(0))
+tournament.createRound(10, {gas: 4000000})
+tournament.startRound(300, 120, {gas: 1500000});
+token.approve(tournament.address, 2)
+platform.enterTournament(tournament.address, {gas: 1500000})
+round = web3.eth.contract(MatryxRound.abi).at(tournament.currentRound()[1])
+tournament.createSubmission("thing", web3.eth.accounts[0], "external address", [], [], true);
+
+
+web3.eth.getBalance(web3.eth.accounts[0])
+
+
+platform.transferMTXToAddress.sendTransaction(platform.address, 100, {gas: 100000});
+
+web3.eth.defaultAccount = web3.eth.accounts[0]
+token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address)
+token.setReleaseAgent(web3.eth.accounts[0])
+token.releaseTokenTransfer.sendTransaction({gas: 1000000})
+token.mint(web3.eth.accounts[0], 10000)
+token.balanceOf.call(web3.eth.accounts[0])
+token.balanceOf.call(web3.eth.accounts[1])
+token.approve(web3.eth.accounts[1], 100)
+token.allowance.call(web3.eth.accounts[0], web3.eth.accounts[1])
+token.transferFrom(web3.eth.accounts[0], web3.eth.accounts[1], 100, {from: web3.eth.accounts[1]})

@@ -11,5 +11,17 @@ var MatryxRoundFactory = artifacts.require("MatryxRoundFactory");
 var MatryxSubmissionFactory = artifacts.require("MatryxSubmissionFactory");
 
 module.exports = function(deployer) {
-	return deployer.deploy(MatryxPlatform, "0x89c81164a847fae12841c7d2371864c7656f91c9", MatryxPeerFactory.address, MatryxTournamentFactory.address);
-}
+	return deployer.deploy(MatryxPlatform, MatryxToken.address, MatryxPeerFactory.address, MatryxTournamentFactory.address).then(() =>
+	{
+		// Supply the platform address to the contracts that need it.
+		MatryxTournamentFactory.deployed().then((tournamentFactory) =>
+		{
+			tournamentFactory.setPlatform(MatryxPlatform.address);
+		});
+
+		MatryxPeerFactory.deployed().then((peerFactory) =>
+		{
+			peerFactory.setPlatform(MatryxPlatform.address);
+		})
+	});
+};

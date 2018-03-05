@@ -16,7 +16,7 @@ contract MatryxPeerFactory is Ownable {
 
 	function createPeer(address _owner) public returns (address _peerAddress) {
 		uint256 trust = getTrustForNewPeer();
-		MatryxPeer peerAddress = new MatryxPeer(_owner, trust);
+		MatryxPeer peerAddress = new MatryxPeer(platformAddress, _owner, trust);
 		peerCount  = peerCount.add(1);
 		return peerAddress;
 	}
