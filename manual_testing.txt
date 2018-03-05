@@ -14,15 +14,20 @@ token.approve(MatryxPlatform.address, 100)
 platform.createTournament.sendTransaction("math", "create a shell", "ipfs hash", 100, 2, 100000, {gas: 4000000})
 tournament = web3.eth.contract(MatryxTournament.abi).at(platform.getTournamentAtIndex.call(0))
 tournament.createRound(10, {gas: 4000000})
-tournament.startRound(300, 120, {gas: 1500000});
+tournament.startRound(10, 120000, {gas: 1500000});
 token.approve(tournament.address, 2)
 platform.enterTournament(tournament.address, {gas: 1500000})
 round = web3.eth.contract(MatryxRound.abi).at(tournament.currentRound()[1])
-tournament.createSubmission("thing", web3.eth.accounts[0], "external address", [], [], true);
+tournament.createSubmission("thing", web3.eth.accounts[0], "external address", [], [], true, {gas: 4000000});
+tournament.chooseWinner(round.getSubmissions()[0]);
+submission = web3.eth.contract(MatryxSubmission.abi).at(round.getSubmissions()[0])
 
 
 web3.eth.getBalance(web3.eth.accounts[0])
 
+subFactory.createSubmission.call(platform.address, tournament.address, round.address, "hello", web3.eth.accounts[0], "external address", [], [], true, {gas: 4000000})
+
+subFactory.createSubmission.estimateGas(platform.address, tournament.address, round.address, "hello", web3.eth.accounts[0], "external address", [], [], true)
 
 platform.transferMTXToAddress.sendTransaction(platform.address, 100, {gas: 100000});
 

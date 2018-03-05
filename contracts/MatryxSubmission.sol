@@ -40,7 +40,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	uint256 timeSubmitted;
 	bool public publicallyAccessibleDuringTournament;
 
-	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, uint256 _timeSubmitted, bool _publicallyAccessibleDuringTournament) public
+	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessibleDuringTournament) public
 	{
 		require(_submissionAuthor != 0x0);
 		
@@ -54,10 +54,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		externalAddress = _externalAddress;
 		references = _references;
 		contributors = _contributors;
-		timeSubmitted = _timeSubmitted;
+		timeSubmitted = now;
 		publicallyAccessibleDuringTournament = _publicallyAccessibleDuringTournament;
-
-		IMatryxPlatform(platformAddress).handleReferencesForSubmission(references);
 	}
 
 	/*
@@ -316,38 +314,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		uint256 _balance = round.getBalance(this);
 		return _balance;
 	}
-
-	function withdrawReward() public ownerOrRound
-	{
-		uint submissionReward = getBalance();
-		IMatryxRound round = IMatryxRound(roundAddress);
-		IMatryxToken token = IMatryxToken(round.getTokenAddress());
-
-		// transfer amount calculated as:
-		// normalizedTrustInSubmission * 
-		// proportionReferenceApprovalsGivenForSubmissionsReferencingThisSubmission *
-		// 0.5 * 
-		// submissionReward
-		uint256 transferAmount = approvalTrust.div(totalPossibleTrust);
-		transferAmount = transferAmount.mul(approvedReferences);
-		transferAmount = transferAmount.div(totalReferenceCount);
-		transferAmount = transferAmount.div(2);
-		transferAmount = transferAmount.mul(submissionReward);
-
-		// TODO: Add minimum MTX check.
-		// If it passes, just give the owner the remaining amount
-
-		token.transfer(msg.sender, transferAmount);
-
-		// TODO: Weight by author's reputation
-		uint256 remainingReward = submissionReward.sub(transferAmount);
-		uint256 diviedReward = remainingReward.div(references.length);
-		for(uint i = 0; i < references.length; i++)
-		{
-			token.transfer(references[i], diviedReward);
-		}
-
-	}
 	
 	function withdrawReward(address _recipient) public ownerOrRound
 	{
@@ -355,19 +321,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		IMatryxRound round = IMatryxRound(roundAddress);
 		IMatryxToken token = IMatryxToken(round.getTokenAddress());
 
-		// transfer amount calculated as:
-		// normalizedTrustInSubmission * 
-		// proportionReferenceApprovalsGivenForSubmissionsReferencingThisSubmission *
-		// 0.5 * 
-		// submissionReward
-		uint256 transferAmount = approvalTrust.div(totalPossibleTrust);
-		transferAmount = transferAmount.mul(approvedReferences);
-		transferAmount = transferAmount.div(totalReferenceCount);
-		transferAmount = transferAmount.div(2);
-		transferAmount = transferAmount.mul(submissionReward);
-
-		// TODO: Add minimum MTX check.
-		// If it passes, just give the recipient the remaining amount
+		uint256 transferAmount = getTransferAmount();
 
 		token.transfer(_recipient, transferAmount);
 
@@ -378,6 +332,33 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		{
 			token.transfer(references[i], diviedReward);
 		}
+	}
+
+	function withdrawReward() public ownerOrRound
+	{
+		withdrawReward(msg.sender);
+	}
+
+	function getTransferAmount() public constant returns (uint256)
+	{
+		
+		uint submissionReward = getBalance();
+		if(totalReferenceCount == 0)
+		{
+			return submissionReward;
+		}
+		// transfer amount calculated as:
+		// normalizedTrustInSubmission * 
+		// proportionReferenceApprovalsGivenForSubmissionsReferencingThisSubmission *
+		// 0.5 * 
+		// submissionReward
+		uint256 transferAmount = approvalTrust.div(totalPossibleTrust);
+		transferAmount = transferAmount.mul(approvedReferences);
+		transferAmount = transferAmount.div(totalReferenceCount);
+		transferAmount = transferAmount.div(2);
+		transferAmount = transferAmount.mul(submissionReward);
+
+		return transferAmount;
 	}
 
 	function prepareToDelete() internal

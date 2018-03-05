@@ -312,7 +312,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Tournament Admin Methods
      */
 
-    /// @dev Opens this tournament up to submissions.
+    /// @dev Opens this tournament up to submissions; called by startRound.
     function openTournament() internal platformOrOwner
     {
         tournamentOpen = true;
@@ -324,6 +324,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @param _submissionAddress Address of the winning submission
     function chooseWinner(address _submissionAddress) public platformOrOwner
     {
+        // TODO: Implement popular vote default winner chosen to avoid
+        // locking up MTX in this tournament (would happen if the tournament
+        // poser tried to choose a winner after the review period ended).
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         round.chooseWinningSubmission(_submissionAddress);
         RoundWinnerChosen(_submissionAddress);
@@ -437,6 +440,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         address submissionAddress = round.createSubmission(_title, _author, _externalAddress, _references, _contributors, _publicallyAccessible);
+        // Send out reference requests to the authors of other submissions
+        IMatryxPlatform(platformAddress).handleReferencesForSubmission(submissionAddress, _references);
 
         numberOfSubmissions = numberOfSubmissions.add(1);
         entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress] = uint256_optional({exists:true, value:entrantToSubmissions[msg.sender].length});

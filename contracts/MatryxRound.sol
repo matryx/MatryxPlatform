@@ -117,6 +117,12 @@ contract MatryxRound is Ownable, IMatryxRound {
 		_;
 	}
 
+	modifier ifSubmissionExists(address _submissionAddress)
+	{
+		require(addressToSubmissionIndex[_submissionAddress].exists);
+		_;
+	}
+
 	/// @dev Requires the function caller to be the platform or the owner of this tournament
 	modifier tournamentOrOwner()
     {
@@ -176,7 +182,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	{
 		bool roundEndedAfterNow = now >= endTime;
 		bool roundReviewNotOver = now <= endTime+reviewPeriod;
-		require(roundEndedAfterNow && roundReviewNotOver && !winningSubmissionChosen);
+		return roundEndedAfterNow && roundReviewNotOver && !winningSubmissionChosen;
 	}
 
 	/// @dev Returns whether or not the submission is accessible to the requester.
@@ -310,10 +316,8 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	/// @dev Choose a winning submission for the round (callable only by the owner of the round).
     /// @param _submissionAddress Index of the winning submission.
-	function chooseWinningSubmission(address _submissionAddress) public onlyTournament duringReviewPeriod
+	function chooseWinningSubmission(address _submissionAddress) public onlyTournament ifSubmissionExists(_submissionAddress) duringReviewPeriod
 	{
-		require(addressToSubmissionIndex[_submissionAddress].exists);
-		//TODO: apply time restrictions.
 		winningSubmission = _submissionAddress;
 		winningSubmissionChosen = true;
 
@@ -325,10 +329,8 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// round winner has been chosen.
 	/// @param _submissionAddress Index of the tournament winning submission.
 	/// @param _remainingBounty Bounty to award the submission.
-	function awardBounty(address _submissionAddress, uint256 _remainingBounty) public onlyTournament
+	function awardBounty(address _submissionAddress, uint256 _remainingBounty) public onlyTournament ifSubmissionExists(_submissionAddress)
 	{
-		require(addressToSubmissionIndex[_submissionAddress].exists);
-		
 		IMatryxToken token = IMatryxToken(matryxTokenAddress);
 		token.transfer(_submissionAddress, _remainingBounty);
 	}
@@ -348,8 +350,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	{
 		require(_author != 0x0);
 		
-        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(platformAddress, tournamentAddress, this, _title, _author, _externalAddress, _references, _contributors, now, _publicallyAccessible);
-        
+        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(platformAddress, tournamentAddress, this, _title, _author, _externalAddress, _references, _contributors, _publicallyAccessible);
         //submission bookkeeping
         addressToSubmissionIndex[submissionAddress] = uint256_optional({exists:true, value: submissions.length});
         submissions.push(submissionAddress);

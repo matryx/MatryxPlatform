@@ -135,7 +135,10 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    * State Maintenance Methods
    */
 
-  function handleReferencesForSubmission(address[] _references) public onlySubmission returns (bool) 
+  // @dev Sends out reference requests for a particular submission.
+  // @param _references Reference whose authors will be sent requests.
+  // @returns Whether or not all references were successfully sent a request.
+  function handleReferencesForSubmission(address _submissionAddress, address[] _references) public onlyTournament returns (bool) 
   {
     for(uint256 i = 0; i < _references.length; i++)
     {
@@ -155,11 +158,14 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
       IMatryxPeer peer = IMatryxPeer(peerAddress);
 
-      peer.invokeReferenceRequestEvent(msg.sender, _referenceAddress);
+      peer.invokeReferenceRequestEvent(_submissionAddress, _referenceAddress);
       submission.receiveReferenceRequest();
     }
   }
 
+  // @dev Sends out a reference request for a submission (must be called by the submission).
+  // @param _reference Reference whose author will be sent a request.
+  // @returns Whether or not all references were successfully sent a request.
   function handleReferenceForSubmission(address _reference) public onlySubmission returns (bool)
   {
       require(isSubmission(_reference));
@@ -231,7 +237,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
     return newTournament;
   }
-  
+
   event successfulTransfer();
   event unsuccessfulTransfer();
   function transferMTXToAddress(address _to, uint256 _amount)
