@@ -4,42 +4,70 @@
 
 platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
 web3.eth.defaultAccount = web3.eth.accounts[0]
-platform.createPeer.sendTransaction({gas: 2000000});
-platform.createPeer.sendTransaction({gas: 2000000, from: web3.eth.accounts[1]});
-platform.createPeer.sendTransaction({gas: 2000000, from: web3.eth.accounts[2]});
+platform.createPeer.sendTransaction({gas: 3000000});
+platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[1]});
+platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[2]});
+platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[3]});
 token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address)
 token.setReleaseAgent(web3.eth.accounts[0])
 token.releaseTokenTransfer.sendTransaction({gas: 1000000})
 token.mint(web3.eth.accounts[0], 10000)
 token.mint(web3.eth.accounts[1], 10000)
 token.mint(web3.eth.accounts[2], 10000)
+token.mint(web3.eth.accounts[3], 10000)
 token.approve(MatryxPlatform.address, 100)
 platform.createTournament.sendTransaction("math", "create a shell", "ipfs hash", 100, 2, 100000, {gas: 4000000})
 tournament = web3.eth.contract(MatryxTournament.abi).at(platform.getTournamentAtIndex.call(0))
 tournament.createRound(10, {gas: 4000000})
-tournament.startRound(25, 120000, {gas: 1500000});
+tournament.startRound(10, 120000, {gas: 1500000});
 
 token.approve(tournament.address, 2, {from: web3.eth.accounts[1]})
 token.approve(tournament.address, 2, {from: web3.eth.accounts[2]})
+token.approve(tournament.address, 2, {from: web3.eth.accounts[3]})
 platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[1]})
 platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[2]})
+platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[3]});
 
 round = web3.eth.contract(MatryxRound.abi).at(tournament.currentRound()[1])
 tournament.createSubmission("submissionOne", web3.eth.accounts[1], "external address", [], [], true, {gas: 4000000, from: web3.eth.accounts[1]});
 tournament.createSubmission("submissionTwo", web3.eth.accounts[2], "external address", [], [], true, {gas: 4000000, from: web3.eth.accounts[2]});
+tournament.createSubmission("submissionTee", web3.eth.accounts[3], "external address", [], [], true, {gas: 4000000, from: web3.eth.accounts[3]});
 
 tournament.chooseWinner(round.getSubmissions()[0]);
 addressSubmissionOne = round.getSubmissions()[0];
 addressSubmissionTwo = round.getSubmissions()[1];
+addressSubmissionTee = round.getSubmissions()[2];
 submissionOne = web3.eth.contract(MatryxSubmission.abi).at(addressSubmissionOne)
 submissionTwo = web3.eth.contract(MatryxSubmission.abi).at(addressSubmissionTwo)
+submissionTee = web3.eth.contract(MatryxSubmission.abi).at(addressSubmissionTee)
 
-submissionOne.addReference(addressSubmissionTwo, {from: web3.eth.accounts[1], gas: 1000000});
-submissionTwo.addReference(addressSubmissionOne, {from: web3.eth.accounts[2], gas: 1000000});
+submissionOne.addReference(addressSubmissionTwo, {from: web3.eth.accounts[1], gas: 2000000});
+submissionTwo.addReference(addressSubmissionOne, {from: web3.eth.accounts[2], gas: 2000000});
+submissionTee.addReference(addressSubmissionOne, {from: web3.eth.accounts[3], gas: 2000000});
+
+submissionOne.getReferences.call({from: web3.eth.accounts[1]})
+submissionTwo.getReferences.call({from: web3.eth.accounts[2]})
+submissionTee.getReferences.call({from: web3.eth.accounts[3]})
 
 peerOne = web3.eth.contract(MatryxPeer.abi).at(platform.peerAddress.call(web3.eth.accounts[1]))
 peerTwo = web3.eth.contract(MatryxPeer.abi).at(platform.peerAddress.call(web3.eth.accounts[2]))
+peerTee = web3.eth.contract(MatryxPeer.abi).at(platform.peerAddress.call(web3.eth.accounts[3]));
 
-peerTwo.approveReference(addressSubmissionOne, addressSubmissionTwo, {from: web3.eth.accounts[2]});
-peerOne.approveReference(addressSubmissionTwo, addressSubmissionOne, {from: web3.eth.accounts[1]});
+peerTwo.approveReference(addressSubmissionOne, addressSubmissionTwo, {from: web3.eth.accounts[2], gas: 1000000});
+peerOne.approveReference(addressSubmissionTwo, addressSubmissionOne, {from: web3.eth.accounts[1], gas: 1000000});
+peerTee.flagMissingReference(addressSubmissionOne, addressSubmissionTee, {from: web3.eth.accounts[3], gas: 2000000});
 
+submissionOne.addressIsFlagged(addressSubmissionTee);
+
+peerTee.getMissingReferenceCount.call(submissionOne.address, {from: web3.eth.accounts[3]});
+
+submissionOne.addReference(addressSubmissionTee, {from: web3.eth.accounts[1], gas: 3000000});
+
+submissionOne.addressIsFlagged(addressSubmissionTee);
+
+// peerTee.flagMissingReference(addressSubmissionOne, addressSubmissionTee, {from: web3.eth.accounts[3], gas: 2000000}); // Should revert.
+submissionOne.removeReference(addressSubmissionTee, {from: web3.eth.accounts[1], gas: 3000000});
+
+peerOne.getPeersInfluenceOnMyReputation.call(peerTee.address);
+
+peerTee.flagMissingReference(addressSubmissionOne, addressSubmissionTee, {from: web3.eth.accounts[3], gas: 2000000}); // Should not revert.

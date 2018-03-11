@@ -1,5 +1,6 @@
 pragma solidity ^0.4.18;
 
+import '../libraries/math/SafeMath.sol';
 import './MatryxOracleMessenger.sol';
 import '../interfaces/IMatryxToken.sol';
 import '../interfaces/IMatryxPeer.sol';
@@ -14,21 +15,26 @@ import './Ownable.sol';
 /// @title MatryxPlatform - The Matryx platform contract.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
+  using SafeMath for uint256;
 
+  // TODO: condense and put in structs
   address public matryxTokenAddress;
   address matryxPeerFactoryAddress;
   address matryxTournamentFactoryAddress;
   address[] public allTournaments;
-  // TODO: condense bool mappings using struct
+  mapping(bytes32=>address[]) public tournamentByCategory;
+  mapping(bytes32=>uint256) public categoryCount;
+  string[] public categories;
+
   mapping(address=>bool) peerExists;
-  mapping(address=>address) ownerToPeer;
-  mapping(address=>mapping(address=>bool)) peerToOwnsSubmission;
+  mapping(address=>address) ownerToPeerAndPeerToOwner;
+  mapping(address=>mapping(address=>bool)) addressToOwnsSubmission;
   mapping(address=>bool) tournamentExists;
   mapping(address=>bool) submissionExists;
 
   mapping(address=>address[]) entrantToTournamentArray;
-  mapping(address=>address[]) authorToSubmissionArray;
-  mapping(address=>mapping(address=>uint256_optional))  authorToSubmissionToSubmissionIndex;
+  mapping(address=>address[]) ownerToSubmissionArray;
+  mapping(address=>mapping(address=>uint256_optional))  ownerToSubmissionToSubmissionIndex;
 
   function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress) public
   {
@@ -144,21 +150,16 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     {
       address _referenceAddress = _references[i];
 
-      if(!submissionExists[_referenceAddress])
+      if(!isSubmission(_referenceAddress))
       {
         // TODO: Introduce uint error codes
-        // for returning things like "Reference is not submission"
-        return false;
+        // for returning things like "Reference _ is not submission"
+        continue;
       }
 
       IMatryxSubmission submission = IMatryxSubmission(_referenceAddress);
       address author = submission.getAuthor();
-      address peerAddress = ownerToPeer[author];
-      require(peerAddress != 0x0);
-
-      IMatryxPeer peer = IMatryxPeer(peerAddress);
-
-      peer.invokeReferenceRequestEvent(_submissionAddress, _referenceAddress);
+      IMatryxPeer(author).receiveReferenceRequest(_submissionAddress, _referenceAddress);
       submission.receiveReferenceRequest();
     }
   }
@@ -171,11 +172,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       require(isSubmission(_reference));
       IMatryxSubmission submission = IMatryxSubmission(_reference);
       address author = submission.getAuthor();
-      address peerAddress = ownerToPeer[author];
-      require(peerAddress != 0x0);
-
-      IMatryxPeer peer = IMatryxPeer(peerAddress);
-      peer.invokeReferenceRequestEvent(msg.sender, _reference);
+      IMatryxPeer(author).receiveReferenceRequest(msg.sender, _reference);
       submission.receiveReferenceRequest();
   }
 
@@ -215,17 +212,24 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @param _BountyMTX Total tournament reward in MTX.
   /// @param _entryFee Fee to charge participant upon entering into tournament.
   /// @return _tournamentAddress Address of the newly created tournament
-  function createTournament(string _discipline, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
+  function createTournament(string _category, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
   {
     IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
     // Check that the platform has a sufficient allowance to
     // transfer the reward from the tournament creator to itself
-    uint256 tournamentsAllowance = matryxToken.allowance(msg.sender, this);
-    require(tournamentsAllowance >= _BountyMTX);
+    require(matryxToken.allowance(msg.sender, this) >= _BountyMTX);
 
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
     address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _BountyMTX, _entryFee, _reviewPeriod);
-    TournamentCreated(_discipline, msg.sender, newTournament, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
+    TournamentCreated(_category, msg.sender, newTournament, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
+    
+    bytes32 hashOfCategory = keccak256(_category);
+    if(categoryCount[hashOfCategory] == 0)
+    {
+      categories.push(_category);
+    }
+    tournamentByCategory[hashOfCategory].push(newTournament);
+    categoryCount[hashOfCategory] = categoryCount[hashOfCategory].add(1);
 
     // Transfer the MTX reward to the tournament.
     bool transferSuccess = matryxToken.transferFrom(msg.sender, newTournament, _BountyMTX);
@@ -238,56 +242,39 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return newTournament;
   }
 
-  event successfulTransfer();
-  event unsuccessfulTransfer();
-  function transferMTXToAddress(address _to, uint256 _amount)
-  {
-    IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-    bool transferSuccess = matryxToken.transferFrom(msg.sender, _to, _amount);
-    if(transferSuccess)
-    {
-      successfulTransfer();
-    }
-    else
-    {
-      unsuccessfulTransfer();
-    }
-  }
-
   /*
    * State Maintenance Methods
    */ 
 
-  function updateUsersTournaments(address _author, address _tournament) internal
+  function updateUsersTournaments(address _owner, address _tournament) internal
   {
-    entrantToTournamentArray[_author].push(_tournament);
+    entrantToTournamentArray[_owner].push(_tournament);
   }
 
-  function updateSubmissions(address _author, address _submission) public onlyTournament
+  function updateSubmissions(address _owner, address _submission) public onlyTournament
   {
-    authorToSubmissionToSubmissionIndex[_author][_submission] = uint256_optional({exists:true, value:authorToSubmissionArray[_author].length});
-    authorToSubmissionArray[_author].push(_submission);
-    peerToOwnsSubmission[ownerToPeer[_author]][_submission] = true;
+    ownerToSubmissionToSubmissionIndex[_owner][_submission] = uint256_optional({exists:true, value:ownerToSubmissionArray[_owner].length});
+    ownerToSubmissionArray[_owner].push(_submission);
+    addressToOwnsSubmission[_owner][_submission] = true;
     submissionExists[_submission] = true;
   }
 
   function removeSubmission(address _submissionAddress, address _tournamentAddress) public returns (bool)
   {
-    address peerAddress = ownerToPeer[msg.sender];
-    require(peerToOwnsSubmission[peerAddress][_submissionAddress]);
+    require(addressToOwnsSubmission[msg.sender][_submissionAddress]);
     require(tournamentExists[_tournamentAddress]);
     
     if(submissionExists[_submissionAddress])
     {
       IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
-      address author = submission.getAuthor();
-      uint256 submissionIndex = authorToSubmissionToSubmissionIndex[author][_submissionAddress].value;
+      address owner = Ownable(_submissionAddress).getOwner();
+      uint256 submissionIndex = ownerToSubmissionToSubmissionIndex[owner][_submissionAddress].value;
 
       submissionExists[_submissionAddress] = false;
-      delete authorToSubmissionArray[author][submissionIndex];
-      delete authorToSubmissionToSubmissionIndex[author][_submissionAddress];
+      delete ownerToSubmissionArray[owner][submissionIndex];
+      delete ownerToSubmissionToSubmissionIndex[owner][_submissionAddress];
 
-      IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, author);
+      IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, owner);
       return true;
     }
     
@@ -300,11 +287,12 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   function createPeer() public returns (address)
   {
-    require(ownerToPeer[msg.sender] == 0x0);
+    require(ownerToPeerAndPeerToOwner[msg.sender] == 0x0);
     IMatryxPeerFactory peerFactory = IMatryxPeerFactory(matryxPeerFactoryAddress);
     address peer = peerFactory.createPeer(msg.sender);
     peerExists[peer] = true;
-    ownerToPeer[msg.sender] = peer;
+    ownerToPeerAndPeerToOwner[msg.sender] = peer;
+    ownerToPeerAndPeerToOwner[peer] = msg.sender;
   }
 
   function isPeer(address _peerAddress) public constant returns (bool)
@@ -314,21 +302,21 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   function hasPeer(address _sender) public returns (bool)
   {
-    return (ownerToPeer[_sender] != 0x0);
+    return (ownerToPeerAndPeerToOwner[_sender] != 0x0);
   }
 
   function peerExistsAndOwnsSubmission(address _peer, address _reference) public returns (bool)
   {
     bool isAPeer = peerExists[_peer];
     bool referenceIsSubmission = submissionExists[_reference];
-    bool peerOwnsSubmission = peerToOwnsSubmission[_peer][_reference];
+    bool peerOwnsSubmission = addressToOwnsSubmission[ownerToPeerAndPeerToOwner[_peer]][_reference];
 
     return isAPeer && referenceIsSubmission && peerOwnsSubmission;
   }
 
   function peerAddress(address _sender) public constant returns (address)
   {
-    return ownerToPeer[_sender];
+    return ownerToPeerAndPeerToOwner[_sender];
   }
 
   function isSubmission(address _submissionAddress) public constant returns (bool)
@@ -364,7 +352,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
    function mySubmissions() public constant returns (address[])
    {
-    return authorToSubmissionArray[msg.sender];
+    return ownerToSubmissionArray[msg.sender];
    }
 
   /// @dev Returns the total number of tournaments

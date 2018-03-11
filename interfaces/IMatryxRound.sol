@@ -19,6 +19,6 @@ interface IMatryxRound
 	function Start(uint256 _duration, uint256 _reviewPeriod) public;
 	function chooseWinningSubmission(address _submissionAddress) public;
 	function awardBounty(address _submissionAddress, uint256 _remainingBounty) public;
-	function createSubmission(string _name, address _author, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessible) public returns (address _submissionAddress);
+	function createSubmission(string _name, address _owner, address _author, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessible) public returns (address _submissionAddress);
 	function getBalance(address _submissionAddress) public returns (uint256);
 }

@@ -12,6 +12,9 @@ import './Ownable.sol';
 contract MatryxPeer is Ownable {
 	using SafeMath for uint256;
 
+	uint256 one_eighteenDecimal = 1*10**18;
+
+	// TODO: condense and put in structs
 	address platformAddress;
 
 	uint256 globalTrust;
@@ -20,7 +23,6 @@ contract MatryxPeer is Ownable {
 	uint256 totalTrustGiven;
 	mapping(address=>uint256) judgingPeerToUnnormalizedTrust;
 	mapping(address=>uint256) judgingPeerToTotalTrustGiven;
-	mapping(address=>uint256) judgingPeerToGlobalReputation;
 
 	mapping(address=>uint256) judgingPeerToInfluenceOnMyReputation;
 	mapping(address=>bool) peerHasJudgedMe;
@@ -29,12 +31,69 @@ contract MatryxPeer is Ownable {
 	// Tracks the proportion of references this peer has approved on a given submission
 	mapping(address=>uint256) submissionToApprovedReferences;
 	mapping(address=>uint256) submissionToReferenceCount;
+	mapping(address=>ReferencesMetadata) submissionToReferencesMetadata;
 
 	event ReceivedReferenceRequest(address _submissionAddress, address reference);
+	event ReferenceRequestCancelled(address _submissionAddress, address reference);
+
+	/*
+	 * Structs
+	 */
+
+	struct ReferencesMetadata
+	{
+		uint256 approvedReferenceCount;
+		uint256 missingReferenceCount;
+		uint256 totalReferenceCount;
+	}
+
+	/*
+	 * Modifiers
+	 */
 
 	modifier onlyPlatform()
 	{
 		require(msg.sender == platformAddress);
+		_;
+	}
+
+	modifier onlyPeer()
+	{
+		IMatryxPlatform platform = IMatryxPlatform(platformAddress);
+		require(platform.isPeer(msg.sender));
+		_;
+	}
+
+	modifier notMe()
+	{
+		require(msg.sender != address(this));
+		_;
+	}
+
+	modifier notOwner()
+	{
+		require(msg.sender != owner);
+		_;
+	}
+
+	modifier ownerOrSubmission(address _submission)
+	{
+		require((msg.sender == owner) || (msg.sender == _submission));
+		_;
+	}
+
+	modifier forExistingSubmission(address _submission)
+	{
+		IMatryxPlatform platform = IMatryxPlatform(platformAddress);
+		require(platform.isSubmission(_submission));
+		_;
+	}
+
+	modifier senderOwnsReference(address _reference)
+	{
+		Ownable referencedSubmission = Ownable(_reference);
+		address referenceOwner = referencedSubmission.getOwner();
+		require(referenceOwner == msg.sender);
 		_;
 	}
 
@@ -50,17 +109,39 @@ contract MatryxPeer is Ownable {
 		return globalTrust;
 	}
 
-	function invokeReferenceRequestEvent(address _submissionAddress, address _reference) public onlyPlatform
+	function receiveReferenceRequest(address _submissionAddress, address _reference) public onlyPlatform
 	{
 		ReceivedReferenceRequest(_submissionAddress, _reference);
+		submissionToReferencesMetadata[_submissionAddress].totalReferenceCount = submissionToReferencesMetadata[_submissionAddress].totalReferenceCount.add(1);
 	}
 
-	function trustMe(uint256 _newTotalTrust, uint256 _senderReputation) public
+	function receiveCancelledReferenceRequest(address _submissionAddress, address _reference) public onlyPlatform
 	{
-		IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-		require(platform.isPeer(msg.sender));
-		require(msg.sender != address(this));
+		ReferenceRequestCancelled(_submissionAddress, _reference);
+		submissionToReferencesMetadata[_submissionAddress].totalReferenceCount = submissionToReferencesMetadata[_submissionAddress].totalReferenceCount.sub(1);
+	}
 
+	function giveTrust(address _peer) internal
+	{
+		judgedPeerToUnnormalizedTrust[_peer] = judgedPeerToUnnormalizedTrust[_peer].add(one_eighteenDecimal);
+		totalTrustGiven = totalTrustGiven.add(1);
+
+		MatryxPeer(_peer).receiveTrust(totalTrustGiven, globalTrust);
+	}
+
+	function giveDistrust(address _peer) internal returns (bool)
+	{
+		if(judgedPeerToUnnormalizedTrust[_peer] >= one_eighteenDecimal)
+		{
+			judgedPeerToUnnormalizedTrust[_peer] = judgedPeerToUnnormalizedTrust[_peer].sub(one_eighteenDecimal);
+			totalTrustGiven = totalTrustGiven.sub(1);
+		}
+
+		return MatryxPeer(_peer).receiveDistrust(totalTrustGiven, globalTrust);
+	}
+
+	function receiveTrust(uint256 _newTotalTrust, uint256 _senderReputation) public notMe notOwner onlyPeer
+	{	
 		// remove peer's influence on my reputation before adding their new influence
 		if(peerHasJudgedMe[msg.sender])
 		{
@@ -75,27 +156,21 @@ contract MatryxPeer is Ownable {
 		}
 
 		// update state variables so we can look at them later
-		judgingPeerToUnnormalizedTrust[msg.sender] = judgingPeerToUnnormalizedTrust[msg.sender].add(1 ether);
+		judgingPeerToUnnormalizedTrust[msg.sender] = judgingPeerToUnnormalizedTrust[msg.sender].add(one_eighteenDecimal);
 		judgingPeerToTotalTrustGiven[msg.sender] = _newTotalTrust;
 		// calculate peer's new influence on my reputation
-		uint256 peersNewOpinionOfMe = judgingPeerToUnnormalizedTrust[msg.sender].div(_newTotalTrust);
-		uint256 peersNewInfluenceOnMyReputation = peersNewOpinionOfMe.mul(_senderReputation);
+		uint256 peersNewNormalizedOpinionOfMe = judgingPeerToUnnormalizedTrust[msg.sender].div(_newTotalTrust);
+		uint256 peersNewInfluenceOnMyReputation = peersNewNormalizedOpinionOfMe.mul(_senderReputation);
+		// _senderReputation and peersNewNormalizedOpinionOfMe are both 18 decimal numbers;
+		// we must divide by 1*10**18 in order to retain the correct number of decimals.
+		peersNewInfluenceOnMyReputation = peersNewInfluenceOnMyReputation.div(one_eighteenDecimal);
 		judgingPeerToInfluenceOnMyReputation[msg.sender] = peersNewInfluenceOnMyReputation;
 		// add this influence to my reputation
 		globalTrust = globalTrust.add(peersNewInfluenceOnMyReputation);
 	}
 
-	function distrustMe(uint256 _newTotalTrust, uint256 _senderReputation) public returns (bool)
+	function receiveDistrust(uint256 _newTotalTrust, uint256 _senderReputation) public notMe notOwner onlyPeer returns (bool)
 	{
-		IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-		require(platform.isPeer(msg.sender));
-		require(msg.sender != address(this));
-
-		if(judgingPeerToUnnormalizedTrust[msg.sender] < 1)
-		{
-			return false;
-		}
-
 		// remove peer's influence on my reputation before adding their new influence
 		if(peerHasJudgedMe[msg.sender])
 		{
@@ -109,72 +184,128 @@ contract MatryxPeer is Ownable {
 			judgingPeers.push(msg.sender);
 		}
 
-		// update peers unnormalized trust in me
-		judgingPeerToUnnormalizedTrust[msg.sender] = judgingPeerToUnnormalizedTrust[msg.sender].sub(1 ether);
+		if((judgingPeerToUnnormalizedTrust[msg.sender] < one_eighteenDecimal) || (_newTotalTrust == 0))
+		{
+			return false;
+		}
+
+		judgingPeerToUnnormalizedTrust[msg.sender] = judgingPeerToUnnormalizedTrust[msg.sender].sub(one_eighteenDecimal);
 		judgingPeerToTotalTrustGiven[msg.sender] = _newTotalTrust;
 		// calculate peer's new influence on my reputation
-		uint256 peersNewOpinionOfMe = judgingPeerToUnnormalizedTrust[msg.sender].div(_newTotalTrust);
-		uint256 peersNewInfluenceOnMyReputation = peersNewOpinionOfMe.mul(_senderReputation);
+		uint256 peersNewNormalizedOpinionOfMe = judgingPeerToUnnormalizedTrust[msg.sender].div(_newTotalTrust);
+		uint256 peersNewInfluenceOnMyReputation = peersNewNormalizedOpinionOfMe.mul(_senderReputation);
+		// _senderReputation and peersNewNormalizedOpinionOfMe are both 18 decimal numbers;
+		// we must divide by 1*10**18 in order to retain the correct number of decimals.
+		peersNewInfluenceOnMyReputation = peersNewInfluenceOnMyReputation.div(one_eighteenDecimal);
 		judgingPeerToInfluenceOnMyReputation[msg.sender] = peersNewInfluenceOnMyReputation;
 		// add this influence to my reputation
 		globalTrust = globalTrust.add(peersNewInfluenceOnMyReputation);
-
 		return true;
 	}
 
-	/// @dev Flags a missing reference on a submission.
-	/// @param _submission Address of the submission to flag.
-	/// @param _missingReference Reference that is missing.
-	function flagMissingReference(address _submission, address _missingReference) public onlyOwner returns (bool)
+	function getPeersInfluenceOnMyReputation(address _peerAddress) public constant returns (uint256)
 	{
-		// TODO: Add a way of undoing this missing reference flag.
-		// Maybe like removeMissingReferenceFlag
+		return judgingPeerToInfluenceOnMyReputation[_peerAddress];
+	}
 
-		// Safety checks (we check for peer ownership over _missingReference in MatryxSubmission.approveReference)
-		IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-		require(platform.isSubmission(_submission));
-		IMatryxSubmission submission = IMatryxSubmission(_submission);
-		address author = submission.getAuthor();
-		require(author == msg.sender);
+	/// @dev 					  Flags a missing reference to a submission within another
+	///							  submission. This method should be called by the owner of
+	/// 						  this peer in order to approve a reference to one of
+	/// 	 					  their works within someone else's submission.
+	/// @param _submissionAddress Address of the submission missing a reference.
+	/// @param _missingReference  Reference that is missing.
+	function flagMissingReference(address _submissionAddress, address _missingReference) public onlyOwner senderOwnsReference(_missingReference) forExistingSubmission(_submissionAddress) forExistingSubmission(_missingReference) returns (bool)
+	{
+		// Require that we're the author of the reference we're claiming is missing.
+		// Require that the platform knows the submission.
+		// Require that the platform knows the reference we're attempting to flag.
+		
+		// Add 1 to the state vars keeping track of the number of
+		// this peer's submissions that _submission fails to reference
+		// as well as the submission's total number of references to submissions by this peer
+		submissionToReferencesMetadata[_submissionAddress].missingReferenceCount = submissionToReferencesMetadata[_submissionAddress].missingReferenceCount.add(1);
 
+		IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
 		submission.flagMissingReference(_missingReference);
 
-		if(judgedPeerToUnnormalizedTrust[author] >= 1)
+		address submissionAuthor = submission.getAuthor();
+		return giveDistrust(submissionAuthor);
+	}
+
+	function getMissingReferenceCount(address _submissionAddress) public constant returns (uint256, uint256)
+	{
+		return (submissionToReferencesMetadata[_submissionAddress].missingReferenceCount, submissionToReferencesMetadata[_submissionAddress].totalReferenceCount);
+	}
+
+	/// @dev					  Removes a flag on a missing reference from a submission.
+	/// @param _submissionAddress Address of the submission which was previously flagged as missing a reference
+	///							  to this peer's work.
+	/// @param _missingReference  Address of the reference to vindicate.
+	function removeMissingReferenceFlag(address _submissionAddress, address _missingReference) public ownerOrSubmission(_submissionAddress) forExistingSubmission(_submissionAddress) forExistingSubmission(_missingReference)
+	{
+		// Require that the platform knows the submission.
+		// Require that the platform knows the reference we'd like to vindicate.
+		// Require that we're the author of the reference we're attempting to vindicate
+
+		submissionToReferencesMetadata[_submissionAddress].missingReferenceCount = submissionToReferencesMetadata[_submissionAddress].missingReferenceCount.sub(1);
+
+		IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
+		submission.removeMissingReferenceFlag(_missingReference);
+
+		address submissionAuthor = submission.getAuthor();
+		giveTrust(submissionAuthor);
+	}
+
+	/// @dev 					  Approve of a reference to a submission written by this peer
+	/// 						  on another submission. This method should be called by the 
+	/// 	 					  owner of this peer in order to approve a reference to one  
+	/// 	 					  of their works within someone else's submission.
+	/// @param _submissionAddress Address of the submission on which to approve the reference.
+	/// @param _reference 		  Reference to approve.
+	function approveReference(address _submissionAddress, address _reference) public onlyOwner senderOwnsReference(_reference) forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
+	{
+		// Require that we're the author of the reference we're attempting to approve
+		// Require that the platform knows the submission.
+		// Require that the platform knows the reference we'd like to approve.
+		
+		// Add 1 to the state var keeping track of the number of approved references on this submission
+		submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.add(one_eighteenDecimal);
+		
+		IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
+		submission.approveReference(_reference);
+
+		address submissionAuthor = submission.getAuthor();
+		giveTrust(submissionAuthor);
+	}
+
+	/// @dev 					  Remove approval of a reference from a submission.
+	/// @param _submissionAddress Address of the submission which was previously given an approval
+	/// 						  for one of its references.
+	/// @param _reference 		  Address of the reference to decry.
+	function removeReferenceApproval(address _submissionAddress, address _reference) public ownerOrSubmission(_submissionAddress) forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
+	{
+		// Require that the platform knows the submission.
+		// Require that the platform knows the reference we'd like to decry.
+		// Require that we're the author of the reference we're attempting to decry.
+
+		// Remove 1 from the state var keeping track of the number of approved references on this submission
+		submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.sub(one_eighteenDecimal);
+
+		IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
+		submission.removeReferenceApproval(_reference);
+
+		address submissionAuthor = submission.getAuthor();
+		giveDistrust(submissionAuthor);
+	}
+
+	function getApprovedReferenceProportion(address _submissionAddress) public constant returns (uint256)
+	{
+		if(submissionToReferencesMetadata[_submissionAddress].totalReferenceCount + submissionToReferencesMetadata[_submissionAddress].missingReferenceCount == 0)
 		{
-			judgedPeerToUnnormalizedTrust[author] = judgedPeerToUnnormalizedTrust[author].sub(1 ether);
-			totalTrustGiven = totalTrustGiven.sub(1);
+			return 0;
 		}
 
-		return MatryxPeer(author).distrustMe(totalTrustGiven, globalTrust);
-	}
-
-	// @dev Approve of a reference to a submission written by this peer.
-	/// @param _submission Address of the submission on which to approve a reference.
-	/// @param _reference Reference to approve.
-	function approveReference(address _submission, address _reference) public onlyOwner
-	{
-		// TODO: Add a way of undoing this reference approval.
-		// Maybe like removeReferenceApproval
-
-		// Safety checks (we check for peer ownership over _reference in MatryxSubmission.approveReference)
-		IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-		require(platform.isSubmission(_submission));
-		IMatryxSubmission submission = IMatryxSubmission(_submission);
-		address author = submission.getAuthor();
-		require(author == msg.sender);
-
-		submission.approveReference(_reference);
-		
-		judgedPeerToUnnormalizedTrust[author] = judgedPeerToUnnormalizedTrust[author].add(1 *10**18);
-		totalTrustGiven = totalTrustGiven.add(1);
-		submissionToApprovedReferences[_submission] = submissionToApprovedReferences[_submission].add(1);
-
-		MatryxPeer(author).trustMe(totalTrustGiven, globalTrust);
-	}
-
-	function getTotalReferenceCount(address _submissionAddress) public constant returns (uint256)
-	{
-		return submissionToReferenceCount[_submissionAddress];
+		return submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.div(submissionToReferencesMetadata[_submissionAddress].totalReferenceCount.add(submissionToReferencesMetadata[_submissionAddress].missingReferenceCount));
 	}
 
 	function peersJudged() public constant returns (uint256)

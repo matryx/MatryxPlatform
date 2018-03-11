@@ -14,7 +14,8 @@ import './Ownable.sol';
 contract MatryxTournament is Ownable, IMatryxTournament {
     using SafeMath for uint256;
     using strings for *;
-
+    
+    // TODO: condense and put in structs
     //Platform identification
     address public platformAddress;
     address public matryxTokenAddress;
@@ -432,21 +433,20 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return entryFee;
     }
 
-    function createSubmission(string _title, address _author, bytes32 _externalAddress, address[] _contributors, address[] _references, bool _publicallyAccessible) public onlyEntrant onlyPeerLinked(msg.sender) whileTournamentOpen returns (address _submissionAddress)
+    function createSubmission(string _title, address _owner, bytes32 _externalAddress, address[] _contributors, address[] _references, bool _publicallyAccessible) public onlyEntrant onlyPeerLinked(msg.sender) whileTournamentOpen returns (address _submissionAddress)
     {
         // This check is critical for MatryxPeer.
-        IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-        require(platform.peerAddress(_author) != 0x0);
+        address peerAddress = IMatryxPlatform(platformAddress).peerAddress(_owner);
+        require(peerAddress != 0x0);
 
-        IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
-        address submissionAddress = round.createSubmission(_title, _author, _externalAddress, _references, _contributors, _publicallyAccessible);
+        address submissionAddress = IMatryxRound(rounds[rounds.length-1]).createSubmission(_title, _owner, peerAddress, _externalAddress, _references, _contributors, _publicallyAccessible);
         // Send out reference requests to the authors of other submissions
         IMatryxPlatform(platformAddress).handleReferencesForSubmission(submissionAddress, _references);
 
         numberOfSubmissions = numberOfSubmissions.add(1);
         entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress] = uint256_optional({exists:true, value:entrantToSubmissions[msg.sender].length});
         entrantToSubmissions[msg.sender].push(submissionAddress);
-        platform.updateSubmissions(msg.sender, submissionAddress);
+        IMatryxPlatform(platformAddress).updateSubmissions(msg.sender, submissionAddress);
         
         return submissionAddress;
     }

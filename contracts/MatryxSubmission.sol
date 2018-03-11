@@ -12,6 +12,7 @@ import './Ownable.sol';
 contract MatryxSubmission is Ownable, IMatryxSubmission {
 	using SafeMath for uint256;
 
+	// TODO: condense and put in structs
 	// Parent identification
 	address private platformAddress;
 	address private tournamentAddress;
@@ -25,22 +26,24 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	// Tracks the normalized trust gained through peers approving this submission
 	mapping(address=>uint256) authorToApprovalTrustGiven;
-	uint256 approvalTrust;
-	uint256 totalPossibleTrust;
-	address[] approvingPeers;
+	uint256 public approvalTrust;
+	uint256 public totalPossibleTrust;
+	address[] public approvingPeers;
 
 	// Tracks the proportion of references this submission has approved
 	mapping(address=>uint256_optional) missingReferenceToIndex;
-	address[] missingReferences;
+	address[] public missingReferences;
 	mapping(address=>ReferenceInfo) addressToReferenceInfo;
-	uint256 approvedReferences;
-	uint256 totalReferenceCount;
+	mapping(address=>ReferenceStats) approvedReferencesByAuthor;
+	uint256 public approvedReferences;
+	uint256 public totalReferenceCount;
 
 	address[] contributors;
 	uint256 timeSubmitted;
+	uint256 timeUpdated;
 	bool public publicallyAccessibleDuringTournament;
 
-	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessibleDuringTournament) public
+	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionOwner, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessibleDuringTournament) public
 	{
 		require(_submissionAuthor != 0x0);
 		
@@ -49,10 +52,17 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		roundAddress = _roundAddress;
 
 		title = _title;
-		owner = _submissionAuthor;
+		owner = _submissionOwner;
 		author = _submissionAuthor;
 		externalAddress = _externalAddress;
 		references = _references;
+
+		for(uint256 i = 0; i < references.length;i++)
+		{
+			addressToReferenceInfo[references[i]].exists = true;
+			addressToReferenceInfo[references[i]].index = i;
+		}
+		
 		contributors = _contributors;
 		timeSubmitted = now;
 		publicallyAccessibleDuringTournament = _publicallyAccessibleDuringTournament;
@@ -64,8 +74,18 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	struct ReferenceInfo
 	{
-		bool flaggedAsMissing;
-		bool isIncluded;
+		uint256 index;
+		bool exists;
+		bool approved;
+		bool flagged;
+		uint256 negativeReputationAffect;
+		uint256 positiveReputationAffect;
+	}
+
+	struct ReferenceStats
+	{
+		uint256 numberMissing;
+		uint256 numberApproved;
 	}
 
 	struct uint256_optional
@@ -102,7 +122,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
   		_;
   	}
 
-  	modifier owningPeer(address _reference)
+  	modifier onlyOwningPeer(address _reference)
   	{
   		require(IMatryxPlatform(platformAddress).peerExistsAndOwnsSubmission(msg.sender, _reference));
   		_;
@@ -167,49 +187,84 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		return contributors;
 	}
 
-	function getTimeSubmitted() constant whenAccessible(msg.sender) public returns(uint256) {
+	function getTimeSubmitted() constant public returns(uint256) {
 		return timeSubmitted;
+	}
+
+	function getTimeUpdated() constant public returns(uint256) {
+		return timeUpdated;
 	}
 
 	/*
 	 * Setter Methods
 	 */
 
-	function makeExternallyAccessibleDuringTournament() onlyAuthor public
+	function makeExternallyAccessibleDuringTournament() onlyOwner public
 	{
 		publicallyAccessibleDuringTournament = true;
 	}
 
     /// @dev Edit the title of a submission (callable only by submission's owner).
     /// @param _title New title for the submission.
-	function updateTitle(string _title) onlyAuthor duringOpenSubmission public 
+	function updateTitle(string _title) onlyOwner duringOpenSubmission public 
 	{
 		title = _title;
 	}
 
 	/// @dev Update the external address of a submission (callable only by submission's owner).
     /// @param _externalAddress New content hash for the body of the submission.
-	function updateExternalAddress(bytes32 _externalAddress) onlyAuthor duringOpenSubmission public
+	function updateExternalAddress(bytes32 _externalAddress) onlyOwner duringOpenSubmission public
 	{
 		externalAddress = _externalAddress;
+		timeUpdated = now;
 	}
 
 	/// @dev Add a missing reference to a submission (callable only by submission's owner).
     /// @param _reference Address of additional reference to include.
-	function addReference(address _reference) onlyAuthor public 
+	function addReference(address _reference) onlyOwner public 
 	{
+		require(addressToReferenceInfo[_reference].exists == false);
 		IMatryxPlatform(platformAddress).handleReferenceForSubmission(_reference);
 		references.push(_reference);
-		addressToReferenceInfo[_reference].isIncluded = true;
+		addressToReferenceInfo[_reference].index = references.length-1;
+		addressToReferenceInfo[_reference].exists = true;
+
+		// We know that the parameter is a valid submission
+		// as deemed by the platform. Therefore we're able to
+		// get it's author without worrying that we don't
+		// know what code we're calling.
+		if(addressToReferenceInfo[_reference].flagged)
+		{
+			address referenceAuthor = IMatryxSubmission(_reference).getAuthor();
+			IMatryxPeer(referenceAuthor).removeMissingReferenceFlag(this, _reference);
+		}
+
+		addressToReferenceInfo[_reference].flagged = false;
+	}
+
+	function addressIsFlagged(address _reference) public constant returns (bool, bool)
+	{
+		return (addressToReferenceInfo[_reference].flagged, missingReferenceToIndex[_reference].exists);
 	}
 
 	/// @dev Remove an erroneous reference to a submission (callable only by submission's owner).
-    /// @param _referenceIndex Index of reference to remove.
-	function removeReference(uint256 _referenceIndex) onlyAuthor public
+    /// @param _reference Address of reference to remove.
+	function removeReference(address _reference) onlyOwner public
 	{
-		delete references[_referenceIndex];
-		addressToReferenceInfo[references[_referenceIndex]].isIncluded = false;
-		// TODO: Handle affect on reference approval trust
+		require(addressToReferenceInfo[_reference].exists == true);
+		uint256 referenceIndex = addressToReferenceInfo[_reference].index;
+		delete references[referenceIndex];
+		delete addressToReferenceInfo[_reference];
+
+		// We know that the parameter is a valid submission
+		// as deemed by the platform. Therefore we're able to
+		// get it's author without worrying that we don't
+		// know what code we're calling.
+		if(addressToReferenceInfo[_reference].approved)
+		{
+			address referenceAuthor = IMatryxSubmission(_reference).getAuthor();
+			IMatryxPeer(referenceAuthor).removeReferenceApproval(this, _reference);
+		}
 	}
 
 	function receiveReferenceRequest() public onlyPlatform
@@ -225,75 +280,126 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// @dev Called by the owner of _reference when this submission is approved to list _reference
 	/// as a reference.
 	/// _reference Reference being approved by msg.sender.
-	function approveReference(address _reference) public owningPeer(_reference)
+	function approveReference(address _reference) public onlyOwningPeer(_reference)
 	{
-		// TODO: Add a way of undoing this reference approval.
-		// Maybe like removeReferenceApproval
+		require(addressToReferenceInfo[_reference].exists == true);
+  		require(addressToReferenceInfo[_reference].approved == false);
 
-		require(addressToReferenceInfo[_reference].isIncluded == false);
-
-		IMatryxPeer peer = IMatryxPeer(msg.sender);
-		uint256 peersReputation = peer.getReputation();
-		
-		if(authorToApprovalTrustGiven[msg.sender] == 0x0)
-		{	
-			approvingPeers.push(msg.sender);
-			totalPossibleTrust = totalPossibleTrust.add(peer.getReputation());
-		}
-		else
-		{
-			approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
-		}
-
-		uint256 peersReferencesInThisSubmission = peer.getTotalReferenceCount(this);
-		uint256 trustToAdd = peersReputation.div(peersReferencesInThisSubmission);
-		approvalTrust = approvalTrust.add(trustToAdd);
-
-		approvedReferences = approvedReferences.add(1);
+  		// Update state variables regarding the approved reference
+  		approvedReferences = approvedReferences.add(1);
+		addressToReferenceInfo[_reference].approved = true;
 		if(missingReferenceToIndex[_reference].exists)
 		{
 			delete missingReferences[missingReferenceToIndex[_reference].value];
 		}
-	}
 
-	/// @dev Called by the owner of _reference when this submission does not list _reference
-	/// as a reference.
-	/// @param _reference Missing reference in this submission.
-	function flagMissingReference(address _reference) public owningPeer(_reference)
-	{
-		// TODO: Add a way of undoing this missing reference flag.
-		// Maybe like removeMissingReferenceFlag
-
-		require(addressToReferenceInfo[_reference].flaggedAsMissing == false);
-		require(addressToReferenceInfo[_reference].isIncluded == false);
-		addressToReferenceInfo[_reference].flaggedAsMissing == true;
-		
+  		// Update submission reputation variables
 		IMatryxPeer peer = IMatryxPeer(msg.sender);
 		uint256 peersReputation = peer.getReputation();
-
+		uint256 originalTrust = approvalTrust;
+		
 		if(authorToApprovalTrustGiven[msg.sender] == 0x0)
-		{
+		{	
 			approvingPeers.push(msg.sender);
-			totalPossibleTrust = totalPossibleTrust.add(peer.getReputation());
+			totalPossibleTrust = totalPossibleTrust.add(peersReputation);
 		}
 		else
 		{
 			approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
 		}
 
-		uint256 peersReferencesInThisSubmission = peer.getTotalReferenceCount(this);
-		uint256 trustToAdd = peersReputation.div(peersReferencesInThisSubmission);
+		uint256 normalizedProportionOfReferenceApprovals = peer.getApprovedReferenceProportion(this);
+		uint256 trustToAdd = peersReputation.mul(normalizedProportionOfReferenceApprovals);
+		trustToAdd = trustToAdd.div(1*10**18);
+
+		authorToApprovalTrustGiven[msg.sender] = trustToAdd;
 		approvalTrust = approvalTrust.add(trustToAdd);
 
-		totalReferenceCount = totalReferenceCount.add(1);
+		// Store the difference in reputation that approving this reference caused to this submission.
+		// We may need this value if this approval is ever revoked by the trust-lending peer.
+		addressToReferenceInfo[_reference].positiveReputationAffect = approvalTrust.sub(originalTrust);
+	}
 
+	/// @dev 			  Called by the owner of the _reference to remove their approval of a reference
+	///		 			  within this submission.
+	/// @param _reference Reference that peer is revoking the approval of to be included
+	///					  in this submission.
+	function removeReferenceApproval(address _reference) public onlyOwningPeer(_reference)
+	{
+		require(addressToReferenceInfo[_reference].approved = true);
+
+		approvedReferences = approvedReferences.sub(1);
+		addressToReferenceInfo[_reference].approved = false;
+
+		if(addressToReferenceInfo[_reference].flagged)
+		{
+			// TODO: TEST THIS THOROUGHLY.
+			missingReferences[missingReferenceToIndex[_reference].value] = _reference;
+		}
+
+		approvalTrust = approvalTrust.sub(addressToReferenceInfo[_reference].positiveReputationAffect);
+	}
+
+	/// @dev 	Called by the owner of _reference when this submission does not list _reference
+	/// 		as a reference.
+	/// @param  _reference Missing reference in this submission.
+	function flagMissingReference(address _reference) public onlyOwningPeer(_reference)
+	{
+		require(addressToReferenceInfo[_reference].exists == false);
+  		require(addressToReferenceInfo[_reference].flagged == false);
+
+		// Update state variables regarding the missing reference
 		missingReferences.push(_reference);
 		missingReferenceToIndex[_reference] = uint256_optional(true, missingReferences.length-1);
+		addressToReferenceInfo[_reference].flagged = true;
+		
+		// Update submission reputation state variables
+		IMatryxPeer peer = IMatryxPeer(msg.sender);
+		uint256 peersReputation = peer.getReputation();
+		uint256 originalTrust = approvalTrust;
+
+		if(authorToApprovalTrustGiven[msg.sender] == 0x0)
+		{
+			approvingPeers.push(msg.sender);
+			totalPossibleTrust = totalPossibleTrust.add(peersReputation);
+		}
+		else
+		{
+			approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
+		}
+
+		uint256 normalizedProportionOfReferenceApprovals = peer.getApprovedReferenceProportion(this);
+		uint256 trustToAdd = peersReputation.mul(normalizedProportionOfReferenceApprovals);
+		trustToAdd = trustToAdd.div(1*10**18);
+
+		authorToApprovalTrustGiven[msg.sender] = trustToAdd;
+		approvalTrust = approvalTrust.add(trustToAdd);
+
+		// Store the difference in reputation that flagging this reference caused to this submission.
+		// We may need this value if this flag is ever revoked by the trust-detracting peer.
+		addressToReferenceInfo[_reference].negativeReputationAffect = originalTrust.sub(approvalTrust);
+
+		totalReferenceCount = totalReferenceCount.add(1);
+	}
+
+	/// @dev 			  Called by the owner of _reference to remove a missing reference flag placed on a reference
+	///		 			  as missing.
+	/// @param _reference Reference previously marked by peer as missing.
+	function removeMissingReferenceFlag(address _reference) public onlyOwningPeer(_reference)
+	{
+		// TODO: Ensure that this reference was previously flagged as missing (MatryxSubmission)
+		require(addressToReferenceInfo[_reference].flagged == true);
+
+		missingReferenceToIndex[_reference].exists = false;
+		addressToReferenceInfo[_reference].flagged = false;
+		delete missingReferences[missingReferenceToIndex[_reference].value];
+		
+		approvalTrust = approvalTrust.add(addressToReferenceInfo[_reference].negativeReputationAffect);
 	}
 
 	/// @dev Add a contributor to a submission (callable only by submission's owner).
     /// @param _contributor Address of contributor to add to the submission.
-	function addContributor(address _contributor) onlyAuthor public
+	function addContributor(address _contributor) onlyOwner public
 	{
 		contributors.push(_contributor);
 
@@ -303,7 +409,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	/// @dev Remove a contributor from a submission (callable only by submission's owner).
     /// @param _contributorIndex Index of the contributor to remove from the submission.
-	function removeContributor(uint256 _contributorIndex) onlyAuthor public 
+	function removeContributor(uint256 _contributorIndex) onlyOwner public 
 	{
 		delete contributors[_contributorIndex];
 	}
@@ -352,11 +458,13 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		// proportionReferenceApprovalsGivenForSubmissionsReferencingThisSubmission *
 		// 0.5 * 
 		// submissionReward
-		uint256 transferAmount = approvalTrust.div(totalPossibleTrust);
+		uint256 transferAmount = approvalTrust.mul(1*10**18);
+		transferAmount = transferAmount.div(totalPossibleTrust);
 		transferAmount = transferAmount.mul(approvedReferences);
 		transferAmount = transferAmount.div(totalReferenceCount);
 		transferAmount = transferAmount.div(2);
 		transferAmount = transferAmount.mul(submissionReward);
+		transferAmount = transferAmount.div(1*10**18);
 
 		return transferAmount;
 	}

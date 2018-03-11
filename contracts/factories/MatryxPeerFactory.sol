@@ -21,7 +21,7 @@ contract MatryxPeerFactory is Ownable {
 		return peerAddress;
 	}
 
-	function getTrustForNewPeer() internal constant returns (uint256)
+	function getTrustForNewPeer() public constant returns (uint256)
 	{
 		uint256 integralTopValue = fastSigmoid(peerCount+2);
 		uint256 integralBottomValue = fastSigmoid(peerCount+1);
@@ -31,12 +31,12 @@ contract MatryxPeerFactory is Ownable {
 		return trustValue;
 	}
 
-	function fastSigmoid(uint256 _input) internal pure returns (uint256)
+	function fastSigmoid(uint256 _input) public pure returns (uint256)
 	{
 		uint256 one = 1 * 10**18;
 		uint256 two = 2 * 10**18;
 		uint256 inputWithDecimals = _input * 10**18;
 
-		return (two.mul(_input)).div(one.add(inputWithDecimals));
+		return (two.mul(inputWithDecimals)).div(one.add(inputWithDecimals));
 	}
 }
