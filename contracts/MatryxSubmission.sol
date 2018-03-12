@@ -34,7 +34,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	mapping(address=>uint256_optional) missingReferenceToIndex;
 	address[] public missingReferences;
 	mapping(address=>ReferenceInfo) addressToReferenceInfo;
-	mapping(address=>ReferenceStats) approvedReferencesByAuthor;
+	mapping(address=>ReferenceStats) referenceStatsByAuthor;
 	uint256 public approvedReferences;
 	uint256 public totalReferenceCount;
 
@@ -80,6 +80,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		bool flagged;
 		uint256 negativeReputationAffect;
 		uint256 positiveReputationAffect;
+		uint256 authorReputation;
 	}
 
 	struct ReferenceStats
@@ -224,7 +225,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	function addReference(address _reference) onlyOwner public 
 	{
 		require(addressToReferenceInfo[_reference].exists == false);
-		IMatryxPlatform(platformAddress).handleReferenceForSubmission(_reference);
+		IMatryxPlatform(platformAddress).handleReferenceRequestForSubmission(_reference);
 		references.push(_reference);
 		addressToReferenceInfo[_reference].index = references.length-1;
 		addressToReferenceInfo[_reference].exists = true;
@@ -239,7 +240,15 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 			IMatryxPeer(referenceAuthor).removeMissingReferenceFlag(this, _reference);
 		}
 
-		addressToReferenceInfo[_reference].flagged = false;
+		// If there are no more approved or flagged references by this author,
+		// remove their influence over our reputation (subtract their reputation from
+		// this submission's total possible trust value)
+		uint numberApprovedOrMissing = referenceStatsByAuthor[referenceAuthor].numberApproved.add(referenceStatsByAuthor[referenceAuthor].numberMissing);
+		if(numberApprovedOrMissing == 0)
+		{
+			totalPossibleTrust = totalPossibleTrust.sub(addressToReferenceInfo[_reference].authorReputation);
+			addressToReferenceInfo[_reference].authorReputation = 0;
+		}
 	}
 
 	function addressIsFlagged(address _reference) public constant returns (bool, bool)
@@ -252,19 +261,35 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	function removeReference(address _reference) onlyOwner public
 	{
 		require(addressToReferenceInfo[_reference].exists == true);
+		IMatryxPlatform(platformAddress).handleCancelledReferenceRequestForSubmission(_reference);
+		// We know that the parameter is a valid submission
+		// as deemed by the platform. Therefore we're able to
+		// call getAuthor without worrying that we don't
+		// know what code we're calling.
+		address referenceAuthor = IMatryxSubmission(_reference).getAuthor();
+		if(addressToReferenceInfo[_reference].approved)
+		{
+			IMatryxPeer(referenceAuthor).removeReferenceApproval(this, _reference);
+		}
+
+		// If there are no more approved or flagged references by this author,
+		// remove their influence over our reputation (subtract their reputation from
+		// this submission's total possible trust value)
+		uint numberApprovedOrMissing = referenceStatsByAuthor[referenceAuthor].numberApproved.add(referenceStatsByAuthor[referenceAuthor].numberMissing);
+		if(numberApprovedOrMissing == 0)
+		{
+			totalPossibleTrust = totalPossibleTrust.sub(addressToReferenceInfo[_reference].authorReputation);
+			addressToReferenceInfo[_reference].authorReputation = 0;
+		}
+
 		uint256 referenceIndex = addressToReferenceInfo[_reference].index;
 		delete references[referenceIndex];
 		delete addressToReferenceInfo[_reference];
+	}
 
-		// We know that the parameter is a valid submission
-		// as deemed by the platform. Therefore we're able to
-		// get it's author without worrying that we don't
-		// know what code we're calling.
-		if(addressToReferenceInfo[_reference].approved)
-		{
-			address referenceAuthor = IMatryxSubmission(_reference).getAuthor();
-			IMatryxPeer(referenceAuthor).removeReferenceApproval(this, _reference);
-		}
+	function getNumberApprovedOrMissing(address _peerAddress) public constant returns (uint256)
+	{
+		return referenceStatsByAuthor[_peerAddress].numberApproved.add(referenceStatsByAuthor[_peerAddress].numberMissing);
 	}
 
 	function receiveReferenceRequest() public onlyPlatform
@@ -298,23 +323,25 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		uint256 peersReputation = peer.getReputation();
 		uint256 originalTrust = approvalTrust;
 		
-		if(authorToApprovalTrustGiven[msg.sender] == 0x0)
+		if(referenceStatsByAuthor[msg.sender].numberApproved == 0)
 		{	
 			approvingPeers.push(msg.sender);
-			totalPossibleTrust = totalPossibleTrust.add(peersReputation);
 		}
 		else
 		{
 			approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
+			totalPossibleTrust = totalPossibleTrust.sub(addressToReferenceInfo[_reference].authorReputation);
 		}
+
+		referenceStatsByAuthor[msg.sender].numberApproved = referenceStatsByAuthor[msg.sender].numberApproved.add(1);
 
 		uint256 normalizedProportionOfReferenceApprovals = peer.getApprovedReferenceProportion(this);
 		uint256 trustToAdd = peersReputation.mul(normalizedProportionOfReferenceApprovals);
 		trustToAdd = trustToAdd.div(1*10**18);
-
 		authorToApprovalTrustGiven[msg.sender] = trustToAdd;
 		approvalTrust = approvalTrust.add(trustToAdd);
-
+		addressToReferenceInfo[_reference].authorReputation = peersReputation;
+		totalPossibleTrust = totalPossibleTrust.add(peersReputation);
 		// Store the difference in reputation that approving this reference caused to this submission.
 		// We may need this value if this approval is ever revoked by the trust-lending peer.
 		addressToReferenceInfo[_reference].positiveReputationAffect = approvalTrust.sub(originalTrust);
@@ -337,7 +364,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 			missingReferences[missingReferenceToIndex[_reference].value] = _reference;
 		}
 
+		referenceStatsByAuthor[msg.sender].numberApproved = referenceStatsByAuthor[msg.sender].numberApproved.sub(1);
+
 		approvalTrust = approvalTrust.sub(addressToReferenceInfo[_reference].positiveReputationAffect);
+		authorToApprovalTrustGiven[msg.sender] = authorToApprovalTrustGiven[msg.sender].sub(addressToReferenceInfo[_reference].positiveReputationAffect);
 	}
 
 	/// @dev 	Called by the owner of _reference when this submission does not list _reference
@@ -358,23 +388,25 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		uint256 peersReputation = peer.getReputation();
 		uint256 originalTrust = approvalTrust;
 
-		if(authorToApprovalTrustGiven[msg.sender] == 0x0)
+		if(referenceStatsByAuthor[msg.sender].numberMissing == 0)
 		{
 			approvingPeers.push(msg.sender);
-			totalPossibleTrust = totalPossibleTrust.add(peersReputation);
 		}
 		else
 		{
 			approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
+			totalPossibleTrust = totalPossibleTrust.sub(addressToReferenceInfo[_reference].authorReputation);
 		}
+
+		referenceStatsByAuthor[msg.sender].numberMissing = referenceStatsByAuthor[msg.sender].numberMissing.add(1);
 
 		uint256 normalizedProportionOfReferenceApprovals = peer.getApprovedReferenceProportion(this);
 		uint256 trustToAdd = peersReputation.mul(normalizedProportionOfReferenceApprovals);
 		trustToAdd = trustToAdd.div(1*10**18);
-
 		authorToApprovalTrustGiven[msg.sender] = trustToAdd;
 		approvalTrust = approvalTrust.add(trustToAdd);
-
+		addressToReferenceInfo[_reference].authorReputation = peersReputation;
+		totalPossibleTrust = totalPossibleTrust.add(peersReputation);
 		// Store the difference in reputation that flagging this reference caused to this submission.
 		// We may need this value if this flag is ever revoked by the trust-detracting peer.
 		addressToReferenceInfo[_reference].negativeReputationAffect = originalTrust.sub(approvalTrust);
@@ -393,8 +425,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		missingReferenceToIndex[_reference].exists = false;
 		addressToReferenceInfo[_reference].flagged = false;
 		delete missingReferences[missingReferenceToIndex[_reference].value];
+
+		referenceStatsByAuthor[msg.sender].numberMissing = referenceStatsByAuthor[msg.sender].numberMissing.sub(1);
 		
 		approvalTrust = approvalTrust.add(addressToReferenceInfo[_reference].negativeReputationAffect);
+		authorToApprovalTrustGiven[msg.sender] = authorToApprovalTrustGiven[msg.sender].add(addressToReferenceInfo[_reference].negativeReputationAffect);
 	}
 
 	/// @dev Add a contributor to a submission (callable only by submission's owner).
@@ -427,16 +462,20 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		IMatryxRound round = IMatryxRound(roundAddress);
 		IMatryxToken token = IMatryxToken(round.getTokenAddress());
 
+		// Transfer reward to submission author
 		uint256 transferAmount = getTransferAmount();
-
 		token.transfer(_recipient, transferAmount);
 
-		// TODO: Weight by author's reputation
+		// Distribute reward to references
 		uint256 remainingReward = submissionReward.sub(transferAmount);
-		uint256 diviedReward = remainingReward.div(references.length);
 		for(uint i = 0; i < references.length; i++)
 		{
-			token.transfer(references[i], diviedReward);
+			if(addressToReferenceInfo[references[i]].approved)
+			{
+				uint256 weight = (addressToReferenceInfo[references[i]].authorReputation).mul(1*10**18).div(totalPossibleTrust);
+				uint256 weightedReward = remainingReward.mul(weight).div(1*10**18);
+				token.transfer(references[i], weightedReward);
+			}
 		}
 	}
 
@@ -449,20 +488,22 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	{
 		
 		uint submissionReward = getBalance();
-		if(totalReferenceCount == 0)
+		if(totalPossibleTrust == 0)
 		{
+			if(missingReferences.length > 0)
+			{
+				return 0;
+			}
+
 			return submissionReward;
 		}
+
 		// transfer amount calculated as:
-		// normalizedTrustInSubmission * 
-		// proportionReferenceApprovalsGivenForSubmissionsReferencingThisSubmission *
-		// 0.5 * 
+		// normalizedAndReferenceCountWeightedTrustInSubmission * 
+		// (1 - submissionGratitude) * 
 		// submissionReward
-		uint256 transferAmount = approvalTrust.mul(1*10**18);
+		uint256 transferAmount = approvalTrust.mul(1*10**18 - IMatryxTournament(tournamentAddress).getSubmissionGratitude());
 		transferAmount = transferAmount.div(totalPossibleTrust);
-		transferAmount = transferAmount.mul(approvedReferences);
-		transferAmount = transferAmount.div(totalReferenceCount);
-		transferAmount = transferAmount.div(2);
 		transferAmount = transferAmount.mul(submissionReward);
 		transferAmount = transferAmount.div(1*10**18);
 

@@ -144,7 +144,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   // @dev Sends out reference requests for a particular submission.
   // @param _references Reference whose authors will be sent requests.
   // @returns Whether or not all references were successfully sent a request.
-  function handleReferencesForSubmission(address _submissionAddress, address[] _references) public onlyTournament returns (bool) 
+  function handleReferenceRequestsForSubmission(address _submissionAddress, address[] _references) public onlyTournament returns (bool) 
   {
     for(uint256 i = 0; i < _references.length; i++)
     {
@@ -167,13 +167,22 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   // @dev Sends out a reference request for a submission (must be called by the submission).
   // @param _reference Reference whose author will be sent a request.
   // @returns Whether or not all references were successfully sent a request.
-  function handleReferenceForSubmission(address _reference) public onlySubmission returns (bool)
+  function handleReferenceRequestForSubmission(address _reference) public onlySubmission returns (bool)
   {
       require(isSubmission(_reference));
       IMatryxSubmission submission = IMatryxSubmission(_reference);
       address author = submission.getAuthor();
       IMatryxPeer(author).receiveReferenceRequest(msg.sender, _reference);
       submission.receiveReferenceRequest();
+  }
+
+  function handleCancelledReferenceRequestForSubmission(address _reference) public onlySubmission returns (bool)
+  {
+    require(isSubmission(_reference));
+    IMatryxSubmission submission = IMatryxSubmission(_reference);
+    address author = submission.getAuthor();
+    IMatryxPeer(author).receiveCancelledReferenceRequest(msg.sender, _reference);
+    submission.cancelReferenceRequest();
   }
 
   /* 

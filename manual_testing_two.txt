@@ -43,39 +43,24 @@ submissionTwo = web3.eth.contract(MatryxSubmission.abi).at(addressSubmissionTwo)
 submissionThr = web3.eth.contract(MatryxSubmission.abi).at(addressSubmissionThr)
 
 submissionOne.addReference(addressSubmissionTwo, {from: web3.eth.accounts[1], gas: 2000000});
-submissionTwo.addReference(addressSubmissionOne, {from: web3.eth.accounts[2], gas: 2000000});
-submissionThr.addReference(addressSubmissionOne, {from: web3.eth.accounts[3], gas: 2000000});
+submissionOne.addReference(addressSubmissionThr, {from: web3.eth.accounts[1], gas: 2000000});
 
 submissionOne.getReferences.call({from: web3.eth.accounts[1]})
-submissionTwo.getReferences.call({from: web3.eth.accounts[2]})
-submissionThr.getReferences.call({from: web3.eth.accounts[3]})
 
 peerOne = web3.eth.contract(MatryxPeer.abi).at(platform.peerAddress.call(web3.eth.accounts[1]))
 peerTwo = web3.eth.contract(MatryxPeer.abi).at(platform.peerAddress.call(web3.eth.accounts[2]))
 peerThr = web3.eth.contract(MatryxPeer.abi).at(platform.peerAddress.call(web3.eth.accounts[3]));
 
 peerTwo.approveReference(addressSubmissionOne, addressSubmissionTwo, {from: web3.eth.accounts[2], gas: 1000000});
-peerOne.approveReference(addressSubmissionTwo, addressSubmissionOne, {from: web3.eth.accounts[1], gas: 1000000});
-peerThr.flagMissingReference(addressSubmissionOne, addressSubmissionThr, {from: web3.eth.accounts[3], gas: 2000000});
+peerThr.approveReference(addressSubmissionOne, addressSubmissionThr, {from: web3.eth.accounts[3], gas: 1000000});
 
-submissionOne.addressIsFlagged(addressSubmissionThr);
-
-peerThr.getMissingReferenceCount.call(submissionOne.address, {from: web3.eth.accounts[3]});
-
-submissionOne.addReference(addressSubmissionThr, {from: web3.eth.accounts[1], gas: 3000000});
-
-peerThr.getMissingReferenceCount.call(submissionOne.address, {from: web3.eth.accounts[3]});
+peerThr.getMissingReferenceCount.call(submissionOne.address, {from: web3.eth.accounts[3]}); // Should be 0.
 
 // peerThr.flagMissingReference(addressSubmissionOne, addressSubmissionThr, {from: web3.eth.accounts[3], gas: 2000000}); // Should revert.
-
 submissionOne.removeReference(addressSubmissionThr, {from: web3.eth.accounts[1], gas: 3000000});
 
 peerOne.getPeersInfluenceOnMyReputation.call(peerThr.address);
 
 peerThr.flagMissingReference(addressSubmissionOne, addressSubmissionThr, {from: web3.eth.accounts[3], gas: 2000000}); // Should not revert.
-
-submissionOne.addReference(addressSubmissionThr, {from: web3.eth.accounts[1], gas: 3000000}); // Should increase submissionOne.approvalTrust()
-
-peerThr.approveReference(addressSubmissionOne, addressSubmissionThr, {from: web3.eth.accounts[3], gas: 1000000})
 
 

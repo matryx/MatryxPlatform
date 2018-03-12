@@ -7,8 +7,9 @@ interface IMatryxPlatform
 	function prepareBalance(uint256 _toIgnore) public;
 	function balanceIsNonZero() public view returns (bool);
 	function getBalance() public constant returns (uint256);
-	function handleReferencesForSubmission(address _submissionAddress, address[] _references) public returns (bool);
-	function handleReferenceForSubmission(address _reference) public returns (bool);
+	function handleReferenceRequestsForSubmission(address _submissionAddress, address[] _references) public returns (bool);
+	function handleReferenceRequestForSubmission(address _reference) public returns (bool);
+	function handleCancelledReferenceRequestForSubmission(address _reference) public returns (bool);
 	function enterTournament(address _tournamentAddress) public returns (bool _success);
 	function createTournament(string _discipline, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public returns (address _tournamentAddress);
 	function updateSubmissions(address _owner, address _submission) public;

@@ -11,6 +11,7 @@ interface IMatryxTournament
     function getPlatform() public view returns (address _platformAddress);
     function getExternalAddress() public view returns (bytes32 _externalAddress);
     function currentRound() public constant returns (uint256 _currentRound, address _currentRoundAddress);
+    function getSubmissionGratitude() public constant returns (uint256);
     function mySubmissions() public view returns (address[]);
     function submissionCount() public view returns (uint256 _submissionCount);
     function entrantCount() public view returns (uint256 _entrantCount);
@@ -18,6 +19,7 @@ interface IMatryxTournament
     function setExternalAddress(bytes32 _externalAddress) public;
     function setEntryFee(uint256 _entryFee) public;
     function setNumberOfRounds(uint256 _newMaxRounds) public;
+    function setSubmissionGratitude(uint256 _gratitude) public;
     function setDiscipline(string _discipline) public;
     function chooseWinner(address _submissionAddress) public;
     function createRound(uint256 _bountyMTX) public returns (address _roundAddress) ;

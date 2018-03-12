@@ -40,6 +40,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     uint256 public BountyMTX;
     uint256 public BountyMTXLeft;
     uint256 public entryFee;
+    uint256_optional public submissionGratitude;
 
     // TODO: Automatic round creation variable
 
@@ -183,6 +184,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         _;
     }
 
+    modifier ifGratitudeSet()
+    {
+        require(submissionGratitude.exists);
+        _;
+    }
+
     /*
     * State Maintenance Methods
     */
@@ -258,6 +265,14 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return (rounds.length, rounds[rounds.length-1]);
     }
 
+    /// @dev    Returns a weight from 0 to 1 (18 decimal uint) indicating
+    ///         how much of a submission's reward goes to its references.
+    /// @return Relative amount of MTX going to references of submissions under this tournament.
+    function getSubmissionGratitude() public constant returns (uint256)
+    {
+        return submissionGratitude.value;
+    }
+
     /// @dev Returns all of the sender's submissions to this tournament.
     /// @return (_roundIndices[], _submissionIndices[]) Locations of the sender's submissions.
     function mySubmissions() public view returns (address[])
@@ -304,6 +319,17 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         maxRounds = _newMaxRounds;
     }
 
+    /// @dev             Set the relative amount of MTX to be delivered to a submission's
+    ///                  references
+    /// @param _gratitude Weight from 0 to 1 (18 decimal uint) specifying enforced submission 
+    ///                  gratitude
+    function setSubmissionGratitude(uint256 _gratitude) public onlyOwner
+    {
+        assert(_gratitude >= 0 && _gratitude <= (1*10**18));
+        submissionGratitude.exists = true;
+        submissionGratitude.value = _gratitude;
+    }
+
     function setDiscipline(string _discipline) public onlyOwner
     {
         discipline = _discipline;
@@ -314,7 +340,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      */
 
     /// @dev Opens this tournament up to submissions; called by startRound.
-    function openTournament() internal platformOrOwner
+    function openTournament() internal platformOrOwner ifGratitudeSet
     {
         tournamentOpen = true;
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
@@ -379,7 +405,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Starts the latest round.
     /// @param _duration Duration of the round in seconds.
-    function startRound(uint256 _duration, uint256 _reviewPeriod) public 
+    function startRound(uint256 _duration, uint256 _reviewPeriod) public
     {
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
         round.Start(_duration, _reviewPeriod);
@@ -441,7 +467,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         address submissionAddress = IMatryxRound(rounds[rounds.length-1]).createSubmission(_title, _owner, peerAddress, _externalAddress, _references, _contributors, _publicallyAccessible);
         // Send out reference requests to the authors of other submissions
-        IMatryxPlatform(platformAddress).handleReferencesForSubmission(submissionAddress, _references);
+        IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(submissionAddress, _references);
 
         numberOfSubmissions = numberOfSubmissions.add(1);
         entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress] = uint256_optional({exists:true, value:entrantToSubmissions[msg.sender].length});
