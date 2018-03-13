@@ -30,6 +30,8 @@ platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accou
 platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[3]});
 
 round = web3.eth.contract(MatryxRound.abi).at(tournament.currentRound()[1])
+
+//Crashes below
 tournament.createSubmission("submissionOne", web3.eth.accounts[1], "external address", [], [], true, {gas: 5000000, from: web3.eth.accounts[1]});
 tournament.createSubmission("submissionTwo", web3.eth.accounts[2], "external address", [], [], true, {gas: 5000000, from: web3.eth.accounts[2]});
 tournament.createSubmission("submissionThr", web3.eth.accounts[3], "external address", [], [], true, {gas: 5000000, from: web3.eth.accounts[3]});
