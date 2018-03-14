@@ -290,18 +290,17 @@ contract MatryxPeer is Ownable {
 
 		// Remove 1 from the state var keeping track of the number of approved references on this submission
 		submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.sub(one_eighteenDecimal);
-		// If we were sent this message by a submission, it means that the submission has *removed* the reference.
-		// We therefore need to decrease our totalReferenceCount for that submission.
-		if(msg.sender == _submissionAddress)
-		{
-			submissionToReferencesMetadata[_submissionAddress].totalReferenceCount = submissionToReferencesMetadata[_submissionAddress].totalReferenceCount.sub(1);
-		}
 
 		IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
 		submission.removeReferenceApproval(_reference);
 
 		address submissionAuthor = submission.getAuthor();
 		giveDistrust(submissionAuthor);
+	}
+
+	function getApprovedAndTotalReferenceCounts(address _submissionAddress) public constant returns (uint256, uint256)
+	{
+		return (submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount, submissionToReferencesMetadata[_submissionAddress].totalReferenceCount);
 	}
 
 	function getApprovedReferenceProportion(address _submissionAddress) public constant returns (uint256)
