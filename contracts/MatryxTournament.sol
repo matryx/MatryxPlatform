@@ -21,7 +21,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     address public matryxTokenAddress;
 
     //Tournament identification
-    string name;
+    string public name;
     bytes32 public externalAddress;
 
     // Timing and State
