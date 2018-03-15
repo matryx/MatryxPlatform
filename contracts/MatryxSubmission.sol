@@ -165,6 +165,16 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		return _balance;
 	}
 
+	function getRound() public constant returns (address)
+	{
+		return roundAddress;
+	}
+
+	function getTournament() public constant returns (address)
+	{
+		return tournamentAddress;
+	}
+
 	/// @dev Removes a submission from this round (callable only by submission's owner).
     /// @param _submissionIndex Index of the submission to remove.
 	// function suicide(uint256 _submissionIndex) onlyAuthor public

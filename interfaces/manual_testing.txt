@@ -1,0 +1,21 @@
+platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
+web3.eth.defaultAccount = web3.eth.accounts[0]
+platform.createTournament.sendTransaction("create a shell", "ipfs hash", 100, 2, {gas: 4000000})
+tournament = web3.eth.contract(MatryxTournament.abi).at(platform.getTournamentAtIndex.call(0))
+tournament.openTournament();
+tournament.createRound(10, {gas: 4000000})
+tournament.startRound(100, {gas: 1500000});
+
+platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[0]})
+tournament.createSubmission("submissionOne", web3.eth.accounts[1], "external address", [], [], true, {gas: 4000000, from: web3.eth.accounts[0]});
+
+platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[1]})
+tournament.createSubmission("submissionTwo", web3.eth.accounts[1], "external address", [], [], true, {gas: 4000000, from: web3.eth.accounts[1]});
+
+round = web3.eth.contract(MatryxRound.abi).at(tournament.currentRound()[1]);
+addressSubmissionOne = round.getSubmissions()[0];
+addressSubmissionTwo = round.getSubmissions()[1];
+submissionOne = web3.eth.contract(MatryxSubmission.abi).at(addressSubmissionOne);
+submissionTwo = web3.eth.contract(MatryxSubmission.abi).at(addressSubmissionTwo);
+
+tournament.chooseWinner(0);

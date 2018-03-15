@@ -162,6 +162,11 @@ contract MatryxRound is Ownable, IMatryxRound {
      * Getter Methods
      */
 
+    function getTournament() public constant returns (address)
+	{
+		return tournamentAddress;
+	}
+
 	/// @dev Returns all submissions made to this round.
 	/// @return _submissions All submissions made to this round.
 	function getSubmissions() public constant returns (address[] _submissions)

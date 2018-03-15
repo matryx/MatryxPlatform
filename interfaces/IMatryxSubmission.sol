@@ -17,4 +17,6 @@ interface IMatryxSubmission
 	function addContributor(address _contributor) public;
 	function removeContributor(uint256 _contributorIndex) public;
 	function getBalance() public returns (uint256);
+	function getRound() public constant returns (address);
+	function getTournament() public constant returns (address);
 }
