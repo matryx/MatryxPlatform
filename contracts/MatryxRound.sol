@@ -224,6 +224,14 @@ contract MatryxRound is Ownable, IMatryxRound {
      * Getter Methods
      */
 
+    function getPlatform() public constant returns (address) {
+		return platformAddress;
+	}
+
+    function getTournament() public constant returns (address) {
+		return tournamentAddress;
+	}
+
     function getBounty() public constant returns (uint256) 
     { 
     	return bountyMTX;

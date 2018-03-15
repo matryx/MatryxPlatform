@@ -129,9 +129,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
   		_;
   	}
 
-	// A modifier to ensure that information can be obtained
-	// about this submission only when it should be (when the creator decides it can
-	// or after the tournament has been closed).
+	// A modifier to ensure that information can only obtained
+	// about this submission when it should be.
 	modifier whenAccessible(address _requester)
 	{
 		require(isAccessible(_requester));
@@ -148,6 +147,18 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/*
 	 * Getter Methods
 	 */
+
+	function getPlatform() public constant returns (address) {
+		return platformAddress;
+	}
+
+	function getTournament() public constant returns (address) {
+		return tournamentAddress;
+	}
+
+	function getRound() public constant returns (address) {
+		return roundAddress;
+	}
 
 	function isAccessible(address _requester) public constant returns (bool)
 	{
@@ -167,32 +178,32 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || roundClosed;
 	}
 
-	function getTitle() constant whenAccessible(msg.sender) public returns(string) {
+	function getTitle() public constant whenAccessible(msg.sender) returns(string) {
 		return title;
 	}
 
-	function getAuthor() constant whenAccessible(msg.sender) public returns(address) {
+	function getAuthor() public constant whenAccessible(msg.sender) returns(address) {
 		return author;
 	}
 
-	function getExternalAddress() constant whenAccessible(msg.sender) public returns (bytes32)
+	function getExternalAddress() public constant whenAccessible(msg.sender) returns (bytes32)
 	{
 		return externalAddress;
 	}
 
-	function getReferences() constant whenAccessible(msg.sender) public returns(address[]) {
+	function getReferences() public constant whenAccessible(msg.sender) returns(address[]) {
 		return references;
 	}
 
-	function getContributors() constant whenAccessible(msg.sender) public returns(address[]) {
+	function getContributors() public constant whenAccessible(msg.sender) returns(address[]) {
 		return contributors;
 	}
 
-	function getTimeSubmitted() constant public returns(uint256) {
+	function getTimeSubmitted() public constant returns(uint256) {
 		return timeSubmitted;
 	}
 
-	function getTimeUpdated() constant public returns(uint256) {
+	function getTimeUpdated() public constant returns(uint256) {
 		return timeUpdated;
 	}
 
