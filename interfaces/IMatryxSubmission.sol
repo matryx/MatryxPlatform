@@ -17,7 +17,6 @@ interface IMatryxSubmission {
 	function addReference(address _reference) public ;
 	function addressIsFlagged(address _reference) public constant returns (bool, bool);
 	function removeReference(address _reference) public;
-	function getNumberApprovedOrMissing(address _peerAddress) public constant returns (uint256);
 	function receiveReferenceRequest() public;
 	function cancelReferenceRequest() public;
 	function approveReference(address _reference) public;

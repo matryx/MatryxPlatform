@@ -294,11 +294,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		delete addressToReferenceInfo[_reference];
 	}
 
-	function getNumberApprovedOrMissing(address _peerAddress) public constant returns (uint256)
-	{
-		return referenceStatsByAuthor[_peerAddress].numberApproved.add(referenceStatsByAuthor[_peerAddress].numberMissing);
-	}
-
 	function receiveReferenceRequest() public onlyPlatform
 	{
 		totalReferenceCount = totalReferenceCount.add(1);
@@ -314,44 +309,44 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// _reference Reference being approved by msg.sender.
 	function approveReference(address _reference) public onlyOwningPeer(_reference)
 	{
-		require(addressToReferenceInfo[_reference].exists == true);
-  		require(addressToReferenceInfo[_reference].approved == false);
+		// require(addressToReferenceInfo[_reference].exists == true);
+  // 		require(addressToReferenceInfo[_reference].approved == false);
 
-  		// Update state variables regarding the approved reference
-  		approvedReferences = approvedReferences.add(1);
-		addressToReferenceInfo[_reference].approved = true;
-		if(missingReferenceToIndex[_reference].exists)
-		{
-			delete missingReferences[missingReferenceToIndex[_reference].value];
-		}
+  // 		// Update state variables regarding the approved reference
+  // 		approvedReferences = approvedReferences.add(1);
+		// addressToReferenceInfo[_reference].approved = true;
+		// if(missingReferenceToIndex[_reference].exists)
+		// {
+		// 	delete missingReferences[missingReferenceToIndex[_reference].value];
+		// }
 
-  		// Update submission reputation variables
-		IMatryxPeer peer = IMatryxPeer(msg.sender);
-		uint256 peersReputation = peer.getReputation();
-		uint256 originalTrust = approvalTrust;
+  // 		// Update submission reputation variables
+		// IMatryxPeer peer = IMatryxPeer(msg.sender);
+		// uint256 peersReputation = peer.getReputation();
+		// uint256 originalTrust = approvalTrust;
 		
-		if(referenceStatsByAuthor[msg.sender].numberApproved == 0)
-		{	
-			approvingPeers.push(msg.sender);
-		}
-		else
-		{
-			approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
-			totalPossibleTrust = totalPossibleTrust.sub(addressToReferenceInfo[_reference].authorReputation);
-		}
+		// if(referenceStatsByAuthor[msg.sender].numberApproved == 0)
+		// {	
+		// 	approvingPeers.push(msg.sender);
+		// }
+		// else
+		// {
+		// 	approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
+		// 	totalPossibleTrust = totalPossibleTrust.sub(addressToReferenceInfo[_reference].authorReputation);
+		// }
 
-		referenceStatsByAuthor[msg.sender].numberApproved = referenceStatsByAuthor[msg.sender].numberApproved.add(1);
+		// referenceStatsByAuthor[msg.sender].numberApproved = referenceStatsByAuthor[msg.sender].numberApproved.add(1);
 
-		uint256 normalizedProportionOfReferenceApprovals = peer.getApprovedReferenceProportion(this);
-		uint256 trustToAdd = peersReputation.mul(normalizedProportionOfReferenceApprovals);
-		trustToAdd = trustToAdd.div(1*10**18);
-		authorToApprovalTrustGiven[msg.sender] = trustToAdd;
-		approvalTrust = approvalTrust.add(trustToAdd);
-		addressToReferenceInfo[_reference].authorReputation = peersReputation;
-		totalPossibleTrust = totalPossibleTrust.add(peersReputation);
-		// Store the difference in reputation that approving this reference caused to this submission.
-		// We may need this value if this approval is ever revoked by the trust-lending peer.
-		addressToReferenceInfo[_reference].positiveReputationAffect = approvalTrust.sub(originalTrust);
+		// uint256 normalizedProportionOfReferenceApprovals = peer.getApprovedReferenceProportion(this);
+		// uint256 trustToAdd = peersReputation.mul(normalizedProportionOfReferenceApprovals);
+		// trustToAdd = trustToAdd.div(1*10**18);
+		// authorToApprovalTrustGiven[msg.sender] = trustToAdd;
+		// approvalTrust = approvalTrust.add(trustToAdd);
+		// addressToReferenceInfo[_reference].authorReputation = peersReputation;
+		// totalPossibleTrust = totalPossibleTrust.add(peersReputation);
+		// // Store the difference in reputation that approving this reference caused to this submission.
+		// // We may need this value if this approval is ever revoked by the trust-lending peer.
+		// addressToReferenceInfo[_reference].positiveReputationAffect = approvalTrust.sub(originalTrust);
 	}
 
 	/// @dev 			  Called by the owner of the _reference to remove their approval of a reference
@@ -360,21 +355,21 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	///					  in this submission.
 	function removeReferenceApproval(address _reference) public onlyOwningPeer(_reference)
 	{
-		require(addressToReferenceInfo[_reference].approved = true);
+		// require(addressToReferenceInfo[_reference].approved = true);
 
-		approvedReferences = approvedReferences.sub(1);
-		addressToReferenceInfo[_reference].approved = false;
+		// approvedReferences = approvedReferences.sub(1);
+		// addressToReferenceInfo[_reference].approved = false;
 
-		if(addressToReferenceInfo[_reference].flagged)
-		{
-			// TODO: TEST THIS THOROUGHLY.
-			missingReferences[missingReferenceToIndex[_reference].value] = _reference;
-		}
+		// if(addressToReferenceInfo[_reference].flagged)
+		// {
+		// 	// TODO: TEST THIS THOROUGHLY.
+		// 	missingReferences[missingReferenceToIndex[_reference].value] = _reference;
+		// }
 
-		referenceStatsByAuthor[msg.sender].numberApproved = referenceStatsByAuthor[msg.sender].numberApproved.sub(1);
+		// referenceStatsByAuthor[msg.sender].numberApproved = referenceStatsByAuthor[msg.sender].numberApproved.sub(1);
 
-		approvalTrust = approvalTrust.sub(addressToReferenceInfo[_reference].positiveReputationAffect);
-		authorToApprovalTrustGiven[msg.sender] = authorToApprovalTrustGiven[msg.sender].sub(addressToReferenceInfo[_reference].positiveReputationAffect);
+		// approvalTrust = approvalTrust.sub(addressToReferenceInfo[_reference].positiveReputationAffect);
+		// authorToApprovalTrustGiven[msg.sender] = authorToApprovalTrustGiven[msg.sender].sub(addressToReferenceInfo[_reference].positiveReputationAffect);
 	}
 
 	/// @dev 	Called by the owner of _reference when this submission does not list _reference
@@ -382,43 +377,43 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// @param  _reference Missing reference in this submission.
 	function flagMissingReference(address _reference) public onlyOwningPeer(_reference)
 	{
-		require(addressToReferenceInfo[_reference].exists == false);
-  		require(addressToReferenceInfo[_reference].flagged == false);
+		// require(addressToReferenceInfo[_reference].exists == false);
+  // 		require(addressToReferenceInfo[_reference].flagged == false);
 
-		// Update state variables regarding the missing reference
-		missingReferences.push(_reference);
-		missingReferenceToIndex[_reference] = uint256_optional(true, missingReferences.length-1);
-		addressToReferenceInfo[_reference].flagged = true;
+		// // Update state variables regarding the missing reference
+		// missingReferences.push(_reference);
+		// missingReferenceToIndex[_reference] = uint256_optional(true, missingReferences.length-1);
+		// addressToReferenceInfo[_reference].flagged = true;
 		
-		// Update submission reputation state variables
-		IMatryxPeer peer = IMatryxPeer(msg.sender);
-		uint256 peersReputation = peer.getReputation();
-		uint256 originalTrust = approvalTrust;
+		// // Update submission reputation state variables
+		// IMatryxPeer peer = IMatryxPeer(msg.sender);
+		// uint256 peersReputation = peer.getReputation();
+		// uint256 originalTrust = approvalTrust;
 
-		if(referenceStatsByAuthor[msg.sender].numberMissing == 0)
-		{
-			approvingPeers.push(msg.sender);
-		}
-		else
-		{
-			approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
-			totalPossibleTrust = totalPossibleTrust.sub(addressToReferenceInfo[_reference].authorReputation);
-		}
+		// if(referenceStatsByAuthor[msg.sender].numberMissing == 0)
+		// {
+		// 	approvingPeers.push(msg.sender);
+		// }
+		// else
+		// {
+		// 	approvalTrust = approvalTrust.sub(authorToApprovalTrustGiven[msg.sender]);
+		// 	totalPossibleTrust = totalPossibleTrust.sub(addressToReferenceInfo[_reference].authorReputation);
+		// }
 
-		referenceStatsByAuthor[msg.sender].numberMissing = referenceStatsByAuthor[msg.sender].numberMissing.add(1);
+		// referenceStatsByAuthor[msg.sender].numberMissing = referenceStatsByAuthor[msg.sender].numberMissing.add(1);
 
-		uint256 normalizedProportionOfReferenceApprovals = peer.getApprovedReferenceProportion(this);
-		uint256 trustToAdd = peersReputation.mul(normalizedProportionOfReferenceApprovals);
-		trustToAdd = trustToAdd.div(1*10**18);
-		authorToApprovalTrustGiven[msg.sender] = trustToAdd;
-		approvalTrust = approvalTrust.add(trustToAdd);
-		addressToReferenceInfo[_reference].authorReputation = peersReputation;
-		totalPossibleTrust = totalPossibleTrust.add(peersReputation);
-		// Store the difference in reputation that flagging this reference caused to this submission.
-		// We may need this value if this flag is ever revoked by the trust-detracting peer.
-		addressToReferenceInfo[_reference].negativeReputationAffect = originalTrust.sub(approvalTrust);
+		// uint256 normalizedProportionOfReferenceApprovals = peer.getApprovedReferenceProportion(this);
+		// uint256 trustToAdd = peersReputation.mul(normalizedProportionOfReferenceApprovals);
+		// trustToAdd = trustToAdd.div(1*10**18);
+		// authorToApprovalTrustGiven[msg.sender] = trustToAdd;
+		// approvalTrust = approvalTrust.add(trustToAdd);
+		// addressToReferenceInfo[_reference].authorReputation = peersReputation;
+		// totalPossibleTrust = totalPossibleTrust.add(peersReputation);
+		// // Store the difference in reputation that flagging this reference caused to this submission.
+		// // We may need this value if this flag is ever revoked by the trust-detracting peer.
+		// addressToReferenceInfo[_reference].negativeReputationAffect = originalTrust.sub(approvalTrust);
 
-		totalReferenceCount = totalReferenceCount.add(1);
+		// totalReferenceCount = totalReferenceCount.add(1);
 	}
 
 	/// @dev 			  Called by the owner of _reference to remove a missing reference flag placed on a reference
@@ -426,17 +421,17 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// @param _reference Reference previously marked by peer as missing.
 	function removeMissingReferenceFlag(address _reference) public onlyOwningPeer(_reference)
 	{
-		// TODO: Ensure that this reference was previously flagged as missing (MatryxSubmission)
-		require(addressToReferenceInfo[_reference].flagged == true);
+		// // TODO: Ensure that this reference was previously flagged as missing (MatryxSubmission)
+		// require(addressToReferenceInfo[_reference].flagged == true);
 
-		missingReferenceToIndex[_reference].exists = false;
-		addressToReferenceInfo[_reference].flagged = false;
-		delete missingReferences[missingReferenceToIndex[_reference].value];
+		// missingReferenceToIndex[_reference].exists = false;
+		// addressToReferenceInfo[_reference].flagged = false;
+		// delete missingReferences[missingReferenceToIndex[_reference].value];
 
-		referenceStatsByAuthor[msg.sender].numberMissing = referenceStatsByAuthor[msg.sender].numberMissing.sub(1);
+		// referenceStatsByAuthor[msg.sender].numberMissing = referenceStatsByAuthor[msg.sender].numberMissing.sub(1);
 		
-		approvalTrust = approvalTrust.add(addressToReferenceInfo[_reference].negativeReputationAffect);
-		authorToApprovalTrustGiven[msg.sender] = authorToApprovalTrustGiven[msg.sender].add(addressToReferenceInfo[_reference].negativeReputationAffect);
+		// approvalTrust = approvalTrust.add(addressToReferenceInfo[_reference].negativeReputationAffect);
+		// authorToApprovalTrustGiven[msg.sender] = authorToApprovalTrustGiven[msg.sender].add(addressToReferenceInfo[_reference].negativeReputationAffect);
 	}
 
 	/// @dev Add a contributor to a submission (callable only by submission's owner).
@@ -469,31 +464,30 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		IMatryxRound round = IMatryxRound(roundAddress);
 		IMatryxToken token = IMatryxToken(round.getTokenAddress());
 
-		// Transfer reward to submission author
-		uint256 transferAmount = getTransferAmount();
-		token.transfer(_recipient, transferAmount);
+		// // Transfer reward to submission author
+		// uint256 transferAmount = getTransferAmount();
+		// token.transfer(_recipient, transferAmount);
 
-		// Distribute reward to references
-		uint256 remainingReward = submissionReward.sub(transferAmount);
-		for(uint i = 0; i < references.length; i++)
-		{
-			if(addressToReferenceInfo[references[i]].approved)
-			{
-				uint256 weight = (addressToReferenceInfo[references[i]].authorReputation).mul(1*10**18).div(totalPossibleTrust);
-				uint256 weightedReward = remainingReward.mul(weight).div(1*10**18);
-				token.transfer(references[i], weightedReward);
-			}
-		}
+		// // Distribute reward to references
+		// uint256 remainingReward = submissionReward.sub(transferAmount);
+		// for(uint i = 0; i < references.length; i++)
+		// {
+		// 	if(addressToReferenceInfo[references[i]].approved)
+		// 	{
+		// 		uint256 weight = (addressToReferenceInfo[references[i]].authorReputation).mul(1*10**18).div(totalPossibleTrust);
+		// 		uint256 weightedReward = remainingReward.mul(weight).div(1*10**18);
+		// 		token.transfer(references[i], weightedReward);
+		// 	}
+		// }
 	}
 
 	function withdrawReward() public ownerOrRound
 	{
-		withdrawReward(msg.sender);
+		// withdrawReward(msg.sender);
 	}
 
 	function getTransferAmount() public constant returns (uint256)
 	{
-		
 		uint submissionReward = getBalance();
 		if(totalPossibleTrust == 0)
 		{
