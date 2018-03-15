@@ -1,19 +1,23 @@
 pragma solidity ^0.4.18;
 
 interface IMatryxSubmission {
+	function getTournament() public constant returns (address);
+	function getRound() public constant returns (address);
 	function isAccessible(address _requester) public constant returns (bool);
-	function getTitle() constant public returns(string);
-	function getAuthor() constant public returns(address);
-	function getExternalAddress() constant public returns (bytes32);
-	function getReferences() constant public returns(address[]);
-	function getContributors() constant public returns(address[]);
-	function getTimeSubmitted() constant public returns(uint256);
-	function getTimeUpdated() constant public returns(uint256);
+	function getTitle() public constant returns(string);
+	function getAuthor() public constant returns(address);
+	function getExternalAddress() public constant returns (bytes32);
+	function getReferences() public constant returns(address[]);
+	function getContributors() public constant returns(address[]);
+	function getTimeSubmitted() public constant returns(uint256);
+	function getTimeUpdated() public constant returns(uint256);
 	function makeExternallyAccessibleDuringTournament() public;
-	function updateTitle(string _title) public;
+	function updateTitle(string _title) public ;
 	function updateExternalAddress(bytes32 _externalAddress) public;
-	function addReference(address _reference) public;
+	function addReference(address _reference) public ;
+	function addressIsFlagged(address _reference) public constant returns (bool, bool);
 	function removeReference(address _reference) public;
+	function getNumberApprovedOrMissing(address _peerAddress) public constant returns (uint256);
 	function receiveReferenceRequest() public;
 	function cancelReferenceRequest() public;
 	function approveReference(address _reference) public;
@@ -23,7 +27,8 @@ interface IMatryxSubmission {
 	function addContributor(address _contributor) public;
 	function removeContributor(uint256 _contributorIndex) public ;
 	function getBalance() public returns (uint256);
-	function withdrawReward() public;
 	function withdrawReward(address _recipient) public;
+	function withdrawReward() public;
+	function getTransferAmount() public constant returns (uint256);
 	function deleteSubmission() public;
 }

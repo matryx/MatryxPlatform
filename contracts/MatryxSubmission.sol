@@ -148,10 +148,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	 * Getter Methods
 	 */
 
-	function getPlatform() public constant returns (address) {
-		return platformAddress;
-	}
-
 	function getTournament() public constant returns (address) {
 		return tournamentAddress;
 	}
