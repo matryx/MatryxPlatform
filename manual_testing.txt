@@ -7,10 +7,10 @@
 // Set up the platform, create three peers, set up MatryxToken, mint some tokens for each owner of a peer, create a tournament.
 platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
 web3.eth.defaultAccount = web3.eth.accounts[0]
-platform.createPeer.sendTransaction({gas: 3000000});
-platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[1]});
-platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[2]});
-platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[3]});
+platform.createPeer.sendTransaction({gas: 4000000});
+platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[1]});
+platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[2]});
+platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[3]});
 token = web3.eth.contract(MatryxToken.abi).at("0x89c81164a847fae12841c7d2371864c7656f91c9")
 token.setReleaseAgent(web3.eth.accounts[0])
 token.releaseTokenTransfer.sendTransaction({gas: 1000000})

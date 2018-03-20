@@ -24,18 +24,17 @@ platform.createTournament.sendTransaction("math", "create a shell", "ipfs hash",
 
 // Then these.
 tournament = web3.eth.contract(MatryxTournament.abi).at(platform.getTournamentAtIndex.call(0))
-tournament.setSubmissionGratitude(5*10**17, {gas: 1000000})
-tournament.createRound(10, {gas: 4000000})
+tournament.createRound(10, {gas: 4500000})
 
 // Then these.
-tournament.startRound(10, 120000, {gas: 1500000});
+tournament.startRound(86400, 120000, {gas: 2500000});
 token.approve(tournament.address, 2, {from: web3.eth.accounts[1]});
 token.approve(tournament.address, 2, {from: web3.eth.accounts[2]});
 token.approve(tournament.address, 2, {from: web3.eth.accounts[3]});
 platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[1]});
-platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[2]});
-platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[3]});
-tournament.createSubmission("submissionOne", web3.eth.accounts[1], "external address", [], [], true, {gas: 5000000, from: web3.eth.accounts[1]});
+platform.enterTournament(tournament.address, {gas: 2500000, from: web3.eth.accounts[2]});
+platform.enterTournament(tournament.address, {gas: 2500000, from: web3.eth.accounts[3]});
+tournament.createSubmission("submissionOne", web3.eth.accounts[1], "external address", [], [], true, {gas: 4700000, from: web3.eth.accounts[1]});
 tournament.createSubmission("submissionTwo", web3.eth.accounts[2], "external address", [], [], true, {gas: 5000000, from: web3.eth.accounts[2]});
 tournament.createSubmission("submissionThr", web3.eth.accounts[3], "external address", [], [], true, {gas: 5000000, from: web3.eth.accounts[3]});
 
@@ -50,7 +49,7 @@ submissionTwo = web3.eth.contract(MatryxSubmission.abi).at(addressSubmissionTwo)
 submissionThr = web3.eth.contract(MatryxSubmission.abi).at(addressSubmissionThr)
 
 // Run these to add references to the first submission.
-submissionOne.addReference(addressSubmissionTwo, {from: web3.eth.accounts[1], gas: 2000000});
+submissionOne.addReference(addressSubmissionTwo, {from: web3.eth.accounts[1], gas: 3000000});
 submissionOne.addReference(addressSubmissionThr, {from: web3.eth.accounts[1], gas: 2000000});
 
 // Check to make sure those references exist now.

@@ -21,6 +21,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   address public matryxTokenAddress;
   address matryxPeerFactoryAddress;
   address matryxTournamentFactoryAddress;
+  address matryxSubmissionTrustLibAddress;
   address[] public allTournaments;
   mapping(bytes32=>address[]) public tournamentByCategory;
   mapping(bytes32=>uint256) public categoryCount;
@@ -36,11 +37,14 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   mapping(address=>address[]) ownerToSubmissionArray;
   mapping(address=>mapping(address=>uint256_optional))  ownerToSubmissionToSubmissionIndex;
 
-  function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress) public
+  uint256_optional submissionGratitude = uint256_optional({exists: true, value: 2*10**17});
+
+  function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionTrustLibAddress) public
   {
     matryxTokenAddress = _matryxTokenAddress;
     matryxPeerFactoryAddress = _matryxPeerFactoryAddress;
     matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
+    matryxSubmissionTrustLibAddress = _matryxSubmissionTrustLibAddress;
   }
 
   /*
@@ -185,6 +189,41 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     submission.cancelReferenceRequest();
   }
 
+  function updateUsersTournaments(address _owner, address _tournament) internal
+  {
+    entrantToTournamentArray[_owner].push(_tournament);
+  }
+
+  function updateSubmissions(address _owner, address _submission) public onlyTournament
+  {
+    ownerToSubmissionToSubmissionIndex[_owner][_submission] = uint256_optional({exists:true, value:ownerToSubmissionArray[_owner].length});
+    ownerToSubmissionArray[_owner].push(_submission);
+    addressToOwnsSubmission[_owner][_submission] = true;
+    submissionExists[_submission] = true;
+  }
+
+  function removeSubmission(address _submissionAddress, address _tournamentAddress) public returns (bool)
+  {
+    require(addressToOwnsSubmission[msg.sender][_submissionAddress]);
+    require(tournamentExists[_tournamentAddress]);
+    
+    if(submissionExists[_submissionAddress])
+    {
+      IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
+      address owner = Ownable(_submissionAddress).getOwner();
+      uint256 submissionIndex = ownerToSubmissionToSubmissionIndex[owner][_submissionAddress].value;
+
+      submissionExists[_submissionAddress] = false;
+      delete ownerToSubmissionArray[owner][submissionIndex];
+      delete ownerToSubmissionToSubmissionIndex[owner][_submissionAddress];
+
+      IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, owner);
+      return true;
+    }
+    
+    return false;
+  }
+
   /* 
    * Tournament Entry Methods
    */
@@ -252,45 +291,6 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   }
 
   /*
-   * State Maintenance Methods
-   */ 
-
-  function updateUsersTournaments(address _owner, address _tournament) internal
-  {
-    entrantToTournamentArray[_owner].push(_tournament);
-  }
-
-  function updateSubmissions(address _owner, address _submission) public onlyTournament
-  {
-    ownerToSubmissionToSubmissionIndex[_owner][_submission] = uint256_optional({exists:true, value:ownerToSubmissionArray[_owner].length});
-    ownerToSubmissionArray[_owner].push(_submission);
-    addressToOwnsSubmission[_owner][_submission] = true;
-    submissionExists[_submission] = true;
-  }
-
-  function removeSubmission(address _submissionAddress, address _tournamentAddress) public returns (bool)
-  {
-    require(addressToOwnsSubmission[msg.sender][_submissionAddress]);
-    require(tournamentExists[_tournamentAddress]);
-    
-    if(submissionExists[_submissionAddress])
-    {
-      IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
-      address owner = Ownable(_submissionAddress).getOwner();
-      uint256 submissionIndex = ownerToSubmissionToSubmissionIndex[owner][_submissionAddress].value;
-
-      submissionExists[_submissionAddress] = false;
-      delete ownerToSubmissionArray[owner][submissionIndex];
-      delete ownerToSubmissionToSubmissionIndex[owner][_submissionAddress];
-
-      IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, owner);
-      return true;
-    }
-    
-    return false;
-  }
-
-  /*
    * Access Control Methods
    */
 
@@ -344,12 +344,40 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   }
 
   /*
+   * Setter Methods
+   */ 
+
+    /// @dev              Set the relative amount of MTX to be delivered to a submission's
+    ///                   references
+    /// @param _gratitude Weight from 0 to 1 (18 decimal uint) specifying enforced submission 
+    ///                   gratitude
+    function setSubmissionGratitude(uint256 _gratitude) public onlyOwner
+    {
+        assert(_gratitude >= 0 && _gratitude <= (1*10**18));
+        submissionGratitude = uint256_optional({exists: true, value: _gratitude});
+    }
+
+  /*
    * Getter Methods
    */
 
    function getTokenAddress() public constant returns (address)
    {
       return matryxTokenAddress;
+   }
+
+   function getSubmissionTrustLibrary() public constant returns (address)
+   {
+      return matryxSubmissionTrustLibAddress;
+   }
+
+   /// @dev    Returns a weight from 0 to 1 (18 decimal uint) indicating
+   ///         how much of a submission's reward goes to its references.
+   /// @return Relative amount of MTX going to references of submissions under this tournament.
+   function getSubmissionGratitude() public constant returns (uint256)
+   {
+      require(submissionGratitude.exists);
+      return submissionGratitude.value;
    }
 
    /// @dev Returns addresses for submissions the sender has created.
@@ -364,17 +392,17 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return ownerToSubmissionArray[msg.sender];
    }
 
-  /// @dev Returns the total number of tournaments
-  /// @return _tournamentCount Total number of tournaments.
-  function tournamentCount() public constant returns (uint256 _tournamentCount)
-  {
-      return allTournaments.length;
-  }
-
-  function getTournamentAtIndex(uint256 _index) public constant returns (address _tournamentAddress)
-  {
-    require(_index >= 0);
-    require(_index < allTournaments.length);
-    return allTournaments[_index];
-  }
+   /// @dev Returns the total number of tournaments
+   /// @return _tournamentCount Total number of tournaments.
+   function tournamentCount() public constant returns (uint256 _tournamentCount)
+   {
+       return allTournaments.length;
+   }
+ 
+   function getTournamentAtIndex(uint256 _index) public constant returns (address _tournamentAddress)
+   {
+     require(_index >= 0);
+     require(_index < allTournaments.length);
+     return allTournaments[_index];
+   }
 }

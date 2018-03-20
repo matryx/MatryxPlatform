@@ -20,8 +20,11 @@ interface IMatryxPlatform
 	function peerAddress(address _sender) public constant returns (address);
 	function isSubmission(address _submissionAddress) public constant returns (bool);
 	function getTournament_IsMine(address _tournamentAddress) public constant returns (bool _isMine);
+	function setSubmissionGratitude(uint256 _gratitude) public;
 	function tournamentCount() public constant returns (uint256 _tournamentCount);
 	function getTokenAddress() public constant returns (address);
+	function getSubmissionTrustLibrary() public constant returns (address);
+	function getSubmissionGratitude() public constant returns (uint256);
 	function myTournaments() public constant returns (address[]);
 	function mySubmissions() public constant returns (address[]);
 }

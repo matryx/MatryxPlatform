@@ -1,13 +1,13 @@
 pragma solidity ^0.4.18;
 
 import '../MatryxPeer.sol';
-import '../../libraries/math/SafeMath.sol';
+import '../../libraries/math/SafeMath128.sol';
 
 contract MatryxPeerFactory is Ownable {
-	using SafeMath for uint256;
+	using SafeMath128 for uint128;
 
 	address public platformAddress;
-	uint256 public peerCount;
+	uint64 public peerCount;
 
 	function setPlatform(address _platformAddress) public onlyOwner
 	{
@@ -15,27 +15,27 @@ contract MatryxPeerFactory is Ownable {
 	}
 
 	function createPeer(address _owner) public returns (address _peerAddress) {
-		uint256 trust = getTrustForNewPeer();
+		uint128 trust = getTrustForNewPeer();
 		MatryxPeer peerAddress = new MatryxPeer(platformAddress, _owner, trust);
-		peerCount  = peerCount.add(1);
+		peerCount  = uint64(uint128(peerCount).add(1));
 		return peerAddress;
 	}
 
-	function getTrustForNewPeer() public constant returns (uint256)
+	function getTrustForNewPeer() public constant returns (uint128)
 	{
-		uint256 integralTopValue = fastSigmoid(peerCount+2);
-		uint256 integralBottomValue = fastSigmoid(peerCount+1);
-		uint trustValue = integralTopValue - integralBottomValue;
+		uint128 integralTopValue = fastSigmoid(peerCount+2);
+		uint128 integralBottomValue = fastSigmoid(peerCount+1);
+		uint128 trustValue = integralTopValue - integralBottomValue;
 		require(trustValue >= 0);
 
 		return trustValue;
 	}
 
-	function fastSigmoid(uint256 _input) public pure returns (uint256)
+	function fastSigmoid(uint256 _input) public pure returns (uint128)
 	{
-		uint256 one = 1 * 10**18;
-		uint256 two = 2 * 10**18;
-		uint256 inputWithDecimals = _input * 10**18;
+		uint128 one = 1 * 10**18;
+		uint128 two = 2 * 10**18;
+		uint128 inputWithDecimals = uint128(_input) * 10**18;
 
 		return (two.mul(inputWithDecimals)).div(one.add(inputWithDecimals));
 	}
