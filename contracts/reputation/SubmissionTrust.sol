@@ -8,8 +8,9 @@ import '../../interfaces/IMatryxPlatform.sol';
 import '../../interfaces/IMatryxTournament.sol';
 import '../../interfaces/IMatryxRound.sol';
 import '../../interfaces/IMatryxSubmission.sol';
+import '../Ownable.sol';
 
-contract SubmissionTrust
+contract SubmissionTrust is Ownable
 {
 	using SafeMath for uint256;
 	using SafeMath128 for uint128;

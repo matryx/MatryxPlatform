@@ -11,7 +11,7 @@ platform.createPeer.sendTransaction({gas: 4000000});
 platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[1]});
 platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[2]});
 platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[3]});
-token = web3.eth.contract(MatryxToken.abi).at("0x89c81164a847fae12841c7d2371864c7656f91c9")
+token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address)
 token.setReleaseAgent(web3.eth.accounts[0])
 token.releaseTokenTransfer.sendTransaction({gas: 1000000})
 token.mint(web3.eth.accounts[0], 10000)
@@ -28,7 +28,7 @@ tournament.createRound(10, {gas: 4000000})
 
 // Start the round and create some submissions!
 // (Modify the first parameter '30' to the desired number of seconds to keep the round open)
-tournament.startRound(30, 120000, {gas: 1500000});
+tournament.startRound(10, 120000, {gas: 1500000});
 token.approve(tournament.address, 2, {from: web3.eth.accounts[1]})
 token.approve(tournament.address, 2, {from: web3.eth.accounts[2]})
 token.approve(tournament.address, 2, {from: web3.eth.accounts[3]})
@@ -68,7 +68,7 @@ peerThr = web3.eth.contract(MatryxPeer.abi).at(platform.peerAddress.call(web3.et
 peerOne.getReputation.call()
 // This value should be zero because no one has voiced their opinion on our submission.
 submissionOne.totalPossibleTrust()
-// This value should also be zero ebcause no one has approved our submission.
+// This value should also be zero because no one has approved our submission.
 submissionOne.approvalTrust()
 
 // Approve the references to submissionTwo on submissionOne (from peer two)
@@ -90,7 +90,7 @@ peerOne.approveReference(addressSubmissionTwo, addressSubmissionOne, {from: web3
 
 // peerTwo's reptuation is higher now!
 peerTwo.getReputation.call()
-// submissionTwo's total possible trust is now equal to the approved-submission-proportion-weighted sum of reputations of its references' authors (aka peerOne's reputation).
+// submissionTwo's total possible trust is now equal to the approved-submission-proportion-weighted sum of reputations of its references' authors (aka equal to peerOne's reputation).
 submissionTwo.totalPossibleTrust()
 // Check submissionTwo's approval trust as well, which should be at its maximum value just like submissionOne.
 
@@ -105,18 +105,18 @@ submissionOne.approvalTrust()
 // Check that the reference to submission three is flagged (debug method)
 submissionOne.addressIsFlagged(addressSubmissionThr);
 
-// Check (as peer three) how many references of ours are missing on submissionOne. This method returns a tuple where the first element is the number of missing references and the second is the number of total references (excluding missing references).
+// Check (as peer three) how many references of ours are missing on submissionOne. This method returns a tuple where the first element is the number of missing references and the second is the total number of references (excluding missing references) (debug method).
 peerThr.getMissingReferenceCount.call(submissionOne.address, {from: web3.eth.accounts[3]});
 
 // Add the missing reference to submissionOne
 submissionOne.addReference(addressSubmissionThr, {from: web3.eth.accounts[1], gas: 3000000});
 
-// peerThree's missing reference flag has removed because submissionOne added the reference that was missing. submisionOne's total possible trust decreased because peerThree is no longer influencing the trust on submissionOne. submissionOne's trust still encompasses peerTwo's reputation (at the time that they approved. This is how this implementation is 'lazy').
+// peerThree's missing reference flag has removed because submissionOne added the reference that was missing. submisionOne's total possible trust decreased because peerThree is no longer influencing the trust on submissionOne. submissionOne's trust still encompasses peerTwo's reputation (at the time that they approved. This is how this implementation is 'lazy'. The laziness also appears in the calculation of peers' trust values).
 submissionOne.totalPossibleTrust()
 // approval trust remains the same.
 submissionOne.approvalTrust()
 
-// Check (as peer three) how many references of ours are missing on submissionOne. Missing references should be 0, total references should now be one.
+// Check (as peer three) how many references of ours are missing on submissionOne. Missing references should be 0, total references should now be 1.
 peerThr.getMissingReferenceCount.call(submissionOne.address, {from: web3.eth.accounts[3]});
 
 // This next call should revert: the reference to submissionThree was just added.

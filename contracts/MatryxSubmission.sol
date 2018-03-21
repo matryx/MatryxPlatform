@@ -46,12 +46,15 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	bool public publicallyAccessibleDuringTournament;
 
 	address public trustDelegate;
+	bytes4 fnSelector_setValue = bytes4(keccak256("setValue(uint256)"));
 	bytes4 fnSelector_addReference = bytes4(keccak256("addReference(address)"));
 	bytes4 fnSelector_removeReference = bytes4(keccak256("removeReference(address)"));
 	bytes4 fnSelector_approveReference = bytes4(keccak256("approveReference(address)"));
 	bytes4 fnSelector_removeReferenceApproval = bytes4(keccak256("removeReferenceApproval(address)"));
 	bytes4 fnSelector_flagMissingReference = bytes4(keccak256("flagMissingReference(address)"));
 	bytes4 fnSelector_removeMissingReferenceFlag = bytes4(keccak256("removeMissingReferenceFlag(address)"));
+
+	bytes4 fnSelector_revertIfReferenceFlagged = bytes4(keccak256("revertIfReferenceFlagged(address)"));
 
 	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionOwner, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessibleDuringTournament) public
 	{
@@ -247,7 +250,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @param _reference Address of additional reference to include.
 	function addReference(address _reference) onlyOwner public 
 	{
-		trustDelegate.delegatecall(fnSelector_addReference, _reference);
+		require(trustDelegate.delegatecall(fnSelector_addReference, _reference));
 	}
 
 	function addressIsFlagged(address _reference) public constant returns (bool, bool)
@@ -259,7 +262,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @param _reference Address of reference to remove.
 	function removeReference(address _reference) onlyOwner public
 	{
-		trustDelegate.delegatecall(fnSelector_removeReference, _reference);
+		require(trustDelegate.delegatecall(fnSelector_removeReference, _reference));
 	}
 
 	function receiveReferenceRequest() public onlyPlatform
@@ -277,7 +280,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// _reference Reference being approved by msg.sender.
 	function approveReference(address _reference) public
 	{
-		trustDelegate.delegatecall(fnSelector_approveReference, _reference);
+		require(trustDelegate.delegatecall(fnSelector_approveReference, _reference));
 	}
 
 	/// @dev 			  Called by the owner of the _reference to remove their approval of a reference
@@ -286,7 +289,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	///					  in this submission.
 	function removeReferenceApproval(address _reference) public
 	{
-		trustDelegate.delegatecall(fnSelector_removeReferenceApproval, _reference);
+		require(trustDelegate.delegatecall(fnSelector_removeReferenceApproval, _reference));
 	}
 
 	/// @dev 	Called by the owner of _reference when this submission does not list _reference
@@ -294,7 +297,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// @param  _reference Missing reference in this submission.
 	function flagMissingReference(address _reference) public
 	{
-		trustDelegate.delegatecall(fnSelector_flagMissingReference, _reference);
+		require(trustDelegate.delegatecall(fnSelector_flagMissingReference, _reference));
 	}
 
 	/// @dev 			  Called by the owner of _reference to remove a missing reference flag placed on a reference
@@ -302,7 +305,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// @param _reference Reference previously marked by peer as missing.
 	function removeMissingReferenceFlag(address _reference) public
 	{
-		trustDelegate.delegatecall(fnSelector_removeMissingReferenceFlag, _reference);
+		require(trustDelegate.delegatecall(fnSelector_removeMissingReferenceFlag, _reference));
 	}
 
 	/// @dev Add a contributor to a submission (callable only by submission's owner).
