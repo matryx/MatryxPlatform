@@ -239,7 +239,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       // submission owner: peer linked account
       // submission author: peer
       require(tournamentExists[_tournamentAddress]);
-
+      
       IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
 
       bool success = tournament.enterUserInTournament(msg.sender);
