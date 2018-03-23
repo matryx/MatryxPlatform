@@ -1,4 +1,4 @@
-# Matryx Alpha Source Code v1 ![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
+# Matryx Alpha Source Code - Develop Branch ![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
 [![Jenkins](https://img.shields.io/jenkins/s/https/jenkins.qa.ubuntu.com/view/Precise/view/All%20Precise/job/precise-desktop-amd64_default.svg)](http://jenkins.matryx.ai/matryx-alpha-source/build-status)
 [![Jenkins coverage](https://img.shields.io/badge/coverage-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/code-coverage)
 [![Jenkins tests](https://img.shields.io/badge/tests-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/tests)
@@ -13,38 +13,55 @@ The Collaborative Research and Development Engine Optimized for Virtual Reality 
 
 A full description about our platform is in our [whitepaper](https://matryx.ai/matryx-whitepaper.pdf).
 
-## How to use the platform
-In our first iteration we focused on end-to-end development for the platform across many layers. From our Matryx ethereum private chain to our backend MatryxOracle system to our VR Interfaces. 
-In the next release, we will be working towards our long term architecture to be put in place and thoroughly tested across the full integration. 
+This branch is where the latest development happens. As we develop code during our sprints for the next release, merge our user stories to this branch. So this is the most up to date branch. All merges undergo peer reviewed Pull Requests prior to being merged and must pass strict non-functional requirements such as code coverage.
 
-Our lead Matryx Architect, Max, made a great medium article posting on how to use the first alpha release of the Matryx Platform that focuses on integration with our Virtual Reality Mathematics tool, [Calcflow](http://calcflow.io/).
+For each tagged release, we will identify the major changes and add them to the CHANGELOG. Our next major release is March 31, 2018 so keep you eyes open for that huge push.
 
-A link to the article directly can be found [here](https://blog.matryx.ai/matryx-alpha-a-how-to-guide-b6b5b9ffcca4)
+## How to use the platform on Develop Branch
 
-The Matryx platform is currently deployed on an Ethereum Private chain. In order to interact with the bounties and the alpha platform, you will need to run a node locally, as well as **_have Matryx Tokens (MTX) in your ERC20 Compatible Wallet_** such as [My Ether Wallet](https://www.myetherwallet.com/).
- 
- Instructions on getting the private chain synced locally can be found here:
- * [Windows](https://github.com/matryx/matryx-alpha-source/wiki/Running-the-Matryx-Ethereum-Private-Chain-%5BWindows%5D) 
- * [OSX](https://github.com/matryx/matryx-alpha-source/wiki/Running-the-Matryx-Ethereum-Private-Chain-%5BOSX%5D)
- 
+Here you can test everything locally and run it as well. Running either our private chain or your own testRPC and then migrating the platform will be easy. 
+
+```
+truffle migrate
+```
+
+There are some major changes between Matryx Alpha v1 and the develop branch. In the first iteration since we focused on end-to-end integration, it is one main platform smart contract. Now we have multiple contracts such as Platform, Tournament, and Round.
+
+This increases the complexity on the UI side to interact with the platform, but not that much. Coming soon is an API you can call for the 3 tiered system's contract addresses and related ABIs. 
+
+If you migrate the Platform locally, we recommend using ```truffle console``` to interact with it's ease of use.
+Here you can start typing MatryxPlatform and hit `tab` and it will be able to recognize the contract.
+You can grab the ABI by calling `MatryxPlatform.abi` if you want to interact with it through a testRPC/ganache-cli/geth console.
+
 ### API
 
 Visit the wiki for the [API Documentation](https://github.com/matryx/matryx-alpha-source/wiki/Platform-Technical-Overview-and-API#api)
 
-The Platform is deployed on our Private Ethereum Chain at address: `0x7c4970b887cfa95062ead0708267009dcd564017`
+The Matryx Alpha v1 Platform is deployed on our Private Ethereum Chain at address: `0x7c4970b887cfa95062ead0708267009dcd564017`
 The Platform's ABI is: [here](https://github.com/matryx/matryx-alpha-source/blob/master/platformAbi.txt)
+
+> Keep in mind that we do not have the develop branch deployed on the private chain.
+
+#### Platform Contract API
+
+  | Method    | Inputs | Output | 
+|:----------|:-------------| ---: |
+| **`tournamentByAddress()`** | uint256 tournamentId | bytes32 tournamentAddress|
+| **`tournamentCount()`** | None | uint256 numberOfTournaments|
+| **`createTournament()`** | string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee | address tournamentAddress |
+| **`enterTournament()`** | address _tournamentAddress | address _submissionViewer|
+
+#### Tournament Contract API
 
 | Method    | Inputs | Output | 
 |:----------|:-------------| ---: |
-| **`getBalance()`** | uint256 tournamentId, string title, string body, string references, string contributors | uint256 |
-| **`createSubmission()`** | uint256 tournamentId, string title, string body, string references, string contributors | None |
-| **`tournamentByIndex()`** | uint256 idx | uint256, string, string, uint256 |
-| **`tournamentByAddress()`** | uint256 tournamentId | uint256, string, string, uint256 |
-| **`tournamentCount()`** | None | uint256 |
-| **`submissionByIndex()`** | uint256 tournamentId | uint256, string, string, string, string, address |
-| **`submissionByAddress()`** | uint256 tournamentId | uint256, string, string, string, string, address |
+| **`isOwner()`** | address _sender | bool |
+| **`isEntrant()`** | address _sender | bool |
+| **`tournamentOpen()`** | address _sender | bool |
+| **`getExternalAddress()`** | None | bytes |
+| **`mySubmissions()`** | None | address[] |
 | **`submissionCount()`** | None | uint256 |
-
+| **`getEntryFee()`** | None | uint256 |
 
 ## Interfaces
 The are several interfaces that are being built that are designed to plug in to the Matryx Platform 
@@ -84,9 +101,22 @@ From there, when you type 'MatryxPlatform', it will recognize the contract and y
 Check out the [Matryx Wiki on Technical Overview and API](https://github.com/matryx/matryx-alpha-source/wiki/Platform-Technical-Overview-and-API)
 
 ### Testing the Platform
-An extremely important part of the platform is testing to make sure it is not compromised. Luckily for this iteration, we are focused solely on end-to-end integration, but in the following releases we have already started implementing unit and functional testing paired with code coverage reports.
+The big ways we test the platform is through javascript tests using Mocha. You can see in the /tests/ folder some of our examples. We require extremely high code coverage for each contract to be know that we are covering all our bases. 
 
-Check out our develop branch to see the latest pushes to the platform, but beware, it is an unstable build as we are actively building on it everyday.
+To run the tests:
+```
+./retest.sh
+```
+
+To run the code coverage:
+```
+./codeCoverage
+```
+
+If ./codecoverage.sh or retest.sh isnt able to be executed, make sure you change the permissions.
+```
+chmod +x codecoverage.sh
+```
 
 ### Contributing
 Our team at Matryx knows that the community is what will really drive the vision we all believe. So we strongly recommend that the community help us make improvements and we all make solid and sound decisions for the future direction of the platform. To report bugs with this package, please create an issue in this repository on the master branch.
@@ -139,7 +169,3 @@ We look forward to seeing the community feedback and issue identifications to ma
 Please take a look at our [Terms of Service](https://github.com/matryx/matryx-alpha-source/blob/master/TOS.txt) for using the platform that we have deployed
 
 -The Matryx Team
-
-
-If you like Matryx, please consider donating ETH to 0xe665Dd2C090c7ceFD5C40cb9de00830108A62785
-

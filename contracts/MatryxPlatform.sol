@@ -22,6 +22,8 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   address matryxPeerFactoryAddress;
   address matryxTournamentFactoryAddress;
   address matryxSubmissionTrustLibAddress;
+  address matryxRoundLibAddress;
+
   address[] public allTournaments;
   mapping(bytes32=>address[]) public tournamentByCategory;
   mapping(bytes32=>uint256) public categoryCount;
@@ -61,8 +63,8 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    * Events
    */
 
-  event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress, uint256 _MTXReward);
   event UserEnteredTournament(address _entrant, address _tournamentAddress);
   event QueryID(string queryID);
@@ -73,7 +75,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @param _externalAddress External address of the tournament.
   /// @param _MTXReward Reward for winning the tournament.
   /// @param _entryFee Fee for entering into the tournament.
-  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
+  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
   {
     TournamentOpened(_owner, _tournamentAddress, _tournamentName, _externalAddress, _MTXReward, _entryFee);
   }
@@ -260,7 +262,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @param _BountyMTX Total tournament reward in MTX.
   /// @param _entryFee Fee to charge participant upon entering into tournament.
   /// @return _tournamentAddress Address of the newly created tournament
-  function createTournament(string _category, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
+  function createTournament(string _category, string _tournamentName, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
   {
     IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
     // Check that the platform has a sufficient allowance to
@@ -369,6 +371,11 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    function getSubmissionTrustLibrary() public constant returns (address)
    {
       return matryxSubmissionTrustLibAddress;
+   }
+
+   function getRoundLibAddress() public constant returns (address)
+   {
+      return matryxRoundLibAddress;
    }
 
    /// @dev    Returns a weight from 0 to 1 (18 decimal uint) indicating

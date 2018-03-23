@@ -23,7 +23,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	// Submission
 	string title;
 	address author;
-	bytes32 externalAddress;
+	bytes externalAddress;
 	address[] references;
 
 	// Tracks the normalized trust gained through peers approving this submission
@@ -46,7 +46,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	bool public publicallyAccessibleDuringTournament;
 
 	address public trustDelegate;
-	bytes4 fnSelector_setValue = bytes4(keccak256("setValue(uint256)"));
 	bytes4 fnSelector_addReference = bytes4(keccak256("addReference(address)"));
 	bytes4 fnSelector_removeReference = bytes4(keccak256("removeReference(address)"));
 	bytes4 fnSelector_approveReference = bytes4(keccak256("approveReference(address)"));
@@ -56,7 +55,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	bytes4 fnSelector_revertIfReferenceFlagged = bytes4(keccak256("revertIfReferenceFlagged(address)"));
 
-	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionOwner, address _submissionAuthor, bytes32 _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessibleDuringTournament) public
+	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionOwner, address _submissionAuthor, bytes _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessibleDuringTournament) public
 	{
 		require(_submissionAuthor != 0x0);
 		
@@ -196,7 +195,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		return author;
 	}
 
-	function getExternalAddress() public constant whenAccessible(msg.sender) returns (bytes32)
+	function getExternalAddress() public constant whenAccessible(msg.sender) returns (bytes)
 	{
 		return externalAddress;
 	}
@@ -235,7 +234,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	/// @dev Update the external address of a submission (callable only by submission's owner).
     /// @param _externalAddress New content hash for the body of the submission.
-	function updateExternalAddress(bytes32 _externalAddress) onlyOwner duringOpenSubmission public
+	function updateExternalAddress(bytes _externalAddress) onlyOwner duringOpenSubmission public
 	{
 		externalAddress = _externalAddress;
 		timeUpdated = now;
@@ -335,8 +334,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	function withdrawReward(address _recipient) public ownerOrRound
 	{
 		uint submissionReward = getBalance();
-		IMatryxRound round = IMatryxRound(roundAddress);
-		IMatryxToken token = IMatryxToken(round.getTokenAddress());
+		IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
 
 		// Transfer reward to submission author
 		uint256 transferAmount = getTransferAmount();
