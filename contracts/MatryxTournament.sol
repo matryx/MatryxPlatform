@@ -409,6 +409,15 @@ contract MatryxTournament is Ownable, IMatryxTournament {
             return false;
         }
 
+        IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
+        require(matryxToken.allowance(_entrantAddress, this) > entryFee);
+        bool success = matryxToken.transferFrom(_entrantAddress, this);
+
+        if(success)
+        {
+            addressToIsEntrant[msg.sender].value = entryFee;
+        }
+
         // Finally, change the tournament's state to reflect the user entering.
         addressToIsEntrant[_entrantAddress].exists = true;
         addressToIsEntrant[_entrantAddress].value = entryFee;
