@@ -1,6 +1,6 @@
 # Matryx Alpha Source Code - Develop Branch ![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
 
-[![travisCI](https://travis-ci.org/matryx/matryx-alpha-source.svg?branch=develop)](http://travisci.org)
+[![travisCI](https://travis-ci.org/matryx/matryx-alpha-source.svg?branch=develop)](https://travis-ci.org/matryx/matryx-alpha-source)
 [![Telegram](https://img.shields.io/badge/chat-Telegram-blue.svg)](https://t.me/matryxai)
 [![Latest News](https://img.shields.io/badge/Blog-Medium-yellowgreen.svg)](https://blog.matryx.ai/)
 
