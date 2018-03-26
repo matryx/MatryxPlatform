@@ -402,7 +402,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev Enters the user into the tournament.
     /// @param _entrantAddress Address of the user to enter.
     /// @return success Whether or not the user was entered successfully.
-    function enterUserInTournament(address _entrantAddress) public onlyPlatform whileTournamentOpen returns (bool success)
+    function enterUserInTournament(address _entrantAddress) public onlyPlatform whileTournamentOpen returns (bool _success)
     {
         if(addressToIsEntrant[_entrantAddress].exists == true)
         {
@@ -411,18 +411,17 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
         require(matryxToken.allowance(_entrantAddress, this) > entryFee);
-        bool success = matryxToken.transferFrom(_entrantAddress, this);
+        bool transferSuccess = matryxToken.transferFrom(_entrantAddress, this, entryFee);
 
-        if(success)
+        if(transferSuccess)
         {
-            addressToIsEntrant[msg.sender].value = entryFee;
+            // Finally, change the tournament's state to reflect the user entering.
+            addressToIsEntrant[_entrantAddress].exists = true;
+            addressToIsEntrant[_entrantAddress].value = entryFee;
+            allEntrants.push(_entrantAddress);
         }
 
-        // Finally, change the tournament's state to reflect the user entering.
-        addressToIsEntrant[_entrantAddress].exists = true;
-        addressToIsEntrant[_entrantAddress].value = entryFee;
-        allEntrants.push(_entrantAddress);
-        return true;
+        return transferSuccess;
     }
 
     /// @dev Returns the fee in MTX to be payed by a prospective entrant.
