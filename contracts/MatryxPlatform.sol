@@ -311,12 +311,14 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return peerExists[_peerAddress];
   }
 
-  function hasPeer(address _sender) public returns (bool)
+  // TODO: add constant
+  function hasPeer(address _sender) public constant returns (bool)
   {
     return (ownerToPeerAndPeerToOwner[_sender] != 0x0);
   }
 
-  function peerExistsAndOwnsSubmission(address _peer, address _reference) public returns (bool)
+  // TODO: add constant
+  function peerExistsAndOwnsSubmission(address _peer, address _reference) public constant returns (bool)
   {
     bool isAPeer = peerExists[_peer];
     bool referenceIsSubmission = submissionExists[_reference];
