@@ -410,7 +410,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         }
 
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-        require(matryxToken.allowance(_entrantAddress, this) > entryFee);
+        require(matryxToken.allowance(_entrantAddress, this) >= entryFee);
         bool transferSuccess = matryxToken.transferFrom(_entrantAddress, this, entryFee);
 
         if(transferSuccess)
