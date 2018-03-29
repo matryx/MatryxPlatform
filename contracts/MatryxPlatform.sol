@@ -65,6 +65,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   struct category
   {
+    string name;
     uint128 count;
     bytes32 prev;
     bytes32 next;
@@ -254,7 +255,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
         hashOfTopCategory = hashOfCategory;
         hashOfLastCategory = hashOfCategory;
         // Create a new entry in the iterator for it and don't store previous or next pointers
-        categoryIterator[hashOfCategory] = category({count: 1, prev: 0, next: 0, tournaments: new address[](0)});
+        categoryIterator[hashOfCategory] = category({name: _category, count: 1, prev: 0, next: 0, tournaments: new address[](0)});
         // Store the mapping from count 1 to this category
         topCategoryByCount[1] = hashOfCategory;
       }
@@ -262,7 +263,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       {
         // If this is not the first category ever,
         // Create a new iterator entry, complete with a prev pointer to the previous last category
-        categoryIterator[hashOfCategory] = category({count: 1, prev: hashOfLastCategory, next: 0x0, tournaments: new address[](0)});
+        categoryIterator[hashOfCategory] = category({name: _category, count: 1, prev: hashOfLastCategory, next: 0x0, tournaments: new address[](0)});
         // Update that previous last category's next pointer (there's one more after it now)
         categoryIterator[hashOfLastCategory].next = hashOfCategory;
 
@@ -361,7 +362,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
           if(Anext != 0x0)
           {
             categoryIterator[Anext].prev = hashOfCategory;
-          } 
+          }
         }
       }
     }
@@ -375,6 +376,25 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   function getCategoryCount(string _category) external constant returns (uint256)
   {
     return categoryIterator[keccak256(_category)].count;
+  }
+
+  function getTopCategory(uint256 _index) external constant returns (string)
+  {
+    bytes32 categoryHash = hashOfTopCategory;
+    string categoryName  = categoryIterator[categoryHash].name;
+
+    for(uint256 i = 1; i <= _index; i++)
+    {
+      categoryHash = categoryIterator[categoryHash].next;
+      categoryName = categoryIterator[categoryHash].name;
+    
+      if(categoryHash == 0x0)
+      {
+        break;
+      }
+    }
+
+    return categoryName;
   }
 
   function switchTournamentCategory(string discipline) onlyTournament public
