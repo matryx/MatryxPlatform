@@ -27,8 +27,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   address matryxRoundLibAddress;
 
   address[] public allTournaments;
-  bytes32 public firstCategoryHash;
-  bytes32 public lastCategoryHash;
+  bytes32 public hashOfTopCategory;
+  bytes32 public hashOfLastCategory;
+  mapping(uint256=>bytes32) public topCategoryByCount;
   mapping(bytes32=>category) public categoryIterator;
   string[] public categoryList;
 
@@ -240,71 +241,145 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   function addTournamentToCategory(address _tournamentAddress, string _category) internal
   {
     bytes32 hashOfCategory = keccak256(_category);
+    // If this is the first tournament in its category
     if(categoryIterator[hashOfCategory].count == 0)
     {
+      // Push the new category to a list of categories
       categoryList.push(_category);
 
-      if(firstCategoryHash == 0x0)
+      // If its the first category ever
+      if(hashOfTopCategory == 0x0)
       {
-        firstCategoryHash = hashOfCategory;
+        // Update the top category pointer
+        hashOfTopCategory = hashOfCategory;
+        hashOfLastCategory = hashOfCategory;
+        // Create a new entry in the iterator for it and don't store previous or next pointers
         categoryIterator[hashOfCategory] = category({count: 1, prev: 0, next: 0, tournaments: new address[](0)});
+        // Store the mapping from count 1 to this category
+        topCategoryByCount[1] = hashOfCategory;
       }
       else
       {
-        categoryIterator[hashOfCategory] = category({count: 1, prev: lastCategoryHash, next: 0x0, tournaments: new address[](0)});
-        categoryIterator[lastCategoryHash].next = hashOfCategory;
+        // If this is not the first category ever,
+        // Create a new iterator entry, complete with a prev pointer to the previous last category
+        categoryIterator[hashOfCategory] = category({count: 1, prev: hashOfLastCategory, next: 0x0, tournaments: new address[](0)});
+        // Update that previous last category's next pointer (there's one more after it now)
+        categoryIterator[hashOfLastCategory].next = hashOfCategory;
+
+        if(topCategoryByCount[1] == 0x0)
+        {
+          topCategoryByCount[1] = hashOfCategory;
+        }
       }
 
+      // Push to the tournaments list for this category
       categoryIterator[hashOfCategory].tournaments.push(_tournamentAddress);
-      lastCategoryHash = hashOfCategory;
-
+      // Update the last category pointer
+      hashOfLastCategory = hashOfCategory;
       return;
     }
 
     categoryIterator[hashOfCategory].tournaments.push(_tournamentAddress);
-    categoryIterator[hashOfCategory].count = categoryIterator[hashOfCategory].count.add(1);
 
-    // if the count of the category is now greater than the previous category
-    // swap the categories
-    if(categoryIterator[hashOfCategory].count > categoryIterator[categoryIterator[hashOfCategory].prev].count)
+    uint256 categoryCount = categoryIterator[hashOfCategory].count;
+    // If this category has the top relative count (category.prev.count > category.count):
+    //  If category.next exists, the top category for our previous count becomes category.next,
+    //  otherwise (category.next doesn't exist), the top category for our previous count
+    //  we set to 0x0.
+    if(topCategoryByCount[categoryIterator[hashOfCategory].count] == hashOfCategory)
     {
-        if(categoryIterator[hashOfCategory].prev == firstCategoryHash)
+      if(categoryIterator[hashOfCategory].next != 0x0)
+      {
+        topCategoryByCount[categoryCount] = categoryIterator[hashOfCategory].next;
+      }
+      else
+      {
+        topCategoryByCount[categoryCount] = 0x0;
+      }
+    }
+
+    uint128 newCount = categoryIterator[hashOfCategory].count + 1;
+    categoryIterator[hashOfCategory].count = newCount;
+
+    // If the top category for our new count is not defined, 
+    // define it as this category.
+    if(topCategoryByCount[newCount] == 0)
+    {
+      topCategoryByCount[newCount] = hashOfCategory;
+    }
+
+    // If the count of the category is now greater than the previous category
+    // swap it with the top category of its count.
+    if(categoryIterator[hashOfCategory].prev != 0x0)
+    {
+      if(categoryIterator[hashOfCategory].count > categoryIterator[categoryIterator[hashOfCategory].prev].count)
+      {
+        // define A as the top category of its count
+        bytes32 hashOfTopA = topCategoryByCount[categoryIterator[hashOfCategory].count-1];
+        if(hashOfTopA == hashOfTopCategory)
         {
-          firstCategoryHash = hashOfCategory;
+          hashOfTopCategory = hashOfCategory;
         }
 
-        if(hashOfCategory == lastCategoryHash)
+        if(hashOfCategory == hashOfLastCategory)
         {
-          lastCategoryHash = categoryIterator[hashOfCategory].prev;
+          hashOfLastCategory = categoryIterator[hashOfCategory].prev;
         }
 
-        category storage A = categoryIterator[categoryIterator[hashOfCategory].prev];
+        category storage A = categoryIterator[hashOfTopA];
         category storage B = categoryIterator[hashOfCategory];
-        bytes32 hashOfA = categoryIterator[A.next].prev;
-        bytes32 hashOfB = categoryIterator[B.prev].next;
+
+        bool adjacent = A.next == hashOfCategory;
+        bytes32 Bprev = B.prev;
+        bytes32 Anext = A.next;
 
         A.next = B.next;
         B.prev = A.prev;
-        categoryIterator[A.prev].next = hashOfB;
-        categoryIterator[B.next].prev = hashOfA;
-        A.prev = hashOfB;
-        B.next = hashOfA;
+
+        if(A.prev != 0x0)
+        {
+          categoryIterator[A.prev].next = hashOfCategory;
+        }
+        if(B.next != 0x0)
+        {
+          categoryIterator[B.next].prev = hashOfTopA;
+        }
+        
+        if(adjacent)
+        {
+          A.prev = hashOfCategory;
+          B.next = hashOfTopA;
+        }
+        else
+        {
+          A.prev = Bprev;
+          B.next = Anext;
+          if(Bprev != 0x0)
+          {
+            categoryIterator[Bprev].next = hashOfTopA;
+          }
+          if(Anext != 0x0)
+          {
+            categoryIterator[Anext].prev = hashOfCategory;
+          } 
+        }
+      }
     }
   }
 
-  function getTournamentsByCategory(string category) external constant returns (address[])
+  function getTournamentsByCategory(string _category) external constant returns (address[])
   {
-    return categoryIterator[keccak256(category)].tournaments;
+    return categoryIterator[keccak256(_category)].tournaments;
   }
 
-  function getCategoryCount(string category) external constant returns (uint256)
+  function getCategoryCount(string _category) external constant returns (uint256)
   {
-    return categoryIterator[keccak256(category)].count;
+    return categoryIterator[keccak256(_category)].count;
   }
 
   function switchTournamentCategory(string discipline) onlyTournament public
   {
-
+    revert();
   }
 
   /* 
