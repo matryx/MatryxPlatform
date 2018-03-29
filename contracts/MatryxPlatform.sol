@@ -1,6 +1,7 @@
 pragma solidity ^0.4.18;
 
 import '../libraries/math/SafeMath.sol';
+import '../libraries/math/SafeMath128.sol';
 import './MatryxOracleMessenger.sol';
 import '../interfaces/IMatryxToken.sol';
 import '../interfaces/IMatryxPeer.sol';
@@ -16,6 +17,7 @@ import './Ownable.sol';
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   using SafeMath for uint256;
+  using SafeMath128 for uint128;
 
   // TODO: condense and put in structs
   address public matryxTokenAddress;
@@ -25,9 +27,10 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   address matryxRoundLibAddress;
 
   address[] public allTournaments;
-  mapping(bytes32=>address[]) public tournamentByCategory;
-  mapping(bytes32=>uint256) public categoryCount;
-  string[] public categories;
+  bytes32 public firstCategoryHash;
+  bytes32 public lastCategoryHash;
+  mapping(bytes32=>category) public categoryIterator;
+  string[] public categoryList;
 
   mapping(address=>bool) peerExists;
   mapping(address=>address) ownerToPeerAndPeerToOwner;
@@ -57,6 +60,14 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   {
     bool exists;
     uint256 value;
+  }
+
+  struct category
+  {
+    uint128 count;
+    bytes32 prev;
+    bytes32 next;
+    address[] tournaments;
   }
 
   /*
@@ -226,6 +237,76 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return false;
   }
 
+  function addTournamentToCategory(address _tournamentAddress, string _category) internal
+  {
+    bytes32 hashOfCategory = keccak256(_category);
+    if(categoryIterator[hashOfCategory].count == 0)
+    {
+      categoryList.push(_category);
+
+      if(firstCategoryHash == 0x0)
+      {
+        firstCategoryHash = hashOfCategory;
+        categoryIterator[hashOfCategory] = category({count: 1, prev: 0, next: 0, tournaments: new address[](0)});
+      }
+      else
+      {
+        categoryIterator[hashOfCategory] = category({count: 1, prev: lastCategoryHash, next: 0x0, tournaments: new address[](0)});
+        categoryIterator[lastCategoryHash].next = hashOfCategory;
+      }
+
+      categoryIterator[hashOfCategory].tournaments.push(_tournamentAddress);
+      lastCategoryHash = hashOfCategory;
+
+      return;
+    }
+
+    categoryIterator[hashOfCategory].tournaments.push(_tournamentAddress);
+    categoryIterator[hashOfCategory].count = categoryIterator[hashOfCategory].count.add(1);
+
+    // if the count of the category is now greater than the previous category
+    // swap the categories
+    if(categoryIterator[hashOfCategory].count > categoryIterator[categoryIterator[hashOfCategory].prev].count)
+    {
+        if(categoryIterator[hashOfCategory].prev == firstCategoryHash)
+        {
+          firstCategoryHash = hashOfCategory;
+        }
+
+        if(hashOfCategory == lastCategoryHash)
+        {
+          lastCategoryHash = categoryIterator[hashOfCategory].prev;
+        }
+
+        category storage A = categoryIterator[categoryIterator[hashOfCategory].prev];
+        category storage B = categoryIterator[hashOfCategory];
+        bytes32 hashOfA = categoryIterator[A.next].prev;
+        bytes32 hashOfB = categoryIterator[B.prev].next;
+
+        A.next = B.next;
+        B.prev = A.prev;
+        categoryIterator[A.prev].next = hashOfB;
+        categoryIterator[B.next].prev = hashOfA;
+        A.prev = hashOfB;
+        B.next = hashOfA;
+    }
+  }
+
+  function getTournamentsByCategory(string category) external constant returns (address[])
+  {
+    return categoryIterator[keccak256(category)].tournaments;
+  }
+
+  function getCategoryCount(string category) external constant returns (uint256)
+  {
+    return categoryIterator[keccak256(category)].count;
+  }
+
+  function switchTournamentCategory(string discipline) onlyTournament public
+  {
+
+  }
+
   /* 
    * Tournament Entry Methods
    */
@@ -273,13 +354,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _BountyMTX, _entryFee, _reviewPeriod);
     TournamentCreated(_category, msg.sender, newTournament, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
     
-    bytes32 hashOfCategory = keccak256(_category);
-    if(categoryCount[hashOfCategory] == 0)
-    {
-      categories.push(_category);
-    }
-    tournamentByCategory[hashOfCategory].push(newTournament);
-    categoryCount[hashOfCategory] = categoryCount[hashOfCategory].add(1);
+    addTournamentToCategory(newTournament, _category);
 
     // Transfer the MTX reward to the tournament.
     bool transferSuccess = matryxToken.transferFrom(msg.sender, newTournament, _BountyMTX);

@@ -32,8 +32,8 @@
       "type": "function"
     }
   ],
-  "bytecode": "0x6060604052341561000f57600080fd5b60405160208061017a8339810160405280805160008054600160a060020a03338116600160a060020a03199283161790925560018054929093169116179055505061011b8061005f6000396000f300606060405260043610603e5763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166372de26dd81146043575b600080fd5b3415604d57600080fd5b60566004356068565b60405190815260200160405180910390f35b600080543373ffffffffffffffffffffffffffffffffffffffff908116911614609057600080fd5b43428333604051938452602084019290925260408084019190915273ffffffffffffffffffffffffffffffffffffffff9091166c01000000000000000000000000026060830152607490910190519081900390206002819055929150505600a165627a7a723058209b5cc4fb938a4a70b990aea0c5a6d01dfb2cd60e61a6bca21bc7128b8f086fab0029",
-  "deployedBytecode": "0x606060405260043610603e5763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166372de26dd81146043575b600080fd5b3415604d57600080fd5b60566004356068565b60405190815260200160405180910390f35b600080543373ffffffffffffffffffffffffffffffffffffffff908116911614609057600080fd5b43428333604051938452602084019290925260408084019190915273ffffffffffffffffffffffffffffffffffffffff9091166c01000000000000000000000000026060830152607490910190519081900390206002819055929150505600a165627a7a723058209b5cc4fb938a4a70b990aea0c5a6d01dfb2cd60e61a6bca21bc7128b8f086fab0029",
+  "bytecode": "0x6060604052341561000f57600080fd5b60405160208061017a8339810160405280805160008054600160a060020a03338116600160a060020a03199283161790925560018054929093169116179055505061011b8061005f6000396000f300606060405260043610603e5763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166372de26dd81146043575b600080fd5b3415604d57600080fd5b60566004356068565b60405190815260200160405180910390f35b600080543373ffffffffffffffffffffffffffffffffffffffff908116911614609057600080fd5b43428333604051938452602084019290925260408084019190915273ffffffffffffffffffffffffffffffffffffffff9091166c01000000000000000000000000026060830152607490910190519081900390206002819055929150505600a165627a7a723058202a6a9473188a310f04e6ff29104d5c7ecfd069e0d25d076e2ee50e2d03fc91a40029",
+  "deployedBytecode": "0x606060405260043610603e5763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166372de26dd81146043575b600080fd5b3415604d57600080fd5b60566004356068565b60405190815260200160405180910390f35b600080543373ffffffffffffffffffffffffffffffffffffffff908116911614609057600080fd5b43428333604051938452602084019290925260408084019190915273ffffffffffffffffffffffffffffffffffffffff9091166c01000000000000000000000000026060830152607490910190519081900390206002819055929150505600a165627a7a723058202a6a9473188a310f04e6ff29104d5c7ecfd069e0d25d076e2ee50e2d03fc91a40029",
   "sourceMap": "201:1113:3:-;;;533:131;;;;;;;;;;;;;;;;;;;;;;594:5;:41;;-1:-1:-1;;;;;624:10:3;594:41;;-1:-1:-1;;;;;;594:41:3;;;;;;;;641:18;;;;;;;;;;;-1:-1:-1;;201:1113:3;;;;;;",
   "deployedSourceMap": "201:1113:3:-;;;;;;;;;;;;;;;;;;;;;;;886:426;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;953:11;724:5;;702:10;724:5;702:28;;;724:5;;702:28;694:37;;;;;;1173:12;1187:3;1192:6;1200:10;1163:48;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;1145:7;:67;;;1163:48;886:426;-1:-1:-1;;886:426:3:o",
   "source": "pragma solidity ^0.4.18;\n\nimport \"./MatryxOracleMessenger.sol\";\n\n/// @title MatryxQueryEncrypter - Readies queries and takes query results from the web client.\n/// @author Max Howard - <max@nanome.ai>\ncontract MatryxQueryEncrypter {\n\n  // The owner of this contract. i.e. The single MatryxOracleMessenger contract.\n  MatryxOracleMessenger owner;\n  // The address of the querier (user) for the query this resolver has been given.\n  address querier;\n  // The id of the query (this contract generates this value).\n  uint256 queryID;\n\n  function MatryxQueryEncrypter(address _querier) public {\n    owner = MatryxOracleMessenger(msg.sender);\n    querier = _querier;\n  }\n\n  modifier owneronly { \n    require(msg.sender == address(owner));\n    _;\n  }\n\n  /// @dev Generates a Query ID for this query and returns it.\n  /// @param _query Query being made.\n  /// @return _id Query ID generated.\n  function generateQueryID(bytes32 _query) owneronly public returns (uint256 _id) {\n    // Set the queryID for this QueryResolver by hashing:\n    // 1) The current blocknumber\n    // 2) The time\n    // 3) The query itself\n    // 4) The sender of the query.\n    queryID = uint256(keccak256(block.number, now, _query, msg.sender));\n\n    // Return to the MatryxOracleMessenger the queryID we just created.\n    return (queryID);\n  }\n}",
@@ -42,14 +42,14 @@
     "absolutePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/contracts/MatryxQueryEncrypter.sol",
     "exportedSymbols": {
       "MatryxQueryEncrypter": [
-        2278
+        2518
       ]
     },
-    "id": 2279,
+    "id": 2519,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 2214,
+        "id": 2454,
         "literals": [
           "solidity",
           "^",
@@ -62,9 +62,9 @@
       {
         "absolutePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/contracts/MatryxOracleMessenger.sol",
         "file": "./MatryxOracleMessenger.sol",
-        "id": 2215,
+        "id": 2455,
         "nodeType": "ImportDirective",
-        "scope": 2279,
+        "scope": 2519,
         "sourceUnit": 188,
         "src": "26:37:3",
         "symbolAliases": [],
@@ -76,19 +76,19 @@
         "contractKind": "contract",
         "documentation": "@title MatryxQueryEncrypter - Readies queries and takes query results from the web client.\n @author Max Howard - <max@nanome.ai>",
         "fullyImplemented": true,
-        "id": 2278,
+        "id": 2518,
         "linearizedBaseContracts": [
-          2278
+          2518
         ],
         "name": "MatryxQueryEncrypter",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "constant": false,
-            "id": 2217,
+            "id": 2457,
             "name": "owner",
             "nodeType": "VariableDeclaration",
-            "scope": 2278,
+            "scope": 2518,
             "src": "317:27:3",
             "stateVariable": true,
             "storageLocation": "default",
@@ -98,7 +98,7 @@
             },
             "typeName": {
               "contractScope": null,
-              "id": 2216,
+              "id": 2456,
               "name": "MatryxOracleMessenger",
               "nodeType": "UserDefinedTypeName",
               "referencedDeclaration": 187,
@@ -113,10 +113,10 @@
           },
           {
             "constant": false,
-            "id": 2219,
+            "id": 2459,
             "name": "querier",
             "nodeType": "VariableDeclaration",
-            "scope": 2278,
+            "scope": 2518,
             "src": "431:15:3",
             "stateVariable": true,
             "storageLocation": "default",
@@ -125,7 +125,7 @@
               "typeString": "address"
             },
             "typeName": {
-              "id": 2218,
+              "id": 2458,
               "name": "address",
               "nodeType": "ElementaryTypeName",
               "src": "431:7:3",
@@ -139,10 +139,10 @@
           },
           {
             "constant": false,
-            "id": 2221,
+            "id": 2461,
             "name": "queryID",
             "nodeType": "VariableDeclaration",
-            "scope": 2278,
+            "scope": 2518,
             "src": "513:15:3",
             "stateVariable": true,
             "storageLocation": "default",
@@ -151,7 +151,7 @@
               "typeString": "uint256"
             },
             "typeName": {
-              "id": 2220,
+              "id": 2460,
               "name": "uint256",
               "nodeType": "ElementaryTypeName",
               "src": "513:7:3",
@@ -165,25 +165,25 @@
           },
           {
             "body": {
-              "id": 2237,
+              "id": 2477,
               "nodeType": "Block",
               "src": "588:76:3",
               "statements": [
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 2231,
+                    "id": 2471,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 2226,
+                      "id": 2466,
                       "name": "owner",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 2217,
+                      "referencedDeclaration": 2457,
                       "src": "594:5:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_contract$_MatryxOracleMessenger_$187",
@@ -199,18 +199,18 @@
                           "argumentTypes": null,
                           "expression": {
                             "argumentTypes": null,
-                            "id": 2228,
+                            "id": 2468,
                             "name": "msg",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 10460,
+                            "referencedDeclaration": 10741,
                             "src": "624:3:3",
                             "typeDescriptions": {
                               "typeIdentifier": "t_magic_message",
                               "typeString": "msg"
                             }
                           },
-                          "id": 2229,
+                          "id": 2469,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -232,7 +232,7 @@
                             "typeString": "address"
                           }
                         ],
-                        "id": 2227,
+                        "id": 2467,
                         "name": "MatryxOracleMessenger",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
@@ -243,7 +243,7 @@
                           "typeString": "type(contract MatryxOracleMessenger)"
                         }
                       },
-                      "id": 2230,
+                      "id": 2470,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -263,25 +263,25 @@
                       "typeString": "contract MatryxOracleMessenger"
                     }
                   },
-                  "id": 2232,
+                  "id": 2472,
                   "nodeType": "ExpressionStatement",
                   "src": "594:41:3"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 2235,
+                    "id": 2475,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 2233,
+                      "id": 2473,
                       "name": "querier",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 2219,
+                      "referencedDeclaration": 2459,
                       "src": "641:7:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -292,11 +292,11 @@
                     "operator": "=",
                     "rightHandSide": {
                       "argumentTypes": null,
-                      "id": 2234,
+                      "id": 2474,
                       "name": "_querier",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 2223,
+                      "referencedDeclaration": 2463,
                       "src": "651:8:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -309,13 +309,13 @@
                       "typeString": "address"
                     }
                   },
-                  "id": 2236,
+                  "id": 2476,
                   "nodeType": "ExpressionStatement",
                   "src": "641:18:3"
                 }
               ]
             },
-            "id": 2238,
+            "id": 2478,
             "implemented": true,
             "isConstructor": true,
             "isDeclaredConst": false,
@@ -323,15 +323,15 @@
             "name": "MatryxQueryEncrypter",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 2224,
+              "id": 2464,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2223,
+                  "id": 2463,
                   "name": "_querier",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2238,
+                  "scope": 2478,
                   "src": "563:16:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -340,7 +340,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2222,
+                    "id": 2462,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "563:7:3",
@@ -357,12 +357,12 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 2225,
+              "id": 2465,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "588:0:3"
             },
-            "scope": 2278,
+            "scope": 2518,
             "src": "533:131:3",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -370,7 +370,7 @@
           },
           {
             "body": {
-              "id": 2250,
+              "id": 2490,
               "nodeType": "Block",
               "src": "687:56:3",
               "statements": [
@@ -384,7 +384,7 @@
                           "typeIdentifier": "t_address",
                           "typeString": "address"
                         },
-                        "id": 2246,
+                        "id": 2486,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -393,18 +393,18 @@
                           "argumentTypes": null,
                           "expression": {
                             "argumentTypes": null,
-                            "id": 2241,
+                            "id": 2481,
                             "name": "msg",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 10460,
+                            "referencedDeclaration": 10741,
                             "src": "702:3:3",
                             "typeDescriptions": {
                               "typeIdentifier": "t_magic_message",
                               "typeString": "msg"
                             }
                           },
-                          "id": 2242,
+                          "id": 2482,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -425,11 +425,11 @@
                           "arguments": [
                             {
                               "argumentTypes": null,
-                              "id": 2244,
+                              "id": 2484,
                               "name": "owner",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 2217,
+                              "referencedDeclaration": 2457,
                               "src": "724:5:3",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_contract$_MatryxOracleMessenger_$187",
@@ -444,7 +444,7 @@
                                 "typeString": "contract MatryxOracleMessenger"
                               }
                             ],
-                            "id": 2243,
+                            "id": 2483,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -457,7 +457,7 @@
                             },
                             "typeName": "address"
                           },
-                          "id": 2245,
+                          "id": 2485,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -485,18 +485,18 @@
                           "typeString": "bool"
                         }
                       ],
-                      "id": 2240,
+                      "id": 2480,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 10463,
+                      "referencedDeclaration": 10744,
                       "src": "694:7:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$returns$__$",
                         "typeString": "function (bool) pure"
                       }
                     },
-                    "id": 2247,
+                    "id": 2487,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -510,22 +510,22 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 2248,
+                  "id": 2488,
                   "nodeType": "ExpressionStatement",
                   "src": "694:37:3"
                 },
                 {
-                  "id": 2249,
+                  "id": 2489,
                   "nodeType": "PlaceholderStatement",
                   "src": "737:1:3"
                 }
               ]
             },
-            "id": 2251,
+            "id": 2491,
             "name": "owneronly",
             "nodeType": "ModifierDefinition",
             "parameters": {
-              "id": 2239,
+              "id": 2479,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "687:0:3"
@@ -535,25 +535,25 @@
           },
           {
             "body": {
-              "id": 2276,
+              "id": 2516,
               "nodeType": "Block",
               "src": "966:346:3",
               "statements": [
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 2271,
+                    "id": 2511,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 2260,
+                      "id": 2500,
                       "name": "queryID",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 2221,
+                      "referencedDeclaration": 2461,
                       "src": "1145:7:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -572,18 +572,18 @@
                               "argumentTypes": null,
                               "expression": {
                                 "argumentTypes": null,
-                                "id": 2263,
+                                "id": 2503,
                                 "name": "block",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 10452,
+                                "referencedDeclaration": 10733,
                                 "src": "1173:5:3",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_magic_block",
                                   "typeString": "block"
                                 }
                               },
-                              "id": 2264,
+                              "id": 2504,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
@@ -599,11 +599,11 @@
                             },
                             {
                               "argumentTypes": null,
-                              "id": 2265,
+                              "id": 2505,
                               "name": "now",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 10462,
+                              "referencedDeclaration": 10743,
                               "src": "1187:3:3",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -612,11 +612,11 @@
                             },
                             {
                               "argumentTypes": null,
-                              "id": 2266,
+                              "id": 2506,
                               "name": "_query",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 2253,
+                              "referencedDeclaration": 2493,
                               "src": "1192:6:3",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_bytes32",
@@ -627,18 +627,18 @@
                               "argumentTypes": null,
                               "expression": {
                                 "argumentTypes": null,
-                                "id": 2267,
+                                "id": 2507,
                                 "name": "msg",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 10460,
+                                "referencedDeclaration": 10741,
                                 "src": "1200:3:3",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_magic_message",
                                   "typeString": "msg"
                                 }
                               },
-                              "id": 2268,
+                              "id": 2508,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
@@ -672,18 +672,18 @@
                                 "typeString": "address"
                               }
                             ],
-                            "id": 2262,
+                            "id": 2502,
                             "name": "keccak256",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 10454,
+                            "referencedDeclaration": 10735,
                             "src": "1163:9:3",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_sha3_pure$__$returns$_t_bytes32_$",
                               "typeString": "function () pure returns (bytes32)"
                             }
                           },
-                          "id": 2269,
+                          "id": 2509,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -705,7 +705,7 @@
                             "typeString": "bytes32"
                           }
                         ],
-                        "id": 2261,
+                        "id": 2501,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -718,7 +718,7 @@
                         },
                         "typeName": "uint256"
                       },
-                      "id": 2270,
+                      "id": 2510,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -738,7 +738,7 @@
                       "typeString": "uint256"
                     }
                   },
-                  "id": 2272,
+                  "id": 2512,
                   "nodeType": "ExpressionStatement",
                   "src": "1145:67:3"
                 },
@@ -748,11 +748,11 @@
                     "components": [
                       {
                         "argumentTypes": null,
-                        "id": 2273,
+                        "id": 2513,
                         "name": "queryID",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2221,
+                        "referencedDeclaration": 2461,
                         "src": "1299:7:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -760,7 +760,7 @@
                         }
                       }
                     ],
-                    "id": 2274,
+                    "id": 2514,
                     "isConstant": false,
                     "isInlineArray": false,
                     "isLValue": false,
@@ -773,28 +773,28 @@
                       "typeString": "uint256"
                     }
                   },
-                  "functionReturnParameters": 2259,
-                  "id": 2275,
+                  "functionReturnParameters": 2499,
+                  "id": 2515,
                   "nodeType": "Return",
                   "src": "1291:16:3"
                 }
               ]
             },
-            "id": 2277,
+            "id": 2517,
             "implemented": true,
             "isConstructor": false,
             "isDeclaredConst": false,
             "modifiers": [
               {
                 "arguments": [],
-                "id": 2256,
+                "id": 2496,
                 "modifierName": {
                   "argumentTypes": null,
-                  "id": 2255,
+                  "id": 2495,
                   "name": "owneronly",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 2251,
+                  "referencedDeclaration": 2491,
                   "src": "927:9:3",
                   "typeDescriptions": {
                     "typeIdentifier": "t_modifier$__$",
@@ -808,15 +808,15 @@
             "name": "generateQueryID",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 2254,
+              "id": 2494,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2253,
+                  "id": 2493,
                   "name": "_query",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2277,
+                  "scope": 2517,
                   "src": "911:14:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -825,7 +825,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 2252,
+                    "id": 2492,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "911:7:3",
@@ -842,15 +842,15 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 2259,
+              "id": 2499,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2258,
+                  "id": 2498,
                   "name": "_id",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2277,
+                  "scope": 2517,
                   "src": "953:11:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -859,7 +859,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 2257,
+                    "id": 2497,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "953:7:3",
@@ -874,14 +874,14 @@
               ],
               "src": "952:13:3"
             },
-            "scope": 2278,
+            "scope": 2518,
             "src": "886:426:3",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 2279,
+        "scope": 2519,
         "src": "201:1113:3"
       }
     ],
@@ -891,14 +891,14 @@
     "absolutePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/contracts/MatryxQueryEncrypter.sol",
     "exportedSymbols": {
       "MatryxQueryEncrypter": [
-        2278
+        2518
       ]
     },
-    "id": 2279,
+    "id": 2519,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 2214,
+        "id": 2454,
         "literals": [
           "solidity",
           "^",
@@ -911,9 +911,9 @@
       {
         "absolutePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/contracts/MatryxOracleMessenger.sol",
         "file": "./MatryxOracleMessenger.sol",
-        "id": 2215,
+        "id": 2455,
         "nodeType": "ImportDirective",
-        "scope": 2279,
+        "scope": 2519,
         "sourceUnit": 188,
         "src": "26:37:3",
         "symbolAliases": [],
@@ -925,19 +925,19 @@
         "contractKind": "contract",
         "documentation": "@title MatryxQueryEncrypter - Readies queries and takes query results from the web client.\n @author Max Howard - <max@nanome.ai>",
         "fullyImplemented": true,
-        "id": 2278,
+        "id": 2518,
         "linearizedBaseContracts": [
-          2278
+          2518
         ],
         "name": "MatryxQueryEncrypter",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "constant": false,
-            "id": 2217,
+            "id": 2457,
             "name": "owner",
             "nodeType": "VariableDeclaration",
-            "scope": 2278,
+            "scope": 2518,
             "src": "317:27:3",
             "stateVariable": true,
             "storageLocation": "default",
@@ -947,7 +947,7 @@
             },
             "typeName": {
               "contractScope": null,
-              "id": 2216,
+              "id": 2456,
               "name": "MatryxOracleMessenger",
               "nodeType": "UserDefinedTypeName",
               "referencedDeclaration": 187,
@@ -962,10 +962,10 @@
           },
           {
             "constant": false,
-            "id": 2219,
+            "id": 2459,
             "name": "querier",
             "nodeType": "VariableDeclaration",
-            "scope": 2278,
+            "scope": 2518,
             "src": "431:15:3",
             "stateVariable": true,
             "storageLocation": "default",
@@ -974,7 +974,7 @@
               "typeString": "address"
             },
             "typeName": {
-              "id": 2218,
+              "id": 2458,
               "name": "address",
               "nodeType": "ElementaryTypeName",
               "src": "431:7:3",
@@ -988,10 +988,10 @@
           },
           {
             "constant": false,
-            "id": 2221,
+            "id": 2461,
             "name": "queryID",
             "nodeType": "VariableDeclaration",
-            "scope": 2278,
+            "scope": 2518,
             "src": "513:15:3",
             "stateVariable": true,
             "storageLocation": "default",
@@ -1000,7 +1000,7 @@
               "typeString": "uint256"
             },
             "typeName": {
-              "id": 2220,
+              "id": 2460,
               "name": "uint256",
               "nodeType": "ElementaryTypeName",
               "src": "513:7:3",
@@ -1014,25 +1014,25 @@
           },
           {
             "body": {
-              "id": 2237,
+              "id": 2477,
               "nodeType": "Block",
               "src": "588:76:3",
               "statements": [
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 2231,
+                    "id": 2471,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 2226,
+                      "id": 2466,
                       "name": "owner",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 2217,
+                      "referencedDeclaration": 2457,
                       "src": "594:5:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_contract$_MatryxOracleMessenger_$187",
@@ -1048,18 +1048,18 @@
                           "argumentTypes": null,
                           "expression": {
                             "argumentTypes": null,
-                            "id": 2228,
+                            "id": 2468,
                             "name": "msg",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 10460,
+                            "referencedDeclaration": 10741,
                             "src": "624:3:3",
                             "typeDescriptions": {
                               "typeIdentifier": "t_magic_message",
                               "typeString": "msg"
                             }
                           },
-                          "id": 2229,
+                          "id": 2469,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -1081,7 +1081,7 @@
                             "typeString": "address"
                           }
                         ],
-                        "id": 2227,
+                        "id": 2467,
                         "name": "MatryxOracleMessenger",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
@@ -1092,7 +1092,7 @@
                           "typeString": "type(contract MatryxOracleMessenger)"
                         }
                       },
-                      "id": 2230,
+                      "id": 2470,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -1112,25 +1112,25 @@
                       "typeString": "contract MatryxOracleMessenger"
                     }
                   },
-                  "id": 2232,
+                  "id": 2472,
                   "nodeType": "ExpressionStatement",
                   "src": "594:41:3"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 2235,
+                    "id": 2475,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 2233,
+                      "id": 2473,
                       "name": "querier",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 2219,
+                      "referencedDeclaration": 2459,
                       "src": "641:7:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -1141,11 +1141,11 @@
                     "operator": "=",
                     "rightHandSide": {
                       "argumentTypes": null,
-                      "id": 2234,
+                      "id": 2474,
                       "name": "_querier",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 2223,
+                      "referencedDeclaration": 2463,
                       "src": "651:8:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_address",
@@ -1158,13 +1158,13 @@
                       "typeString": "address"
                     }
                   },
-                  "id": 2236,
+                  "id": 2476,
                   "nodeType": "ExpressionStatement",
                   "src": "641:18:3"
                 }
               ]
             },
-            "id": 2238,
+            "id": 2478,
             "implemented": true,
             "isConstructor": true,
             "isDeclaredConst": false,
@@ -1172,15 +1172,15 @@
             "name": "MatryxQueryEncrypter",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 2224,
+              "id": 2464,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2223,
+                  "id": 2463,
                   "name": "_querier",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2238,
+                  "scope": 2478,
                   "src": "563:16:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1189,7 +1189,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2222,
+                    "id": 2462,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "563:7:3",
@@ -1206,12 +1206,12 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 2225,
+              "id": 2465,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "588:0:3"
             },
-            "scope": 2278,
+            "scope": 2518,
             "src": "533:131:3",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1219,7 +1219,7 @@
           },
           {
             "body": {
-              "id": 2250,
+              "id": 2490,
               "nodeType": "Block",
               "src": "687:56:3",
               "statements": [
@@ -1233,7 +1233,7 @@
                           "typeIdentifier": "t_address",
                           "typeString": "address"
                         },
-                        "id": 2246,
+                        "id": 2486,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -1242,18 +1242,18 @@
                           "argumentTypes": null,
                           "expression": {
                             "argumentTypes": null,
-                            "id": 2241,
+                            "id": 2481,
                             "name": "msg",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 10460,
+                            "referencedDeclaration": 10741,
                             "src": "702:3:3",
                             "typeDescriptions": {
                               "typeIdentifier": "t_magic_message",
                               "typeString": "msg"
                             }
                           },
-                          "id": 2242,
+                          "id": 2482,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -1274,11 +1274,11 @@
                           "arguments": [
                             {
                               "argumentTypes": null,
-                              "id": 2244,
+                              "id": 2484,
                               "name": "owner",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 2217,
+                              "referencedDeclaration": 2457,
                               "src": "724:5:3",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_contract$_MatryxOracleMessenger_$187",
@@ -1293,7 +1293,7 @@
                                 "typeString": "contract MatryxOracleMessenger"
                               }
                             ],
-                            "id": 2243,
+                            "id": 2483,
                             "isConstant": false,
                             "isLValue": false,
                             "isPure": true,
@@ -1306,7 +1306,7 @@
                             },
                             "typeName": "address"
                           },
-                          "id": 2245,
+                          "id": 2485,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -1334,18 +1334,18 @@
                           "typeString": "bool"
                         }
                       ],
-                      "id": 2240,
+                      "id": 2480,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 10463,
+                      "referencedDeclaration": 10744,
                       "src": "694:7:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$returns$__$",
                         "typeString": "function (bool) pure"
                       }
                     },
-                    "id": 2247,
+                    "id": 2487,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -1359,22 +1359,22 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 2248,
+                  "id": 2488,
                   "nodeType": "ExpressionStatement",
                   "src": "694:37:3"
                 },
                 {
-                  "id": 2249,
+                  "id": 2489,
                   "nodeType": "PlaceholderStatement",
                   "src": "737:1:3"
                 }
               ]
             },
-            "id": 2251,
+            "id": 2491,
             "name": "owneronly",
             "nodeType": "ModifierDefinition",
             "parameters": {
-              "id": 2239,
+              "id": 2479,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "687:0:3"
@@ -1384,25 +1384,25 @@
           },
           {
             "body": {
-              "id": 2276,
+              "id": 2516,
               "nodeType": "Block",
               "src": "966:346:3",
               "statements": [
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 2271,
+                    "id": 2511,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 2260,
+                      "id": 2500,
                       "name": "queryID",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 2221,
+                      "referencedDeclaration": 2461,
                       "src": "1145:7:3",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -1421,18 +1421,18 @@
                               "argumentTypes": null,
                               "expression": {
                                 "argumentTypes": null,
-                                "id": 2263,
+                                "id": 2503,
                                 "name": "block",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 10452,
+                                "referencedDeclaration": 10733,
                                 "src": "1173:5:3",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_magic_block",
                                   "typeString": "block"
                                 }
                               },
-                              "id": 2264,
+                              "id": 2504,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
@@ -1448,11 +1448,11 @@
                             },
                             {
                               "argumentTypes": null,
-                              "id": 2265,
+                              "id": 2505,
                               "name": "now",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 10462,
+                              "referencedDeclaration": 10743,
                               "src": "1187:3:3",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_uint256",
@@ -1461,11 +1461,11 @@
                             },
                             {
                               "argumentTypes": null,
-                              "id": 2266,
+                              "id": 2506,
                               "name": "_query",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 2253,
+                              "referencedDeclaration": 2493,
                               "src": "1192:6:3",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_bytes32",
@@ -1476,18 +1476,18 @@
                               "argumentTypes": null,
                               "expression": {
                                 "argumentTypes": null,
-                                "id": 2267,
+                                "id": 2507,
                                 "name": "msg",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 10460,
+                                "referencedDeclaration": 10741,
                                 "src": "1200:3:3",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_magic_message",
                                   "typeString": "msg"
                                 }
                               },
-                              "id": 2268,
+                              "id": 2508,
                               "isConstant": false,
                               "isLValue": false,
                               "isPure": false,
@@ -1521,18 +1521,18 @@
                                 "typeString": "address"
                               }
                             ],
-                            "id": 2262,
+                            "id": 2502,
                             "name": "keccak256",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 10454,
+                            "referencedDeclaration": 10735,
                             "src": "1163:9:3",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_sha3_pure$__$returns$_t_bytes32_$",
                               "typeString": "function () pure returns (bytes32)"
                             }
                           },
-                          "id": 2269,
+                          "id": 2509,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -1554,7 +1554,7 @@
                             "typeString": "bytes32"
                           }
                         ],
-                        "id": 2261,
+                        "id": 2501,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -1567,7 +1567,7 @@
                         },
                         "typeName": "uint256"
                       },
-                      "id": 2270,
+                      "id": 2510,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -1587,7 +1587,7 @@
                       "typeString": "uint256"
                     }
                   },
-                  "id": 2272,
+                  "id": 2512,
                   "nodeType": "ExpressionStatement",
                   "src": "1145:67:3"
                 },
@@ -1597,11 +1597,11 @@
                     "components": [
                       {
                         "argumentTypes": null,
-                        "id": 2273,
+                        "id": 2513,
                         "name": "queryID",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2221,
+                        "referencedDeclaration": 2461,
                         "src": "1299:7:3",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
@@ -1609,7 +1609,7 @@
                         }
                       }
                     ],
-                    "id": 2274,
+                    "id": 2514,
                     "isConstant": false,
                     "isInlineArray": false,
                     "isLValue": false,
@@ -1622,28 +1622,28 @@
                       "typeString": "uint256"
                     }
                   },
-                  "functionReturnParameters": 2259,
-                  "id": 2275,
+                  "functionReturnParameters": 2499,
+                  "id": 2515,
                   "nodeType": "Return",
                   "src": "1291:16:3"
                 }
               ]
             },
-            "id": 2277,
+            "id": 2517,
             "implemented": true,
             "isConstructor": false,
             "isDeclaredConst": false,
             "modifiers": [
               {
                 "arguments": [],
-                "id": 2256,
+                "id": 2496,
                 "modifierName": {
                   "argumentTypes": null,
-                  "id": 2255,
+                  "id": 2495,
                   "name": "owneronly",
                   "nodeType": "Identifier",
                   "overloadedDeclarations": [],
-                  "referencedDeclaration": 2251,
+                  "referencedDeclaration": 2491,
                   "src": "927:9:3",
                   "typeDescriptions": {
                     "typeIdentifier": "t_modifier$__$",
@@ -1657,15 +1657,15 @@
             "name": "generateQueryID",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 2254,
+              "id": 2494,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2253,
+                  "id": 2493,
                   "name": "_query",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2277,
+                  "scope": 2517,
                   "src": "911:14:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1674,7 +1674,7 @@
                     "typeString": "bytes32"
                   },
                   "typeName": {
-                    "id": 2252,
+                    "id": 2492,
                     "name": "bytes32",
                     "nodeType": "ElementaryTypeName",
                     "src": "911:7:3",
@@ -1691,15 +1691,15 @@
             },
             "payable": false,
             "returnParameters": {
-              "id": 2259,
+              "id": 2499,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2258,
+                  "id": 2498,
                   "name": "_id",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2277,
+                  "scope": 2517,
                   "src": "953:11:3",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1708,7 +1708,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 2257,
+                    "id": 2497,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
                     "src": "953:7:3",
@@ -1723,14 +1723,14 @@
               ],
               "src": "952:13:3"
             },
-            "scope": 2278,
+            "scope": 2518,
             "src": "886:426:3",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 2279,
+        "scope": 2519,
         "src": "201:1113:3"
       }
     ],
@@ -1742,5 +1742,5 @@
   },
   "networks": {},
   "schemaVersion": "2.0.0",
-  "updatedAt": "2018-03-27T17:38:32.577Z"
+  "updatedAt": "2018-03-29T02:57:21.864Z"
 }
