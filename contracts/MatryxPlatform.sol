@@ -1,6 +1,7 @@
 pragma solidity ^0.4.18;
 
 import '../libraries/math/SafeMath.sol';
+import '../libraries/math/SafeMath128.sol';
 import './MatryxOracleMessenger.sol';
 import '../interfaces/IMatryxToken.sol';
 import '../interfaces/IMatryxPeer.sol';
@@ -16,6 +17,7 @@ import './Ownable.sol';
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   using SafeMath for uint256;
+  using SafeMath128 for uint128;
 
   // TODO: condense and put in structs
   address public matryxTokenAddress;
@@ -25,9 +27,11 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   address matryxRoundLibAddress;
 
   address[] public allTournaments;
-  mapping(bytes32=>address[]) public tournamentByCategory;
-  mapping(bytes32=>uint256) public categoryCount;
-  string[] public categories;
+  bytes32 public hashOfTopCategory;
+  bytes32 public hashOfLastCategory;
+  mapping(uint256=>bytes32) public topCategoryByCount;
+  mapping(bytes32=>category) public categoryIterator;
+  string[] public categoryList;
 
   mapping(address=>bool) peerExists;
   mapping(address=>address) ownerToPeerAndPeerToOwner;
@@ -57,6 +61,15 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   {
     bool exists;
     uint256 value;
+  }
+
+  struct category
+  {
+    string name;
+    uint128 count;
+    bytes32 prev;
+    bytes32 next;
+    address[] tournaments;
   }
 
   /*
@@ -226,6 +239,169 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return false;
   }
 
+  function addTournamentToCategory(address _tournamentAddress, string _category) internal
+  {
+    bytes32 hashOfCategory = keccak256(_category);
+    // If this is the first tournament in its category
+    if(categoryIterator[hashOfCategory].count == 0)
+    {
+      // Push the new category to a list of categories
+      categoryList.push(_category);
+
+      // If its the first category ever
+      if(hashOfTopCategory == 0x0)
+      {
+        // Update the top category pointer
+        hashOfTopCategory = hashOfCategory;
+        hashOfLastCategory = hashOfCategory;
+        // Create a new entry in the iterator for it and don't store previous or next pointers
+        categoryIterator[hashOfCategory] = category({name: _category, count: 1, prev: 0, next: 0, tournaments: new address[](0)});
+        // Store the mapping from count 1 to this category
+        topCategoryByCount[1] = hashOfCategory;
+      }
+      else
+      {
+        // If this is not the first category ever,
+        // Create a new iterator entry, complete with a prev pointer to the previous last category
+        categoryIterator[hashOfCategory] = category({name: _category, count: 1, prev: hashOfLastCategory, next: 0x0, tournaments: new address[](0)});
+        // Update that previous last category's next pointer (there's one more after it now)
+        categoryIterator[hashOfLastCategory].next = hashOfCategory;
+
+        if(topCategoryByCount[1] == 0x0)
+        {
+          topCategoryByCount[1] = hashOfCategory;
+        }
+      }
+
+      // Push to the tournaments list for this category
+      categoryIterator[hashOfCategory].tournaments.push(_tournamentAddress);
+      // Update the last category pointer
+      hashOfLastCategory = hashOfCategory;
+      return;
+    }
+
+    categoryIterator[hashOfCategory].tournaments.push(_tournamentAddress);
+
+    uint256 categoryCount = categoryIterator[hashOfCategory].count;
+    // If this category has the top relative count (category.prev.count > category.count):
+    //  If category.next exists, the top category for our previous count becomes category.next,
+    //  otherwise (category.next doesn't exist), the top category for our previous count
+    //  we set to 0x0.
+    if(topCategoryByCount[categoryIterator[hashOfCategory].count] == hashOfCategory)
+    {
+      if(categoryIterator[hashOfCategory].next != 0x0)
+      {
+        topCategoryByCount[categoryCount] = categoryIterator[hashOfCategory].next;
+      }
+      else
+      {
+        topCategoryByCount[categoryCount] = 0x0;
+      }
+    }
+
+    uint128 newCount = categoryIterator[hashOfCategory].count + 1;
+    categoryIterator[hashOfCategory].count = newCount;
+
+    // If the top category for our new count is not defined, 
+    // define it as this category.
+    if(topCategoryByCount[newCount] == 0)
+    {
+      topCategoryByCount[newCount] = hashOfCategory;
+    }
+
+    // If the count of the category is now greater than the previous category
+    // swap it with the top category of its count.
+    if(categoryIterator[hashOfCategory].prev != 0x0)
+    {
+      if(categoryIterator[hashOfCategory].count > categoryIterator[categoryIterator[hashOfCategory].prev].count)
+      {
+        // define A as the top category of its count
+        bytes32 hashOfTopA = topCategoryByCount[categoryIterator[hashOfCategory].count-1];
+        if(hashOfTopA == hashOfTopCategory)
+        {
+          hashOfTopCategory = hashOfCategory;
+        }
+
+        if(hashOfCategory == hashOfLastCategory)
+        {
+          hashOfLastCategory = categoryIterator[hashOfCategory].prev;
+        }
+
+        category storage A = categoryIterator[hashOfTopA];
+        category storage B = categoryIterator[hashOfCategory];
+
+        bool adjacent = A.next == hashOfCategory;
+        bytes32 Bprev = B.prev;
+        bytes32 Anext = A.next;
+
+        A.next = B.next;
+        B.prev = A.prev;
+
+        if(A.prev != 0x0)
+        {
+          categoryIterator[A.prev].next = hashOfCategory;
+        }
+        if(B.next != 0x0)
+        {
+          categoryIterator[B.next].prev = hashOfTopA;
+        }
+        
+        if(adjacent)
+        {
+          A.prev = hashOfCategory;
+          B.next = hashOfTopA;
+        }
+        else
+        {
+          A.prev = Bprev;
+          B.next = Anext;
+          if(Bprev != 0x0)
+          {
+            categoryIterator[Bprev].next = hashOfTopA;
+          }
+          if(Anext != 0x0)
+          {
+            categoryIterator[Anext].prev = hashOfCategory;
+          }
+        }
+      }
+    }
+  }
+
+  function getTournamentsByCategory(string _category) external constant returns (address[])
+  {
+    return categoryIterator[keccak256(_category)].tournaments;
+  }
+
+  function getCategoryCount(string _category) external constant returns (uint256)
+  {
+    return categoryIterator[keccak256(_category)].count;
+  }
+
+  function getTopCategory(uint256 _index) external constant returns (string)
+  {
+    bytes32 categoryHash = hashOfTopCategory;
+    string categoryName  = categoryIterator[categoryHash].name;
+
+    for(uint256 i = 1; i <= _index; i++)
+    {
+      categoryHash = categoryIterator[categoryHash].next;
+      categoryName = categoryIterator[categoryHash].name;
+    
+      if(categoryHash == 0x0)
+      {
+        break;
+      }
+    }
+
+    return categoryName;
+  }
+
+  function switchTournamentCategory(string discipline) onlyTournament public
+  {
+    revert();
+  }
+
   /* 
    * Tournament Entry Methods
    */
@@ -273,13 +449,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _BountyMTX, _entryFee, _reviewPeriod);
     TournamentCreated(_category, msg.sender, newTournament, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
     
-    bytes32 hashOfCategory = keccak256(_category);
-    if(categoryCount[hashOfCategory] == 0)
-    {
-      categories.push(_category);
-    }
-    tournamentByCategory[hashOfCategory].push(newTournament);
-    categoryCount[hashOfCategory] = categoryCount[hashOfCategory].add(1);
+    addTournamentToCategory(newTournament, _category);
 
     // Transfer the MTX reward to the tournament.
     bool transferSuccess = matryxToken.transferFrom(msg.sender, newTournament, _BountyMTX);
@@ -311,12 +481,14 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return peerExists[_peerAddress];
   }
 
-  function hasPeer(address _sender) public returns (bool)
+  // TODO: add constant
+  function hasPeer(address _sender) public constant returns (bool)
   {
     return (ownerToPeerAndPeerToOwner[_sender] != 0x0);
   }
 
-  function peerExistsAndOwnsSubmission(address _peer, address _reference) public returns (bool)
+  // TODO: add constant
+  function peerExistsAndOwnsSubmission(address _peer, address _reference) public constant returns (bool)
   {
     bool isAPeer = peerExists[_peer];
     bool referenceIsSubmission = submissionExists[_reference];

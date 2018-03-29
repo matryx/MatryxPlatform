@@ -28,7 +28,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	uint256 public reviewPeriod;
 	uint256 public bounty;
 	address public winningSubmission;
-	bool public winningSubmissionChosen;
+	bool winningSubmissionChosen;
 
 	mapping(address=>uint) addressToParticipantType;
  	mapping(address=>address) authorToSubmissionAddress;
