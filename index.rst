@@ -1,8 +1,6 @@
 Matryx Alpha Source Code - Develop Branch |logo|
 ================================================
 
-|Telegram| |Latest News|
-
 Introduction
 ------------
 
