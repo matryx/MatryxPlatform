@@ -23,5 +23,13 @@ module.exports = {
 			gas: 9000000000, // <-- Use this high gas value
 			gasPrice: 10000000000     // <-- Use this low gas price
     	}
-	}
+	},
+	solc: 
+	{
+  		optimizer: 
+  		{
+	    	enabled: true,
+	    	runs: 4000
+  		}
+  	}
 };

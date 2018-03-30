@@ -51,8 +51,9 @@ contract('MatryxPlatform', function(accounts)
 		assert.isTrue(submissionAccessibleToTimmy, "Submission is not accessible to Timmy");
 	});
 
+	// TODO: Change this so tournament chooses winner.
 	it("Submission is requested by peer after round has ended", async function() {
-		await round.chooseWinningSubmission(0);
+		await tournament.chooseWinner(0);
 
 		let firstSubmissionAccessibleToPeer = await round.submissionIsAccessible.call(0, {from: accounts[3]});
 
@@ -122,8 +123,9 @@ contract('MatryxPlatform', function(accounts)
 		assert.equal(submissionAuthor, accounts[0], "The author of submission 1 is not accounts[0].");
 	});
 
+	// TODO: Change this so that tournament chooses winner.
 	it("Balance of a submission is gettable.", async function() {
-		await round.chooseWinningSubmission(1);
+		await tournament.chooseWinner(1);
 		winningSubmissionAddress = await round.getSubmissionAddress.call(1);
 		let submissionBalance = await round.getBalance.call(winningSubmissionAddress);
 		assert.equal(submissionBalance, 5, "Balance of winning submission was not equal to round bounty");

@@ -48,7 +48,7 @@ The Platform's ABI is: [here](https://github.com/matryx/matryx-alpha-source/blob
 |:----------|:-------------| ---: |
 | **`tournamentByAddress()`** | uint256 tournamentId | bytes32 tournamentAddress|
 | **`tournamentCount()`** | None | uint256 numberOfTournaments|
-| **`createTournament()`** | string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee | address tournamentAddress |
+| **`createTournament()`** | string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee | address tournamentAddress |
 | **`enterTournament()`** | address _tournamentAddress | address _submissionViewer|
 
 #### Tournament Contract API
@@ -58,7 +58,7 @@ The Platform's ABI is: [here](https://github.com/matryx/matryx-alpha-source/blob
 | **`isOwner()`** | address _sender | bool |
 | **`isEntrant()`** | address _sender | bool |
 | **`tournamentOpen()`** | address _sender | bool |
-| **`getExternalAddress()`** | None | bytes32 |
+| **`getExternalAddress()`** | None | bytes |
 | **`mySubmissions()`** | None | address[] |
 | **`submissionCount()`** | None | uint256 |
 | **`getEntryFee()`** | None | uint256 |

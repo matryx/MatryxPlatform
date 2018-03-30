@@ -21,7 +21,7 @@ contract MatryxOracleMessenger is Ownable {
   // Map from user addresses (queriers) to QueryIDs. We assume each user only
   // makes one query at a time.
   mapping(address => uint256) internal fromQuerierToQueryID;
-  // Map from QueryIDs to responses (bytes32s. aka dynamically-sized byte arrays.)
+  // Map from QueryIDs to responses (bytes32)
   mapping(uint256 => uint256) internal queryResponses;
 
   /// @dev Gets the latest response from the oracle (internal).

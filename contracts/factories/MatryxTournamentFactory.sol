@@ -4,15 +4,17 @@ import '../MatryxTournament.sol';
 import '../Ownable.sol';
 
 contract MatryxTournamentFactory is Ownable {
+	address public matryxTokenAddress;
 	address public platformAddress;
 	address public matryxRoundFactoryAddress;
 
-	function MatryxTournamentFactory(address _matryxRoundFactoryAddress) public {
+	function MatryxTournamentFactory(address _matryxTokenAddress, address _matryxRoundFactoryAddress) public {
+		matryxTokenAddress = _matryxTokenAddress;
 		matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
 	}
 
-	function createTournament(address _owner, string _tournamentName, bytes32 _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public returns (address _roundAddress) {
-		MatryxTournament newTournament = new MatryxTournament(platformAddress, matryxRoundFactoryAddress, _owner, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
+	function createTournament(address _owner, string _tournamentTitle, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public returns (address _tournamentAddress) {
+		MatryxTournament newTournament = new MatryxTournament(platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, _owner, _tournamentTitle, _externalAddress, _BountyMTX, _entryFee, _reviewPeriod);
 		return newTournament;
 	}
 
