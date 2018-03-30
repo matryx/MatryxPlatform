@@ -1,5 +1,5 @@
-Matryx Alpha Source Code - Develop Branch |logo|
-================================================
+Matryx Alpha Source Code
+========================
 
 Introduction
 ------------
