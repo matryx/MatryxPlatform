@@ -1,9 +1,7 @@
 Matryx Alpha Source Code - Develop Branch |logo|
 ================================================
 
-|travisCI| |Telegram| |Latest News|
-
-|Jenkins coverage| |Jenkins tests|
+|Telegram| |Latest News|
 
 Introduction
 ------------
@@ -274,15 +272,5 @@ for using the platform that we have deployed
 -The Matryx Team
 
 .. |logo| image:: https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png
-.. |travisCI| image:: https://travis-ci.org/matryx/matryx-alpha-source.svg?branch=develop
-   :target: https://travis-ci.org/matryx/matryx-alpha-source
-.. |Telegram| image:: https://img.shields.io/badge/chat-Telegram-blue.svg
-   :target: https://t.me/matryxai
-.. |Latest News| image:: https://img.shields.io/badge/Blog-Medium-yellowgreen.svg
-   :target: https://blog.matryx.ai/
-.. |Jenkins coverage| image:: https://img.shields.io/badge/coverage-Coming%20Soon-brightgreen.svg
-   :target: http://jenkins.matryx.ai/matryx-alpha-source/code-coverage
-.. |Jenkins tests| image:: https://img.shields.io/badge/tests-Coming%20Soon-brightgreen.svg
-   :target: http://jenkins.matryx.ai/matryx-alpha-source/tests
 .. |Calcflow| image:: https://github.com/matryx/matryx-alpha-source/blob/master/assets/Calcflow_mtx.gif
 
