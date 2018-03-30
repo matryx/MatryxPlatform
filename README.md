@@ -1,9 +1,12 @@
 # Matryx Alpha Source Code - Develop Branch ![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
-[![Jenkins](https://img.shields.io/jenkins/s/https/jenkins.qa.ubuntu.com/view/Precise/view/All%20Precise/job/precise-desktop-amd64_default.svg)](http://jenkins.matryx.ai/matryx-alpha-source/build-status)
-[![Jenkins coverage](https://img.shields.io/badge/coverage-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/code-coverage)
-[![Jenkins tests](https://img.shields.io/badge/tests-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/tests)
+
+[![travisCI](https://travis-ci.org/matryx/matryx-alpha-source.svg?branch=develop)](https://travis-ci.org/matryx/matryx-alpha-source)
 [![Telegram](https://img.shields.io/badge/chat-Telegram-blue.svg)](https://t.me/matryxai)
 [![Latest News](https://img.shields.io/badge/Blog-Medium-yellowgreen.svg)](https://blog.matryx.ai/)
+
+
+[![Jenkins coverage](https://img.shields.io/badge/coverage-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/code-coverage)
+[![Jenkins tests](https://img.shields.io/badge/tests-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/tests)
 
 
 ## Introduction
