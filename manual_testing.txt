@@ -11,13 +11,13 @@ platform.createPeer.sendTransaction({gas: 4000000});
 platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[1]});
 platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[2]});
 platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[3]});
-token = web3.eth.contract(MatryxToken.abi).at("0x89c81164a847fae12841c7d2371864c7656f91c9")
+token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address)
 token.setReleaseAgent(web3.eth.accounts[0])
 token.releaseTokenTransfer.sendTransaction({gas: 1000000})
 token.mint(web3.eth.accounts[0], 10000)
-token.mint(web3.eth.accounts[1], 2)
-token.mint(web3.eth.accounts[2], 2)
-token.mint(web3.eth.accounts[3], 2)
+token.mint(web3.eth.accounts[1], 5000)
+token.mint(web3.eth.accounts[2], 5000)
+token.mint(web3.eth.accounts[3], 5000)
 token.approve(MatryxPlatform.address, 100)
 platform.createTournament.sendTransaction("math", "create a shell", "ipfs hash", 100, 2, 100000, {gas: 4000000})
 

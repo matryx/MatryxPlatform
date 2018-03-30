@@ -24,7 +24,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     //Tournament identification
     string public title;
     bytes public externalAddress;
-    string public discipline;
+    string public category;
 
     // Timing and State
     uint256 public timeCreated;
@@ -55,7 +55,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     mapping(address=>uint256_optional) private addressToIsEntrant;
     address[] private allEntrants;
 
-    function MatryxTournament(address _platformAddress, address _matryxTokenAddress, address _matryxRoundFactoryAddress, address _owner, string _tournamentTitle, bytes _externalAddress, uint256 _Bounty, uint256 _entryFee, uint256 _reviewPeriod) public {
+    function MatryxTournament(address _platformAddress, address _matryxTokenAddress, address _matryxRoundFactoryAddress, address _owner, string _category, string _tournamentTitle, bytes _externalAddress, uint256 _Bounty, uint256 _entryFee) public {
         //Clean inputs
         require(_owner != 0x0);
         //require(!_tournamentName.toSlice().empty());
@@ -69,13 +69,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         timeCreated = now;
         // Identification
         owner = _owner;
+        category = _category;
         title = _tournamentTitle;
         externalAddress = _externalAddress;
         // Reward and fee
         Bounty = _Bounty;
         BountyLeft = _Bounty;
         entryFee = _entryFee;
-        reviewPeriod = _reviewPeriod;
 
         // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
     }
@@ -309,14 +309,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         maxRounds = _newMaxRounds;
     }
 
-    function setDiscipline(string _discipline) public onlyOwner
+    function setCategory(string _category) public onlyOwner
     {
-        // if(!discipline.toSlice().empty())
+        // if(!category.toSlice().empty())
         // {
         //     revert();
         // }
-
-        discipline = _discipline;
+        revert();
     }
 
     /*
@@ -401,13 +400,10 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         if(rounds.length == maxRounds)
         {
             tournamentClosedTime = now + _duration;
-            round.Start(_duration, reviewPeriod);
+            reviewPeriod = _reviewPeriod;
         }
-        else
-        {
-            round.Start(_duration, _reviewPeriod);
-        }
-
+        
+        round.Start(_duration, _reviewPeriod);
         RoundStarted(rounds.length-1);
     }
 

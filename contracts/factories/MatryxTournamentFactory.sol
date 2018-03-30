@@ -13,8 +13,8 @@ contract MatryxTournamentFactory is Ownable {
 		matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
 	}
 
-	function createTournament(address _owner, string _tournamentTitle, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public returns (address _tournamentAddress) {
-		MatryxTournament newTournament = new MatryxTournament(platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, _owner, _tournamentTitle, _externalAddress, _BountyMTX, _entryFee, _reviewPeriod);
+	function createTournament(address _owner, string _category, string _tournamentTitle, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public returns (address _tournamentAddress) {
+		MatryxTournament newTournament = new MatryxTournament(platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, _owner, _category, _tournamentTitle, _externalAddress, _BountyMTX, _entryFee);
 		return newTournament;
 	}
 

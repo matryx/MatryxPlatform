@@ -9,6 +9,10 @@
           "type": "address"
         },
         {
+          "name": "_category",
+          "type": "string"
+        },
+        {
           "name": "_tournamentTitle",
           "type": "string"
         },
@@ -22,10 +26,6 @@
         },
         {
           "name": "_entryFee",
-          "type": "uint256"
-        },
-        {
-          "name": "_reviewPeriod",
           "type": "uint256"
         }
       ],
@@ -59,20 +59,20 @@
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "pragma solidity ^0.4.18;\n\ninterface IMatryxTournamentFactory\n{\n\tfunction createTournament(address _owner, string _tournamentTitle, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public returns (address _tournamentAddress);\n\tfunction setPlatform(address _platformAddress) public;\n}",
+  "source": "pragma solidity ^0.4.18;\n\ninterface IMatryxTournamentFactory\n{\n\tfunction createTournament(address _owner, string _category, string _tournamentTitle, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public returns (address _tournamentAddress);\n\tfunction setPlatform(address _platformAddress) public;\n}",
   "sourcePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/interfaces/factories/IMatryxTournamentFactory.sol",
   "ast": {
     "absolutePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/interfaces/factories/IMatryxTournamentFactory.sol",
     "exportedSymbols": {
       "IMatryxTournamentFactory": [
-        9174
+        9165
       ]
     },
-    "id": 9175,
+    "id": 9166,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 9151,
+        "id": 9142,
         "literals": [
           "solidity",
           "^",
@@ -88,16 +88,16 @@
         "contractKind": "interface",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 9174,
+        "id": 9165,
         "linearizedBaseContracts": [
-          9174
+          9165
         ],
         "name": "IMatryxTournamentFactory",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": null,
-            "id": 9168,
+            "id": 9159,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": false,
@@ -105,15 +105,15 @@
             "name": "createTournament",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 9164,
+              "id": 9155,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 9153,
+                  "id": 9144,
                   "name": "_owner",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
+                  "scope": 9159,
                   "src": "90:14:38",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -122,7 +122,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 9152,
+                    "id": 9143,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "90:7:38",
@@ -136,11 +136,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 9155,
-                  "name": "_tournamentTitle",
+                  "id": 9146,
+                  "name": "_category",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "106:23:38",
+                  "scope": 9159,
+                  "src": "106:16:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -148,7 +148,7 @@
                     "typeString": "string memory"
                   },
                   "typeName": {
-                    "id": 9154,
+                    "id": 9145,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "106:6:38",
@@ -162,11 +162,37 @@
                 },
                 {
                   "constant": false,
-                  "id": 9157,
+                  "id": 9148,
+                  "name": "_tournamentTitle",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 9159,
+                  "src": "124:23:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string memory"
+                  },
+                  "typeName": {
+                    "id": 9147,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "124:6:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string storage pointer"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 9150,
                   "name": "_externalAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "131:22:38",
+                  "scope": 9159,
+                  "src": "149:22:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -174,10 +200,10 @@
                     "typeString": "bytes memory"
                   },
                   "typeName": {
-                    "id": 9156,
+                    "id": 9149,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
-                    "src": "131:5:38",
+                    "src": "149:5:38",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bytes_storage_ptr",
                       "typeString": "bytes storage pointer"
@@ -188,11 +214,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 9159,
+                  "id": 9152,
                   "name": "_BountyMTX",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "155:18:38",
+                  "scope": 9159,
+                  "src": "173:18:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -200,10 +226,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 9158,
+                    "id": 9151,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "155:7:38",
+                    "src": "173:7:38",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -214,11 +240,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 9161,
+                  "id": 9154,
                   "name": "_entryFee",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "175:17:38",
+                  "scope": 9159,
+                  "src": "193:17:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -226,36 +252,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 9160,
+                    "id": 9153,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "175:7:38",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_uint256",
-                      "typeString": "uint256"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 9163,
-                  "name": "_reviewPeriod",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "194:21:38",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_uint256",
-                    "typeString": "uint256"
-                  },
-                  "typeName": {
-                    "id": 9162,
-                    "name": "uint256",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "194:7:38",
+                    "src": "193:7:38",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -265,20 +265,20 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "89:127:38"
+              "src": "89:122:38"
             },
             "payable": false,
             "returnParameters": {
-              "id": 9167,
+              "id": 9158,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 9166,
+                  "id": 9157,
                   "name": "_tournamentAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "233:26:38",
+                  "scope": 9159,
+                  "src": "228:26:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -286,10 +286,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 9165,
+                    "id": 9156,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "233:7:38",
+                    "src": "228:7:38",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -299,17 +299,17 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "232:28:38"
+              "src": "227:28:38"
             },
-            "scope": 9174,
-            "src": "64:197:38",
+            "scope": 9165,
+            "src": "64:192:38",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           },
           {
             "body": null,
-            "id": 9173,
+            "id": 9164,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": false,
@@ -317,16 +317,16 @@
             "name": "setPlatform",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 9171,
+              "id": 9162,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 9170,
+                  "id": 9161,
                   "name": "_platformAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9173,
-                  "src": "284:24:38",
+                  "scope": 9164,
+                  "src": "279:24:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -334,10 +334,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 9169,
+                    "id": 9160,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "284:7:38",
+                    "src": "279:7:38",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -347,40 +347,40 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "283:26:38"
+              "src": "278:26:38"
             },
             "payable": false,
             "returnParameters": {
-              "id": 9172,
+              "id": 9163,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "316:0:38"
+              "src": "311:0:38"
             },
-            "scope": 9174,
-            "src": "263:54:38",
+            "scope": 9165,
+            "src": "258:54:38",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 9175,
-        "src": "26:293:38"
+        "scope": 9166,
+        "src": "26:288:38"
       }
     ],
-    "src": "0:319:38"
+    "src": "0:314:38"
   },
   "legacyAST": {
     "absolutePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/interfaces/factories/IMatryxTournamentFactory.sol",
     "exportedSymbols": {
       "IMatryxTournamentFactory": [
-        9174
+        9165
       ]
     },
-    "id": 9175,
+    "id": 9166,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 9151,
+        "id": 9142,
         "literals": [
           "solidity",
           "^",
@@ -396,16 +396,16 @@
         "contractKind": "interface",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 9174,
+        "id": 9165,
         "linearizedBaseContracts": [
-          9174
+          9165
         ],
         "name": "IMatryxTournamentFactory",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": null,
-            "id": 9168,
+            "id": 9159,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": false,
@@ -413,15 +413,15 @@
             "name": "createTournament",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 9164,
+              "id": 9155,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 9153,
+                  "id": 9144,
                   "name": "_owner",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
+                  "scope": 9159,
                   "src": "90:14:38",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -430,7 +430,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 9152,
+                    "id": 9143,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "90:7:38",
@@ -444,11 +444,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 9155,
-                  "name": "_tournamentTitle",
+                  "id": 9146,
+                  "name": "_category",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "106:23:38",
+                  "scope": 9159,
+                  "src": "106:16:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -456,7 +456,7 @@
                     "typeString": "string memory"
                   },
                   "typeName": {
-                    "id": 9154,
+                    "id": 9145,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "106:6:38",
@@ -470,11 +470,37 @@
                 },
                 {
                   "constant": false,
-                  "id": 9157,
+                  "id": 9148,
+                  "name": "_tournamentTitle",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 9159,
+                  "src": "124:23:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string memory"
+                  },
+                  "typeName": {
+                    "id": 9147,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "124:6:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string storage pointer"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 9150,
                   "name": "_externalAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "131:22:38",
+                  "scope": 9159,
+                  "src": "149:22:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -482,10 +508,10 @@
                     "typeString": "bytes memory"
                   },
                   "typeName": {
-                    "id": 9156,
+                    "id": 9149,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
-                    "src": "131:5:38",
+                    "src": "149:5:38",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bytes_storage_ptr",
                       "typeString": "bytes storage pointer"
@@ -496,11 +522,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 9159,
+                  "id": 9152,
                   "name": "_BountyMTX",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "155:18:38",
+                  "scope": 9159,
+                  "src": "173:18:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -508,10 +534,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 9158,
+                    "id": 9151,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "155:7:38",
+                    "src": "173:7:38",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -522,11 +548,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 9161,
+                  "id": 9154,
                   "name": "_entryFee",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "175:17:38",
+                  "scope": 9159,
+                  "src": "193:17:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -534,36 +560,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 9160,
+                    "id": 9153,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "175:7:38",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_uint256",
-                      "typeString": "uint256"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 9163,
-                  "name": "_reviewPeriod",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "194:21:38",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_uint256",
-                    "typeString": "uint256"
-                  },
-                  "typeName": {
-                    "id": 9162,
-                    "name": "uint256",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "194:7:38",
+                    "src": "193:7:38",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -573,20 +573,20 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "89:127:38"
+              "src": "89:122:38"
             },
             "payable": false,
             "returnParameters": {
-              "id": 9167,
+              "id": 9158,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 9166,
+                  "id": 9157,
                   "name": "_tournamentAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9168,
-                  "src": "233:26:38",
+                  "scope": 9159,
+                  "src": "228:26:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -594,10 +594,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 9165,
+                    "id": 9156,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "233:7:38",
+                    "src": "228:7:38",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -607,17 +607,17 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "232:28:38"
+              "src": "227:28:38"
             },
-            "scope": 9174,
-            "src": "64:197:38",
+            "scope": 9165,
+            "src": "64:192:38",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           },
           {
             "body": null,
-            "id": 9173,
+            "id": 9164,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": false,
@@ -625,16 +625,16 @@
             "name": "setPlatform",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 9171,
+              "id": 9162,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 9170,
+                  "id": 9161,
                   "name": "_platformAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9173,
-                  "src": "284:24:38",
+                  "scope": 9164,
+                  "src": "279:24:38",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -642,10 +642,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 9169,
+                    "id": 9160,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "284:7:38",
+                    "src": "279:7:38",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -655,27 +655,27 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "283:26:38"
+              "src": "278:26:38"
             },
             "payable": false,
             "returnParameters": {
-              "id": 9172,
+              "id": 9163,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "316:0:38"
+              "src": "311:0:38"
             },
-            "scope": 9174,
-            "src": "263:54:38",
+            "scope": 9165,
+            "src": "258:54:38",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 9175,
-        "src": "26:293:38"
+        "scope": 9166,
+        "src": "26:288:38"
       }
     ],
-    "src": "0:319:38"
+    "src": "0:314:38"
   },
   "compiler": {
     "name": "solc",
@@ -683,5 +683,5 @@
   },
   "networks": {},
   "schemaVersion": "2.0.0",
-  "updatedAt": "2018-03-29T18:43:54.575Z"
+  "updatedAt": "2018-03-30T22:31:23.265Z"
 }

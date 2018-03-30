@@ -438,7 +438,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @param _BountyMTX Total tournament reward in MTX.
   /// @param _entryFee Fee to charge participant upon entering into tournament.
   /// @return _tournamentAddress Address of the newly created tournament
-  function createTournament(string _category, string _tournamentName, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _reviewPeriod) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
+  function createTournament(string _category, string _tournamentName, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
   {
     IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
     // Check that the platform has a sufficient allowance to
@@ -446,7 +446,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     require(matryxToken.allowance(msg.sender, this) >= _BountyMTX);
 
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-    address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _BountyMTX, _entryFee, _reviewPeriod);
+    address newTournament = tournamentFactory.createTournament(msg.sender, _category, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
     TournamentCreated(_category, msg.sender, newTournament, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
     
     addTournamentToCategory(newTournament, _category);
