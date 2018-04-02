@@ -381,7 +381,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   function getTopCategory(uint256 _index) external constant returns (string)
   {
     bytes32 categoryHash = hashOfTopCategory;
-    string categoryName  = categoryIterator[categoryHash].name;
+    string storage categoryName  = categoryIterator[categoryHash].name;
 
     for(uint256 i = 1; i <= _index; i++)
     {

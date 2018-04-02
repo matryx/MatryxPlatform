@@ -23,7 +23,7 @@ contract SubmissionTrust is Ownable
 	// Submission
 	string title;
 	address author;
-	bytes32 externalAddress;
+	bytes externalAddress;
 	address[] references;
 
 	// Tracks the normalized trust gained through peers approving this submission
@@ -41,6 +41,8 @@ contract SubmissionTrust is Ownable
 	uint256 public totalReferenceCount;
 
 	address[] contributors;
+	mapping(address=>uint128) public contributorToBountyDividend;
+	uint128 public contributorBountyDivisor;
 	uint256 timeSubmitted;
 	uint256 timeUpdated;
 	bool public publicallyAccessibleDuringTournament;

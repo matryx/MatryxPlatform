@@ -23,11 +23,10 @@ interface IMatryxSubmission {
 	function removeReferenceApproval(address _reference) public;
 	function flagMissingReference(address _reference) public;
 	function removeMissingReferenceFlag(address _reference) public;
-	function addContributor(address _contributor) public;
+	function addContributor(address _contributor, uint128 _bountyAllocation) public;
 	function removeContributor(uint256 _contributorIndex) public ;
 	function getBalance() public returns (uint256);
 	function withdrawReward(address _recipient) public;
-	function withdrawReward() public;
 	function getTransferAmount() public constant returns (uint256);
 	function deleteSubmission() public;
 }

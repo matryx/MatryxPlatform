@@ -15,6 +15,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	using SafeMath for uint128;
 	using SafeMath for uint32;
 
+
+	/************** TODO ******************/
+	/* COPY ALL FIELDS TO SUBMISSIONTRUST */           // <------------------ DON'T FORGET.
+	/************** TODO ******************/
+
+
 	// Parent identification
 	address private platformAddress;
 	address private tournamentAddress;
@@ -41,6 +47,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	uint256 public totalReferenceCount;
 
 	address[] contributors;
+	mapping(address=>uint128) public contributorToBountyDividend;
+	uint128 public contributorBountyDivisor;
 	uint256 timeSubmitted;
 	uint256 timeUpdated;
 	bool public publicallyAccessibleDuringTournament;
@@ -74,6 +82,13 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		{
 			addressToReferenceInfo[references[i]].exists = true;
 			addressToReferenceInfo[references[i]].index = i;
+		}
+
+		require(_contributors.length == _contributorRewardDistribution.length);
+		for(uint32 j = 0; j < _contributors.length; j++)
+		{
+			contributorBountyDivisor = contributorBountyDivisor + _contributorRewardDistribution[j];
+			contributorToBountyDividend[_contributors[j]] = _contributorRewardDistribution[j];
 		}
 		
 		contributors = _contributors;
@@ -129,9 +144,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
   	modifier ownerOrRound()
   	{
-  		bool isOwner = msg.sender == owner;
-  		bool isRound = msg.sender == roundAddress;
-  		require(isOwner || isRound);
+  		require(msg.sender == owner || msg.sender == roundAddress);
   		_;
   	}
 
@@ -175,7 +188,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 		bool isPlatform = _requester == IMatryxTournament(tournamentAddress).getPlatform();
 		bool isRound = _requester == roundAddress;
-		bool ownsThisSubmission = _requester == author;
+		bool ownsThisSubmission = _requester == owner;
 		bool submissionExternallyAccessible = publicallyAccessibleDuringTournament;
 		bool duringReviewPeriod = IMatryxRound(roundAddress).isInReview() || IMatryxTournament(tournamentAddress).isInReview();
 		bool requesterIsEntrant = IMatryxTournament(tournamentAddress).isEntrant(_requester);
@@ -308,9 +321,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	/// @dev Add a contributor to a submission (callable only by submission's owner).
     /// @param _contributor Address of contributor to add to the submission.
-	function addContributor(address _contributor) onlyOwner public
+	function addContributor(address _contributor, uint128 _bountyAllocation) onlyOwner public
 	{
 		contributors.push(_contributor);
+
+		contributorBountyDivisor = contributorBountyDivisor + _bountyAllocation;
+		contributorToBountyDividend[_contributor] = _bountyAllocation;
 
 		IMatryxRound round = IMatryxRound(roundAddress);
 		round.setParticipantType(_contributor, 2);
@@ -320,6 +336,9 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @param _contributorIndex Index of the contributor to remove from the submission.
 	function removeContributor(uint256 _contributorIndex) onlyOwner public 
 	{
+		contributorBountyDivisor = contributorBountyDivisor - contributorToBountyDividend[contributors[_contributorIndex]];
+		contributorToBountyDividend[contributors[_contributorIndex]] = 0x0;
+
 		delete contributors[_contributorIndex];
 	}
 
@@ -335,26 +354,33 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		uint submissionReward = getBalance();
 		IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
 
-		// Transfer reward to submission author
+		// Transfer reward to submission author and contributors
 		uint256 transferAmount = getTransferAmount();
-		token.transfer(_recipient, transferAmount);
-
-		// Distribute reward to references
-		uint256 remainingReward = submissionReward.sub(transferAmount);
-		for(uint i = 0; i < references.length; i++)
+		uint256 authorAmount = transferAmount.div(2);
+		token.transfer(_recipient, authorAmount);
+		// Distribute transfer amounts to contributors
+		uint256 contributorsAmount = transferAmount.sub(authorAmount);
+		for(uint i = 0; i < contributors.length; i++)
 		{
-			if(addressToReferenceInfo[references[i]].approved)
+			if(contributors[i] != 0x0)
 			{
-				uint256 weight = (addressToReferenceInfo[references[i]].authorReputation).mul(1*10**18).div(totalPossibleTrust);
-				uint256 weightedReward = remainingReward.mul(weight).div(1*10**18);
-				token.transfer(references[i], weightedReward);
+				uint256 contributionWeight = (contributorToBountyDividend[contributors[i]]).mul(1*10**18).div(contributorBountyDivisor);
+				uint256 contributorReward = contributorsAmount.mul(contributionWeight).div(1*10**18);
+				token.transfer(contributors[i], contributorReward);
 			}
 		}
-	}
 
-	function withdrawReward() public ownerOrRound
-	{
-		// withdrawReward(msg.sender);
+		// Distribute remaining reward to references
+		uint256 remainingReward = submissionReward.sub(transferAmount);
+		for(uint j = 0; j < references.length; j++)
+		{
+			if(addressToReferenceInfo[references[j]].approved)
+			{
+				uint256 weight = (addressToReferenceInfo[references[j]].authorReputation).mul(1*10**18).div(totalPossibleTrust);
+				uint256 weightedReward = remainingReward.mul(weight).div(1*10**18);
+				token.transfer(references[j], weightedReward);
+			}
+		}
 	}
 
 	function getTransferAmount() public constant returns (uint256)
@@ -384,7 +410,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	function prepareToDelete() internal
 	{
-		withdrawReward();
+		withdrawReward(owner);
 		// TODO: Remove references on other submissions so that MTX is not burned!
 	}
 
