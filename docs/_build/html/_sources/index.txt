@@ -16,6 +16,7 @@ This documentation details the features of the Matryx Platform Smart Contract sy
    abi-and-geth-interaction
    faq
    versions
+   source/api
 
 .. _dev-docs:
 

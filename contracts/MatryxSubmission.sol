@@ -55,7 +55,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	bytes4 fnSelector_revertIfReferenceFlagged = bytes4(keccak256("revertIfReferenceFlagged(address)"));
 
-	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionOwner, address _submissionAuthor, bytes _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessibleDuringTournament) public
+	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionOwner, address _submissionAuthor, bytes _externalAddress, address[] _references, address[] _contributors, uint128[] _contributorRewardDistribution) public
 	{
 		require(_submissionAuthor != 0x0);
 		
@@ -78,7 +78,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		
 		contributors = _contributors;
 		timeSubmitted = now;
-		publicallyAccessibleDuringTournament = _publicallyAccessibleDuringTournament;
 	}
 
 	/*

@@ -2,4 +2,4 @@ Matryx Platform
 ================
 
 .. literalinclude:: ../../contracts/MatryxPlatform.sol
-   :language: solidity
+   :language: Solidity

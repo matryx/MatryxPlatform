@@ -67,9 +67,15 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="">Creating a Tournament</a></li>
 <li class="toctree-l1"><a class="reference internal" href="rounds.html">Creating and Administering a Round</a></li>
-<li class="toctree-l1"><a class="reference internal" href="trust-and-reputation.html">Trust and Reputation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trust-and-reputation.html">Trust and Reputation System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="abi-and-geth-interaction.html">Interacting with the Platform via Geth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#basic-questions">Basic Questions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#advanced-questions">Advanced Questions</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="versions.html">Versions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/api.html">Source Code Documentation</a></li>
 </ul>
 
           
@@ -107,6 +113,16 @@
             
   <div class="section" id="creating-a-tournament">
 <h1>Creating a Tournament<a class="headerlink" href="#creating-a-tournament" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You must be a peer to create a tournament.</p>
+</div>
+<p>To create a tournament, call  the <code class="docutils literal"><span class="pre">createTournament</span></code> function on the platform, passing in the category (string), tournament name (string), externalAddress (bytes), Bounty (uint256) and entryFee (uint256). The full signature of the function is:</p>
+<div class="highlight-Solidity"><div class="highlight"><pre><span></span><span class="kd">function</span> <span class="n">createTournament</span><span class="p">(</span><span class="kt">string</span> <span class="n">_category</span><span class="p">,</span> <span class="kt">string</span> <span class="n">_tournamentName</span><span class="p">,</span>
+<span class="kt">bytes</span> <span class="n">_externalAddress</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_BountyMTX</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_entryFee</span><span class="p">)</span>
+<span class="kr">public</span> <span class="n">onlyPeerLinked</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">)</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 
 

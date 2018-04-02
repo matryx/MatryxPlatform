@@ -337,11 +337,11 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @param _references Addresses of submissions referenced in creating this submission
     /// @param _contributors Contributors to this submission.
     /// @return _submissionIndex Location of this submission within this round.
-	function createSubmission(string _title, address _owner, address _author, bytes _externalAddress, address[] _references, address[] _contributors, bool _publicallyAccessible) public onlyTournament duringOpenSubmission returns (address _submissionAddress)
+	function createSubmission(string _title, address _owner, address _author, bytes _externalAddress, address[] _references, address[] _contributors, uint128[] _contributorRewardDistribution) public onlyTournament duringOpenSubmission returns (address _submissionAddress)
 	{
 		require(_author != 0x0);
 		
-        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(platformAddress, tournamentAddress, this, _title, _owner, _author, _externalAddress, _references, _contributors, _publicallyAccessible);
+        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(platformAddress, tournamentAddress, this, _title, _owner, _author, _externalAddress, _references, _contributors, _contributorRewardDistribution);
         //submission bookkeeping
         addressToSubmissionIndex[submissionAddress] = uint256_optional({exists:true, value: submissions.length});
         submissions.push(submissionAddress);

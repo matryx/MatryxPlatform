@@ -456,13 +456,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return false;
     }
 
-    function createSubmission(string _title, address _owner, bytes _externalAddress, address[] _contributors, address[] _references, bool _publicallyAccessible) public onlyEntrant onlyPeerLinked(msg.sender) whileTournamentOpen returns (address _submissionAddress)
+    function createSubmission(string _title, address _owner, bytes _externalAddress, address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references) public onlyEntrant onlyPeerLinked(msg.sender) whileTournamentOpen returns (address _submissionAddress)
     {
         // This check is critical for MatryxPeer.
         address peerAddress = IMatryxPlatform(platformAddress).peerAddress(_owner);
         require(peerAddress != 0x0);
 
-        address submissionAddress = IMatryxRound(rounds[rounds.length-1]).createSubmission(_title, _owner, peerAddress, _externalAddress, _references, _contributors, _publicallyAccessible);
+        address submissionAddress = IMatryxRound(rounds[rounds.length-1]).createSubmission(_title, _owner, peerAddress, _externalAddress, _references, _contributors, _contributorRewardDistribution);
         // Send out reference requests to the authors of other submissions
         IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(submissionAddress, _references);
 
