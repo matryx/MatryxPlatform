@@ -369,6 +369,20 @@
       "type": "function"
     },
     {
+      "constant": true,
+      "inputs": [],
+      "name": "getTransferAmount",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "constant": false,
       "inputs": [],
       "name": "deleteSubmission",
@@ -382,16 +396,16 @@
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "pragma solidity ^0.4.18;\n\ninterface IMatryxSubmission {\n\tfunction getTournament() public constant returns (address);\n\tfunction getRound() public constant returns (address);\n\tfunction isAccessible(address _requester) public constant returns (bool);\n\tfunction getTitle() public constant returns(string);\n\tfunction getAuthor() public constant returns(address);\n\tfunction getExternalAddress() public constant returns (bytes);\n\tfunction getReferences() public constant returns(address[]);\n\tfunction getContributors() public constant returns(address[]);\n\tfunction getTimeSubmitted() public constant returns(uint256);\n\tfunction getTimeUpdated() public constant returns(uint256);\n\tfunction makeExternallyAccessibleDuringTournament() public;\n\tfunction updateTitle(string _title) public ;\n\tfunction updateExternalAddress(bytes _externalAddress) public;\n\tfunction addReference(address _reference) public ;\n\tfunction addressIsFlagged(address _reference) public constant returns (bool, bool);\n\tfunction removeReference(address _reference) public;\n\tfunction receiveReferenceRequest() public;\n\tfunction cancelReferenceRequest() public;\n\tfunction approveReference(address _reference) public;\n\tfunction removeReferenceApproval(address _reference) public;\n\tfunction flagMissingReference(address _reference) public;\n\tfunction removeMissingReferenceFlag(address _reference) public;\n\tfunction addContributor(address _contributor, uint128 _bountyAllocation) public;\n\tfunction removeContributor(uint256 _contributorIndex) public ;\n\tfunction getBalance() public returns (uint256);\n\tfunction withdrawReward(address _recipient) public;\n\tfunction deleteSubmission() public;\n}",
+  "source": "pragma solidity ^0.4.18;\n\ninterface IMatryxSubmission {\n\tfunction getTournament() public constant returns (address);\n\tfunction getRound() public constant returns (address);\n\tfunction isAccessible(address _requester) public constant returns (bool);\n\tfunction getTitle() public constant returns(string);\n\tfunction getAuthor() public constant returns(address);\n\tfunction getExternalAddress() public constant returns (bytes);\n\tfunction getReferences() public constant returns(address[]);\n\tfunction getContributors() public constant returns(address[]);\n\tfunction getTimeSubmitted() public constant returns(uint256);\n\tfunction getTimeUpdated() public constant returns(uint256);\n\tfunction makeExternallyAccessibleDuringTournament() public;\n\tfunction updateTitle(string _title) public ;\n\tfunction updateExternalAddress(bytes _externalAddress) public;\n\tfunction addReference(address _reference) public ;\n\tfunction addressIsFlagged(address _reference) public constant returns (bool, bool);\n\tfunction removeReference(address _reference) public;\n\tfunction receiveReferenceRequest() public;\n\tfunction cancelReferenceRequest() public;\n\tfunction approveReference(address _reference) public;\n\tfunction removeReferenceApproval(address _reference) public;\n\tfunction flagMissingReference(address _reference) public;\n\tfunction removeMissingReferenceFlag(address _reference) public;\n\tfunction addContributor(address _contributor, uint128 _bountyAllocation) public;\n\tfunction removeContributor(uint256 _contributorIndex) public ;\n\tfunction getBalance() public returns (uint256);\n\tfunction withdrawReward(address _recipient) public;\n\tfunction getTransferAmount() public constant returns (uint256);\n\tfunction deleteSubmission() public;\n}",
   "sourcePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/interfaces/IMatryxSubmission.sol",
   "ast": {
     "absolutePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/interfaces/IMatryxSubmission.sol",
     "exportedSymbols": {
       "IMatryxSubmission": [
-        9005
+        9010
       ]
     },
-    "id": 9006,
+    "id": 9011,
     "nodeType": "SourceUnit",
     "nodes": [
       {
@@ -411,9 +425,9 @@
         "contractKind": "interface",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 9005,
+        "id": 9010,
         "linearizedBaseContracts": [
-          9005
+          9010
         ],
         "name": "IMatryxSubmission",
         "nodeType": "ContractDefinition",
@@ -467,7 +481,7 @@
               ],
               "src": "106:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "57:59:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -522,7 +536,7 @@
               ],
               "src": "162:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "118:54:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -604,7 +618,7 @@
               ],
               "src": "240:6:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "174:73:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -659,7 +673,7 @@
               ],
               "src": "292:8:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "249:52:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -714,7 +728,7 @@
               ],
               "src": "347:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "303:54:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -769,7 +783,7 @@
               ],
               "src": "413:7:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "359:62:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -834,7 +848,7 @@
               ],
               "src": "471:11:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "423:60:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -899,7 +913,7 @@
               ],
               "src": "535:11:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "485:62:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -954,7 +968,7 @@
               ],
               "src": "600:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "549:61:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -1009,7 +1023,7 @@
               ],
               "src": "661:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "612:59:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -1037,7 +1051,7 @@
               "parameters": [],
               "src": "731:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "673:59:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1092,7 +1106,7 @@
               "parameters": [],
               "src": "777:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "734:44:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1147,7 +1161,7 @@
               "parameters": [],
               "src": "841:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "780:62:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1202,7 +1216,7 @@
               "parameters": [],
               "src": "893:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "844:50:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1310,7 +1324,7 @@
               ],
               "src": "966:12:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "896:83:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -1365,7 +1379,7 @@
               "parameters": [],
               "src": "1032:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "981:52:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1393,7 +1407,7 @@
               "parameters": [],
               "src": "1076:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1035:42:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1421,7 +1435,7 @@
               "parameters": [],
               "src": "1119:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1079:41:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1476,7 +1490,7 @@
               "parameters": [],
               "src": "1174:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1122:53:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1531,7 +1545,7 @@
               "parameters": [],
               "src": "1236:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1177:60:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1586,7 +1600,7 @@
               "parameters": [],
               "src": "1295:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1239:57:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1641,7 +1655,7 @@
               "parameters": [],
               "src": "1360:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1298:63:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1722,7 +1736,7 @@
               "parameters": [],
               "src": "1442:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1363:80:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1777,7 +1791,7 @@
               "parameters": [],
               "src": "1506:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1445:62:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1832,7 +1846,7 @@
               ],
               "src": "1546:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1509:47:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1887,7 +1901,7 @@
               "parameters": [],
               "src": "1608:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1558:51:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -1895,7 +1909,62 @@
           },
           {
             "body": null,
-            "id": 9004,
+            "id": 9006,
+            "implemented": false,
+            "isConstructor": false,
+            "isDeclaredConst": true,
+            "modifiers": [],
+            "name": "getTransferAmount",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 9002,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1637:2:32"
+            },
+            "payable": false,
+            "returnParameters": {
+              "id": 9005,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 9004,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 9006,
+                  "src": "1665:7:32",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 9003,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1665:7:32",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1664:9:32"
+            },
+            "scope": 9010,
+            "src": "1611:63:32",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "id": 9009,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": false,
@@ -1903,39 +1972,39 @@
             "name": "deleteSubmission",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 9002,
+              "id": 9007,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "1636:2:32"
+              "src": "1701:2:32"
             },
             "payable": false,
             "returnParameters": {
-              "id": 9003,
+              "id": 9008,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "1645:0:32"
+              "src": "1710:0:32"
             },
-            "scope": 9005,
-            "src": "1611:35:32",
+            "scope": 9010,
+            "src": "1676:35:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 9006,
-        "src": "26:1622:32"
+        "scope": 9011,
+        "src": "26:1687:32"
       }
     ],
-    "src": "0:1648:32"
+    "src": "0:1713:32"
   },
   "legacyAST": {
     "absolutePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/interfaces/IMatryxSubmission.sol",
     "exportedSymbols": {
       "IMatryxSubmission": [
-        9005
+        9010
       ]
     },
-    "id": 9006,
+    "id": 9011,
     "nodeType": "SourceUnit",
     "nodes": [
       {
@@ -1955,9 +2024,9 @@
         "contractKind": "interface",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 9005,
+        "id": 9010,
         "linearizedBaseContracts": [
-          9005
+          9010
         ],
         "name": "IMatryxSubmission",
         "nodeType": "ContractDefinition",
@@ -2011,7 +2080,7 @@
               ],
               "src": "106:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "57:59:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2066,7 +2135,7 @@
               ],
               "src": "162:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "118:54:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2148,7 +2217,7 @@
               ],
               "src": "240:6:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "174:73:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2203,7 +2272,7 @@
               ],
               "src": "292:8:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "249:52:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2258,7 +2327,7 @@
               ],
               "src": "347:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "303:54:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2313,7 +2382,7 @@
               ],
               "src": "413:7:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "359:62:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2378,7 +2447,7 @@
               ],
               "src": "471:11:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "423:60:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2443,7 +2512,7 @@
               ],
               "src": "535:11:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "485:62:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2498,7 +2567,7 @@
               ],
               "src": "600:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "549:61:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2553,7 +2622,7 @@
               ],
               "src": "661:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "612:59:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2581,7 +2650,7 @@
               "parameters": [],
               "src": "731:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "673:59:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -2636,7 +2705,7 @@
               "parameters": [],
               "src": "777:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "734:44:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -2691,7 +2760,7 @@
               "parameters": [],
               "src": "841:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "780:62:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -2746,7 +2815,7 @@
               "parameters": [],
               "src": "893:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "844:50:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -2854,7 +2923,7 @@
               ],
               "src": "966:12:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "896:83:32",
             "stateMutability": "view",
             "superFunction": null,
@@ -2909,7 +2978,7 @@
               "parameters": [],
               "src": "1032:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "981:52:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -2937,7 +3006,7 @@
               "parameters": [],
               "src": "1076:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1035:42:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -2965,7 +3034,7 @@
               "parameters": [],
               "src": "1119:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1079:41:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -3020,7 +3089,7 @@
               "parameters": [],
               "src": "1174:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1122:53:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -3075,7 +3144,7 @@
               "parameters": [],
               "src": "1236:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1177:60:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -3130,7 +3199,7 @@
               "parameters": [],
               "src": "1295:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1239:57:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -3185,7 +3254,7 @@
               "parameters": [],
               "src": "1360:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1298:63:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -3266,7 +3335,7 @@
               "parameters": [],
               "src": "1442:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1363:80:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -3321,7 +3390,7 @@
               "parameters": [],
               "src": "1506:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1445:62:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -3376,7 +3445,7 @@
               ],
               "src": "1546:9:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1509:47:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -3431,7 +3500,7 @@
               "parameters": [],
               "src": "1608:0:32"
             },
-            "scope": 9005,
+            "scope": 9010,
             "src": "1558:51:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
@@ -3439,7 +3508,62 @@
           },
           {
             "body": null,
-            "id": 9004,
+            "id": 9006,
+            "implemented": false,
+            "isConstructor": false,
+            "isDeclaredConst": true,
+            "modifiers": [],
+            "name": "getTransferAmount",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 9002,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1637:2:32"
+            },
+            "payable": false,
+            "returnParameters": {
+              "id": 9005,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 9004,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 9006,
+                  "src": "1665:7:32",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 9003,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1665:7:32",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1664:9:32"
+            },
+            "scope": 9010,
+            "src": "1611:63:32",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "id": 9009,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": false,
@@ -3447,30 +3571,30 @@
             "name": "deleteSubmission",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 9002,
+              "id": 9007,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "1636:2:32"
+              "src": "1701:2:32"
             },
             "payable": false,
             "returnParameters": {
-              "id": 9003,
+              "id": 9008,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "1645:0:32"
+              "src": "1710:0:32"
             },
-            "scope": 9005,
-            "src": "1611:35:32",
+            "scope": 9010,
+            "src": "1676:35:32",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 9006,
-        "src": "26:1622:32"
+        "scope": 9011,
+        "src": "26:1687:32"
       }
     ],
-    "src": "0:1648:32"
+    "src": "0:1713:32"
   },
   "compiler": {
     "name": "solc",
@@ -3478,5 +3602,5 @@
   },
   "networks": {},
   "schemaVersion": "2.0.0",
-  "updatedAt": "2018-04-02T06:05:35.724Z"
+  "updatedAt": "2018-04-02T07:02:57.385Z"
 }
