@@ -1,6 +1,5 @@
 var SafeMath = artifacts.require("../libraries/math/SafeMath.sol");
 var Strings = artifacts.require("../libraries/strings/strings.sol");
-var MatryxToken = artifacts.require("./MatryxToken/MatryxToken.sol");
 var SubmissionTrust = artifacts.require("SubmissionTrust");
 var RoundManagement = artifacts.require("./reputation/RoundManagement.sol");
 var MatryxPlatform = artifacts.require("MatryxPlatform");
