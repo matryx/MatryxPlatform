@@ -1,0 +1,763 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Matryx Platform &mdash; Matryx 0.2 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700&subset=latin,cyrillic' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Matryx 0.2 documentation" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="../index.html" class="fa fa-home"> Matryx</a>
+        
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tournaments.html">Creating a Tournament</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rounds.html">Creating and Administering a Round</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trust-and-reputation.html">Trust and Reputation System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../abi-and-geth-interaction.html">Interacting with the Platform via Geth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../faq.html#basic-questions">Basic Questions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../faq.html#advanced-questions">Advanced Questions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../versions.html">Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Source Code Documentation</a></li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">Matryx</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+    <li>Matryx Platform</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="../_sources/source/matryxplatform.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="matryx-platform">
+<h1>Matryx Platform<a class="headerlink" href="#matryx-platform" title="Permalink to this headline">¶</a></h1>
+<div class="highlight-Solidity"><div class="highlight"><pre><span></span><span class="kr">pragma solidity</span> <span class="o">^</span><span class="mi">0</span><span class="p">.</span><span class="mi">4</span><span class="p">.</span><span class="mi">18</span><span class="p">;</span>
+
+<span class="kn">import</span> <span class="s">&#39;../libraries/math/SafeMath.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;../libraries/math/SafeMath128.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;./MatryxOracleMessenger.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;../interfaces/IMatryxToken.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;../interfaces/IMatryxPeer.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;../interfaces/IMatryxPlatform.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;../interfaces/factories/IMatryxPeerFactory.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;../interfaces/factories/IMatryxTournamentFactory.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;../interfaces/IMatryxTournament.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;../interfaces/IMatryxRound.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;../interfaces/IMatryxSubmission.sol&#39;</span><span class="p">;</span>
+<span class="kn">import</span> <span class="s">&#39;./Ownable.sol&#39;</span><span class="p">;</span>
+
+<span class="c1">/// @title MatryxPlatform - The Matryx platform contract.</span>
+<span class="c1">/// @author Max Howard - &lt;max@nanome.ai&gt;, Sam Hessenauer - &lt;sam@nanome.ai&gt;</span>
+<span class="kd">contract</span> <span class="n">MatryxPlatform</span> <span class="kr">is</span> <span class="n">MatryxOracleMessenger</span><span class="p">,</span> <span class="n">IMatryxPlatform</span> <span class="p">{</span>
+  <span class="kn">using</span> <span class="n">SafeMath</span> <span class="k">for</span> <span class="kt">uint256</span><span class="p">;</span>
+  <span class="kn">using</span> <span class="n">SafeMath128</span> <span class="k">for</span> <span class="kt">uint128</span><span class="p">;</span>
+
+  <span class="c1">// TODO: condense and put in structs</span>
+  <span class="kt">address</span> <span class="kr">public</span> <span class="n">matryxTokenAddress</span><span class="p">;</span>
+  <span class="kt">address</span> <span class="n">matryxPeerFactoryAddress</span><span class="p">;</span>
+  <span class="kt">address</span> <span class="n">matryxTournamentFactoryAddress</span><span class="p">;</span>
+  <span class="kt">address</span> <span class="n">matryxSubmissionTrustLibAddress</span><span class="p">;</span>
+  <span class="kt">address</span> <span class="n">matryxRoundLibAddress</span><span class="p">;</span>
+
+  <span class="kt">address</span><span class="p">[]</span> <span class="kr">public</span> <span class="n">allTournaments</span><span class="p">;</span>
+  <span class="kt">bytes32</span> <span class="kr">public</span> <span class="n">hashOfTopCategory</span><span class="p">;</span>
+  <span class="kt">bytes32</span> <span class="kr">public</span> <span class="n">hashOfLastCategory</span><span class="p">;</span>
+  <span class="kd">mapping</span><span class="p">(</span><span class="kt">uint256</span><span class="o">=&gt;</span><span class="kt">bytes32</span><span class="p">)</span> <span class="kr">public</span> <span class="n">topCategoryByCount</span><span class="p">;</span>
+  <span class="kd">mapping</span><span class="p">(</span><span class="kt">bytes32</span><span class="o">=&gt;</span><span class="n">category</span><span class="p">)</span> <span class="kr">public</span> <span class="n">categoryIterator</span><span class="p">;</span>
+  <span class="kt">string</span><span class="p">[]</span> <span class="kr">public</span> <span class="n">categoryList</span><span class="p">;</span>
+
+  <span class="kd">mapping</span><span class="p">(</span><span class="kt">address</span><span class="o">=&gt;</span><span class="kt">bool</span><span class="p">)</span> <span class="n">peerExists</span><span class="p">;</span>
+  <span class="kd">mapping</span><span class="p">(</span><span class="kt">address</span><span class="o">=&gt;</span><span class="kt">address</span><span class="p">)</span> <span class="n">ownerToPeerAndPeerToOwner</span><span class="p">;</span>
+  <span class="kd">mapping</span><span class="p">(</span><span class="kt">address</span><span class="o">=&gt;</span><span class="kd">mapping</span><span class="p">(</span><span class="kt">address</span><span class="o">=&gt;</span><span class="kt">bool</span><span class="p">))</span> <span class="n">addressToOwnsSubmission</span><span class="p">;</span>
+  <span class="kd">mapping</span><span class="p">(</span><span class="kt">address</span><span class="o">=&gt;</span><span class="kt">bool</span><span class="p">)</span> <span class="n">tournamentExists</span><span class="p">;</span>
+  <span class="kd">mapping</span><span class="p">(</span><span class="kt">address</span><span class="o">=&gt;</span><span class="kt">bool</span><span class="p">)</span> <span class="n">submissionExists</span><span class="p">;</span>
+
+  <span class="kd">mapping</span><span class="p">(</span><span class="kt">address</span><span class="o">=&gt;</span><span class="kt">address</span><span class="p">[])</span> <span class="n">entrantToTournamentArray</span><span class="p">;</span>
+  <span class="kd">mapping</span><span class="p">(</span><span class="kt">address</span><span class="o">=&gt;</span><span class="kt">address</span><span class="p">[])</span> <span class="n">ownerToSubmissionArray</span><span class="p">;</span>
+  <span class="kd">mapping</span><span class="p">(</span><span class="kt">address</span><span class="o">=&gt;</span><span class="kd">mapping</span><span class="p">(</span><span class="kt">address</span><span class="o">=&gt;</span><span class="n">uint256_optional</span><span class="p">))</span>  <span class="n">ownerToSubmissionToSubmissionIndex</span><span class="p">;</span>
+
+  <span class="n">uint256_optional</span> <span class="n">submissionGratitude</span> <span class="o">=</span> <span class="n">uint256_optional</span><span class="p">({</span><span class="n">exists</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span> <span class="nb">value</span><span class="o">:</span> <span class="mi">2</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="mi">17</span><span class="p">});</span>
+
+  <span class="kd">function</span> <span class="n">MatryxPlatform</span><span class="p">(</span><span class="kt">address</span> <span class="n">_matryxTokenAddress</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_matryxPeerFactoryAddress</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_matryxTournamentFactoryAddress</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_matryxSubmissionTrustLibAddress</span><span class="p">)</span> <span class="kr">public</span>
+  <span class="p">{</span>
+    <span class="n">matryxTokenAddress</span> <span class="o">=</span> <span class="n">_matryxTokenAddress</span><span class="p">;</span>
+    <span class="n">matryxPeerFactoryAddress</span> <span class="o">=</span> <span class="n">_matryxPeerFactoryAddress</span><span class="p">;</span>
+    <span class="n">matryxTournamentFactoryAddress</span> <span class="o">=</span> <span class="n">_matryxTournamentFactoryAddress</span><span class="p">;</span>
+    <span class="n">matryxSubmissionTrustLibAddress</span> <span class="o">=</span> <span class="n">_matryxSubmissionTrustLibAddress</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="cm">/*</span>
+<span class="cm">   * Structs</span>
+<span class="cm">   */</span>
+
+  <span class="kd">struct</span> <span class="n">uint256_optional</span>
+  <span class="p">{</span>
+    <span class="kt">bool</span> <span class="n">exists</span><span class="p">;</span>
+    <span class="kt">uint256</span> <span class="nb">value</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">struct</span> <span class="n">category</span>
+  <span class="p">{</span>
+    <span class="kt">string</span> <span class="n">name</span><span class="p">;</span>
+    <span class="kt">uint128</span> <span class="n">count</span><span class="p">;</span>
+    <span class="kt">bytes32</span> <span class="n">prev</span><span class="p">;</span>
+    <span class="kt">bytes32</span> <span class="n">next</span><span class="p">;</span>
+    <span class="kt">address</span><span class="p">[]</span> <span class="n">tournaments</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="cm">/*</span>
+<span class="cm">   * Events</span>
+<span class="cm">   */</span>
+
+  <span class="kd">event</span> <span class="n">TournamentCreated</span><span class="p">(</span><span class="kt">string</span> <span class="n">_discipline</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_owner</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">,</span> <span class="kt">string</span> <span class="n">_tournamentName</span><span class="p">,</span> <span class="kt">bytes</span> <span class="n">_externalAddress</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_MTXReward</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_entryFee</span><span class="p">);</span>
+  <span class="kd">event</span> <span class="n">TournamentOpened</span><span class="p">(</span><span class="kt">address</span> <span class="n">_owner</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">,</span> <span class="kt">string</span> <span class="n">_tournamentName</span><span class="p">,</span> <span class="kt">bytes</span> <span class="n">_externalAddress</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_MTXReward</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_entryFee</span><span class="p">);</span>
+  <span class="kd">event</span> <span class="n">TournamentClosed</span><span class="p">(</span><span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_finalRoundNumber</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_winningSubmissionAddress</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_MTXReward</span><span class="p">);</span>
+  <span class="kd">event</span> <span class="n">UserEnteredTournament</span><span class="p">(</span><span class="kt">address</span> <span class="n">_entrant</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">);</span>
+  <span class="kd">event</span> <span class="n">QueryID</span><span class="p">(</span><span class="kt">string</span> <span class="n">queryID</span><span class="p">);</span>
+  <span class="c1">/// @dev Allows tournaments to invoke tournamentOpened events on the platform.</span>
+  <span class="c1">/// @param _owner Owner of the tournament.</span>
+  <span class="c1">/// @param _tournamentAddress Address of the tournament.</span>
+  <span class="c1">/// @param _tournamentName Name of the tournament.</span>
+  <span class="c1">/// @param _externalAddress External address of the tournament.</span>
+  <span class="c1">/// @param _MTXReward Reward for winning the tournament.</span>
+  <span class="c1">/// @param _entryFee Fee for entering into the tournament.</span>
+  <span class="kd">function</span> <span class="n">invokeTournamentOpenedEvent</span><span class="p">(</span><span class="kt">address</span> <span class="n">_owner</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">,</span> <span class="kt">string</span> <span class="n">_tournamentName</span><span class="p">,</span> <span class="kt">bytes</span> <span class="n">_externalAddress</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_MTXReward</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_entryFee</span><span class="p">)</span> <span class="kr">public</span> <span class="n">onlyTournament</span>
+  <span class="p">{</span>
+    <span class="n">TournamentOpened</span><span class="p">(</span><span class="n">_owner</span><span class="p">,</span> <span class="n">_tournamentAddress</span><span class="p">,</span> <span class="n">_tournamentName</span><span class="p">,</span> <span class="n">_externalAddress</span><span class="p">,</span> <span class="n">_MTXReward</span><span class="p">,</span> <span class="n">_entryFee</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="c1">/// @dev Allows tournaments to invoke tournamentClosed events on the platform.</span>
+  <span class="c1">/// @param _tournamentAddress Address of the tournament.</span>
+  <span class="c1">/// @param _finalRoundNumber Index of the round containing the winning submission.</span>
+  <span class="c1">/// @param _winningSubmissionAddress Address of the winning submission.</span>
+  <span class="kd">function</span> <span class="n">invokeTournamentClosedEvent</span><span class="p">(</span><span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_finalRoundNumber</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_winningSubmissionAddress</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_MTXReward</span><span class="p">)</span> <span class="kr">public</span> <span class="n">onlyTournament</span>
+  <span class="p">{</span>
+    <span class="n">TournamentClosed</span><span class="p">(</span><span class="n">_tournamentAddress</span><span class="p">,</span> <span class="n">_finalRoundNumber</span><span class="p">,</span> <span class="n">_winningSubmissionAddress</span><span class="p">,</span> <span class="n">_MTXReward</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="cm">/* </span>
+<span class="cm">   * Modifiers</span>
+<span class="cm">   */</span>
+
+  <span class="kd">modifier</span> <span class="n">onlyTournament</span>
+  <span class="p">{</span>
+    <span class="nb">require</span><span class="p">(</span><span class="n">tournamentExists</span><span class="p">[</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">]);</span>
+    <span class="kr">_</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">modifier</span> <span class="n">onlySubmission</span>
+  <span class="p">{</span>
+    <span class="nb">require</span><span class="p">(</span><span class="n">submissionExists</span><span class="p">[</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">]);</span>
+    <span class="kr">_</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">modifier</span> <span class="n">onlyPeerLinked</span><span class="p">(</span><span class="kt">address</span> <span class="n">_sender</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="nb">require</span><span class="p">(</span><span class="n">hasPeer</span><span class="p">(</span><span class="n">_sender</span><span class="p">));</span>
+    <span class="kr">_</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="cm">/* </span>
+<span class="cm">   * MTX Balance Methods</span>
+<span class="cm">   */</span>
+
+  <span class="c1">/// @dev Prepares the user&#39;s MTX balance, allowing them to use the platform.</span>
+  <span class="c1">/// @param _toIgnore Request bytes (deprecated).</span>
+  <span class="kd">function</span> <span class="n">prepareBalance</span><span class="p">(</span><span class="kt">uint256</span> <span class="n">_toIgnore</span><span class="p">)</span> <span class="kr">public</span>
+  <span class="p">{</span>   
+      <span class="c1">// Make sure that the user has not already attempted to prepare their balance</span>
+      <span class="kt">uint256</span> <span class="n">qID</span> <span class="o">=</span> <span class="n">fromQuerierToQueryID</span><span class="p">[</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">];</span>
+      <span class="kt">uint256</span> <span class="n">queryResponse</span> <span class="o">=</span> <span class="n">queryResponses</span><span class="p">[</span><span class="n">qID</span><span class="p">];</span>
+      <span class="nb">require</span><span class="p">(</span><span class="n">queryResponse</span> <span class="o">==</span> <span class="mh">0x0</span><span class="p">);</span>
+
+      <span class="nb">this</span><span class="p">.</span><span class="n">Query</span><span class="p">(</span><span class="kt">bytes32</span><span class="p">(</span><span class="n">_toIgnore</span><span class="p">),</span> <span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="c1">/// @dev Returns whether or not the user can use the platform.</span>
+  <span class="c1">/// @return Whether or not user has a positive balance.</span>
+  <span class="kd">function</span> <span class="n">balanceIsNonZero</span><span class="p">()</span> <span class="kr">public</span> <span class="kr">view</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span><span class="p">)</span>
+  <span class="p">{</span>
+      <span class="kt">uint</span> <span class="nb">balance</span> <span class="o">=</span> <span class="n">latestResponseFromOracle</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">);</span>
+      <span class="k">return</span> <span class="nb">balance</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="c1">/// @dev Returns the user&#39;s balance</span>
+  <span class="c1">/// @return Sender&#39;s MTX balance.</span>
+  <span class="kd">function</span> <span class="n">getBalance</span><span class="p">()</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">uint256</span><span class="p">)</span>
+  <span class="p">{</span>
+      <span class="kt">uint256</span> <span class="nb">balance</span> <span class="o">=</span> <span class="n">latestResponseFromOracle</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">);</span>
+      <span class="k">return</span> <span class="nb">balance</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="cm">/*</span>
+<span class="cm">   * State Maintenance Methods</span>
+<span class="cm">   */</span>
+
+  <span class="c1">// @dev Sends out reference requests for a particular submission.</span>
+  <span class="c1">// @param _references Reference whose authors will be sent requests.</span>
+  <span class="c1">// @returns Whether or not all references were successfully sent a request.</span>
+  <span class="kd">function</span> <span class="n">handleReferenceRequestsForSubmission</span><span class="p">(</span><span class="kt">address</span> <span class="n">_submissionAddress</span><span class="p">,</span> <span class="kt">address</span><span class="p">[]</span> <span class="n">_references</span><span class="p">)</span> <span class="kr">public</span> <span class="n">onlyTournament</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span><span class="p">)</span> 
+  <span class="p">{</span>
+    <span class="k">for</span><span class="p">(</span><span class="kt">uint256</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">_references</span><span class="p">.</span><span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="kt">address</span> <span class="n">_referenceAddress</span> <span class="o">=</span> <span class="n">_references</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+
+      <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">isSubmission</span><span class="p">(</span><span class="n">_referenceAddress</span><span class="p">))</span>
+      <span class="p">{</span>
+        <span class="c1">// TODO: Introduce uint error codes</span>
+        <span class="c1">// for returning things like &quot;Reference _ is not submission&quot;</span>
+        <span class="k">continue</span><span class="p">;</span>
+      <span class="p">}</span>
+
+      <span class="n">IMatryxSubmission</span> <span class="n">submission</span> <span class="o">=</span> <span class="n">IMatryxSubmission</span><span class="p">(</span><span class="n">_referenceAddress</span><span class="p">);</span>
+      <span class="kt">address</span> <span class="n">author</span> <span class="o">=</span> <span class="n">submission</span><span class="p">.</span><span class="n">getAuthor</span><span class="p">();</span>
+      <span class="n">IMatryxPeer</span><span class="p">(</span><span class="n">author</span><span class="p">).</span><span class="n">receiveReferenceRequest</span><span class="p">(</span><span class="n">_submissionAddress</span><span class="p">,</span> <span class="n">_referenceAddress</span><span class="p">);</span>
+      <span class="n">submission</span><span class="p">.</span><span class="n">receiveReferenceRequest</span><span class="p">();</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="c1">// @dev Sends out a reference request for a submission (must be called by the submission).</span>
+  <span class="c1">// @param _reference Reference whose author will be sent a request.</span>
+  <span class="c1">// @returns Whether or not all references were successfully sent a request.</span>
+  <span class="kd">function</span> <span class="n">handleReferenceRequestForSubmission</span><span class="p">(</span><span class="kt">address</span> <span class="n">_reference</span><span class="p">)</span> <span class="kr">public</span> <span class="n">onlySubmission</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span><span class="p">)</span>
+  <span class="p">{</span>
+      <span class="nb">require</span><span class="p">(</span><span class="n">isSubmission</span><span class="p">(</span><span class="n">_reference</span><span class="p">));</span>
+      <span class="n">IMatryxSubmission</span> <span class="n">submission</span> <span class="o">=</span> <span class="n">IMatryxSubmission</span><span class="p">(</span><span class="n">_reference</span><span class="p">);</span>
+      <span class="kt">address</span> <span class="n">author</span> <span class="o">=</span> <span class="n">submission</span><span class="p">.</span><span class="n">getAuthor</span><span class="p">();</span>
+      <span class="n">IMatryxPeer</span><span class="p">(</span><span class="n">author</span><span class="p">).</span><span class="n">receiveReferenceRequest</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">,</span> <span class="n">_reference</span><span class="p">);</span>
+      <span class="n">submission</span><span class="p">.</span><span class="n">receiveReferenceRequest</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">handleCancelledReferenceRequestForSubmission</span><span class="p">(</span><span class="kt">address</span> <span class="n">_reference</span><span class="p">)</span> <span class="kr">public</span> <span class="n">onlySubmission</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="nb">require</span><span class="p">(</span><span class="n">isSubmission</span><span class="p">(</span><span class="n">_reference</span><span class="p">));</span>
+    <span class="n">IMatryxSubmission</span> <span class="n">submission</span> <span class="o">=</span> <span class="n">IMatryxSubmission</span><span class="p">(</span><span class="n">_reference</span><span class="p">);</span>
+    <span class="kt">address</span> <span class="n">author</span> <span class="o">=</span> <span class="n">submission</span><span class="p">.</span><span class="n">getAuthor</span><span class="p">();</span>
+    <span class="n">IMatryxPeer</span><span class="p">(</span><span class="n">author</span><span class="p">).</span><span class="n">receiveCancelledReferenceRequest</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">,</span> <span class="n">_reference</span><span class="p">);</span>
+    <span class="n">submission</span><span class="p">.</span><span class="n">cancelReferenceRequest</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">updateUsersTournaments</span><span class="p">(</span><span class="kt">address</span> <span class="n">_owner</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_tournament</span><span class="p">)</span> <span class="kr">internal</span>
+  <span class="p">{</span>
+    <span class="n">entrantToTournamentArray</span><span class="p">[</span><span class="n">_owner</span><span class="p">].</span><span class="n">push</span><span class="p">(</span><span class="n">_tournament</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">updateSubmissions</span><span class="p">(</span><span class="kt">address</span> <span class="n">_owner</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_submission</span><span class="p">)</span> <span class="kr">public</span> <span class="n">onlyTournament</span>
+  <span class="p">{</span>
+    <span class="n">ownerToSubmissionToSubmissionIndex</span><span class="p">[</span><span class="n">_owner</span><span class="p">][</span><span class="n">_submission</span><span class="p">]</span> <span class="o">=</span> <span class="n">uint256_optional</span><span class="p">({</span><span class="n">exists</span><span class="o">:</span><span class="kc">true</span><span class="p">,</span> <span class="nb">value</span><span class="o">:</span><span class="n">ownerToSubmissionArray</span><span class="p">[</span><span class="n">_owner</span><span class="p">].</span><span class="n">length</span><span class="p">});</span>
+    <span class="n">ownerToSubmissionArray</span><span class="p">[</span><span class="n">_owner</span><span class="p">].</span><span class="n">push</span><span class="p">(</span><span class="n">_submission</span><span class="p">);</span>
+    <span class="n">addressToOwnsSubmission</span><span class="p">[</span><span class="n">_owner</span><span class="p">][</span><span class="n">_submission</span><span class="p">]</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="n">submissionExists</span><span class="p">[</span><span class="n">_submission</span><span class="p">]</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">removeSubmission</span><span class="p">(</span><span class="kt">address</span> <span class="n">_submissionAddress</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">)</span> <span class="kr">public</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="nb">require</span><span class="p">(</span><span class="n">addressToOwnsSubmission</span><span class="p">[</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">][</span><span class="n">_submissionAddress</span><span class="p">]);</span>
+    <span class="nb">require</span><span class="p">(</span><span class="n">tournamentExists</span><span class="p">[</span><span class="n">_tournamentAddress</span><span class="p">]);</span>
+    
+    <span class="k">if</span><span class="p">(</span><span class="n">submissionExists</span><span class="p">[</span><span class="n">_submissionAddress</span><span class="p">])</span>
+    <span class="p">{</span>
+      <span class="n">IMatryxSubmission</span> <span class="n">submission</span> <span class="o">=</span> <span class="n">IMatryxSubmission</span><span class="p">(</span><span class="n">_submissionAddress</span><span class="p">);</span>
+      <span class="kt">address</span> <span class="n">owner</span> <span class="o">=</span> <span class="n">Ownable</span><span class="p">(</span><span class="n">_submissionAddress</span><span class="p">).</span><span class="n">getOwner</span><span class="p">();</span>
+      <span class="kt">uint256</span> <span class="n">submissionIndex</span> <span class="o">=</span> <span class="n">ownerToSubmissionToSubmissionIndex</span><span class="p">[</span><span class="n">owner</span><span class="p">][</span><span class="n">_submissionAddress</span><span class="p">].</span><span class="nb">value</span><span class="p">;</span>
+
+      <span class="n">submissionExists</span><span class="p">[</span><span class="n">_submissionAddress</span><span class="p">]</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+      <span class="k">delete</span> <span class="n">ownerToSubmissionArray</span><span class="p">[</span><span class="n">owner</span><span class="p">][</span><span class="n">submissionIndex</span><span class="p">];</span>
+      <span class="k">delete</span> <span class="n">ownerToSubmissionToSubmissionIndex</span><span class="p">[</span><span class="n">owner</span><span class="p">][</span><span class="n">_submissionAddress</span><span class="p">];</span>
+
+      <span class="n">IMatryxTournament</span><span class="p">(</span><span class="n">_tournamentAddress</span><span class="p">).</span><span class="n">removeSubmission</span><span class="p">(</span><span class="n">_submissionAddress</span><span class="p">,</span> <span class="n">owner</span><span class="p">);</span>
+      <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">addTournamentToCategory</span><span class="p">(</span><span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">,</span> <span class="kt">string</span> <span class="n">_category</span><span class="p">)</span> <span class="kr">internal</span>
+  <span class="p">{</span>
+    <span class="kt">bytes32</span> <span class="n">hashOfCategory</span> <span class="o">=</span> <span class="nf">keccak256</span><span class="p">(</span><span class="n">_category</span><span class="p">);</span>
+    <span class="c1">// If this is the first tournament in its category</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">// Push the new category to a list of categories</span>
+      <span class="n">categoryList</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">_category</span><span class="p">);</span>
+
+      <span class="c1">// If its the first category ever</span>
+      <span class="k">if</span><span class="p">(</span><span class="n">hashOfTopCategory</span> <span class="o">==</span> <span class="mh">0x0</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="c1">// Update the top category pointer</span>
+        <span class="n">hashOfTopCategory</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+        <span class="n">hashOfLastCategory</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+        <span class="c1">// Create a new entry in the iterator for it and don&#39;t store previous or next pointers</span>
+        <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">]</span> <span class="o">=</span> <span class="n">category</span><span class="p">({</span><span class="n">name</span><span class="o">:</span> <span class="n">_category</span><span class="p">,</span> <span class="n">count</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">prev</span><span class="o">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">next</span><span class="o">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tournaments</span><span class="o">:</span> <span class="k">new</span> <span class="kt">address</span><span class="p">[](</span><span class="mi">0</span><span class="p">)});</span>
+        <span class="c1">// Store the mapping from count 1 to this category</span>
+        <span class="n">topCategoryByCount</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+      <span class="p">{</span>
+        <span class="c1">// If this is not the first category ever,</span>
+        <span class="c1">// Create a new iterator entry, complete with a prev pointer to the previous last category</span>
+        <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">]</span> <span class="o">=</span> <span class="n">category</span><span class="p">({</span><span class="n">name</span><span class="o">:</span> <span class="n">_category</span><span class="p">,</span> <span class="n">count</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">prev</span><span class="o">:</span> <span class="n">hashOfLastCategory</span><span class="p">,</span> <span class="n">next</span><span class="o">:</span> <span class="mh">0x0</span><span class="p">,</span> <span class="n">tournaments</span><span class="o">:</span> <span class="k">new</span> <span class="kt">address</span><span class="p">[](</span><span class="mi">0</span><span class="p">)});</span>
+        <span class="c1">// Update that previous last category&#39;s next pointer (there&#39;s one more after it now)</span>
+        <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfLastCategory</span><span class="p">].</span><span class="n">next</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="n">topCategoryByCount</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mh">0x0</span><span class="p">)</span>
+        <span class="p">{</span>
+          <span class="n">topCategoryByCount</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+
+      <span class="c1">// Push to the tournaments list for this category</span>
+      <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">tournaments</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">_tournamentAddress</span><span class="p">);</span>
+      <span class="c1">// Update the last category pointer</span>
+      <span class="n">hashOfLastCategory</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+      <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">tournaments</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">_tournamentAddress</span><span class="p">);</span>
+
+    <span class="kt">uint256</span> <span class="n">categoryCount</span> <span class="o">=</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">count</span><span class="p">;</span>
+    <span class="c1">// If this category has the top relative count (category.prev.count &gt; category.count):</span>
+    <span class="c1">//  If category.next exists, the top category for our previous count becomes category.next,</span>
+    <span class="c1">//  otherwise (category.next doesn&#39;t exist), the top category for our previous count</span>
+    <span class="c1">//  we set to 0x0.</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">topCategoryByCount</span><span class="p">[</span><span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">count</span><span class="p">]</span> <span class="o">==</span> <span class="n">hashOfCategory</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="k">if</span><span class="p">(</span><span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">next</span> <span class="o">!=</span> <span class="mh">0x0</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">topCategoryByCount</span><span class="p">[</span><span class="n">categoryCount</span><span class="p">]</span> <span class="o">=</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">next</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+      <span class="p">{</span>
+        <span class="n">topCategoryByCount</span><span class="p">[</span><span class="n">categoryCount</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">uint128</span> <span class="n">newCount</span> <span class="o">=</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">count</span> <span class="o">=</span> <span class="n">newCount</span><span class="p">;</span>
+
+    <span class="c1">// If the top category for our new count is not defined, </span>
+    <span class="c1">// define it as this category.</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">topCategoryByCount</span><span class="p">[</span><span class="n">newCount</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">topCategoryByCount</span><span class="p">[</span><span class="n">newCount</span><span class="p">]</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// If the count of the category is now greater than the previous category</span>
+    <span class="c1">// swap it with the top category of its count.</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">prev</span> <span class="o">!=</span> <span class="mh">0x0</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="k">if</span><span class="p">(</span><span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">count</span> <span class="o">&gt;</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">prev</span><span class="p">].</span><span class="n">count</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="c1">// define A as the top category of its count</span>
+        <span class="kt">bytes32</span> <span class="n">hashOfTopA</span> <span class="o">=</span> <span class="n">topCategoryByCount</span><span class="p">[</span><span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">count</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">hashOfTopA</span> <span class="o">==</span> <span class="n">hashOfTopCategory</span><span class="p">)</span>
+        <span class="p">{</span>
+          <span class="n">hashOfTopCategory</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="n">hashOfCategory</span> <span class="o">==</span> <span class="n">hashOfLastCategory</span><span class="p">)</span>
+        <span class="p">{</span>
+          <span class="n">hashOfLastCategory</span> <span class="o">=</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">].</span><span class="n">prev</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="n">category</span> <span class="kr">storage</span> <span class="n">A</span> <span class="o">=</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfTopA</span><span class="p">];</span>
+        <span class="n">category</span> <span class="kr">storage</span> <span class="n">B</span> <span class="o">=</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="n">hashOfCategory</span><span class="p">];</span>
+
+        <span class="kt">bool</span> <span class="n">adjacent</span> <span class="o">=</span> <span class="n">A</span><span class="p">.</span><span class="n">next</span> <span class="o">==</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+        <span class="kt">bytes32</span> <span class="n">Bprev</span> <span class="o">=</span> <span class="n">B</span><span class="p">.</span><span class="n">prev</span><span class="p">;</span>
+        <span class="kt">bytes32</span> <span class="n">Anext</span> <span class="o">=</span> <span class="n">A</span><span class="p">.</span><span class="n">next</span><span class="p">;</span>
+
+        <span class="n">A</span><span class="p">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">B</span><span class="p">.</span><span class="n">next</span><span class="p">;</span>
+        <span class="n">B</span><span class="p">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">A</span><span class="p">.</span><span class="n">prev</span><span class="p">;</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="n">A</span><span class="p">.</span><span class="n">prev</span> <span class="o">!=</span> <span class="mh">0x0</span><span class="p">)</span>
+        <span class="p">{</span>
+          <span class="n">categoryIterator</span><span class="p">[</span><span class="n">A</span><span class="p">.</span><span class="n">prev</span><span class="p">].</span><span class="n">next</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">B</span><span class="p">.</span><span class="n">next</span> <span class="o">!=</span> <span class="mh">0x0</span><span class="p">)</span>
+        <span class="p">{</span>
+          <span class="n">categoryIterator</span><span class="p">[</span><span class="n">B</span><span class="p">.</span><span class="n">next</span><span class="p">].</span><span class="n">prev</span> <span class="o">=</span> <span class="n">hashOfTopA</span><span class="p">;</span>
+        <span class="p">}</span>
+        
+        <span class="k">if</span><span class="p">(</span><span class="n">adjacent</span><span class="p">)</span>
+        <span class="p">{</span>
+          <span class="n">A</span><span class="p">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+          <span class="n">B</span><span class="p">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">hashOfTopA</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+          <span class="n">A</span><span class="p">.</span><span class="n">prev</span> <span class="o">=</span> <span class="n">Bprev</span><span class="p">;</span>
+          <span class="n">B</span><span class="p">.</span><span class="n">next</span> <span class="o">=</span> <span class="n">Anext</span><span class="p">;</span>
+          <span class="k">if</span><span class="p">(</span><span class="n">Bprev</span> <span class="o">!=</span> <span class="mh">0x0</span><span class="p">)</span>
+          <span class="p">{</span>
+            <span class="n">categoryIterator</span><span class="p">[</span><span class="n">Bprev</span><span class="p">].</span><span class="n">next</span> <span class="o">=</span> <span class="n">hashOfTopA</span><span class="p">;</span>
+          <span class="p">}</span>
+          <span class="k">if</span><span class="p">(</span><span class="n">Anext</span> <span class="o">!=</span> <span class="mh">0x0</span><span class="p">)</span>
+          <span class="p">{</span>
+            <span class="n">categoryIterator</span><span class="p">[</span><span class="n">Anext</span><span class="p">].</span><span class="n">prev</span> <span class="o">=</span> <span class="n">hashOfCategory</span><span class="p">;</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">getTournamentsByCategory</span><span class="p">(</span><span class="kt">string</span> <span class="n">_category</span><span class="p">)</span> <span class="kr">external</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span><span class="p">[])</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="nf">keccak256</span><span class="p">(</span><span class="n">_category</span><span class="p">)].</span><span class="n">tournaments</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">getCategoryCount</span><span class="p">(</span><span class="kt">string</span> <span class="n">_category</span><span class="p">)</span> <span class="kr">external</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">uint256</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="nf">keccak256</span><span class="p">(</span><span class="n">_category</span><span class="p">)].</span><span class="n">count</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">getTopCategory</span><span class="p">(</span><span class="kt">uint256</span> <span class="n">_index</span><span class="p">)</span> <span class="kr">external</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">string</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="kt">bytes32</span> <span class="n">categoryHash</span> <span class="o">=</span> <span class="n">hashOfTopCategory</span><span class="p">;</span>
+    <span class="kt">string</span> <span class="n">categoryName</span>  <span class="o">=</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="n">categoryHash</span><span class="p">].</span><span class="n">name</span><span class="p">;</span>
+
+    <span class="k">for</span><span class="p">(</span><span class="kt">uint256</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">_index</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">categoryHash</span> <span class="o">=</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="n">categoryHash</span><span class="p">].</span><span class="n">next</span><span class="p">;</span>
+      <span class="n">categoryName</span> <span class="o">=</span> <span class="n">categoryIterator</span><span class="p">[</span><span class="n">categoryHash</span><span class="p">].</span><span class="n">name</span><span class="p">;</span>
+    
+      <span class="k">if</span><span class="p">(</span><span class="n">categoryHash</span> <span class="o">==</span> <span class="mh">0x0</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">categoryName</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">switchTournamentCategory</span><span class="p">(</span><span class="kt">string</span> <span class="n">discipline</span><span class="p">)</span> <span class="n">onlyTournament</span> <span class="kr">public</span>
+  <span class="p">{</span>
+    <span class="nb">revert</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="cm">/* </span>
+<span class="cm">   * Tournament Entry Methods</span>
+<span class="cm">   */</span>
+
+  <span class="c1">/// @dev Enter the user into a tournament and charge the entry fee.</span>
+  <span class="c1">/// @param _tournamentAddress Address of the tournament to enter into.</span>
+  <span class="c1">/// @return _success Whether or not user was successfully entered into the tournament.</span>
+  <span class="kd">function</span> <span class="n">enterTournament</span><span class="p">(</span><span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">)</span> <span class="kr">public</span> <span class="n">onlyPeerLinked</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">)</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span> <span class="n">_success</span><span class="p">)</span>
+  <span class="p">{</span>
+      <span class="c1">// TODO: Consider scheme: </span>
+      <span class="c1">// submission owner: peer linked account</span>
+      <span class="c1">// submission author: peer</span>
+      <span class="nb">require</span><span class="p">(</span><span class="n">tournamentExists</span><span class="p">[</span><span class="n">_tournamentAddress</span><span class="p">]);</span>
+      
+      <span class="n">IMatryxTournament</span> <span class="n">tournament</span> <span class="o">=</span> <span class="n">IMatryxTournament</span><span class="p">(</span><span class="n">_tournamentAddress</span><span class="p">);</span>
+
+      <span class="kt">bool</span> <span class="n">success</span> <span class="o">=</span> <span class="n">tournament</span><span class="p">.</span><span class="n">enterUserInTournament</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">);</span>
+      <span class="k">if</span><span class="p">(</span><span class="n">success</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">updateUsersTournaments</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">,</span> <span class="n">_tournamentAddress</span><span class="p">);</span>
+        <span class="n">UserEnteredTournament</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">,</span> <span class="n">_tournamentAddress</span><span class="p">);</span>
+      <span class="p">}</span>
+
+      <span class="k">return</span> <span class="n">success</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="cm">/* </span>
+<span class="cm">   * Tournament Admin Methods</span>
+<span class="cm">   */</span>
+
+  <span class="c1">/// @dev Create a new tournament.</span>
+  <span class="c1">/// @param _tournamentName Name of the new tournament.</span>
+  <span class="c1">/// @param _externalAddress Off-chain content hash of tournament details (ipfs hash)</span>
+  <span class="c1">/// @param _BountyMTX Total tournament reward in MTX.</span>
+  <span class="c1">/// @param _entryFee Fee to charge participant upon entering into tournament.</span>
+  <span class="c1">/// @return _tournamentAddress Address of the newly created tournament</span>
+  <span class="kd">function</span> <span class="n">createTournament</span><span class="p">(</span><span class="kt">string</span> <span class="n">_category</span><span class="p">,</span> <span class="kt">string</span> <span class="n">_tournamentName</span><span class="p">,</span> <span class="kt">bytes</span> <span class="n">_externalAddress</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_BountyMTX</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">_entryFee</span><span class="p">)</span> <span class="kr">public</span> <span class="n">onlyPeerLinked</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">)</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">IMatryxToken</span> <span class="n">matryxToken</span> <span class="o">=</span> <span class="n">IMatryxToken</span><span class="p">(</span><span class="n">matryxTokenAddress</span><span class="p">);</span>
+    <span class="c1">// Check that the platform has a sufficient allowance to</span>
+    <span class="c1">// transfer the reward from the tournament creator to itself</span>
+    <span class="nb">require</span><span class="p">(</span><span class="n">matryxToken</span><span class="p">.</span><span class="n">allowance</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">,</span> <span class="nb">this</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">_BountyMTX</span><span class="p">);</span>
+
+    <span class="n">IMatryxTournamentFactory</span> <span class="n">tournamentFactory</span> <span class="o">=</span> <span class="n">IMatryxTournamentFactory</span><span class="p">(</span><span class="n">matryxTournamentFactoryAddress</span><span class="p">);</span>
+    <span class="kt">address</span> <span class="n">newTournament</span> <span class="o">=</span> <span class="n">tournamentFactory</span><span class="p">.</span><span class="n">createTournament</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">,</span> <span class="n">_category</span><span class="p">,</span> <span class="n">_tournamentName</span><span class="p">,</span> <span class="n">_externalAddress</span><span class="p">,</span> <span class="n">_BountyMTX</span><span class="p">,</span> <span class="n">_entryFee</span><span class="p">);</span>
+    <span class="n">TournamentCreated</span><span class="p">(</span><span class="n">_category</span><span class="p">,</span> <span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">,</span> <span class="n">newTournament</span><span class="p">,</span> <span class="n">_tournamentName</span><span class="p">,</span> <span class="n">_externalAddress</span><span class="p">,</span> <span class="n">_BountyMTX</span><span class="p">,</span> <span class="n">_entryFee</span><span class="p">);</span>
+    
+    <span class="n">addTournamentToCategory</span><span class="p">(</span><span class="n">newTournament</span><span class="p">,</span> <span class="n">_category</span><span class="p">);</span>
+
+    <span class="c1">// Transfer the MTX reward to the tournament.</span>
+    <span class="kt">bool</span> <span class="n">transferSuccess</span> <span class="o">=</span> <span class="n">matryxToken</span><span class="p">.</span><span class="n">transferFrom</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">,</span> <span class="n">newTournament</span><span class="p">,</span> <span class="n">_BountyMTX</span><span class="p">);</span>
+    <span class="nb">require</span><span class="p">(</span><span class="n">transferSuccess</span><span class="p">);</span>
+    
+    <span class="c1">// update data structures</span>
+    <span class="n">allTournaments</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">newTournament</span><span class="p">);</span>
+    <span class="n">tournamentExists</span><span class="p">[</span><span class="n">newTournament</span><span class="p">]</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="n">newTournament</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="cm">/*</span>
+<span class="cm">   * Access Control Methods</span>
+<span class="cm">   */</span>
+
+  <span class="kd">function</span> <span class="n">createPeer</span><span class="p">()</span> <span class="kr">public</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="nb">require</span><span class="p">(</span><span class="n">ownerToPeerAndPeerToOwner</span><span class="p">[</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">]</span> <span class="o">==</span> <span class="mh">0x0</span><span class="p">);</span>
+    <span class="n">IMatryxPeerFactory</span> <span class="n">peerFactory</span> <span class="o">=</span> <span class="n">IMatryxPeerFactory</span><span class="p">(</span><span class="n">matryxPeerFactoryAddress</span><span class="p">);</span>
+    <span class="kt">address</span> <span class="n">peer</span> <span class="o">=</span> <span class="n">peerFactory</span><span class="p">.</span><span class="n">createPeer</span><span class="p">(</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">);</span>
+    <span class="n">peerExists</span><span class="p">[</span><span class="n">peer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="n">ownerToPeerAndPeerToOwner</span><span class="p">[</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">]</span> <span class="o">=</span> <span class="n">peer</span><span class="p">;</span>
+    <span class="n">ownerToPeerAndPeerToOwner</span><span class="p">[</span><span class="n">peer</span><span class="p">]</span> <span class="o">=</span> <span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">isPeer</span><span class="p">(</span><span class="kt">address</span> <span class="n">_peerAddress</span><span class="p">)</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">peerExists</span><span class="p">[</span><span class="n">_peerAddress</span><span class="p">];</span>
+  <span class="p">}</span>
+
+  <span class="c1">// TODO: add constant</span>
+  <span class="kd">function</span> <span class="n">hasPeer</span><span class="p">(</span><span class="kt">address</span> <span class="n">_sender</span><span class="p">)</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">ownerToPeerAndPeerToOwner</span><span class="p">[</span><span class="n">_sender</span><span class="p">]</span> <span class="o">!=</span> <span class="mh">0x0</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="c1">// TODO: add constant</span>
+  <span class="kd">function</span> <span class="n">peerExistsAndOwnsSubmission</span><span class="p">(</span><span class="kt">address</span> <span class="n">_peer</span><span class="p">,</span> <span class="kt">address</span> <span class="n">_reference</span><span class="p">)</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="kt">bool</span> <span class="n">isAPeer</span> <span class="o">=</span> <span class="n">peerExists</span><span class="p">[</span><span class="n">_peer</span><span class="p">];</span>
+    <span class="kt">bool</span> <span class="n">referenceIsSubmission</span> <span class="o">=</span> <span class="n">submissionExists</span><span class="p">[</span><span class="n">_reference</span><span class="p">];</span>
+    <span class="kt">bool</span> <span class="n">peerOwnsSubmission</span> <span class="o">=</span> <span class="n">addressToOwnsSubmission</span><span class="p">[</span><span class="n">ownerToPeerAndPeerToOwner</span><span class="p">[</span><span class="n">_peer</span><span class="p">]][</span><span class="n">_reference</span><span class="p">];</span>
+
+    <span class="k">return</span> <span class="n">isAPeer</span> <span class="o">&amp;&amp;</span> <span class="n">referenceIsSubmission</span> <span class="o">&amp;&amp;</span> <span class="n">peerOwnsSubmission</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">peerAddress</span><span class="p">(</span><span class="kt">address</span> <span class="n">_sender</span><span class="p">)</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">ownerToPeerAndPeerToOwner</span><span class="p">[</span><span class="n">_sender</span><span class="p">];</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="n">isSubmission</span><span class="p">(</span><span class="kt">address</span> <span class="n">_submissionAddress</span><span class="p">)</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">submissionExists</span><span class="p">[</span><span class="n">_submissionAddress</span><span class="p">];</span>
+  <span class="p">}</span>
+
+  <span class="c1">/// @dev Returns whether or not the given tournament belongs to the sender.</span>
+  <span class="c1">/// @param _tournamentAddress Address of the tournament to check.</span>
+  <span class="c1">/// @return _isMine Whether or not the tournament belongs to the sender.</span>
+  <span class="kd">function</span> <span class="n">getTournament_IsMine</span><span class="p">(</span><span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">)</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">bool</span> <span class="n">_isMine</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="nb">require</span><span class="p">(</span><span class="n">tournamentExists</span><span class="p">[</span><span class="n">_tournamentAddress</span><span class="p">]);</span>
+    <span class="n">Ownable</span> <span class="n">tournament</span> <span class="o">=</span> <span class="n">Ownable</span><span class="p">(</span><span class="n">_tournamentAddress</span><span class="p">);</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">tournament</span><span class="p">.</span><span class="n">getOwner</span><span class="p">()</span> <span class="o">==</span> <span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="cm">/*</span>
+<span class="cm">   * Setter Methods</span>
+<span class="cm">   */</span> 
+
+    <span class="c1">/// @dev              Set the relative amount of MTX to be delivered to a submission&#39;s</span>
+    <span class="c1">///                   references</span>
+    <span class="c1">/// @param _gratitude Weight from 0 to 1 (18 decimal uint) specifying enforced submission </span>
+    <span class="c1">///                   gratitude</span>
+    <span class="kd">function</span> <span class="n">setSubmissionGratitude</span><span class="p">(</span><span class="kt">uint256</span> <span class="n">_gratitude</span><span class="p">)</span> <span class="kr">public</span> <span class="n">onlyOwner</span>
+    <span class="p">{</span>
+        <span class="nb">assert</span><span class="p">(</span><span class="n">_gratitude</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">_gratitude</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="mi">18</span><span class="p">));</span>
+        <span class="n">submissionGratitude</span> <span class="o">=</span> <span class="n">uint256_optional</span><span class="p">({</span><span class="n">exists</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span> <span class="nb">value</span><span class="o">:</span> <span class="n">_gratitude</span><span class="p">});</span>
+    <span class="p">}</span>
+
+  <span class="cm">/*</span>
+<span class="cm">   * Getter Methods</span>
+<span class="cm">   */</span>
+
+   <span class="kd">function</span> <span class="n">getTokenAddress</span><span class="p">()</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span><span class="p">)</span>
+   <span class="p">{</span>
+      <span class="k">return</span> <span class="n">matryxTokenAddress</span><span class="p">;</span>
+   <span class="p">}</span>
+
+   <span class="kd">function</span> <span class="n">getSubmissionTrustLibrary</span><span class="p">()</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span><span class="p">)</span>
+   <span class="p">{</span>
+      <span class="k">return</span> <span class="n">matryxSubmissionTrustLibAddress</span><span class="p">;</span>
+   <span class="p">}</span>
+
+   <span class="kd">function</span> <span class="n">getRoundLibAddress</span><span class="p">()</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span><span class="p">)</span>
+   <span class="p">{</span>
+      <span class="k">return</span> <span class="n">matryxRoundLibAddress</span><span class="p">;</span>
+   <span class="p">}</span>
+
+   <span class="c1">/// @dev    Returns a weight from 0 to 1 (18 decimal uint) indicating</span>
+   <span class="c1">///         how much of a submission&#39;s reward goes to its references.</span>
+   <span class="c1">/// @return Relative amount of MTX going to references of submissions under this tournament.</span>
+   <span class="kd">function</span> <span class="n">getSubmissionGratitude</span><span class="p">()</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">uint256</span><span class="p">)</span>
+   <span class="p">{</span>
+      <span class="nb">require</span><span class="p">(</span><span class="n">submissionGratitude</span><span class="p">.</span><span class="n">exists</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">submissionGratitude</span><span class="p">.</span><span class="nb">value</span><span class="p">;</span>
+   <span class="p">}</span>
+
+   <span class="c1">/// @dev Returns addresses for submissions the sender has created.</span>
+   <span class="c1">/// @return Address array representing submissions.</span>
+   <span class="kd">function</span> <span class="n">myTournaments</span><span class="p">()</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span><span class="p">[])</span>
+   <span class="p">{</span>
+      <span class="k">return</span> <span class="n">entrantToTournamentArray</span><span class="p">[</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">];</span>
+   <span class="p">}</span>
+
+   <span class="kd">function</span> <span class="n">mySubmissions</span><span class="p">()</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span><span class="p">[])</span>
+   <span class="p">{</span>
+    <span class="k">return</span> <span class="n">ownerToSubmissionArray</span><span class="p">[</span><span class="nb">msg</span><span class="p">.</span><span class="nb">sender</span><span class="p">];</span>
+   <span class="p">}</span>
+
+   <span class="c1">/// @dev Returns the total number of tournaments</span>
+   <span class="c1">/// @return _tournamentCount Total number of tournaments.</span>
+   <span class="kd">function</span> <span class="n">tournamentCount</span><span class="p">()</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">uint256</span> <span class="n">_tournamentCount</span><span class="p">)</span>
+   <span class="p">{</span>
+       <span class="k">return</span> <span class="n">allTournaments</span><span class="p">.</span><span class="n">length</span><span class="p">;</span>
+   <span class="p">}</span>
+ 
+   <span class="kd">function</span> <span class="n">getTournamentAtIndex</span><span class="p">(</span><span class="kt">uint256</span> <span class="n">_index</span><span class="p">)</span> <span class="kr">public</span> <span class="kr">constant</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">address</span> <span class="n">_tournamentAddress</span><span class="p">)</span>
+   <span class="p">{</span>
+     <span class="nb">require</span><span class="p">(</span><span class="n">_index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">);</span>
+     <span class="nb">require</span><span class="p">(</span><span class="n">_index</span> <span class="o">&lt;</span> <span class="n">allTournaments</span><span class="p">.</span><span class="n">length</span><span class="p">);</span>
+     <span class="k">return</span> <span class="n">allTournaments</span><span class="p">[</span><span class="n">_index</span><span class="p">];</span>
+   <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Max Howard, Sam Hessenauer.
+    </p>
+  </div>
+
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+  
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.2',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

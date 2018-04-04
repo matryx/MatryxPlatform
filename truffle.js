@@ -1,25 +1,35 @@
+require('babel-register');
+require('babel-polyfill');
+require('babel-preset-env');
+
 module.exports = {
-  networks: {
-    development: {
-      host: "localhost",
-      port: 8545,
-      network_id: "*", // Match any network id
-      gas: 3000000,
-      gasPrice: 18000000000,
-      from: '0x11f2915576dc51dffb246959258e8fe5a1913161'
-    },
-    test: {
-      host: "localhost",
-      port: 8545,
-      network_id: "*", // match any network
-      gas: 4712388,
-      //from: "0x4ac11cb7ea279192354bed022491cac7eee62e7c"
-    },
-    prod: {
-      host: '54.183.203.34',
-      port: 4551,
-      network_id: '*',
-      from: '0x11f2915576dc51dffb246959258e8fe5a1913161'
-    }
-  }
+  // See <http://truffleframework.com/docs/advanced/configuration>
+  // to customize your Truffle configuration!
+	networks: 
+	{
+	  	development: 
+	  	{
+	  		host: "localhost",
+	  		port: 8545,
+	    	network_id: "*", // match any network
+	     	gas: 4241593,
+  			gasPrice: 30000000
+		},
+		coverage: 
+		{
+			host: "localhost",
+			network_id: "*",
+			port: 8545,     // <-- If you change this, also set the port option in .solcover.js.
+			gas: 9000000000, // <-- Use this high gas value
+			gasPrice: 10000000000     // <-- Use this low gas price
+    	}
+	},
+	solc: 
+	{
+  		optimizer: 
+  		{
+	    	enabled: true,
+	    	runs: 4000
+  		}
+  	}
 };
