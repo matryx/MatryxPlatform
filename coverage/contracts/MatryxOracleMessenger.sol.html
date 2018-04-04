@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/MatryxOracleMessenger.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> MatryxOracleMessenger.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">94.74% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>18/19</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">75% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>3/4</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>3/3</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">95% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>19/20</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">pragma solidity ^0.4.18;
+&nbsp;
+import "./Ownable.sol";
+import "./MatryxQueryEncrypter.sol";
+&nbsp;
+/// @title MatryxOracleMessenger - An oracle system for validating MTX balances on mainnet.
+/// @author Max Howard - &lt;max@nanome.ai&gt;
+contract MatryxOracleMessenger is Ownable {
+&nbsp;
+  // An event to let our node know that a new query has been performed.
+  event QueryPerformed(uint256 id, address sender);
+&nbsp;
+  event StoredResponse(uint256 storedResponse);
+  event ObtainedResponse(uint256 response);
+  event FailedToStore(uint256 newResponse, uint256 oldResponse);
+  event QueryID(uint256 id);
+&nbsp;
+  // Map from user addresses to MatryxQueryEncrypters. We assume each user only
+  // sends one query at a time.
+  mapping(address =&gt; MatryxQueryEncrypter) internal queryEncrypters;
+  // Map from user addresses (queriers) to QueryIDs. We assume each user only
+  // makes one query at a time.
+  mapping(address =&gt; uint256) internal fromQuerierToQueryID;
+  // Map from QueryIDs to responses (bytes32s. aka dynamically-sized byte arrays.)
+  mapping(uint256 =&gt; uint256) internal queryResponses;
+&nbsp;
+  /// @dev Gets the latest response from the oracle (internal).
+  /// @param _sender Address of sender who we wish to receive the oracle response for.
+  /// @return _response Response from the oracle (an MTX balance).
+  function latestResponseFromOracle(address _sender) internal view returns (uint256 _response)
+  {
+        uint256 queryID = fromQuerierToQueryID[_sender];
+        uint256 response = queryResponses[queryID];
+        return response;
+  }
+&nbsp;
+  /// @dev Uses [the user's existing]/[a new] QueryResolver,
+  //       depending on whether or not the user has submitted a query before.
+  // @param _query Bytes representing the query.
+  // @param _sender Sender of the query (ie user checking their balance).
+  // @return queryID for the Oracle to use in storing their response.
+  function Query(bytes32 _query, address _sender) external {
+    MatryxQueryEncrypter encrypter;
+    // If there's already a queryResolver for this user
+    <span class="missing-if-branch" title="if path not taken" >I</span>if(address(queryEncrypters[_sender]) &gt; 0x0)
+    {
+        // Use that one.
+<span class="cstat-no" title="statement not covered" >        encrypter = queryEncrypters[_sender]</span>;
+    }
+    else
+    {
+        // Otherwise, create a new one and assign it.
+        encrypter = new MatryxQueryEncrypter(_sender);
+        queryEncrypters[_sender] = encrypter;
+    }
+&nbsp;
+    // Get the queryID from the MatryxQueryEncrypter.
+    uint256 queryID = encrypter.generateQueryID(_query);
+    // Store that id under the sender's (querier's) address.
+    fromQuerierToQueryID[_sender] = queryID;
+&nbsp;
+    // Let our Alpha Matryx server know that a query has been performed!
+    QueryPerformed(queryID, _sender);
+  }
+&nbsp;
+  /// @dev Stores a query response (Only to be used by MatryxPlatform, MatryxOracleMessenger and MatryxQueryEncrypter.)
+  /// @param _queryID Query ID given to the oracle by this messenger.
+  /// @param _response Response received from oracle.
+  /// @return success Whether or not the query response was stored successfully (didn't already exist).
+  function storeQueryResponse(uint256 _queryID,  uint256 _response) onlyOwner public returns (bool success)
+  {
+      // Make sure:
+      // 1) The response is not empty and
+      // 2) There has not yet been a response created for this query
+      uint256 oldQueryID = fromQuerierToQueryID[msg.sender];
+      uint256 existingResponse = queryResponses[oldQueryID];
+      if(_response &gt; 0 &amp;&amp; existingResponse == 0)
+      {
+          // If these conditions hold, we set the response here.
+          fromQuerierToQueryID[msg.sender] = _queryID;
+          queryResponses[_queryID] = _response;
+          StoredResponse(queryResponses[_queryID]);
+          return true;
+      }
+      else
+      {
+          // Otherwise, we do nothing with the response,
+          // and return false (unsuccessful storage of response).
+          FailedToStore(_response, queryResponses[_queryID]);
+          return false;
+      }
+  }
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Feb 06 2018 10:52:25 GMT-0800 (PST)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/MatryxPlatform.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> MatryxPlatform.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">93.33% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>28/30</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">50% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>6/12</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">87.5% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>14/16</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">94.29% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>33/35</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">pragma solidity ^0.4.18;
+&nbsp;
+import './MatryxOracleMessenger.sol';
+import '../interfaces/IMatryxPlatform.sol';
+import '../interfaces/factories/IMatryxTournamentFactory.sol';
+import '../interfaces/IMatryxTournament.sol';
+import './Ownable.sol';
+&nbsp;
+/// @title MatryxPlatform - The Matryx platform contract.
+/// @author Max Howard - &lt;max@nanome.ai&gt;, Sam Hessenauer - &lt;sam@nanome.ai&gt;
+contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
+&nbsp;
+  address matryxTournamentFactoryAddress;
+  address[] public allTournaments;
+  mapping(address=&gt;bool) tournamentExists;
+  mapping(address=&gt;address[]) entrantToTournamentArray;
+  mapping(address=&gt;address[]) authorToSubmissionArray;
+&nbsp;
+  function MatryxPlatform(address _matryxTournamentFactoryAddress) public
+  {
+    matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
+  }
+&nbsp;
+  /*
+   * Events
+   */
+&nbsp;
+  event TournamentCreated(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _winningSubmissionIndex);
+  event QueryID(string queryID);
+  /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
+  /// @param _owner Owner of the tournament.
+  /// @param _tournamentAddress Address of the tournament.
+  /// @param _tournamentName Name of the tournament.
+  /// @param _externalAddress External address of the tournament.
+  /// @param _MTXReward Reward for winning the tournament.
+  /// @param _entryFee Fee for entering into the tournament.
+  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament(msg.sender)
+  {
+    TournamentOpened(_owner, _tournamentAddress, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+  }
+&nbsp;
+  /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
+  /// @param _tournamentAddress Address of the tournament.
+  /// @param _finalRoundNumber Index of the round containing the winning submission.
+  /// @param _winningSubmissionIndex Index of the winning submission.
+  function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _winningSubmissionIndex) public onlyTournament(msg.sender)
+  {
+    TournamentClosed(_tournamentAddress, _finalRoundNumber, _winningSubmissionIndex);
+  }
+&nbsp;
+  /* 
+   * Modifiers
+   */
+&nbsp;
+  modifier onlyTournament(address _sender)
+  {
+    <span class="missing-if-branch" title="else path not taken" >E</span>require(tournamentExists[_sender]);
+    _;
+  }
+&nbsp;
+  /* 
+   * MTX Balance Methods
+   */
+&nbsp;
+  /// @dev Prepares the user's MTX balance, allowing them to use the platform.
+  /// @param _toIgnore Request bytes (deprecated).
+  function prepareBalance(uint256 _toIgnore) public
+  {   
+      // Make sure that the user has not already attempted to prepare their balance
+      uint256 qID = fromQuerierToQueryID[msg.sender];
+      uint256 queryResponse = queryResponses[qID];
+      <span class="missing-if-branch" title="else path not taken" >E</span>require(queryResponse == 0x0);
+&nbsp;
+      this.Query(bytes32(_toIgnore), msg.sender);
+  }
+&nbsp;
+  /// @dev Returns whether or not the user can use the platform.
+  /// @return Whether or not user has a positive balance.
+  function balanceIsNonZero() public view returns (bool)
+  {
+      uint balance = latestResponseFromOracle(msg.sender);
+      return balance != 0;
+  }
+&nbsp;
+  /// @dev Returns the user's balance
+  /// @return Sender's MTX balance.
+  function getBalance() public constant returns (uint256)
+  {
+      uint256 balance = latestResponseFromOracle(msg.sender);
+      return balance;
+  }
+&nbsp;
+  /* 
+   * Tournament Entry Methods
+   */
+&nbsp;
+  /// @dev Enter the user into a tournament and charge the entry fee.
+  /// @param _tournamentAddress Address of the tournament to enter into.
+  /// @return _success Whether or not user was successfully entered into the tournament.
+  function enterTournament(address _tournamentAddress) public returns (bool _success)
+  {
+      IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
+      // TODO: Charge the user the MTX entry fee.
+      bool success = tournament.enterUserInTournament(msg.sender);
+      <span class="missing-if-branch" title="else path not taken" >E</span>if(success)
+      {
+        updateMyTournaments(msg.sender, _tournamentAddress);
+      }
+      return success;
+  }
+&nbsp;
+  /* 
+   * Tournament Admin Methods
+   */
+&nbsp;
+  /// @dev Create a new tournament.
+  /// @param _tournamentName Name of the new tournament.
+  /// @param _externalAddress Off-chain content hash of tournament details (ipfs hash)
+  /// @param _MTXReward Total tournament reward in MTX.
+  /// @param _entryFee Fee to charge participant upon entering into tournament.
+  /// @return _tournamentAddress Address of the newly created tournament
+  function createTournament(string _tournamentName, bytes32 _externalAddress, uint256 _MTXReward, uint256 _entryFee) public returns (address _tournamentAddress)
+  {
+    IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
+    address newTournament = tournamentFactory.createTournament(msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    TournamentCreated(msg.sender, newTournament, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    
+    // update data structures
+    allTournaments.push(newTournament);
+    tournamentExists[newTournament] = true;
+&nbsp;
+    return newTournament;
+  }
+&nbsp;
+  function updateMyTournaments(address _author, address _tournament) internal
+  {
+    entrantToTournamentArray[_author].push(_tournament);
+  }
+&nbsp;
+  function updateMySubmissions(address _author, address _submission) public onlyTournament(msg.sender)
+  {
+    authorToSubmissionArray[_author].push(_submission);
+  }
+&nbsp;
+  /*
+   * Access Control Methods
+   */
+&nbsp;
+  /// @dev Returns whether or not the given tournament belongs to the sender.
+  /// @param _tournamentAddress Address of the tournament to check.
+  /// @return _isMine Whether or not the tournament belongs to the sender.
+  function getTournament_IsMine(address _tournamentAddress) public constant returns (bool _isMine)
+  {
+    <span class="missing-if-branch" title="else path not taken" >E</span>require(tournamentExists[_tournamentAddress]);
+    Ownable tournament = Ownable(_tournamentAddress);
+    return (tournament.getOwner() == msg.sender);
+  }
+&nbsp;
+  /// @dev Returns the total number of tournaments
+  /// @return _tournamentCount Total number of tournaments.
+  function tournamentCount() public constant returns (uint256 _tournamentCount)
+  {
+      return allTournaments.length;
+  }
+&nbsp;
+  function getTournamentAtIndex(uint256 _index) public constant returns (address _tournamentAddress)
+  {
+    <span class="missing-if-branch" title="else path not taken" >E</span>require(_index &gt;= 0);
+    <span class="missing-if-branch" title="else path not taken" >E</span>require(_index &lt; allTournaments.length);
+    return allTournaments[_index];
+  }
+&nbsp;
+  /*
+   * Getter Methods
+   */
+&nbsp;
+   /// @dev Returns addresses for submissions the sender has created.
+   /// @return Address array representing submissions.
+<span class="fstat-no" title="function not covered" >   function myTournaments() public constant returns (address[])</span>
+   {
+<span class="cstat-no" title="statement not covered" >      return entrantToTournamentArray[msg.sender];</span>
+   }
+&nbsp;
+<span class="fstat-no" title="function not covered" >   function mySubmissions() public constant returns (address[])</span>
+   {
+<span class="cstat-no" title="statement not covered" >    return authorToSubmissionArray[msg.sender];</span>
+   }
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Feb 06 2018 10:52:25 GMT-0800 (PST)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>
