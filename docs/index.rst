@@ -1,6 +1,6 @@
 
-Matryx Platform API
-====================
+Matryx Platform
+================
 
 This documentation details the features of the Matryx Platform Smart Contract system. 
 
