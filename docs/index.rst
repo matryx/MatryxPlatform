@@ -14,8 +14,8 @@ This documentation details the features of the Matryx Platform Smart Contract sy
    rounds
    trust-and-reputation
    abi-and-geth-interaction
-   sourcefaq
-   versions
+   source_faq
+   source_versions
    source/api
 
 .. _dev-docs:
