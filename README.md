@@ -36,35 +36,9 @@ If you migrate the Platform locally, we recommend using ```truffle console``` to
 Here you can start typing MatryxPlatform and hit `tab` and it will be able to recognize the contract.
 You can grab the ABI by calling `MatryxPlatform.abi` if you want to interact with it through a testRPC/ganache-cli/geth console.
 
-### API
+### Documentation
 
-Visit the wiki for the [API Documentation](https://github.com/matryx/matryx-alpha-source/wiki/Platform-Technical-Overview-and-API#api)
-
-The Matryx Alpha v1 Platform is deployed on our Private Ethereum Chain at address: `0x7c4970b887cfa95062ead0708267009dcd564017`
-The Platform's ABI is: [here](https://github.com/matryx/matryx-alpha-source/blob/master/platformAbi.txt)
-
-> Keep in mind that we do not have the develop branch deployed on the private chain.
-
-#### Platform Contract API
-
-  | Method    | Inputs | Output | 
-|:----------|:-------------| ---: |
-| **`tournamentByAddress()`** | uint256 tournamentId | bytes32 tournamentAddress|
-| **`tournamentCount()`** | None | uint256 numberOfTournaments|
-| **`createTournament()`** | string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee | address tournamentAddress |
-| **`enterTournament()`** | address _tournamentAddress | address _submissionViewer|
-
-#### Tournament Contract API
-
-| Method    | Inputs | Output | 
-|:----------|:-------------| ---: |
-| **`isOwner()`** | address _sender | bool |
-| **`isEntrant()`** | address _sender | bool |
-| **`tournamentOpen()`** | address _sender | bool |
-| **`getExternalAddress()`** | None | bytes |
-| **`mySubmissions()`** | None | address[] |
-| **`submissionCount()`** | None | uint256 |
-| **`getEntryFee()`** | None | uint256 |
+Visit the docs for the [Platform Documentation](http://matryxPlatform.readthedocs.io)
 
 ## Interfaces
 The are several interfaces that are being built that are designed to plug in to the Matryx Platform 
