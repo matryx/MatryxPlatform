@@ -17,9 +17,9 @@ import os
 import shlex
 
 # Custom solidity lexer
-from sphinx.highlighting import lexers
-from pygments_lexer_solidity import SolidityLexer
-lexers['solidity'] = SolidityLexer()
+# from sphinx.highlighting import lexers
+# from pygments_lexer_solidity import SolidityLexer
+# lexers['solidity'] = SolidityLexer()
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

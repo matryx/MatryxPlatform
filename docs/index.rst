@@ -10,8 +10,8 @@ This documentation details the features of the Matryx Platform Smart Contract sy
    :maxdepth: 2
    :caption: API Documentation
 
-   tournaments
-   rounds
+   getting-started
+   tournament-admin
    trust-and-reputation
    abi-and-geth-interaction
    source_faq

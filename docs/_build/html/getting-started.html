@@ -1,0 +1,218 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Diving into Matryx &mdash; Matryx 0.2 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic|Roboto+Slab:400,700|Inconsolata:400,700&subset=latin,cyrillic' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Matryx 0.2 documentation" href="index.html"/>
+        <link rel="next" title="Creating a Tournament" href="tournaments.html"/>
+        <link rel="prev" title="Matryx Platform" href="index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        
+          <a href="index.html" class="fa fa-home"> Matryx</a>
+        
+        
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+          
+          
+              <p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Diving into Matryx</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#becoming-a-matryxpeer">Becoming a MatryxPeer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#approving-entry-fee-withdrawals">Approving Entry Fee Withdrawals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#entering-a-tournament">Entering a Tournament</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tournaments.html">Creating a Tournament</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rounds.html">Creating and Administering a Round</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trust-and-reputation.html">Trust and Reputation System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="trust-and-reputation.html#subsubsection-title">Subsubsection title..</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="abi-and-geth-interaction.html">Interacting with the Platform via Geth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source_faq.html">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="source_faq.html#basic-questions">Basic Questions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="source_faq.html#advanced-questions">Advanced Questions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="source_versions.html">Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/api.html">Source Code Documentation</a></li>
+</ul>
+
+          
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Matryx</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Diving into Matryx</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/getting-started.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document">
+            
+  <div class="section" id="diving-into-matryx">
+<h1>Diving into Matryx<a class="headerlink" href="#diving-into-matryx" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="becoming-a-matryxpeer">
+<h2>Becoming a MatryxPeer<a class="headerlink" href="#becoming-a-matryxpeer" title="Permalink to this headline">¶</a></h2>
+<p>To start using the platform, you first need to create a MatryxPeer for the Ethereum address you intend to use it with. You can do this as many times as you like with as many Ethereum addresses as you have, although the process does cost a bit of gas, so we&#8217;re not sure why you would. That said, creating a peer is as simple as running the following:</p>
+<div class="highlight-Solidity"><div class="highlight"><pre><span></span><span class="n">platform</span><span class="p">.</span><span class="n">createPeer</span><span class="p">({</span><span class="nb">gas</span><span class="o">:</span> <span class="n">platform</span><span class="p">.</span><span class="n">createPeer</span><span class="p">.</span><span class="n">estimateGas</span><span class="p">()});</span>
+</pre></div>
+</div>
+<p>Congrats! Now that you&#8217;ve created a peer, anytime you use the platform the positive and negative trust you earn through interacting with others will be aggregated by this MatryxPeer representation you&#8217;ve just created. For the MatryxPlatform Beta, we simply use MatryxPeer as a way to ensure that you cite your sources.</p>
+</div>
+<div class="section" id="approving-entry-fee-withdrawals">
+<h2>Approving Entry Fee Withdrawals<a class="headerlink" href="#approving-entry-fee-withdrawals" title="Permalink to this headline">¶</a></h2>
+<p>You&#8217;ll now be able to enter tournaments, granted you&#8217;ve paid the entry fee. Let&#8217;s try that, shall we? In order to enter a tournament, you&#8217;ll first need to tell MatryxToken that you approve of the tournament collecting the fee designated by the tournament&#8217;s creator. This is done by calling</p>
+<div class="highlight-Solidity"><div class="highlight"><pre><span></span><span class="n">token</span><span class="p">.</span><span class="n">approve</span><span class="p">(</span><span class="n">tournament</span><span class="p">.</span><span class="kt">address</span><span class="p">,</span> <span class="n">tournament</span><span class="p">.</span><span class="n">entryFee</span><span class="p">());</span>
+</pre></div>
+</div>
+<p>where &#8216;token&#8217; is a web3 Contract representing MatryxToken. This fee is incurred solely to prevent malicious actors from attemping a cross-tournament Sybil attack and will be returned to you at the end of each tournament you enter.</p>
+</div>
+<div class="section" id="entering-a-tournament">
+<h2>Entering a Tournament<a class="headerlink" href="#entering-a-tournament" title="Permalink to this headline">¶</a></h2>
+<p>Now that you&#8217;ve done this, you should be able to enter the tournament. This is a call to the platform itself and goes like</p>
+<div class="highlight-Solidity"><div class="highlight"><pre><span></span><span class="n">platform</span><span class="p">.</span><span class="n">enterTournament</span><span class="p">(</span><span class="n">tournament</span><span class="p">.</span><span class="kt">address</span><span class="p">,</span> <span class="p">{</span><span class="nb">gas</span><span class="o">:</span> <span class="n">platform</span><span class="p">.</span><span class="n">enterTournament</span><span class="p">.</span><span class="n">estimateGas</span><span class="p">(</span><span class="n">tournament</span><span class="p">.</span><span class="kt">address</span><span class="p">)});</span>
+</pre></div>
+</div>
+<p>Congratulations! You&#8217;ve now entered into your first Matryx Tournament! Assemble a team; Let&#8217;s save the world!!</p>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tournaments.html" class="btn btn-neutral float-right" title="Creating a Tournament">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Matryx Platform"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Max Howard, Sam Hessenauer.
+    </p>
+  </div>
+
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+  
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
