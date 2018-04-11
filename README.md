@@ -1,4 +1,5 @@
-# Matryx Alpha Source Code - Develop Branch ![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
+
+# Matryx Platform ![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
 
 [![travisCI](https://travis-ci.org/matryx/matryx-alpha-source.svg?branch=develop)](https://travis-ci.org/matryx/matryx-alpha-source)
 [![Telegram](https://img.shields.io/badge/chat-Telegram-blue.svg)](https://t.me/matryxai)
@@ -146,3 +147,7 @@ We look forward to seeing the community feedback and issue identifications to ma
 Please take a look at our [Terms of Service](https://github.com/matryx/matryx-alpha-source/blob/master/TOS.txt) for using the platform that we have deployed
 
 -The Matryx Team
+
+Architecture Below:
+
+![Architecture](https://github.com/matryx/MatryxPlatform/raw/develop/assets/alpha2architecture.png)
