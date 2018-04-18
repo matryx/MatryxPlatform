@@ -107,7 +107,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Allows rounds to invoke SubmissionCreated events on this tournament.
     /// @param _submissionAddress Address of the submission.
-    function invokeSubmissionCreatedEvent(address _submissionAddress) public
+    function invokeSubmissionCreatedEvent(address _submissionAddress) public onlyRound
     {
         SubmissionCreated(rounds.length-1, _submissionAddress);
     }
