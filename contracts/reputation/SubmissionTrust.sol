@@ -100,10 +100,10 @@ contract SubmissionTrust is Ownable
 		if(addressToReferenceInfo[_reference].flagged)
 		{
 			address referenceAuthor = IMatryxSubmission(_reference).getAuthor();
+			// If this testing session fails, the below line is the culprit.
 			IMatryxPeer(referenceAuthor).removeMissingReferenceFlag(this, _reference);
+			cleanAuthorTrust(referenceAuthor, _reference);
 		}
-
-		cleanAuthorTrust(referenceAuthor, _reference);
 	}
 
 	/// @dev Remove an erroneous reference to a submission (callable only by submission's owner).
@@ -116,13 +116,12 @@ contract SubmissionTrust is Ownable
 		// as deemed by the platform. Therefore we're able to
 		// call getAuthor without worrying that we don't
 		// know what code we're calling.
-		address referenceAuthor = IMatryxSubmission(_reference).getAuthor();
 		if(addressToReferenceInfo[_reference].approved)
 		{
+			address referenceAuthor = IMatryxSubmission(_reference).getAuthor();
 			IMatryxPeer(referenceAuthor).removeReferenceApproval(this, _reference);
+			cleanAuthorTrust(referenceAuthor, _reference);
 		}
-
-		cleanAuthorTrust(referenceAuthor, _reference);
 
 		uint256 referenceIndex = addressToReferenceInfo[_reference].index;
 		delete references[referenceIndex];
