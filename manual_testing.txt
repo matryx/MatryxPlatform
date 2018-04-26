@@ -11,33 +11,32 @@ platform.createPeer.sendTransaction({gas: 4000000});
 platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[1]});
 platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[2]});
 platform.createPeer.sendTransaction({gas: 4000000, from: web3.eth.accounts[3]});
-token = web3.eth.contract(MatryxToken.abi).at("0x89c81164a847fae12841c7d2371864c7656f91c9")
+token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address)
 token.setReleaseAgent(web3.eth.accounts[0])
 token.releaseTokenTransfer.sendTransaction({gas: 1000000})
-token.mint(web3.eth.accounts[0], 10000)
-token.mint(web3.eth.accounts[1], 5000)
-token.mint(web3.eth.accounts[2], 5000)
-token.mint(web3.eth.accounts[3], 5000)
-token.approve(MatryxPlatform.address, 100)
-platform.createTournament.sendTransaction("math", "create a shell", "ipfs hash", 100, 2, 100000, {gas: 4000000})
+token.mint(web3.eth.accounts[0], 10000*10**18)
+token.mint(web3.eth.accounts[1], 5000*10**18)
+token.mint(web3.eth.accounts[2], 5000*10**18)
+token.mint(web3.eth.accounts[3], 5000*10**18)
+token.approve(MatryxPlatform.address, 100*10**18)
+platform.createTournament.sendTransaction("math", "create a shell", "ipfs hash", 100*10**18, 2*10**18, {gas: 4000000})
 
 // Create a round.
 tournament = web3.eth.contract(MatryxTournament.abi).at(platform.getTournamentAtIndex.call(0))
-tournament.setSubmissionGratitude(5*10**17, {gas: 1000000})
-tournament.createRound(10, {gas: 4000000})
+tournament.createRound(10*10**18, {gas: 4000000})
 
 // Start the round and create some submissions!
 // (Modify the first parameter '30' to the desired number of seconds to keep the round open)
-tournament.startRound(10, 120000, {gas: 1500000});
-token.approve(tournament.address, 2, {from: web3.eth.accounts[1]})
-token.approve(tournament.address, 2, {from: web3.eth.accounts[2]})
-token.approve(tournament.address, 2, {from: web3.eth.accounts[3]})
+tournament.startRound(900, 120000, {gas: 1500000});
+token.approve(tournament.address, 2*10**18, {from: web3.eth.accounts[1]})
+token.approve(tournament.address, 2*10**18, {from: web3.eth.accounts[2]})
+token.approve(tournament.address, 2*10**18, {from: web3.eth.accounts[3]})
 platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[1]})
 platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[2]})
 platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[3]});
-tournament.createSubmission("submissionOne", web3.eth.accounts[1], "external address", [], [], true, {gas: 5000000, from: web3.eth.accounts[1]});
-tournament.createSubmission("submissionTwo", web3.eth.accounts[2], "external address", [], [], true, {gas: 5000000, from: web3.eth.accounts[2]});
-tournament.createSubmission("submissionThr", web3.eth.accounts[3], "external address", [], [], true, {gas: 5000000, from: web3.eth.accounts[3]});
+tournament.createSubmission("submissionOne", web3.eth.accounts[1], "external address", [], [], [], {gas: 5000000, from: web3.eth.accounts[1]});
+tournament.createSubmission("submissionTwo", web3.eth.accounts[2], "external address", [], [], [], {gas: 5000000, from: web3.eth.accounts[1]});
+tournament.createSubmission("submissionThr", web3.eth.accounts[3], "external address", [], [], [], {gas: 5000000, from: web3.eth.accounts[3]});
 
 // Then the round has ended, run these to attach to the round and submissions.
 round = web3.eth.contract(MatryxRound.abi).at(tournament.currentRound()[1]);

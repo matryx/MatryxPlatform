@@ -148,11 +148,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
   		_;
   	}
 
-  	modifier onlyOwningPeer(address _reference)
-  	{
-  		require(IMatryxPlatform(platformAddress).peerExistsAndOwnsSubmission(msg.sender, _reference));
-  		_;
-  	}
+  	modifier onlyPeer()
+	{
+		IMatryxPlatform platform = IMatryxPlatform(platformAddress);
+		require(platform.isPeer(msg.sender));
+		_;
+	}
 
 	// A modifier to ensure that information can only obtained
 	// about this submission when it should be.
@@ -196,7 +197,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		bool duringReviewAndRequesterInTournament = duringReviewPeriod && (requesterOwnsTournament || requesterIsEntrant);
 		bool roundClosed = !round.isOpen();
 
-		return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || roundClosed;
+		return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || roundClosed || IMatryxPlatform(platformAddress).isPeer(_requester);
 	}
 
 	function getTitle() public constant whenAccessible(msg.sender) returns(string) {
@@ -264,6 +265,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		require(trustDelegate.delegatecall(fnSelector_addReference, _reference));
 	}
 
+	// Debug function. ?MAYBEDO:Delete
 	function addressIsFlagged(address _reference) public constant returns (bool, bool)
 	{
 		return (addressToReferenceInfo[_reference].flagged, missingReferenceToIndex[_reference].exists);
@@ -289,7 +291,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// @dev Called by the owner of _reference when this submission is approved to list _reference
 	/// as a reference.
 	/// _reference Reference being approved by msg.sender.
-	function approveReference(address _reference) public
+	function approveReference(address _reference) public onlyPeer
 	{
 		require(trustDelegate.delegatecall(fnSelector_approveReference, _reference));
 	}
@@ -298,7 +300,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	///		 			  within this submission.
 	/// @param _reference Reference that peer is revoking the approval of to be included
 	///					  in this submission.
-	function removeReferenceApproval(address _reference) public
+	function removeReferenceApproval(address _reference) public onlyPeer
 	{
 		require(trustDelegate.delegatecall(fnSelector_removeReferenceApproval, _reference));
 	}
@@ -306,7 +308,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// @dev 	Called by the owner of _reference when this submission does not list _reference
 	/// 		as a reference.
 	/// @param  _reference Missing reference in this submission.
-	function flagMissingReference(address _reference) public
+	function flagMissingReference(address _reference) public onlyPeer
 	{
 		require(trustDelegate.delegatecall(fnSelector_flagMissingReference, _reference));
 	}
@@ -314,7 +316,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// @dev 			  Called by the owner of _reference to remove a missing reference flag placed on a reference
 	///		 			  as missing.
 	/// @param _reference Reference previously marked by peer as missing.
-	function removeMissingReferenceFlag(address _reference) public
+	function removeMissingReferenceFlag(address _reference) public onlyPeer
 	{
 		require(trustDelegate.delegatecall(fnSelector_removeMissingReferenceFlag, _reference));
 	}
