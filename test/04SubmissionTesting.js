@@ -2,6 +2,7 @@ let MatryxPlatform = artifacts.require("MatryxPlatform");
 let MatryxTournament = artifacts.require("MatryxTournament");
 let MatryxRound = artifacts.require("MatryxRound");
 let MatryxSubmission = artifacts.require("MatryxSubmission");
+var MatryxToken = artifacts.require("MatryxToken");
 
 contract('MatryxPlatform', function(accounts)
 {
@@ -11,29 +12,62 @@ contract('MatryxPlatform', function(accounts)
     let tournament;
     let submissionOne;
     let submissionOneBlocktime;
+    let token;
 
     it("Submission one owner is submission creator", async function() {
-		// get the platform
 		platform = await MatryxPlatform.deployed();
-		// create a tournament
-		createTournamentTransaction = await platform.createTournament("tournament", "external address", 100, 2);
-		// get the tournament address
-		tournamentAddress = createTournamentTransaction.logs[0].args._tournamentAddress;
+      	token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
+      	platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
+      	web3.eth.defaultAccount = web3.eth.accounts[0]
+      	await platform.createPeer.sendTransaction({gas: 3000000});
+      	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[1]});
+      	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[2]});
+      	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[3]});
+      	await token.setReleaseAgent(web3.eth.accounts[0])
+      	await token.releaseTokenTransfer.sendTransaction({gas: 1000000})
+      	await token.mint(web3.eth.accounts[0], 10000*10**18)
+      	await token.mint(web3.eth.accounts[1], 2*10**18)
+      	await token.mint(web3.eth.accounts[2], 2*10**18)
+      	await token.mint(web3.eth.accounts[3], 2*10**18)
+      	await token.approve(MatryxPlatform.address, 100*10**18)
+      	// create a tournament
+        createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2, {gas: 3000000});
+        // get the tournament address
+        tournamentCreatedEvent = platform.TournamentCreated();
 
-		// // create tournament from address
-		tournament = await MatryxTournament.at(tournamentAddress);
-		await tournament.openTournament();
-		// //
-		await tournament.createRound(4);
-		await tournament.startRound(2);
+      	tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
+        		tournamentCreatedEvent.get((err, res) => {
+            	if (err) {
+            	    reject(err);
+            	} else {
+                	resolve(res);
+            	}
+        	}))
+      	var tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
 
-		let currentRound = await tournament.currentRound.call();
+      	tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
+      	tournament = await MatryxTournament.at(tournamentAddress);
 
-		console.log("current round: " + currentRound);
+      	//open tournament
+    	let tournamentOpen = await tournament.openTournament();
+
+    	//enter tournament
+    	let enteredTournament = await platform.enterTournament(tournamentAddress, {gas: 3000000});
+
+    	//create and start round
+    	let roundAddress = await tournament.createRound(5);
+
+    	round = await tournament.currentRound();
+    	roundAddress = round[1];
+
+    	await tournament.startRound(10, 10, {gas: 3000000});
+    	round = web3.eth.contract(MatryxRound.abi).at(roundAddress);
+
+    	//open round
+    	let roundOpen = await round.isOpen();
 
 		// become entrant in tournament
-		await platform.enterTournament(tournamentAddress);
-		let submissionOneTx = await tournament.createSubmission("submission1", accounts[0], "external address", [accounts[3]], [accounts[4]], false);
+		let submissionOneTx = await tournament.createSubmission("submission1", accounts[0], "external address 1", ["0x0"], ["0x0"], ["0x0"]);
 
 		let blocknumber = await web3.eth.getTransaction(submissionOneTx.tx).blockNumber;
 		submissionOneBlocktime = await web3.eth.getBlock(blocknumber).timestamp
@@ -43,13 +77,13 @@ contract('MatryxPlatform', function(accounts)
 		submissionOne = await MatryxSubmission.at(mySubmissions[0]);
 		let submissionOwner = await submissionOne.owner.call();
 
-		// // check that we're both the tournament and submission owner
+		//check that we're both the tournament and submission owner
 		assert.equal(submissionOwner, accounts[0], "The owner of the submission should be the owner of the tournament");
 	});
 
     it("Submission two owner is submission creator", async function() {
-		await platform.enterTournament(tournamentAddress, {from: accounts[1]});
-		await tournament.createSubmission("submission2", accounts[1], "external address", ["0x0"], ["0x0"], true, {from: accounts[1]});
+    	let enteredTournament = await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: 3000000});
+		await tournament.createSubmission("submission2", accounts[1], "external address 2", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1]});
 
 		let mySubmissions = await tournament.mySubmissions.call({from: accounts[1]});
 		// create the submission in tournament
@@ -66,17 +100,9 @@ contract('MatryxPlatform', function(accounts)
 
 	it("Submission one has correct author", async function() {
 		let submissionAuthor = await submissionOne.getAuthor.call();
+		console.log(submissionAuthor);
+		console.log(accounts[0]);
 		assert.equal(submissionAuthor, accounts[0], "Submission author was not accounts[0]");
-	})
-
-	it("Submission one has correct references", async function() {
-		let submissionReferences = await submissionOne.getReferences.call();
-		assert.equal(submissionReferences, accounts[4], "References for submission one were not [accounts[4]]");
-	});
-
-	it("Submission one has correct contributors", async function() {
-		let submissionContributors = await submissionOne.getContributors.call();
-		assert.equal(submissionContributors, accounts[3], "Contributors for submission one were not [accounts[3]]");
 	})
 
 	it("Submission one has correct time", async function() {
@@ -103,6 +129,12 @@ contract('MatryxPlatform', function(accounts)
 		assert.equal(web3.toAscii(externalAddress).replace(/\u0000/g, ""), "hashbrowns", "External address not updated correctly");
 	})
 
+	it("Able to make a submission externally accessible", async function() {
+		await submissionOne.makeExternallyAccessibleDuringTournament();
+		let accessible = await round.submissionIsAccessible.call(0, {from: accounts[3]});
+		assert.isTrue(accessible, "Submission is not externally accessible");
+	})
+
 	it("Able to add to a submission's references", async function() {
 		await submissionOne.addReference(accounts[5]);
 		let references = await submissionOne.getReferences.call();
@@ -116,7 +148,7 @@ contract('MatryxPlatform', function(accounts)
 	})
 
 	it("Able to add to a submission's contributors", async function() {
-		await submissionOne.addContributor(accounts[6]);
+		await submissionOne.addContributor(accounts[6], 100);
 		let contributors = await submissionOne.getContributors.call();
 		assert.equal(contributors[1], accounts[6], "References on submission not updated correctly");
 	})

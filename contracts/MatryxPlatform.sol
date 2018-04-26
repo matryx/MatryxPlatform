@@ -451,11 +451,11 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     
     addTournamentToCategory(newTournament, _category);
 
-    // Transfer the MTX reward to the tournament.
+    //Transfer the MTX reward to the tournament.
     bool transferSuccess = matryxToken.transferFrom(msg.sender, newTournament, _BountyMTX);
     require(transferSuccess);
     
-    // update data structures
+    //update data structures
     allTournaments.push(newTournament);
     tournamentExists[newTournament] = true;
 

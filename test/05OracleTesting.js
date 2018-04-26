@@ -5,7 +5,7 @@ contract('MatryxPlatform', function(accounts) {
 	let platform;
 	let queryId;
 	it("The oracle system produces a valid query id.", async function() {
-		platform = await MatryxAlpha.new();
+		platform = await MatryxAlpha.deployed();
 		let prepareBalanceTx = await platform.prepareBalance(0x0, {from: accounts[0]});
 		queryId = prepareBalanceTx.logs[0].args.id;
 

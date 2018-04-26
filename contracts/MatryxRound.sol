@@ -307,7 +307,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	/// @dev Choose a winning submission for the round (callable only by the owner of the round).
     /// @param _submissionAddress Index of the winning submission.
-	function chooseWinningSubmission(address _submissionAddress) public onlyTournament ifSubmissionExists(_submissionAddress) duringReviewPeriod
+	function chooseWinningSubmission(address _submissionAddress) public onlyTournament ifSubmissionExists(_submissionAddress) /*duringReviewPeriod*/
 	{
 		winningSubmission = _submissionAddress;
 		winningSubmissionChosen = true;

@@ -336,16 +336,17 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         RoundWinnerChosen(_submissionAddress);
 
         // Conditionally end the tournament
-        if(rounds.length == maxRounds)
-        {
-            require(isInReview());
+        //if(rounds.length == maxRounds)
+        //{
+            //UNCOMMENT THIS LATER
+            //require(isInReview());
             tournamentOpen = false;
 
             IMatryxPlatform platform = IMatryxPlatform(platformAddress);
             uint256 bounty = round.getBounty();
             uint256 roundNumber = rounds.length;
             platform.invokeTournamentClosedEvent(address(this), roundNumber, _submissionAddress, bounty);
-        }
+        //}
     }
 
     /// @dev Creates a new round.
@@ -378,11 +379,14 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return newRoundAddress;
     }
 
+    event platfromExists(address _platformAddress);
+
     /// @dev Opens this tournament up to submissions; called by startRound.
-    function openTournament() internal
+    function openTournament() //internal //UNCOMMENT THIS LATER
     {
         tournamentOpen = true;
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
+        platfromExists(platformAddress);
         platform.invokeTournamentOpenedEvent(owner, this, title, externalAddress, Bounty, entryFee);
     }
 
@@ -422,18 +426,20 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         }
 
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-        require(matryxToken.allowance(_entrantAddress, this) >= entryFee);
-        bool transferSuccess = matryxToken.transferFrom(_entrantAddress, this, entryFee);
+        //UNCOMMENT THESE LATER - TODO: Fix matryxToken part
+        //require(matryxToken.allowance(_entrantAddress, this) >= entryFee);
+        //bool transferSuccess = matryxToken.transferFrom(_entrantAddress, this, entryFee);
 
-        if(transferSuccess)
-        {
+        //if(transferSuccess)
+        //{
             // Finally, change the tournament's state to reflect the user entering.
             addressToIsEntrant[_entrantAddress].exists = true;
             addressToIsEntrant[_entrantAddress].value = entryFee;
             allEntrants.push(_entrantAddress);
-        }
+        //}
 
-        return transferSuccess;
+        //return transferSuccess;
+        return true;
     }
 
     /// @dev Returns the fee in MTX to be payed by a prospective entrant.
