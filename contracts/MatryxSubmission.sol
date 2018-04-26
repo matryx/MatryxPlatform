@@ -197,7 +197,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		bool duringReviewAndRequesterInTournament = duringReviewPeriod && (requesterOwnsTournament || requesterIsEntrant);
 		bool roundClosed = !round.isOpen();
 
-		return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || roundClosed || IMatryxPlatform(platformAddress).isPeer(_requester);
+		return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || roundClosed || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester);
 	}
 
 	function getTitle() public constant whenAccessible(msg.sender) returns(string) {
@@ -327,8 +327,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	{
 		contributors.push(_contributor);
 
-		contributorBountyDivisor = contributorBountyDivisor + _bountyAllocation;
 		contributorToBountyDividend[_contributor] = _bountyAllocation;
+		contributorBountyDivisor = contributorBountyDivisor + _bountyAllocation;
 
 		IMatryxRound round = IMatryxRound(roundAddress);
 		round.setParticipantType(_contributor, 2);
@@ -338,8 +338,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @param _contributorIndex Index of the contributor to remove from the submission.
 	function removeContributor(uint256 _contributorIndex) onlyOwner public 
 	{
-		contributorBountyDivisor = contributorBountyDivisor - contributorToBountyDividend[contributors[_contributorIndex]];
 		contributorToBountyDividend[contributors[_contributorIndex]] = 0x0;
+		contributorBountyDivisor = contributorBountyDivisor - contributorToBountyDividend[contributors[_contributorIndex]];
 
 		delete contributors[_contributorIndex];
 	}

@@ -35,7 +35,7 @@ platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accou
 platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[2]})
 platform.enterTournament(tournament.address, {gas: 1500000, from: web3.eth.accounts[3]});
 tournament.createSubmission("submissionOne", web3.eth.accounts[1], "external address", [], [], [], {gas: 5000000, from: web3.eth.accounts[1]});
-tournament.createSubmission("submissionTwo", web3.eth.accounts[2], "external address", [], [], [], {gas: 5000000, from: web3.eth.accounts[1]});
+tournament.createSubmission("submissionTwo", web3.eth.accounts[2], "external address", [], [], [], {gas: 5000000, from: web3.eth.accounts[2]});
 tournament.createSubmission("submissionThr", web3.eth.accounts[3], "external address", [], [], [], {gas: 5000000, from: web3.eth.accounts[3]});
 
 // Then the round has ended, run these to attach to the round and submissions.
@@ -95,6 +95,10 @@ submissionTwo.totalPossibleTrust()
 
 // Peer three notices that submissionOne has a missing reference to its work and flags it.
 peerThr.flagMissingReference(addressSubmissionOne, addressSubmissionThr, {from: web3.eth.accounts[3], gas: 2000000});
+
+submissionOne.addReference(addressSubmissionThr, {from: web3.eth.accounts[1], gas: 3000000})
+
+peerTwo.removeReferenceApproval(addressSubmissionOne, addressSubmissionTwo, {from: web3.eth.accounts[2], gas: 2000000});
 
 // Check the total possible trust available to submissionOne. It has now increased to include peerThree's reputation.
 submissionOne.totalPossibleTrust()
