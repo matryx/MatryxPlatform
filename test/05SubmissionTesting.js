@@ -11,6 +11,7 @@ contract('MatryxPlatform', function(accounts)
     let tournamentAddress;
     let tournament;
     let submissionOne;
+    let submissionTwo;
     let submissionOneBlocktime;
     let token;
 
@@ -87,7 +88,7 @@ contract('MatryxPlatform', function(accounts)
 
 		let mySubmissions = await tournament.mySubmissions.call({from: accounts[1]});
 		// create the submission in tournament
-		let submissionTwo = await MatryxSubmission.at(mySubmissions[0]);
+		submissionTwo = await MatryxSubmission.at(mySubmissions[0]);
 		let submissionOwnerTwo = await submissionTwo.owner.call();
 
 		assert.equal(submissionOwnerTwo, accounts[1], "The owner of the submission should be the owner of the tournament");
@@ -100,9 +101,8 @@ contract('MatryxPlatform', function(accounts)
 
 	it("Submission one has correct author", async function() {
 		let submissionAuthor = await submissionOne.getAuthor.call();
-		console.log(submissionAuthor);
-		console.log(accounts[0]);
-		assert.equal(submissionAuthor, accounts[0], "Submission author was not accounts[0]");
+		let submissionOnePeerAddress = await platform.peerAddress(accounts[0]);
+		assert.equal(submissionAuthor, submissionOnePeerAddress, "Submission author was not accounts[0]'s peer");
 	})
 
 	it("Submission one has correct time", async function() {
@@ -135,16 +135,48 @@ contract('MatryxPlatform', function(accounts)
 		assert.isTrue(accessible, "Submission is not externally accessible");
 	})
 
+	//Testing methods from Submission Trust
 	it("Able to add to a submission's references", async function() {
-		await submissionOne.addReference(accounts[5]);
+		await submissionOne.addReference(submissionTwo.address, {gas: 3000000});
 		let references = await submissionOne.getReferences.call();
-		assert.equal(references[1], accounts[5], "References on submission not updated correctly");
+		assert.equal(references[1], submissionTwo.address, "References on submission not updated correctly");
+	})
+
+	//TODO
+	it("Able to approve a reference", async function() {
+		let submissionTwoPeerAddress = await platform.peerAddress(accounts[1]);
+		console.log(submissionTwoPeerAddress);
+		//let referenceApproved = await submissionTwo.approveReference(submissionOne.address, {from: accounts[1], gas: 3000000});
+
+		let referenceApproved = await submissionOne.approveReference(submissionTwo.address, {gas: 3000000});
+
+		console.log(referenceApproved);
+		let approvedReferences = submissionTwo.approvedReferences;
+		console.log(approvedReferences);
+		assert.equal(approvedReferences[0], submissionTwo.address, "Reference was not successfully approved.");
+	})
+
+	//TODO
+	it("Able to remove a reference approval", async function() {
+		
 	})
 
 	it("Able to delete a submission's references", async function() {
-		await submissionOne.removeReference(1);
+		await submissionOne.removeReference(submissionTwo.address);
 		let references = await submissionOne.getReferences.call();
 		assert.equal(references[1], 0, "Removed reference was not null");
+	})
+
+	//TODO
+	it("Able to flag a missing reference", async function() {
+		let flag = await submissionOne.flagMissingReference(submissionTwo.address, {gas: 3000000});
+		//console.log(flag);
+		assert.equal(submissionOne.missingReferences[0], submissionTwo.address, "Missing flag was not successfully added.");
+	})
+
+	//TODO
+	it("Able to remove a missing reference flag", async function() {
+		
 	})
 
 	it("Able to add to a submission's contributors", async function() {

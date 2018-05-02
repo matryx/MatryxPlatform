@@ -23,6 +23,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   address public matryxTokenAddress;
   address matryxPeerFactoryAddress;
   address matryxTournamentFactoryAddress;
+  address matryxSubmissionFactoryAddress;
   address matryxSubmissionTrustLibAddress;
   address matryxRoundLibAddress;
 
@@ -45,11 +46,12 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   uint256_optional submissionGratitude = uint256_optional({exists: true, value: 2*10**17});
 
-  function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionTrustLibAddress) public
+  function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress, address _matryxSubmissionTrustLibAddress) public
   {
     matryxTokenAddress = _matryxTokenAddress;
     matryxPeerFactoryAddress = _matryxPeerFactoryAddress;
     matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
+    matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
     matryxSubmissionTrustLibAddress = _matryxSubmissionTrustLibAddress;
   }
 
@@ -133,9 +135,8 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   function prepareBalance(uint256 _toIgnore) public
   {   
       // Make sure that the user has not already attempted to prepare their balance
-      uint256 qID = fromQuerierToQueryID[msg.sender];
-      uint256 queryResponse = queryResponses[qID];
-      require(queryResponse == 0x0);
+      uint256 response = latestResponseFromOracle(msg.sender);
+      require(response == 0x0);
 
       this.Query(bytes32(_toIgnore), msg.sender);
   }

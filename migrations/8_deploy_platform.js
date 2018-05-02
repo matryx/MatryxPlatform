@@ -6,9 +6,10 @@ var RoundManagement = artifacts.require("./reputation/RoundManagement.sol");
 var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxPeerFactory = artifacts.require("MatryxPeerFactory");
 var MatryxTournamentFactory = artifacts.require("MatryxTournamentFactory");
+var MatryxSubmissionFactory = artifacts.require("MatryxSubmissionFactory");
 
 module.exports = function(deployer) {
-	return deployer.deploy(MatryxPlatform, MatryxToken.address, MatryxPeerFactory.address, MatryxTournamentFactory.address, SubmissionTrust.address).then(() =>
+	return deployer.deploy(MatryxPlatform, MatryxToken.address, MatryxPeerFactory.address, MatryxTournamentFactory.address, MatryxSubmissionFactory.address, SubmissionTrust.address).then(() =>
 	{
 		// Supply the platform address to the contracts that need it.
 		MatryxTournamentFactory.deployed().then((tournamentFactory) =>
@@ -19,6 +20,6 @@ module.exports = function(deployer) {
 		MatryxPeerFactory.deployed().then((peerFactory) =>
 		{
 			peerFactory.setPlatform(MatryxPlatform.address);
-		})
+		});
 	});
-};
+}

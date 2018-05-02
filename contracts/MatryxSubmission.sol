@@ -253,7 +253,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		timeUpdated = now;
 	}
 
-	function setTrustDelegate(address _newTrustDelegate) onlyOwner public
+	function setTrustDelegate(address _newTrustDelegate) onlyPlatform public
 	{
 		trustDelegate = _newTrustDelegate;
 	}
@@ -291,7 +291,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// @dev Called by the owner of _reference when this submission is approved to list _reference
 	/// as a reference.
 	/// _reference Reference being approved by msg.sender.
-	function approveReference(address _reference) public onlyPeer
+	function approveReference(address _reference) public /*onlyPeer*/
 	{
 		require(trustDelegate.delegatecall(fnSelector_approveReference, _reference));
 	}

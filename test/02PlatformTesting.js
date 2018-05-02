@@ -167,8 +167,6 @@ contract('MatryxPlatform', function(accounts) {
   //   });
 
   it("The number of tournaments should be 2", async function() {
-    platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
-    web3.eth.defaultAccount = web3.eth.accounts[0]
     await token.mint(web3.eth.accounts[0], 100*10**18)
     await token.approve(MatryxPlatform.address, 100*10**18)
 
@@ -188,6 +186,18 @@ contract('MatryxPlatform', function(accounts) {
     let lookupFirstTournamentAddress = await platform.getTournamentAtIndex.call(0);
     assert.equal(tournamentAddress, lookupFirstTournamentAddress.valueOf(), "Addresses inconsistent for tournament.");
   })
+
+  it("Able to get top category.", async function() {
+      let topCategory = await platform.getTopCategory(0);
+      console.log(topCategory);
+      assert.equal(topCategory, "category", "Did not get the top category of the platform");
+   });
+
+  it("Able to set submission gratitude.", async function() {
+      await platform.setSubmissionGratitude(10);
+      let gratitude = await platform.getSubmissionGratitude();
+      assert.equal(gratitude, 10, "Submission gratitude is not equal to 10");
+   });
 });
 
 contract('MatryxPlatform', async function(accounts)

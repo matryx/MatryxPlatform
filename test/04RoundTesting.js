@@ -12,7 +12,7 @@ contract('MatryxPlatform', function(accounts)
 	let token;
 
 	it("Submission is accessible to creator", async function() {
-		platform = await MatryxPlatform.deployed();
+		  platform = await MatryxPlatform.deployed();
       token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
       platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
       web3.eth.defaultAccount = web3.eth.accounts[0]
@@ -27,10 +27,10 @@ contract('MatryxPlatform', function(accounts)
       await token.mint(web3.eth.accounts[2], 2*10**18)
       await token.mint(web3.eth.accounts[3], 2*10**18)
       await token.approve(MatryxPlatform.address, 100*10**18)
-        // create a tournament.
-        createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2, {gas: 3000000});
-        // get the tournament address
-        tournamentCreatedEvent = platform.TournamentCreated();
+      // create a tournament.
+      createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2, {gas: 3000000});
+      // get the tournament address
+      tournamentCreatedEvent = platform.TournamentCreated();
 
       tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
         tournamentCreatedEvent.get((err, res) => {
@@ -45,29 +45,21 @@ contract('MatryxPlatform', function(accounts)
       tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
       	tournament = await MatryxTournament.at(tournamentAddress);
 
-      	//open tournament
+      //open tournament
     	let tournamentOpen = await tournament.openTournament();
-    	//console.log(tournamentOpen);
 
     	//enter tournament
     	let enteredTournament = await platform.enterTournament(tournamentAddress, {gas: 3000000});
-    	//console.log(enteredTournament);
 
     	//create and start round
     	let roundAddress = await tournament.createRound(5);
-    	//console.log(roundAddress);
-
     	round = await tournament.currentRound();
-    	//console.log("round", round[1]);
     	roundAddress = round[1];
-
     	await tournament.startRound(10, 10, {gas: 3000000});
     	round = web3.eth.contract(MatryxRound.abi).at(roundAddress);
-    	//console.log(round);
 
     	//open round
     	let roundOpen = await round.isOpen();
-    	//console.log(roundOpen);
 
     	//create submission
     	let submissionCreated = await tournament.createSubmission("submission1", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"], {gas: 3000000});
@@ -146,37 +138,36 @@ contract('MatryxPlatform', function(accounts)
 
 	it("The number of submissions is 0.", async function() {
 		platform = await MatryxPlatform.deployed();
-      	token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
-      	platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
-      	web3.eth.defaultAccount = web3.eth.accounts[0]
-      	await platform.createPeer.sendTransaction({gas: 3000000});
-      	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[1]});
-      	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[2]});
-      	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[3]});
-      	await token.setReleaseAgent(web3.eth.accounts[0])
-      	await token.releaseTokenTransfer.sendTransaction({gas: 1000000})
-      	await token.mint(web3.eth.accounts[0], 10000*10**18)
-      	await token.mint(web3.eth.accounts[1], 2*10**18)
-      	await token.mint(web3.eth.accounts[2], 2*10**18)
-      	await token.mint(web3.eth.accounts[3], 2*10**18)
-      	await token.approve(MatryxPlatform.address, 100*10**18)
-      	// create a tournament
-        createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2, {gas: 3000000});
-        // get the tournament address
-        tournamentCreatedEvent = platform.TournamentCreated();
+    token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
+    platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
+    web3.eth.defaultAccount = web3.eth.accounts[0]
+    await platform.createPeer.sendTransaction({gas: 3000000});
+    await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[1]});
+    await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[2]});
+    await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[3]});
+    await token.setReleaseAgent(web3.eth.accounts[0])
+    await token.releaseTokenTransfer.sendTransaction({gas: 1000000})
+    await token.mint(web3.eth.accounts[0], 10000*10**18)
+    await token.mint(web3.eth.accounts[1], 2*10**18)
+    await token.mint(web3.eth.accounts[2], 2*10**18)
+    await token.mint(web3.eth.accounts[3], 2*10**18)
+    await token.approve(MatryxPlatform.address, 100*10**18)
+    // create a tournament
+    createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2, {gas: 3000000});
+    // get the tournament address
+    tournamentCreatedEvent = platform.TournamentCreated();
 
-      	tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
-        		tournamentCreatedEvent.get((err, res) => {
-            	if (err) {
-            	    reject(err);
-            	} else {
-                	resolve(res);
-            	}
-        	}))
-      	var tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
-
-      	tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
-      	tournament = await MatryxTournament.at(tournamentAddress);
+    tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
+     	tournamentCreatedEvent.get((err, res) => {
+         if (err) {
+         	  reject(err);
+          } else {
+            resolve(res);
+        }
+     }))
+    var tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
+    tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
+    tournament = await MatryxTournament.at(tournamentAddress);
 
       //open tournament
     	let tournamentOpen = await tournament.openTournament();
@@ -216,12 +207,13 @@ contract('MatryxPlatform', function(accounts)
 
 	it("Author of submission is gettable.", async function() {
 		let submissionAuthor = await round.getSubmissionAuthor.call(0);
-    console.log(submissionAuthor);
-		assert.equal(submissionAuthor, accounts[0], "The author of submission 1 is not accounts[0].");
+    peerAddress = await platform.peerAddress(accounts[0]);
+		assert.equal(submissionAuthor, peerAddress, "The author of submission 1 is not accounts[0]'s peer.");
 	});
 
 	it("Balance of a submission is gettable.", async function() {
 		let winningSubmissionAddress = await round.getSubmissionAddress.call(1);
+    //close tournament
 		await tournament.chooseWinner(winningSubmissionAddress);
 		let submissionBalance = await round.getBalance.call(winningSubmissionAddress);
 		assert.equal(submissionBalance, 5, "Balance of winning submission was not equal to round bounty");

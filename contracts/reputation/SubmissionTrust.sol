@@ -95,7 +95,7 @@ contract SubmissionTrust is Ownable
 
 		// We know that the parameter is a valid submission
 		// as deemed by the platform. Therefore we're able to
-		// get it's author without worrying that we don't
+		// get its author without worrying that we don't
 		// know what code we're calling.
 		if(addressToReferenceInfo[_reference].flagged)
 		{
