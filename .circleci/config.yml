@@ -1,0 +1,14 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/node:9.4.0
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run: 
+          name: Install Dependencies
+          command: npm install
+      - run: 
+          name: Compile Contracts
+          command: truffle compile
