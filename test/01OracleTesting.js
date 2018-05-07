@@ -20,10 +20,10 @@ contract('MatryxPlatform', function(accounts) {
 
 	it("Query id exists, platform owner tries to store value under id", async function() {
 		web3.eth.defaultAccount = web3.eth.accounts[6]
-		console.log(queryId.valueOf());
+		//console.log(queryId.valueOf());
 		await platform.storeQueryResponse(queryId.valueOf(), 5);
 		let balance = await platform.getBalance.call({from: accounts[6]});
-		console.log(balance);
+		//console.log(balance);
 		assert.equal(balance.valueOf(), 5, "Balance should be 5.");
 	});
 });

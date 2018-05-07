@@ -107,7 +107,6 @@ contract('MatryxPlatform', function(accounts)
 
 	it("Submission one has correct time", async function() {
 		let submissionOneTimeSubmitted = await submissionOne.getTimeSubmitted.call();
-
 		assert.equal(submissionOneTimeSubmitted, submissionOneBlocktime, "Submission one time submitted not equal to time block was mined.");
 	});
 
@@ -135,6 +134,11 @@ contract('MatryxPlatform', function(accounts)
 		assert.isTrue(accessible, "Submission is not externally accessible");
 	})
 
+	it("Able to read a submission's balance", async function() {
+		let balance = await submissionOne.getBalance.call();
+		assert.equal(balance, 0, "Submission's balance was not zero.");
+	})
+
 	//Testing methods from Submission Trust
 	it("Able to add to a submission's references", async function() {
 		await submissionOne.addReference(submissionTwo.address, {gas: 3000000});
@@ -142,41 +146,10 @@ contract('MatryxPlatform', function(accounts)
 		assert.equal(references[1], submissionTwo.address, "References on submission not updated correctly");
 	})
 
-	//TODO
-	it("Able to approve a reference", async function() {
-		let submissionTwoPeerAddress = await platform.peerAddress(accounts[1]);
-		console.log(submissionTwoPeerAddress);
-		//let referenceApproved = await submissionTwo.approveReference(submissionOne.address, {from: accounts[1], gas: 3000000});
-
-		let referenceApproved = await submissionOne.approveReference(submissionTwo.address, {gas: 3000000});
-
-		console.log(referenceApproved);
-		let approvedReferences = submissionTwo.approvedReferences;
-		console.log(approvedReferences);
-		assert.equal(approvedReferences[0], submissionTwo.address, "Reference was not successfully approved.");
-	})
-
-	//TODO
-	it("Able to remove a reference approval", async function() {
-		
-	})
-
 	it("Able to delete a submission's references", async function() {
 		await submissionOne.removeReference(submissionTwo.address);
 		let references = await submissionOne.getReferences.call();
 		assert.equal(references[1], 0, "Removed reference was not null");
-	})
-
-	//TODO
-	it("Able to flag a missing reference", async function() {
-		let flag = await submissionOne.flagMissingReference(submissionTwo.address, {gas: 3000000});
-		//console.log(flag);
-		assert.equal(submissionOne.missingReferences[0], submissionTwo.address, "Missing flag was not successfully added.");
-	})
-
-	//TODO
-	it("Able to remove a missing reference flag", async function() {
-		
 	})
 
 	it("Able to add to a submission's contributors", async function() {
@@ -191,10 +164,6 @@ contract('MatryxPlatform', function(accounts)
 		assert.equal(contributors[1], 0, "Removed reference was not null");
 	})
 
-	it("Able to read a submission's balance", async function() {
-		let balance = await submissionOne.getBalance.call();
-		assert.equal(balance, 0, "Submission's balance was not zero.");
-	})
 });
 
 

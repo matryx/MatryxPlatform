@@ -12,30 +12,45 @@ contract('MatryxPlatform', function(accounts)
     let createTournamentTransaction;
     let tournamentAddress;
     let tournament;
+    let submissionZero;
     let submissionOne;
-    let submissionAddress;
-    let submissionOneBlocktime;
+    let submissionZeroAddress;
+    let submissionZeroBlocktime;
     let token;
-    let peer1;
-    let peerAddress;
+    let peerZero;
+    let peerZeroAddress;
 
 	it("Submission is owned by peer.", async function() {
 		platform = await MatryxPlatform.deployed();
       	token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
       	platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
       	web3.eth.defaultAccount = web3.eth.accounts[0]
-      	peerZero = await platform.createPeer({gas: 3000000});
-        console.log(peerZero);
+
+        //create peers for all 9 accounts
+      	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[0]});
       	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[1]});
       	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[2]});
       	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[3]});
+        await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[4]});
+        await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[5]});
+        await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[6]});
+        await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[7]});
+        await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[8]});
+        await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[9]});
       	await token.setReleaseAgent(web3.eth.accounts[0])
       	await token.releaseTokenTransfer.sendTransaction({gas: 1000000})
       	await token.mint(web3.eth.accounts[0], 10000*10**18)
       	await token.mint(web3.eth.accounts[1], 2*10**18)
       	await token.mint(web3.eth.accounts[2], 2*10**18)
       	await token.mint(web3.eth.accounts[3], 2*10**18)
+        await token.mint(web3.eth.accounts[4], 2*10**18)
+        await token.mint(web3.eth.accounts[5], 2*10**18)
+        await token.mint(web3.eth.accounts[6], 2*10**18)
+        await token.mint(web3.eth.accounts[7], 2*10**18)
+        await token.mint(web3.eth.accounts[8], 2*10**18)
+        await token.mint(web3.eth.accounts[9], 2*10**18)
       	await token.approve(MatryxPlatform.address, 100*10**18)
+
       	// create a tournament
         createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2, {gas: 3000000});
         // get the tournament address
@@ -75,7 +90,6 @@ contract('MatryxPlatform', function(accounts)
 		// become entrant in tournament
 		submissionZero = await tournament.createSubmission("submission0", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"]);
 		submissionZeroAddress = submissionZero.logs[0].args._submissionAddress;
-		console.log(submissionZeroAddress);
 
 		//get peer address
 		peerZeroAddress = await platform.peerAddress(accounts[0]);
@@ -85,21 +99,189 @@ contract('MatryxPlatform', function(accounts)
 		assert.isTrue(peerOwnsSubmission, "The peer does not own this submission");
     });
 
-  //TODO: test that first peer's trust is less than one. check that with each additional peer their original trust decreases
-  //TODO: check that by adding more and more peers the total trust of the system converges to 1
+    //Testing reputation system
+    it("First peer's trust is less than 1 ether", async function() {
+      var peerZero = web3.eth.contract(MatryxPeer.abi).at(peerZeroAddress);
+      let reputationZero = await peerZero.getReputation();
+      let isValid = reputationZero < 1*10**18;
+      assert.isTrue(isValid, "The first peer's reputation was not less than 1 ether.");
+    })
 
-    it("First peer's trust is less than 1", async function() {
-      let isPeer = platform.isPeer(peerZero);
-      console.log(isPeer);
-      let isPeer2 = platform.isPeer(peerZeroAddress);
-      console.log(isPeer2);
-      console.log(peerZero);
-      console.log(peerZeroAddress);
-      let reputation = await peerZero.getReputation();
-      console.log(reputation);
-      let isValid = reputation < 1;
-      console.log(isValid);
-      assert.isTrue(isValid, "The first peer's reputation was not less than 1.");
+    it("Original trust decreases with each additional peer", async function() {
+      //get reputation of all 9 accounts
+      var peerZero = web3.eth.contract(MatryxPeer.abi).at(peerZeroAddress);
+      let reputationZero = await peerZero.getReputation();
+
+      peerOneAddress = await platform.peerAddress(accounts[1]);
+      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+      let reputationOne = await peerOne.getReputation();
+
+      peerTwoAddress = await platform.peerAddress(accounts[2]);
+      var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
+      let reputationTwo = await peerTwo.getReputation();
+
+      peerThreeAddress = await platform.peerAddress(accounts[3]);
+      var peerThree = web3.eth.contract(MatryxPeer.abi).at(peerThreeAddress);
+      let reputationThree = await peerThree.getReputation();
+
+      peerFourAddress = await platform.peerAddress(accounts[4]);
+      var peerFour = web3.eth.contract(MatryxPeer.abi).at(peerFourAddress);
+      let reputationFour = await peerFour.getReputation();
+
+      peerFiveAddress = await platform.peerAddress(accounts[5]);
+      var peerFive = web3.eth.contract(MatryxPeer.abi).at(peerFiveAddress);
+      let reputationFive = await peerFive.getReputation();
+
+      peerSixAddress = await platform.peerAddress(accounts[6]);
+      var peerSix = web3.eth.contract(MatryxPeer.abi).at(peerSixAddress);
+      let reputationSix = await peerSix.getReputation();
+
+      peerSevenAddress = await platform.peerAddress(accounts[7]);
+      var peerSeven = web3.eth.contract(MatryxPeer.abi).at(peerSevenAddress);
+      let reputationSeven = await peerSeven.getReputation();
+
+      peerEightAddress = await platform.peerAddress(accounts[8]);
+      var peerEight = web3.eth.contract(MatryxPeer.abi).at(peerEightAddress);
+      let reputationEight = await peerEight.getReputation();
+
+      peerNineAddress = await platform.peerAddress(accounts[9]);
+      var peerNine = web3.eth.contract(MatryxPeer.abi).at(peerNineAddress);
+      let reputationNine = await peerNine.getReputation();
+
+      let isValid = (reputationZero.toNumber() > reputationOne.toNumber()) && 
+                    (reputationOne.toNumber() > reputationTwo.toNumber()) && 
+                    (reputationTwo.toNumber() > reputationThree.toNumber()) &&
+                    (reputationThree.toNumber() > reputationFour.toNumber()) &&
+                    (reputationFour.toNumber() > reputationFive.toNumber()) &&
+                    (reputationFive.toNumber() > reputationSix.toNumber()) &&
+                    (reputationSix.toNumber() > reputationSeven.toNumber()) &&
+                    (reputationSeven.toNumber() > reputationEight.toNumber()) &&
+                    (reputationEight.toNumber() > reputationNine.toNumber());
+
+      assert.isTrue(isValid, "Original peer trust does not decrease with each additional peer.");
+    })
+
+    it("Total trust converges to 1 ether", async function() {
+      //get reputations
+      var peerZero = web3.eth.contract(MatryxPeer.abi).at(peerZeroAddress);
+      let reputationZero = await peerZero.getReputation();
+
+      peerOneAddress = await platform.peerAddress(accounts[1]);
+      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+      let reputationOne = await peerOne.getReputation();
+
+      peerTwoAddress = await platform.peerAddress(accounts[2]);
+      var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
+      let reputationTwo = await peerTwo.getReputation();
+
+      peerThreeAddress = await platform.peerAddress(accounts[3]);
+      var peerThree = web3.eth.contract(MatryxPeer.abi).at(peerThreeAddress);
+      let reputationThree = await peerThree.getReputation();
+
+      peerFourAddress = await platform.peerAddress(accounts[4]);
+      var peerFour = web3.eth.contract(MatryxPeer.abi).at(peerFourAddress);
+      let reputationFour = await peerFour.getReputation();
+
+      peerFiveAddress = await platform.peerAddress(accounts[5]);
+      var peerFive = web3.eth.contract(MatryxPeer.abi).at(peerFiveAddress);
+      let reputationFive = await peerFive.getReputation();
+
+      peerSixAddress = await platform.peerAddress(accounts[6]);
+      var peerSix = web3.eth.contract(MatryxPeer.abi).at(peerSixAddress);
+      let reputationSix = await peerSix.getReputation();
+
+      peerSevenAddress = await platform.peerAddress(accounts[7]);
+      var peerSeven = web3.eth.contract(MatryxPeer.abi).at(peerSevenAddress);
+      let reputationSeven = await peerSeven.getReputation();
+
+      peerEightAddress = await platform.peerAddress(accounts[8]);
+      var peerEight = web3.eth.contract(MatryxPeer.abi).at(peerEightAddress);
+      let reputationEight = await peerEight.getReputation();
+
+      peerNineAddress = await platform.peerAddress(accounts[9]);
+      var peerNine = web3.eth.contract(MatryxPeer.abi).at(peerNineAddress);
+      let reputationNine = await peerNine.getReputation();
+
+      //calculate the global reputation of the platform
+      let totalReputation = reputationZero.toNumber() + reputationOne.toNumber() + reputationTwo.toNumber() + reputationThree.toNumber() +
+                            reputationFour.toNumber() + reputationFive.toNumber() + reputationSix.toNumber() + reputationSeven.toNumber() +
+                            reputationEight.toNumber() + reputationNine.toNumber();
+
+      console.log(totalReputation);
+      let isValid = totalReputation < 1*10**18;
+
+      assert.isTrue(isValid, "Total trust exceeds 1 ether.");
+    })
+
+    it("Able to approve a reference", async function() {
+      //make a sumbission from account1
+      await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: 3000000});
+      let submissionOne = await tournament.createSubmission("submission1", accounts[1], "external address 1", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1]});
+      let submissionOneAddress = submissionOne.logs[0].args._submissionAddress;
+
+      //make a sumbission from account2
+      await platform.enterTournament(tournamentAddress, {from: accounts[2], gas: 3000000});
+      let submissionTwo = await tournament.createSubmission("submission2", accounts[2], "external address 2", ["0x0"], ["0x0"], ["0x0"], {from: accounts[2]});
+      let submissionTwoAddress = submissionTwo.logs[0].args._submissionAddress;
+
+      //get peers
+      let peerOneAddress = await platform.peerAddress(accounts[1]);
+      let peerTwoAddress = await platform.peerAddress(accounts[2]);
+      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+      var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
+
+      let peerOneReputationBefore = await peerOne.getReputation();
+      console.log("peerOneReputationBefore " + peerOneReputationBefore);
+      let peerTwoReputationBefore = await peerTwo.getReputation();
+      console.log("peerTwoReputationBefore " + peerTwoReputationBefore);
+
+      //peer 1 approves a reference to submission1 within submission2
+      //peer 2's reputation increases
+      await peerOne.approveReference(submissionTwoAddress, submissionOneAddress, {from: accounts[1], gas: 3000000});
+
+      let peerOneReputationAfter = await peerOne.getReputation();
+      console.log("peerOneReputationAfter " + peerOneReputationAfter);
+      let peerTwoReputationAfter = await peerTwo.getReputation();
+      console.log("peerTwoReputationAfter " + peerTwoReputationAfter);
+
+      assert.isTrue(peerTwoReputationAfter > peerTwoReputationBefore, "Reference was not successfully approved.");
+    })
+
+    it("Able to flag a missing reference", async function() {
+      //get peers
+      var peerOneAddress = await platform.peerAddress(accounts[1]);
+      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+
+      var peerTwoAddress = await platform.peerAddress(accounts[2]);
+      var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
+
+      //get submissions 1 and 2
+      let mySubmissionsOne = await tournament.mySubmissions.call({from: accounts[1]});
+      let submissionOne = await MatryxSubmission.at(mySubmissionsOne[0]);
+      let submissionOneAddress = submissionOne.address;
+
+      let mySubmissionsTwo = await tournament.mySubmissions.call({from: accounts[2]});
+      let submissionTwo = await MatryxSubmission.at(mySubmissionsTwo[0]);
+      let submissionTwoAddress = submissionTwo.address;
+
+      let peerOneReputationBefore = await peerOne.getReputation();
+      console.log("peerOneReputationBefore " + peerOneReputationBefore);
+      let peerTwoReputationBefore = await peerTwo.getReputation();
+      console.log("peerTwoReputationBefore " + peerTwoReputationBefore);
+
+      //submission 1 is missing as a reference in submission 2, so peer 1 flags submission 2
+      //peer 2's reputation decreases
+      let flag = await peerOne.flagMissingReference(submissionTwoAddress, submissionOneAddress, {gas: 3000000, from: accounts[1]});
+
+      let isFlagged = await submissionTwo.addressIsFlagged(submissionTwoAddress);
+      console.log("is submission2 flagged?: " + isFlagged);
+
+      let peerOneReputationAfter = await peerOne.getReputation();
+      console.log("peerOneReputationAfter " + peerOneReputationAfter);
+      let peerTwoReputationAfter = await peerTwo.getReputation();
+      console.log("peerTwoReputationAfter " + peerTwoReputationAfter);
+
+      assert.isTrue(peerTwoReputationAfter < peerTwoReputationBefore, "Missing flag was not successfully added.");
     })
 
 });

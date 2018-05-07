@@ -11,10 +11,15 @@ contract('MatryxPlatform', function(accounts){
 
   it("The owner of the platform should be the creator of the platform", async function() {
       platform = await MatryxPlatform.deployed();
+      console.log("platform deployed? " + platform);
       token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
+      console.log("token: " + token);
       platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
-      web3.eth.defaultAccount = web3.eth.accounts[0]
+      console.log("platform" + platform);
+      web3.eth.defaultAccount = web3.eth.accounts[0];
+      console.log("before creating the first peer");
       await platform.createPeer.sendTransaction({gas: 3000000});
+      console.log("after creating the first peer");
       await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[1]});
       await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[2]});
       await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[3]});
@@ -25,12 +30,17 @@ contract('MatryxPlatform', function(accounts){
       await token.mint(web3.eth.accounts[2], 2*10**18)
       await token.mint(web3.eth.accounts[3], 2*10**18)
       await token.approve(MatryxPlatform.address, 100*10**18)
+
+      console.log("creating tournament");
+
       // create a tournament
       createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2*10**18, {gas: 3000000});
+      console.log("createTournamentTransaction: " + createTournamentTransaction);
       // get the tournament address
       //console.log(web3.eth.getTransactionReceipt(createTournamentTransaction).logs);
       //console.log(web3.sha3("TournamentCreated(string,address,address,string,bytes,uint256,uint256)"));
       tournamentCreatedEvent = platform.TournamentCreated();
+      console.log("tournament created event: " + tournamentCreatedEvent);
       //console.log("Event: , tournamentCreatedEvent.get);
 
       tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
@@ -46,8 +56,10 @@ contract('MatryxPlatform', function(accounts){
       //console.log("tournamentsCreatedEvents", tournamentsCreatedEvents[0].args._tournamentAddress);
 
       tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
+      console.log("tournamentAddress: " + tournamentAddress);
       // create tournament from address
       tournament = await MatryxTournament.at(tournamentAddress);
+      console.log("tournament: " + tournament);
 
       let creatorIsOwner = await tournament.isOwner.call(accounts[0]);
       assert(creatorIsOwner.valueOf(), true, "The owner and creator of the tournament should be the same"); 
@@ -245,6 +257,7 @@ contract('MatryxPlatform', async function(accounts)
     platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
     web3.eth.defaultAccount = web3.eth.accounts[0]
     await platform.createPeer.sendTransaction({gas: 3000000});
+    console.log("after creating the first peer");
     await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[1]});
     await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[2]});
     await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[3]});
