@@ -4,7 +4,7 @@ let MatryxRound = artifacts.require("MatryxRound");
 let MatryxSubmission = artifacts.require("MatryxSubmission");
 var MatryxToken = artifacts.require("MatryxToken");
 
-contract('MatryxPlatform', function(accounts)
+contract('MatryxSubmission', function(accounts)
 {
     let platform;
     let createTournamentTransaction;
@@ -14,80 +14,127 @@ contract('MatryxPlatform', function(accounts)
     let submissionTwo;
     let submissionOneBlocktime;
     let token;
+    let gasEstimate;
 
     it("Submission one owner is submission creator", async function() {
-		platform = await MatryxPlatform.deployed();
-      	token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
-      	platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
-      	web3.eth.defaultAccount = web3.eth.accounts[0]
-      	await platform.createPeer.sendTransaction({gas: 3000000});
-      	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[1]});
-      	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[2]});
-      	await platform.createPeer.sendTransaction({gas: 3000000, from: web3.eth.accounts[3]});
-      	await token.setReleaseAgent(web3.eth.accounts[0])
-      	await token.releaseTokenTransfer.sendTransaction({gas: 1000000})
-      	await token.mint(web3.eth.accounts[0], 10000*10**18)
-      	await token.mint(web3.eth.accounts[1], 2*10**18)
-      	await token.mint(web3.eth.accounts[2], 2*10**18)
-      	await token.mint(web3.eth.accounts[3], 2*10**18)
-      	await token.approve(MatryxPlatform.address, 100*10**18)
-      	// create a tournament
-        createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2, {gas: 3000000});
-        // get the tournament address
-        tournamentCreatedEvent = platform.TournamentCreated();
+	  //deploy platform
+      platform = await MatryxPlatform.deployed();
+      token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
+      platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
+      web3.eth.defaultAccount = web3.eth.accounts[0];
 
-      	tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
-        		tournamentCreatedEvent.get((err, res) => {
-            	if (err) {
-            	    reject(err);
-            	} else {
-                	resolve(res);
-            	}
-        	}))
-      	var tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
+      //get gas estimate for creating peers
+      gasEstimate = await platform.createPeer.estimateGas();
 
-      	tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
-      	tournament = await MatryxTournament.at(tournamentAddress);
+      //create peers
+      await platform.createPeer.sendTransaction({gas: gasEstimate});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[1]});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[2]});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[3]});
+      await token.setReleaseAgent(web3.eth.accounts[0]);
 
-      	//open tournament
-    	let tournamentOpen = await tournament.openTournament();
+      //get gas estimate for releasing token transfer
+      gasEstimate = await token.releaseTokenTransfer.estimateGas();
 
-    	//enter tournament
-    	let enteredTournament = await platform.enterTournament(tournamentAddress, {gas: 3000000});
+      //release token transfer and mint tokens for the accounts
+      await token.releaseTokenTransfer.sendTransaction({gas: gasEstimate});
+      await token.mint(web3.eth.accounts[0], 10000*10**18)
+      await token.mint(web3.eth.accounts[1], 2*10**18)
+      await token.mint(web3.eth.accounts[2], 2*10**18)
+      await token.mint(web3.eth.accounts[3], 2*10**18)
+      await token.approve(MatryxPlatform.address, 100*10**18)
 
-    	//create and start round
-    	let roundAddress = await tournament.createRound(5);
+      //get gas estimate for creating tournament
+      gasEstimate = await platform.createTournament.estimateGas("category", "tournament", "external address", 100*10**18, 2*10**18);
+      //since createTournament has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
+      gasEstimate = Math.ceil(gasEstimate * 1.3);
 
-    	round = await tournament.currentRound();
-    	roundAddress = round[1];
+      // create a tournament
+      createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
+      tournamentCreatedEvent = platform.TournamentCreated();
 
-    	await tournament.startRound(10, 10, {gas: 3000000});
-    	round = web3.eth.contract(MatryxRound.abi).at(roundAddress);
+      tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
+        tournamentCreatedEvent.get((err, res) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(res);
+            }
+        }))
+      var tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
 
-    	//open round
-    	let roundOpen = await round.isOpen();
+      //get tournament address
+      tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
+      // create tournament from address
+      tournament = await MatryxTournament.at(tournamentAddress);
 
-		// become entrant in tournament
-		let submissionOneTx = await tournament.createSubmission("submission1", accounts[0], "external address 1", ["0x0"], ["0x0"], ["0x0"]);
+      //get gas estimate for opening tournament
+      gasEstimate = await tournament.openTournament.estimateGas();
+      gasEstimate = Math.ceil(gasEstimate * 1.3);
 
-		let blocknumber = await web3.eth.getTransaction(submissionOneTx.tx).blockNumber;
-		submissionOneBlocktime = await web3.eth.getBlock(blocknumber).timestamp
+      //open tournament
+      let tournamentOpen = await tournament.openTournament({gas: gasEstimate});
 
-		let mySubmissions = await tournament.mySubmissions.call();
-		// create the submission in tournament
-		submissionOne = await MatryxSubmission.at(mySubmissions[0]);
-		let submissionOwner = await submissionOne.owner.call();
+      //get gas estimate for entering tournament
+      gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
 
-		//check that we're both the tournament and submission owner
-		assert.equal(submissionOwner, accounts[0], "The owner of the submission should be the owner of the tournament");
+      //enter tournament
+      let enteredTournament = await platform.enterTournament(tournamentAddress, {gas: gasEstimate});
+
+      //create and start round
+      let roundAddress = await tournament.createRound(5);
+      round = await tournament.currentRound();
+      roundAddress = round[1];
+
+      //get gas estimate for starting round
+      gasEstimate = await tournament.startRound.estimateGas(10, 10);
+
+      //start round
+      await tournament.startRound(10, 10, {gas: gasEstimate});
+      round = web3.eth.contract(MatryxRound.abi).at(roundAddress);
+
+      //open round
+      let roundOpen = await round.isOpen();
+
+      //get gas estimate for creating submission
+      gasEstimate = await tournament.createSubmission.estimateGas("submission1", accounts[0], "external address 1", ["0x0"], ["0x0"], ["0x0"]);
+      //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
+      gasEstimate = Math.ceil(gasEstimate * 1.3);
+
+      //create submission
+      let submissionOneTx = await tournament.createSubmission("submission1", accounts[0], "external address 1", ["0x0"], ["0x0"], ["0x0"], {gas: gasEstimate});
+
+	  let blocknumber = await web3.eth.getTransaction(submissionOneTx.tx).blockNumber;
+	  submissionOneBlocktime = await web3.eth.getBlock(blocknumber).timestamp
+
+	  //get my submissions
+	  let mySubmissions = await tournament.mySubmissions.call();
+	  //get submission one
+	  submissionOne = await MatryxSubmission.at(mySubmissions[0]);
+	  let submissionOwner = await submissionOne.owner.call();
+
+	  //check that we're both the tournament and submission owner
+	  assert.equal(submissionOwner, accounts[0], "The owner of the submission should be the owner of the tournament");
 	});
 
-    it("Submission two owner is submission creator", async function() {
-    	let enteredTournament = await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: 3000000});
-		await tournament.createSubmission("submission2", accounts[1], "external address 2", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1]});
+  it("Submission two owner is submission creator", async function() {
+    //get gas estimate for entering tournament
+    gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
+    //gasEstimate underestimates again here
+    gasEstimate = Math.ceil(gasEstimate * 5.5);
+
+    let enteredTournament = await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: gasEstimate});
+
+    //get gas estimate for creating submission
+    gasEstimate = await tournament.createSubmission.estimateGas("submission1", accounts[0], "external address 1", ["0x0"], ["0x0"], ["0x0"]);
+    //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
+    gasEstimate = Math.ceil(gasEstimate * 1.3);
+
+    //create submission
+		await tournament.createSubmission("submission2", accounts[1], "external address 2", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1], gas: gasEstimate});
 
 		let mySubmissions = await tournament.mySubmissions.call({from: accounts[1]});
-		// create the submission in tournament
+		//get submission
 		submissionTwo = await MatryxSubmission.at(mySubmissions[0]);
 		let submissionOwnerTwo = await submissionTwo.owner.call();
 
@@ -141,25 +188,41 @@ contract('MatryxPlatform', function(accounts)
 
 	//Testing methods from Submission Trust
 	it("Able to add to a submission's references", async function() {
-		await submissionOne.addReference(submissionTwo.address, {gas: 3000000});
+		//estimate gas for adding a reference to a submisssion
+		gasEstimate = await submissionOne.addReference.estimateGas(submissionTwo.address);
+		gasEstimate = Math.ceil(gasEstimate * 1.3);
+
+		await submissionOne.addReference(submissionTwo.address, {gas: gasEstimate});
 		let references = await submissionOne.getReferences.call();
 		assert.equal(references[1], submissionTwo.address, "References on submission not updated correctly");
 	})
 
 	it("Able to delete a submission's references", async function() {
-		await submissionOne.removeReference(submissionTwo.address);
+		//estimate gas for removing a reference
+		gasEstimate = await submissionOne.removeReference.estimateGas(submissionTwo.address);
+		gasEstimate = Math.ceil(gasEstimate * 2.3);
+
+		await submissionOne.removeReference(submissionTwo.address, {gas: gasEstimate});
 		let references = await submissionOne.getReferences.call();
 		assert.equal(references[1], 0, "Removed reference was not null");
 	})
 
 	it("Able to add to a submission's contributors", async function() {
-		await submissionOne.addContributor(accounts[6], 100);
+		//estimate gas for adding a contributor to a submisssion
+		gasEstimate = await submissionOne.addContributor.estimateGas(accounts[6], 100);
+		gasEstimate = Math.ceil(gasEstimate * 1.3);
+
+		await submissionOne.addContributor(accounts[6], 100, {gas: gasEstimate});
 		let contributors = await submissionOne.getContributors.call();
 		assert.equal(contributors[1], accounts[6], "References on submission not updated correctly");
 	})
 
 	it("Able to delete a submission's contributors", async function() {
-		await submissionOne.removeContributor(1);
+		//estimate gas for removing a contributor
+		gasEstimate = await submissionOne.removeContributor.estimateGas(1);
+		gasEstimate = Math.ceil(gasEstimate * 2);
+
+		await submissionOne.removeContributor(1, {gas: gasEstimate});
 		let contributors = await submissionOne.getContributors.call();
 		assert.equal(contributors[1], 0, "Removed reference was not null");
 	})
