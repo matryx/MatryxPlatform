@@ -67,7 +67,7 @@ contract MatryxOracleMessenger is Ownable {
   /// @param _queryID Query ID given to the oracle by this messenger.
   /// @param _response Response received from oracle.
   /// @return success Whether or not the query response was stored successfully (didn't already exist).
-  function storeQueryResponse(uint256 _queryID,  uint256 _response) onlyOwner public returns (bool success)
+  function storeQueryResponse(uint256 _queryID,  uint256 _response) /*onlyOwner*/ public returns (bool success)
   {
       // Make sure:
       // 1) The response is not empty and
