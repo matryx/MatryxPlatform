@@ -23,6 +23,7 @@ contract('MatryxPlatform', function(accounts){
 
       //create peers
       await platform.createPeer.sendTransaction({gas: gasEstimate});
+      console.log("created frist peer");
       await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[1]});
       await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[2]});
       await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[3]});
@@ -296,7 +297,6 @@ contract('MatryxPlatform', async function(accounts)
     let storeQueryResponseTx = await platform.storeQueryResponse(queryID, 1);
     //let response = storeQueryResponseTx.logs[0].args.storedResponse;
     let balanceIsNonZero = await platform.balanceIsNonZero();
-    console.log("balance not zero?: " + balanceIsNonZero);
     assert.isTrue(balanceIsNonZero.valueOf(), "Balance should be non-zero");
   });
 
@@ -324,7 +324,6 @@ contract('MatryxPlatform', async function(accounts)
 
       //get gas estimate for creating peers
       gasEstimate = await platform.createPeer.estimateGas();
-      console.log("gasEstimate: " + gasEstimate);
 
       //create peers
       await platform.createPeer.sendTransaction({gas: gasEstimate});
@@ -335,7 +334,6 @@ contract('MatryxPlatform', async function(accounts)
 
       //get gas estimate for releasing token transfer
       gasEstimate = await token.releaseTokenTransfer.estimateGas();
-      console.log("gasEstimate: " + gasEstimate);
 
       //release token transfer and mint tokens for the accounts
       await token.releaseTokenTransfer.sendTransaction({gas: gasEstimate});
@@ -347,10 +345,8 @@ contract('MatryxPlatform', async function(accounts)
 
       //get gas estimate for creating tournament
       gasEstimate = await platform.createTournament.estimateGas("category", "tournament", "external address", 100*10**18, 2*10**18);
-      console.log("gasEstimate: " + gasEstimate);
       //since createTournament has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
       gasEstimate = Math.ceil(gasEstimate * 1.3);
-      console.log("gasEstimate * constant: " + gasEstimate);
 
       // create a tournament
       createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
@@ -376,7 +372,6 @@ contract('MatryxPlatform', async function(accounts)
 
     //get gas estimate for become entrant in tournament
     gasEstimate = platform.enterTournament.estimateGas(tournamentAddress);
-    console.log("gasEstimate: " + gasEstimate);
 
     // become entrant in tournament
     let enteredTournament = await platform.enterTournament(tournamentAddress, {gas: gasEstimate});

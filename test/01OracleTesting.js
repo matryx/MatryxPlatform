@@ -1,5 +1,6 @@
 var utils = require("./utils.js");
 var MatryxAlpha = artifacts.require("MatryxPlatform");
+var MatryxOracleMessenger = artifacts.require("MatryxOracleMessenger");
 
 contract('MatryxPlatform', function(accounts) {
 	let platform;
@@ -20,10 +21,13 @@ contract('MatryxPlatform', function(accounts) {
 
 	it("Query id exists, platform owner tries to store value under id", async function() {
 		web3.eth.defaultAccount = web3.eth.accounts[6]
-		//console.log(queryId.valueOf());
-		await platform.storeQueryResponse(queryId.valueOf(), 5);
+		console.log(queryId.valueOf());
+
+		let storedResponse = await platform.storeQueryResponse(queryId.valueOf(), 5, {from: accounts[6]});
+		console.log(storedResponse.logs[0].args);
+
 		let balance = await platform.getBalance.call({from: accounts[6]});
-		//console.log(balance);
+		console.log(balance);
 		assert.equal(balance.valueOf(), 5, "Balance should be 5.");
 	});
 });
