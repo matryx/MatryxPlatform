@@ -19,17 +19,17 @@ contract('ReputationTesting', function(accounts)
     let token;
     let peerZero;
     let peerZeroAddress;
-    let gasEstimate;
+    let gasEstimate = 30000000;
 
 	it("Submission is owned by peer.", async function() {
+    web3.eth.defaultAccount = web3.eth.accounts[0];
 		  //deploy platform
       platform = await MatryxPlatform.deployed();
       token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
       platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
-      web3.eth.defaultAccount = web3.eth.accounts[0];
 
       //get gas estimate for creating peers
-      gasEstimate = await platform.createPeer.estimateGas();
+      // gasEstimate = await platform.createPeer.estimateGas();
 
       //create peers
       await platform.createPeer.sendTransaction({gas: gasEstimate});
@@ -45,7 +45,7 @@ contract('ReputationTesting', function(accounts)
       await token.setReleaseAgent(web3.eth.accounts[0]);
 
       //get gas estimate for releasing token transfer
-      gasEstimate = await token.releaseTokenTransfer.estimateGas();
+      // gasEstimate = await token.releaseTokenTransfer.estimateGas();
 
       //release token transfer and mint tokens for the accounts
       await token.releaseTokenTransfer.sendTransaction({gas: gasEstimate});
@@ -62,10 +62,10 @@ contract('ReputationTesting', function(accounts)
       await token.approve(MatryxPlatform.address, 100*10**18)
 
       //get gas estimate for creating tournament
-      gasEstimate = await platform.createTournament.estimateGas("category", "tournament", "external address", 100*10**18, 2*10**18);
+      // gasEstimate = await platform.createTournament.estimateGas("category", "tournament", "external address", 100*10**18, 2*10**18);
       //since createTournament has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
-      gasEstimate = Math.ceil(gasEstimate * 1.3);
-      console.log("gasEstimate * constant: " + gasEstimate);
+      // gasEstimate = Math.ceil(gasEstimate * 1.3);
+      // console.log("gasEstimate * constant: " + gasEstimate);
 
       // create a tournament
       createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
@@ -87,15 +87,15 @@ contract('ReputationTesting', function(accounts)
       tournament = await MatryxTournament.at(tournamentAddress);
 
       //get gas estimate for opening tournament
-      gasEstimate = await tournament.openTournament.estimateGas();
-      gasEstimate = Math.ceil(gasEstimate * 1.3);
-      console.log("gasEstimate * constant: " + gasEstimate);
+      // gasEstimate = await tournament.openTournament.estimateGas();
+      // gasEstimate = Math.ceil(gasEstimate * 1.3);
+      // console.log("gasEstimate * constant: " + gasEstimate);
 
       //open tournament
       let tournamentOpen = await tournament.openTournament({gas: gasEstimate});
 
       //get gas estimate for entering tournament
-      gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
+      // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
 
       //enter tournament
       let enteredTournament = await platform.enterTournament(tournamentAddress, {gas: gasEstimate});
@@ -106,7 +106,7 @@ contract('ReputationTesting', function(accounts)
       roundAddress = round[1];
 
       //get gas estimate for starting round
-      gasEstimate = await tournament.startRound.estimateGas(10, 10);
+      // gasEstimate = await tournament.startRound.estimateGas(10, 10);
 
       //start round
       await tournament.startRound(10, 10, {gas: gasEstimate});
@@ -115,11 +115,11 @@ contract('ReputationTesting', function(accounts)
       //open round
       let roundOpen = await round.isOpen();
 
-      //get gas estimate for creating submission
-      gasEstimate = await tournament.createSubmission.estimateGas("submission0", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"]);
-      //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
-      gasEstimate = Math.ceil(gasEstimate * 1.3);
-      console.log("gasEstimate * constant: " + gasEstimate);
+      // //get gas estimate for creating submission
+      // gasEstimate = await tournament.createSubmission.estimateGas("submission0", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"]);
+      // //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
+      // gasEstimate = Math.ceil(gasEstimate * 1.3);
+      // console.log("gasEstimate * constant: " + gasEstimate);
 
       //create submission
       submissionZero = await tournament.createSubmission("submission0", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"], {gas: gasEstimate});
@@ -249,32 +249,32 @@ contract('ReputationTesting', function(accounts)
 
     it("Able to approve a reference", async function() {
       //get gas estimate for entering tournament
-      gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
-      gasEstimate = Math.ceil(gasEstimate * 10);
+      // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
+      // gasEstimate = Math.ceil(gasEstimate * 10);
 
       //enter tournament
       await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: gasEstimate});
 
-      //get gas estimate for creating submission
-      gasEstimate = await tournament.createSubmission.estimateGas("submission1", accounts[1], "external address 1", ["0x0"], ["0x0"], ["0x0"]);
-      //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
-      gasEstimate = Math.ceil(gasEstimate * 1.3);
+      // //get gas estimate for creating submission
+      // gasEstimate = await tournament.createSubmission.estimateGas("submission1", accounts[1], "external address 1", ["0x0"], ["0x0"], ["0x0"]);
+      // //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
+      // gasEstimate = Math.ceil(gasEstimate * 1.3);
 
       //make a sumbission from account1
       let submissionOne = await tournament.createSubmission("submission1", accounts[1], "external address 1", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1], gas: gasEstimate});
       let submissionOneAddress = submissionOne.logs[0].args._submissionAddress;
 
-      //get gas estimate for entering tournament
-      gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
-      gasEstimate = Math.ceil(gasEstimate * 10);
+      // //get gas estimate for entering tournament
+      // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
+      // gasEstimate = Math.ceil(gasEstimate * 10);
 
       //enter tournament
       await platform.enterTournament(tournamentAddress, {from: accounts[2], gas: gasEstimate});
 
-      //get gas estimate for creating submission
-      gasEstimate = await tournament.createSubmission.estimateGas("submission2", accounts[2], "external address 2", ["0x0"], ["0x0"], ["0x0"]);
-      //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
-      gasEstimate = Math.ceil(gasEstimate * 1.3);
+      // //get gas estimate for creating submission
+      // gasEstimate = await tournament.createSubmission.estimateGas("submission2", accounts[2], "external address 2", ["0x0"], ["0x0"], ["0x0"]);
+      // //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
+      // gasEstimate = Math.ceil(gasEstimate * 1.3);
 
       //make a sumbission from account2
       let submissionTwo = await tournament.createSubmission("submission2", accounts[2], "external address 2", ["0x0"], ["0x0"], ["0x0"], {from: accounts[2], gas: gasEstimate});
