@@ -262,20 +262,20 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @param _reference Address of additional reference to include.
 	function addReference(address _reference) onlyOwner public 
 	{
-		require(trustDelegate.delegatecall(fnSelector_addReference, _reference));
+		//require(trustDelegate.delegatecall(fnSelector_addReference, _reference));
 	}
 
-	// Debug function. ?MAYBEDO:Delete
-	function addressIsFlagged(address _reference) public constant returns (bool, bool)
-	{
-		return (addressToReferenceInfo[_reference].flagged, missingReferenceToIndex[_reference].exists);
-	}
+	// // Debug function. ?MAYBEDO:Delete
+	// function addressIsFlagged(address _reference) public constant returns (bool, bool)
+	// {
+	// 	return (addressToReferenceInfo[_reference].flagged, missingReferenceToIndex[_reference].exists);
+	// }
 
 	/// @dev Remove an erroneous reference to a submission (callable only by submission's owner).
     /// @param _reference Address of reference to remove.
 	function removeReference(address _reference) onlyOwner public
 	{
-		require(trustDelegate.delegatecall(fnSelector_removeReference, _reference));
+		//require(trustDelegate.delegatecall(fnSelector_removeReference, _reference));
 	}
 
 	function receiveReferenceRequest() public onlyPlatform
@@ -293,7 +293,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// _reference Reference being approved by msg.sender.
 	function approveReference(address _reference) public onlyPeer
 	{
-		//require(trustDelegate.delegatecall(fnSelector_approveReference, _reference));
+		require(trustDelegate.delegatecall(fnSelector_approveReference, _reference));
 	}
 
 	/// @dev 			  Called by the owner of the _reference to remove their approval of a reference
@@ -302,7 +302,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	///					  in this submission.
 	function removeReferenceApproval(address _reference) public onlyPeer
 	{
-		//require(trustDelegate.delegatecall(fnSelector_removeReferenceApproval, _reference));
+		require(trustDelegate.delegatecall(fnSelector_removeReferenceApproval, _reference));
 	}
 
 	/// @dev 	Called by the owner of _reference when this submission does not list _reference
