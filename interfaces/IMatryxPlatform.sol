@@ -24,7 +24,6 @@ interface IMatryxPlatform
 	function setSubmissionGratitude(uint256 _gratitude) public;
 	function getTokenAddress() public constant returns (address);
 	function getSubmissionTrustLibrary() public constant returns (address);
-	function getRoundLibAddress() public constant returns (address);
 	function getSubmissionGratitude() public constant returns (uint256);
 	function myTournaments() public constant returns (address[]);
 	function mySubmissions() public constant returns (address[]);
