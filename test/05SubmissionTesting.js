@@ -10,6 +10,8 @@ contract('MatryxSubmission', function(accounts)
     let createTournamentTransaction;
     let tournamentAddress;
     let tournament;
+    let round;
+   	let roundAddress;
     let submissionOne;
     let submissionTwo;
     let submissionOneBlocktime;
@@ -82,7 +84,7 @@ contract('MatryxSubmission', function(accounts)
       let enteredTournament = await platform.enterTournament(tournamentAddress, {gas: gasEstimate});
 
       //create and start round
-      let roundAddress = await tournament.createRound(5);
+      roundAddress = await tournament.createRound(5);
       round = await tournament.currentRound();
       roundAddress = round[1];
 
@@ -157,6 +159,16 @@ contract('MatryxSubmission', function(accounts)
 		assert.equal(submissionOneTimeSubmitted, submissionOneBlocktime, "Submission one time submitted not equal to time block was mined.");
 	});
 
+	it("Able to get tournament address.", async function() {
+    	let tournammentAddressFromSubmission = await submissionOne.getTournament();
+    	assert.equal(tournammentAddressFromSubmission, tournamentAddress, "Did not get the tournamment address correctly.");
+  	});
+
+	it("Able to get round address.", async function() {
+    	let roundAddressFromSubmisison = await submissionOne.getRound();
+    	assert.equal(roundAddressFromSubmisison, roundAddress, "Did not get the tournamment address correctly.");
+  	});
+
 	it("Able to make submission externally accessible", async function() {
 		await submissionOne.makeExternallyAccessibleDuringTournament();
 		let accessible = await submissionOne.publicallyAccessibleDuringTournament.call();
@@ -181,11 +193,6 @@ contract('MatryxSubmission', function(accounts)
 		assert.isTrue(accessible, "Submission is not externally accessible");
 	})
 
-	it("Able to read a submission's balance", async function() {
-		let balance = await submissionOne.getBalance.call();
-		assert.equal(balance, 0, "Submission's balance was not zero.");
-	})
-
 	//Testing methods from Submission Trust
 	it("Able to add to a submission's references", async function() {
 		//estimate gas for adding a reference to a submisssion
@@ -195,6 +202,12 @@ contract('MatryxSubmission', function(accounts)
 		await submissionOne.addReference(submissionTwo.address, {gas: gasEstimate});
 		let references = await submissionOne.getReferences.call();
 		assert.equal(references[1], submissionTwo.address, "References on submission not updated correctly");
+	})
+
+	it("Able to withdraw reward", async function() {
+		let reward = await submissionOne.withdrawReward.call(accounts[0]);
+		console.log("reward: " + reward);
+		assert.equal(reward, 0, "Was not able to withdraw reward.");
 	})
 
 	it("Able to delete a submission's references", async function() {
@@ -226,6 +239,18 @@ contract('MatryxSubmission', function(accounts)
 		let contributors = await submissionOne.getContributors.call();
 		assert.equal(contributors[1], 0, "Removed reference was not null");
 	})
+
+	it("Able to read a submission's balance", async function() {
+		let balance = await submissionOne.getBalance.call();
+		assert.equal(balance, 0, "Submission's balance was not zero.");
+	})
+
+	it("Able to get transfer amount", async function() {
+		let transferAmount = await submissionOne.getTransferAmount.call();
+		console.log("transferAmount: " + transferAmount);
+		assert.equal(transferAmount, 0, "Submission's transfer amount was not zero.");
+	})
+
 
 });
 

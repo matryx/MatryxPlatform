@@ -393,6 +393,23 @@ contract('ReputationTesting', function(accounts)
       assert.isTrue(peerTwoReputationAfter > peerTwoReputationBefore, "Reference was not successfully approved.");
     })
 
+    it("Able to get approved and total reference counts", async function(){
+      let peerOneAddress = await platform.peerAddress(accounts[1]);
+      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+      let approvedAndTotalReferenceCounts = peerOne.getApprovedAndTotalReferenceCounts(submissionTwoAddress);
+      console.log("approvedAndTotalReferenceCounts: " + approvedAndTotalReferenceCounts);
+      assert.equal(approvedAndTotalReferenceCounts[0], 1, "Approved reference count should be 1.")
+    });
+
+    it("Able to get approved reference proportion", async function(){
+      let peerOneAddress = await platform.peerAddress(accounts[1]);
+      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+      let approvedReferenceProportion = peerOne.getApprovedReferenceProportion(submissionTwoAddress);
+      console.log("approvedReferenceProportion: " + approvedReferenceProportion);
+      assert.equal(approvedReferenceProportion.valueOf(), 1, "Approved reference proportion should be 1.")
+    });
+
+
     it("Able to flag a missing reference", async function() {
       //get peers
       var peerOneAddress = await platform.peerAddress(accounts[1]);
@@ -418,9 +435,6 @@ contract('ReputationTesting', function(accounts)
       //peer 2's reputation decreases
       let flag = await peerOne.flagMissingReference(submissionTwoAddress, submissionOneAddress, {from: accounts[1], gas: gasEstimate});
       console.log("flag: " + flag);
-
-      let isFlagged = await submissionTwo.addressIsFlagged(submissionTwoAddress);
-      console.log("is submission2 flagged?: " + isFlagged);
 
       let peerOneReputationAfter = await peerOne.getReputation();
       let peerTwoReputationAfter = await peerTwo.getReputation();
