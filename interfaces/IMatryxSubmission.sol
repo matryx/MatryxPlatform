@@ -15,7 +15,6 @@ interface IMatryxSubmission {
 	function updateTitle(string _title) public ;
 	function updateExternalAddress(bytes _externalAddress) public;
 	function addReference(address _reference) public ;
-	function addressIsFlagged(address _reference) public constant returns (bool, bool);
 	function removeReference(address _reference) public;
 	function receiveReferenceRequest() public;
 	function cancelReferenceRequest() public;
