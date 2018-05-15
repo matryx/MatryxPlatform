@@ -196,6 +196,7 @@ contract('MatryxRound', function(accounts)
 	let tournament;
 	let round;
 	let token;
+  let winningSubmission;
   let gasEstimate = 30000000;
 
 	it("The number of submissions is 0.", async function() {
@@ -304,7 +305,7 @@ contract('MatryxRound', function(accounts)
     // gasEstimate = Math.ceil(gasEstimate * 1.3);
 
     //create second submission
-		let secondSubmission = await tournament.createSubmission("submission2", accounts[0], "external address 2", ["0x0"], ["0x0"], ["0x0"], {gas: gasEstimate});
+		winningSubmission = await tournament.createSubmission("submission2", accounts[0], "external address 2", ["0x0"], ["0x0"], ["0x0"], {gas: gasEstimate});
 		let submissionAddresses = await round.getSubmissions.call();
 		assert.isNotNull(submissionAddresses[1], "There were no submissions in the round after calling tournament.createSubmission");
 	});
@@ -324,8 +325,34 @@ contract('MatryxRound', function(accounts)
 	});
 
 	it("Address of winning submission is gettable.", async function() {
+    console.log("sinningSubmission: " + winningSubmission);
     let chosenWinner = round.getSubmissionAddress.call(1);
 		let winningSubmissionAddress = await round.getWinningSubmissionAddress.call();
 		assert.equal(winningSubmissionAddress, chosenWinner, "Index of winning submission was not 1");
 	});
+
+  it("Winner has been chosen.", async function() {
+    let winnerHasBeenChosen = await round.submissionChosen.call();
+    assert.isTrue(winnerHasBeenChosen, "Winner was not chosen.");
+  });
+
+  it("Able to get platform address.", async function() {
+    let platformAddress = await round.getPlatform();
+    assert.equal(platformAddress, MatryxPlatform.address, "Did not get the platform address correcly");
+  });
+
+   it("Able to get token address.", async function() {
+    let tokenAddress = await round.getTokenAddress();
+    assert.equal(tokenAddress, MatryxToken.address, "Did not get the Matryx Token Address correctly");
+  });
+
+  it("Able to get tournament address.", async function() {
+    let tournammentAddress = await round.getTournament();
+    assert.equal(tournamentAddress, MatryxTournament.address, "Did not get the tournamment address correctly");
+  });
+
+  it("This requester is not a contributor.", async function() {
+    let requesterIsContributor = await round.requesterIsContributor(accounts[1]);
+    assert.isFalse(tokenAddress, MatryxToken.address, "Did not get the Matryx Token Address");
+  });
 });

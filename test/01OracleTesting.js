@@ -19,6 +19,17 @@ contract('MatryxPlatform', function(accounts) {
 		assert.notEqual(queryId.valueOf(), 0, "The query id should not be 0");
 	});
 
+	it("The oracle system produces a valid query id.", async function() {
+		web3.eth.defaultAccount = web3.eth.accounts[6]
+		let query = await platform.Query(1, accounts[6], {from: accounts[6]});
+		console.log("query: " + query);
+		//get query Id
+		queryId = query.logs[0].args.id;
+		console.log(query.logs[0].args.id);
+
+		assert.notEqual(queryId.valueOf(), 0, "The query id should not be 0");
+	});
+
 	it("Query id exists, platform owner tries to store value under id", async function() {
 		web3.eth.defaultAccount = web3.eth.accounts[6]
 		console.log(queryId.valueOf());

@@ -246,11 +246,101 @@ contract('ReputationTesting', function(accounts)
 
       assert.isTrue(isValid, "Total trust exceeds 1.");
     })
+});
+
+contract('ReputationTesting', function(accounts)
+{
+    let platform;
+    let createTournamentTransaction;
+    let tournamentAddress;
+    let tournament;
+    let submissionOne;
+    let submissionOneAddress;
+    let submissionTwo;
+    let submissionTwoAddress;
+    let token;
+    let gasEstimate = 30000000;
 
     it("Able to approve a reference", async function() {
+      web3.eth.defaultAccount = web3.eth.accounts[0];
+      //deploy platform
+      platform = await MatryxPlatform.deployed();
+      token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
+      platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address);
       //get gas estimate for entering tournament
       // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
       // gasEstimate = Math.ceil(gasEstimate * 10);
+      //create peers
+      await platform.createPeer.sendTransaction({gas: gasEstimate});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[1]});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[2]});
+
+      await token.setReleaseAgent(web3.eth.accounts[0]);
+
+      //get gas estimate for releasing token transfer
+      // gasEstimate = await token.releaseTokenTransfer.estimateGas();
+
+      //release token transfer and mint tokens for the accounts
+      await token.releaseTokenTransfer.sendTransaction({gas: gasEstimate});
+      await token.mint(web3.eth.accounts[0], 10000*10**18)
+      await token.mint(web3.eth.accounts[1], 2*10**18)
+      await token.mint(web3.eth.accounts[2], 2*10**18)
+
+      await token.approve(MatryxPlatform.address, 100*10**18)
+
+      //get gas estimate for creating tournament
+      // gasEstimate = await platform.createTournament.estimateGas("category", "tournament", "external address", 100*10**18, 2*10**18);
+      //since createTournament has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
+      // gasEstimate = Math.ceil(gasEstimate * 1.3);
+      // console.log("gasEstimate * constant: " + gasEstimate);
+
+      // create a tournament
+      createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
+      tournamentCreatedEvent = platform.TournamentCreated();
+
+      tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
+        tournamentCreatedEvent.get((err, res) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(res);
+            }
+        }))
+      var tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
+
+      //get tournament address
+      tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
+      // create tournament from address
+      tournament = await MatryxTournament.at(tournamentAddress);
+
+      //get gas estimate for opening tournament
+      // gasEstimate = await tournament.openTournament.estimateGas();
+      // gasEstimate = Math.ceil(gasEstimate * 1.3);
+      // console.log("gasEstimate * constant: " + gasEstimate);
+
+      //open tournament
+      let tournamentOpen = await tournament.openTournament({gas: gasEstimate});
+
+      //get gas estimate for entering tournament
+      // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
+
+      //enter tournament
+      let enteredTournament = await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: gasEstimate});
+
+      //create and start round
+      let roundAddress = await tournament.createRound(5);
+      round = await tournament.currentRound();
+      roundAddress = round[1];
+
+      //get gas estimate for starting round
+      // gasEstimate = await tournament.startRound.estimateGas(10, 10);
+
+      //start round
+      await tournament.startRound(10, 10, {gas: gasEstimate});
+      round = web3.eth.contract(MatryxRound.abi).at(roundAddress);
+
+      //open round
+      let roundOpen = await round.isOpen();
 
       //enter tournament
       await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: gasEstimate});
@@ -261,8 +351,8 @@ contract('ReputationTesting', function(accounts)
       // gasEstimate = Math.ceil(gasEstimate * 1.3);
 
       //make a sumbission from account1
-      let submissionOne = await tournament.createSubmission("submission1", accounts[1], "external address 1", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1], gas: gasEstimate});
-      let submissionOneAddress = submissionOne.logs[0].args._submissionAddress;
+      submissionOne = await tournament.createSubmission("submission1", accounts[1], "external address 1", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1], gas: gasEstimate});
+      submissionOneAddress = submissionOne.logs[0].args._submissionAddress;
 
       // //get gas estimate for entering tournament
       // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
@@ -277,8 +367,8 @@ contract('ReputationTesting', function(accounts)
       // gasEstimate = Math.ceil(gasEstimate * 1.3);
 
       //make a sumbission from account2
-      let submissionTwo = await tournament.createSubmission("submission2", accounts[2], "external address 2", ["0x0"], ["0x0"], ["0x0"], {from: accounts[2], gas: gasEstimate});
-      let submissionTwoAddress = submissionTwo.logs[0].args._submissionAddress;
+      submissionTwo = await tournament.createSubmission("submission2", accounts[2], "external address 2", ["0x0"], ["0x0"], ["0x0"], {from: accounts[2], gas: gasEstimate});
+      submissionTwoAddress = submissionTwo.logs[0].args._submissionAddress;
 
       //get peers
       let peerOneAddress = await platform.peerAddress(accounts[1]);
@@ -312,13 +402,13 @@ contract('ReputationTesting', function(accounts)
       var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
 
       //get submissions 1 and 2
-      let mySubmissionsOne = await tournament.mySubmissions.call({from: accounts[1]});
-      let submissionOne = await MatryxSubmission.at(mySubmissionsOne[0]);
-      let submissionOneAddress = submissionOne.address;
+      // let mySubmissionsOne = await tournament.mySubmissions.call({from: accounts[1]});
+      // let submissionOne = await MatryxSubmission.at(mySubmissionsOne[0]);
+      // let submissionOneAddress = submissionOne.address;
 
-      let mySubmissionsTwo = await tournament.mySubmissions.call({from: accounts[2]});
-      let submissionTwo = await MatryxSubmission.at(mySubmissionsTwo[0]);
-      let submissionTwoAddress = submissionTwo.address;
+      // let mySubmissionsTwo = await tournament.mySubmissions.call({from: accounts[2]});
+      // let submissionTwo = await MatryxSubmission.at(mySubmissionsTwo[0]);
+      // let submissionTwoAddress = submissionTwo.address;
 
       let peerOneReputationBefore = await peerOne.getReputation();
       let peerTwoReputationBefore = await peerTwo.getReputation();
@@ -326,7 +416,8 @@ contract('ReputationTesting', function(accounts)
 
       //submission 1 is missing as a reference in submission 2, so peer 1 flags submission 2
       //peer 2's reputation decreases
-      let flag = await peerOne.flagMissingReference(submissionTwoAddress, submissionOneAddress, {gas: gasEstimate, from: accounts[1]});
+      let flag = await peerOne.flagMissingReference(submissionTwoAddress, submissionOneAddress, {from: accounts[1], gas: gasEstimate});
+      console.log("flag: " + flag);
 
       let isFlagged = await submissionTwo.addressIsFlagged(submissionTwoAddress);
       console.log("is submission2 flagged?: " + isFlagged);
@@ -336,6 +427,21 @@ contract('ReputationTesting', function(accounts)
       console.log("peerTwoReputationAfter " + peerTwoReputationAfter);
 
       assert.isTrue(peerTwoReputationAfter < peerTwoReputationBefore, "Missing flag was not successfully added.");
+    })
+
+    it("Able to get normalized trust in peer", async function() {
+      var peerOneAddress = await platform.peerAddress(accounts[1]);
+      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+      console.log("peerOne: " + peerOne);
+      console.log("peerOneAddress: " + peerOneAddress);
+      let peersJudged = await peerOne.peersJudged();
+      console.log("peersJudged: " + peersJudged);
+
+      let normalizedTrust = await peerOne.normalizedTrustInPeer(peerOneAddress);
+      console.log("normalizedTrust: " + normalizedTrust);
+      let validTrust = normalizedTrust > 0;
+
+      assert.isTrue(validTrust, "Could not get normalized trust in peer.");
     })
 
 });

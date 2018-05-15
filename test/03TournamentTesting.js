@@ -1,6 +1,7 @@
 var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxTournament = artifacts.require("MatryxTournament");
 var MatryxRound = artifacts.require("MatryxRound");
+var MatryxSubmission = artifacts.require("MatryxSubmission");
 var Ownable = artifacts.require("Ownable");
 var MatryxToken = artifacts.require("MatryxToken");
 
@@ -139,12 +140,13 @@ contract('MatryxTournament', function(accounts) {
     });
 
     it("I can retrieve my personal submissions", async function() {
-        let mySubmissions = await tournament.mySubmissions();
-        let mySubmissionAddress = await round.getSubmissionAddress.call(0);
-        let submissionAsOwnable = Ownable.at(mySubmissionAddress.valueOf());
-
-        let submissionIsMine = await submissionAsOwnable.isOwner.call(accounts[0]);
-        assert.isTrue(submissionIsMine, "A submission given in mySubmissions is not one of my submissions.");
+        let mySubmissions = await tournament.mySubmissions.call();
+        console.log("mySubmissions: " + mySubmissions);
+        //get my submission
+        mySubmission = await MatryxSubmission.at(mySubmissions[0]);
+        console.log("mySubmission: " + mySubmission);
+        let submissionOwner = await mySubmission.owner.call();
+        assert.equal(submissionOwner, accounts[0], "A submission given in mySubmissions is not one of my submissions.");
     });
 
     it("There is 1 Submission", async function() {
