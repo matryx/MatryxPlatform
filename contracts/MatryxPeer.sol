@@ -320,7 +320,7 @@ contract MatryxPeer is Ownable {
 		return judgedPeers.length;
 	}
 
-	function normalizedTrustInPeer(address _peer) public constant returns (uint128)
+	function normalizedTrustInPeer(address _peer) public onlyOwner constant returns (uint128)
 	{
 		uint128 normalizedTrust = judgedPeerToUnnormalizedTrust[_peer].div(totalTrustGiven);
 		if(normalizedTrust > 0)

@@ -398,10 +398,10 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return categoryName;
   }
 
-  function switchTournamentCategory(string discipline) onlyTournament public
-  {
-    revert();
-  }
+  // function switchTournamentCategory(string discipline) onlyTournament public
+  // {
+  //   revert();
+  // }
 
   /* 
    * Tournament Entry Methods
@@ -459,6 +459,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     //update data structures
     allTournaments.push(newTournament);
     tournamentExists[newTournament] = true;
+    updateUsersTournaments(msg.sender, newTournament);
 
     return newTournament;
   }
@@ -542,11 +543,6 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    function getSubmissionTrustLibrary() public constant returns (address)
    {
       return matryxSubmissionTrustLibAddress;
-   }
-
-   function getRoundLibAddress() public constant returns (address)
-   {
-      return matryxRoundLibAddress;
    }
 
    /// @dev    Returns a weight from 0 to 1 (18 decimal uint) indicating
