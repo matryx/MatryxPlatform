@@ -449,18 +449,18 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return entryFee;
     }
 
-    function collectEntryFee() public returns (bool)
-    {
-        IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-        bool success = matryxToken.transfer(msg.sender, addressToIsEntrant[msg.sender].value);
-        if(success)
-        {
-            addressToIsEntrant[msg.sender].value = 0;
-            return true;
-        }
+    // function collectEntryFee() public returns (bool)
+    // {
+    //     IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
+    //     bool success = matryxToken.transfer(msg.sender, addressToIsEntrant[msg.sender].value);
+    //     if(success)
+    //     {
+    //         addressToIsEntrant[msg.sender].value = 0;
+    //         return true;
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
     function createSubmission(string _title, address _owner, bytes _externalAddress, address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references) public onlyEntrant onlyPeerLinked(msg.sender) whileTournamentOpen returns (address _submissionAddress)
     {

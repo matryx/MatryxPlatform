@@ -245,7 +245,7 @@ contract SubmissionTrust is Ownable
 	/// @param _reference Reference previously marked by peer as missing.
 	function removeMissingReferenceFlag(address _reference) public
 	{
-		// TODO: Ensure that this reference was previously flagged as missing (MatryxSubmission)
+		//Ensure that this reference was previously flagged as missing (MatryxSubmission)
 		require(addressToReferenceInfo[_reference].flagged == true);
 
 		missingReferenceToIndex[_reference].exists = false;

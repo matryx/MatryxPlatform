@@ -140,23 +140,23 @@ contract MatryxRound is Ownable, IMatryxRound {
 	 * State Maintenance Methods
 	 */
 
-	function removeSubmission(address _submissionAddress) public onlyTournament returns (bool)
-	{
-		if(addressToSubmissionIndex[msg.sender].exists)
-		{
-			IMatryxSubmission submission = IMatryxSubmission(submissions[addressToSubmissionIndex[_submissionAddress].value]);
-			address author = submission.getAuthor();
-			submission.deleteSubmission();
+	// function removeSubmission(address _submissionAddress) public onlyTournament returns (bool)
+	// {
+	// 	if(addressToSubmissionIndex[msg.sender].exists)
+	// 	{
+	// 		IMatryxSubmission submission = IMatryxSubmission(submissions[addressToSubmissionIndex[_submissionAddress].value]);
+	// 		address author = submission.getAuthor();
+	// 		submission.deleteSubmission();
 
-			delete authorToSubmissionAddress[author];
-			delete submissions[addressToSubmissionIndex[_submissionAddress].value];
+	// 		delete authorToSubmissionAddress[author];
+	// 		delete submissions[addressToSubmissionIndex[_submissionAddress].value];
 
-			numberSubmissionsRemoved = numberSubmissionsRemoved.add(1);
-			return true;
-		}
+	// 		numberSubmissionsRemoved = numberSubmissionsRemoved.add(1);
+	// 		return true;
+	// 	}
 
-		return false;
-	}
+	// 	return false;
+	// }
 
 	/*
      * Access Control Methods
@@ -320,11 +320,11 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// round winner has been chosen.
 	/// @param _submissionAddress Index of the tournament winning submission.
 	/// @param _remainingBounty Bounty to award the submission.
-	function awardBounty(address _submissionAddress, uint256 _remainingBounty) public onlyTournament ifSubmissionExists(_submissionAddress)
-	{
-		IMatryxToken token = IMatryxToken(matryxTokenAddress);
-		token.transfer(_submissionAddress, _remainingBounty);
-	}
+	// function awardBounty(address _submissionAddress, uint256 _remainingBounty) public onlyTournament ifSubmissionExists(_submissionAddress)
+	// {
+	// 	IMatryxToken token = IMatryxToken(matryxTokenAddress);
+	// 	token.transfer(_submissionAddress, _remainingBounty);
+	// }
 
 	/*
      * Entrant Methods

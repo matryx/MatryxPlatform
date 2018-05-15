@@ -293,7 +293,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	/// _reference Reference being approved by msg.sender.
 	function approveReference(address _reference) public onlyPeer
 	{
-		require(trustDelegate.delegatecall(fnSelector_approveReference, _reference));
+		//require(trustDelegate.delegatecall(fnSelector_approveReference, _reference));
 	}
 
 	/// @dev 			  Called by the owner of the _reference to remove their approval of a reference
@@ -302,7 +302,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	///					  in this submission.
 	function removeReferenceApproval(address _reference) public onlyPeer
 	{
-		require(trustDelegate.delegatecall(fnSelector_removeReferenceApproval, _reference));
+		//require(trustDelegate.delegatecall(fnSelector_removeReferenceApproval, _reference));
 	}
 
 	/// @dev 	Called by the owner of _reference when this submission does not list _reference
@@ -410,17 +410,17 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		return transferAmount;
 	}
 
-	function prepareToDelete() internal
-	{
-		withdrawReward(owner);
-		// TODO: Remove references on other submissions so that MTX is not burned!
-	}
+	// function prepareToDelete() internal
+	// {
+	// 	withdrawReward(owner);
+	// 	// TODO: Remove references on other submissions so that MTX is not burned!
+	// }
 
-	// @dev Removes a submission permanently.
- 	// @param _recipient Address to send the refunded ether to.
-	function deleteSubmission() onlyRound public
-	{
-		prepareToDelete();
-		selfdestruct(author);
-	}
+	// // @dev Removes a submission permanently.
+ // 	// @param _recipient Address to send the refunded ether to.
+	// function deleteSubmission() onlyRound public
+	// {
+	// 	prepareToDelete();
+	// 	selfdestruct(author);
+	// }
 }
