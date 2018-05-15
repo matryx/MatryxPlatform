@@ -28,5 +28,5 @@ interface IMatryxSubmission {
 	function getBalance() public returns (uint256);
 	function withdrawReward(address _recipient) public;
 	function getTransferAmount() public constant returns (uint256);
-	function deleteSubmission() public;
+	//function deleteSubmission() public;
 }
