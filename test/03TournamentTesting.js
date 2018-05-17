@@ -108,6 +108,11 @@ contract('MatryxTournament', function(accounts) {
         assert.equal(allEntrants, 1, "Total number of entrants should be 1.");
     })
 
+    it("Entrant shuould exist.", async function() {
+        let isEntrant = await tournament.isEntrant.call(accounts[0]);
+        assert.isTrue(isEntrant, "Accounts[0] should be an entrant.");
+    })
+
     it("A round is open", async function() {
         // create a round
         let roundAddress = await tournament.createRound(5);

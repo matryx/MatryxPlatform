@@ -453,6 +453,17 @@ contract('ReputationTesting', function(accounts)
       assert.isTrue(peerTwoReputationAfter < peerTwoReputationBefore, "Missing flag was not successfully added.");
     })
 
+    it("Able to get missing reference count", async function() {
+      var peerOneAddress = await platform.peerAddress(accounts[1]);
+      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+      console.log("peerOne: " + peerOne);
+      console.log("peerOneAddress: " + peerOneAddress);
+      let missingReferenceCount = await peerOne.getMissingReferenceCount(submissionTwoAddress);
+      console.log("missingReferenceCount: " + missingReferenceCount);
+
+      assert.equal(missingReferenceCount[0], 1, "There should be 1 missing reference.");
+    })
+
     it("Able to get total number of peers judged", async function() {
       var peerOneAddress = await platform.peerAddress(accounts[1]);
       var peerTwoAddress = await platform.peerAddress(accounts[2]);
@@ -473,6 +484,9 @@ contract('ReputationTesting', function(accounts)
 
       var peerTwoAddress = await platform.peerAddress(accounts[2]);
       var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
+
+      // await peerOne.approveReference(submissionTwoAddress, submissionOneAddress, {from: accounts[1], gas: gasEstimate});
+      // console.log("approved new reference");
 
       let peerOneReputationBefore = await peerOne.getReputation();
       let peerTwoReputationBefore = await peerTwo.getReputation();
