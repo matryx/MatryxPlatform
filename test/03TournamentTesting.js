@@ -88,6 +88,11 @@ contract('MatryxTournament', function(accounts) {
         assert.equal(tournamentOpen.valueOf(), true, "The tournament should be open.");
     });
 
+    it("Able to get platform from tournament", async function() {
+        let platformFromTournament = await tournament.getPlatform();
+        assert.equal(platformFromTournament, platform.address, "Unable to get platform from tournament.");
+    });
+
     it("A user cannot enter a tournament twice", async function() {
         //get gas estimate for entering tournament
         // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
@@ -97,6 +102,11 @@ contract('MatryxTournament', function(accounts) {
         let successInEnteringTournamentTwice = await platform.enterTournament.call(tournamentAddress, {gas: gasEstimate});
         assert.isFalse(successInEnteringTournamentTwice, "Able to enter a tournament twice");
     });
+
+    it("Able to get total number of entrants.", async function() {
+        let allEntrants = await tournament.entrantCount.call();
+        assert.equal(allEntrants, 1, "Total number of entrants should be 1.");
+    })
 
     it("A round is open", async function() {
         // create a round
@@ -122,6 +132,11 @@ contract('MatryxTournament', function(accounts) {
         let currentRound = await tournament.currentRound.call();
         assert.equal(currentRound, "1,"+round.address, "Current round is incorrect");
     })
+
+    it("Round should be open", async function() {
+        let roundIsOpen = await tournament.roundIsOpen();
+        assert.isTrue(roundIsOpen, "There should be an open round in the tournament.");
+    });
 
     // Create a Submission
     it("A submission was created", async function() {
@@ -179,6 +194,24 @@ contract('MatryxTournament', function(accounts) {
         assert.equal(getEntryFees.toNumber(), 2*10**18);
     });
 
+    it("Able to set tournament title", async function() {
+        await tournament.setTitle("bienvenida-a-matryx");
+        let title = await tournament.getTitle();
+        assert.equal(title, "bienvenida-a-matryx", "The tournament title was not updated correctly.");
+    });
+
+    it("Able to set tournament external address", async function() {
+        await tournament.setExternalAddress("new address");
+        let externalAddress = await tournament.getExternalAddress()
+        assert.equal(web3.toAscii(externalAddress).replace(/\u0000/g, ""), "new address", "The tournament external address was not updated correctly.");
+    });
+
+    it("Able to set entry fee", async function() {
+        await tournament.setEntryFee(10);
+        let entryFee = await tournament.getEntryFee();
+        assert.equal(entryFee.toNumber(), 10, "The tournament entry fee was not updated correctly.");
+    });
+
     it("The tournament is closed", async function() {
         //get gas estimate for creating submission
         // gasEstimate = await tournament.createSubmission.estimateGas("submission1", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"]);
@@ -194,17 +227,66 @@ contract('MatryxTournament', function(accounts) {
         // assert that the tournament is closed
         assert.equal(roundOpen.valueOf(), false, "The round should be closed.");
     });
+  });
 
-    // it("String is empty", async function() {
-    //     let stringEmptyBool = await tournament.stringIsEmpty("");
-    //     assert.equal(stringEmptyBool, true, "stringIsEmpty function should say string is empty");
-    // });
+contract('MatryxTournament', function(accounts) {
+    let platform;
+    let tournament;
+    let round;
+    let token;
+    let gasEstimate = 30000000;
 
-    // //TODO Migrate platformCode
-    // it("Migrate to the new Platform", async function() {
-    //     migratedPlatform = await tournament.upgradePlatform("0x1123456789012345678901234567890123456789")
-    //     numberOfSubmissions = await tournament.submissionCount()
-    //     assert.equal(numberOfSubmissions, 0)
-    // });
+    it("Starting a new round opens the tournament", async function() {
+      web3.eth.defaultAccount = web3.eth.accounts[0];
+      //deploy platform
+      platform = await MatryxPlatform.deployed();
+      token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
+      platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
+
+      //create peers
+      await platform.createPeer.sendTransaction({gas: gasEstimate});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[1]});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[2]});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[3]});
+      await token.setReleaseAgent(web3.eth.accounts[0]);
+
+      //release token transfer and mint tokens for the accounts
+      await token.releaseTokenTransfer.sendTransaction({gas: gasEstimate});
+      await token.mint(web3.eth.accounts[0], 10000*10**18)
+      await token.mint(web3.eth.accounts[1], 2*10**18)
+      await token.mint(web3.eth.accounts[2], 2*10**18)
+      await token.mint(web3.eth.accounts[3], 2*10**18)
+      await token.approve(MatryxPlatform.address, 100*10**18)
+
+      // create a tournament
+      createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
+      tournamentCreatedEvent = platform.TournamentCreated();
+
+      tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
+        tournamentCreatedEvent.get((err, res) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(res);
+            }
+        }))
+      var tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
+
+      //get tournament address
+      tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
+      // create tournament from address
+      tournament = await MatryxTournament.at(tournamentAddress);
+
+      //create and start round
+      let roundAddress = await tournament.createRound(5);
+      round = await tournament.currentRound();
+      roundAddress = round[1];
+
+      //start round
+      await tournament.startRound(10, 10, {gas: gasEstimate});
+
+      let isOpen = await tournament.isOpen();
+      assert.isTrue(isOpen, "The tournament should be open.");
+    });
 
 });

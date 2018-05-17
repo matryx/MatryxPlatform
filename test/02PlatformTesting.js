@@ -131,15 +131,50 @@ contract('MatryxPlatform', function(accounts){
     assert.isTrue(isTournamentMine, "Tournament shoud be mine.");
   });
 
-  it("Tournament.chooseWinner should invoke a TournmamentClosed event.", async function() {
-    platform.TournamentClosed().watch((error, result) => {
-      if(!error) {
-        assert.equal(winningSumbissionAddress, submissionAddress, "The winning submission index should be 1");
-      } else {
-        assert.false();
-      }
-    });
+  // it("Tournament.chooseWinner should invoke a TournmamentClosed event.", async function() {
+  //   let winningSumbissionAddress;
 
+  //   //watch for tournament closed event
+  //   platform.TournamentClosed().watch((error, result) => {
+  //     if(!error) {
+  //       assert.equal(winningSumbissionAddress, submissionAddress, "The winning submission index should be 1");
+  //     } else {
+  //       assert.false();
+  //     }
+  //   });
+
+  //   //open tournament
+  //   let tournamentOpen = await tournament.openTournament();
+
+  //   // //get gas estimate for entering tournament
+  //   // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
+  //   // console.log("gasEstimate: " + gasEstimate);
+
+  //   //enter tournament
+  //   let enteredTournament = await platform.enterTournament(tournamentAddress, {gas: gasEstimate});
+
+  //   //create and start round
+  //   let roundAddress = await tournament.createRound(5);
+
+  //   round = await tournament.currentRound();
+  //   roundAddress = round[1];
+
+  //   await tournament.startRound(10, 10, {gas: gasEstimate});
+  //   round = web3.eth.contract(MatryxRound.abi).at(roundAddress);
+
+  //   //open round
+  //   let roundOpen = await round.isOpen();
+
+  //   //create submission
+  //   let submissionCreated = await tournament.createSubmission("submission1", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"], {gas: gasEstimate});
+  //   submissionAddress = submissionCreated.logs[0].args._submissionAddress;
+
+  //   //choose winner
+  //   let closeTournamentTx = await tournament.chooseWinner(submissionAddress);
+  //   winningSumbissionAddress = closeTournamentTx.logs[0].args._submissionAddress;
+  // });
+
+  it("Able to recognize a submission", async function(){
     //open tournament
     let tournamentOpen = await tournament.openTournament();
 
@@ -161,21 +196,15 @@ contract('MatryxPlatform', function(accounts){
 
     //open round
     let roundOpen = await round.isOpen();
-
     //create submission
     let submissionCreated = await tournament.createSubmission("submission1", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"], {gas: gasEstimate});
-    submissionAddress = submissionCreated.logs[0].args._submissionAddress;
+    let submissionAddress = submissionCreated.logs[0].args._submissionAddress;
+    console.log("submissionAddress: " + submissionAddress);
 
-    //choose winner
-    let closeTournamentTx = await tournament.chooseWinner(submissionAddress);
-    let winningSumbissionAddress = closeTournamentTx.logs[0].args._submissionAddress;
-  });
-
-  it("Able to recognize a submission", async function(){
     let isSubmission = await platform.isSubmission(submissionAddress);
     assert.isTrue(isSubmission, "Should be a submission.")
   });
-});
+ });
 
 contract('MatryxPlatform', function(accounts) {
 	let platform;

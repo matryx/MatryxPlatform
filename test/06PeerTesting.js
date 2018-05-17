@@ -396,19 +396,27 @@ contract('ReputationTesting', function(accounts)
     it("Able to get approved and total reference counts", async function(){
       let peerOneAddress = await platform.peerAddress(accounts[1]);
       var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
-      let approvedAndTotalReferenceCounts = peerOne.getApprovedAndTotalReferenceCounts(submissionTwoAddress);
+      let approvedAndTotalReferenceCounts = peerOne.getApprovedAndTotalReferenceCounts(submissionTwoAddress, {from: accounts[1]});
       console.log("approvedAndTotalReferenceCounts: " + approvedAndTotalReferenceCounts);
-      assert.equal(approvedAndTotalReferenceCounts[0], 1, "Approved reference count should be 1.")
+      assert.equal(approvedAndTotalReferenceCounts[0], 1*10**18, "Approved reference count should be 1.")
     });
 
     it("Able to get approved reference proportion", async function(){
-      let peerOneAddress = await platform.peerAddress(accounts[1]);
-      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
-      let approvedReferenceProportion = peerOne.getApprovedReferenceProportion(submissionTwoAddress);
+      let peerTwoAddress = await platform.peerAddress(accounts[2]);
+      var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
+      let approvedReferenceProportion = peerTwo.getApprovedReferenceProportion(submissionOneAddress, {from: accounts[2]});
       console.log("approvedReferenceProportion: " + approvedReferenceProportion);
-      assert.equal(approvedReferenceProportion.valueOf(), 1, "Approved reference proportion should be 1.")
+      assert.isTrue(approvedReferenceProportion.valueOf() == 0, "Approved reference proportion should be equal to 0.")
     });
 
+    it("Able to get peer's influence on my reputation", async function(){
+      let peerOneAddress = await platform.peerAddress(accounts[1]);
+      let peerTwoAddress = await platform.peerAddress(accounts[2]);
+      var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
+      let peersInfluenceOnMyReputation = peerTwo.getPeersInfluenceOnMyReputation(peerOneAddress, {from: accounts[2]});
+      console.log("peersInfluenceOnMyReputation: " + peersInfluenceOnMyReputation);
+      assert.isTrue(peersInfluenceOnMyReputation.valueOf() > 0, "Peer's influence on my reputation should be greater than zero.")
+    });
 
     it("Able to flag a missing reference", async function() {
       //get peers
@@ -429,6 +437,7 @@ contract('ReputationTesting', function(accounts)
 
       let peerOneReputationBefore = await peerOne.getReputation();
       let peerTwoReputationBefore = await peerTwo.getReputation();
+      console.log("peerOneReputationBefore " + peerOneReputationBefore);
       console.log("peerTwoReputationBefore " + peerTwoReputationBefore);
 
       //submission 1 is missing as a reference in submission 2, so peer 1 flags submission 2
@@ -438,24 +447,75 @@ contract('ReputationTesting', function(accounts)
 
       let peerOneReputationAfter = await peerOne.getReputation();
       let peerTwoReputationAfter = await peerTwo.getReputation();
+      console.log("peerOneReputationAfter " + peerOneReputationAfter);
       console.log("peerTwoReputationAfter " + peerTwoReputationAfter);
 
       assert.isTrue(peerTwoReputationAfter < peerTwoReputationBefore, "Missing flag was not successfully added.");
     })
 
-    it("Able to get normalized trust in peer", async function() {
+    it("Able to get total number of peers judged", async function() {
       var peerOneAddress = await platform.peerAddress(accounts[1]);
+      var peerTwoAddress = await platform.peerAddress(accounts[2]);
       var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+      var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
       console.log("peerOne: " + peerOne);
       console.log("peerOneAddress: " + peerOneAddress);
       let peersJudged = await peerOne.peersJudged();
       console.log("peersJudged: " + peersJudged);
 
-      let normalizedTrust = await peerOne.normalizedTrustInPeer(peerOneAddress);
-      console.log("normalizedTrust: " + normalizedTrust);
-      let validTrust = normalizedTrust > 0;
+      assert.equal(peersJudged, 2, "The total number of peers judged should be 2.");
+    })
 
-      assert.isTrue(validTrust, "Could not get normalized trust in peer.");
+    it("Able to remove reference approval", async function() {
+      //get peers
+      var peerOneAddress = await platform.peerAddress(accounts[1]);
+      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+
+      var peerTwoAddress = await platform.peerAddress(accounts[2]);
+      var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
+
+      let peerOneReputationBefore = await peerOne.getReputation();
+      let peerTwoReputationBefore = await peerTwo.getReputation();
+      console.log("peerOneReputationBefore " + peerOneReputationBefore);
+      console.log("peerTwoReputationBefore " + peerTwoReputationBefore);
+
+      //submission 1 is missing as a reference in submission 2, so peer 1 flags submission 2
+      //peer 2's reputation decreases
+      let flag = await peerOne.removeReferenceApproval(submissionTwoAddress, submissionOneAddress, {from: accounts[1], gas: gasEstimate});
+      console.log("flag: " + flag);
+
+      let peerOneReputationAfter = await peerOne.getReputation();
+      let peerTwoReputationAfter = await peerTwo.getReputation();
+      console.log("peerOneReputationAfter " + peerOneReputationAfter);
+      console.log("peerTwoReputationAfter " + peerTwoReputationAfter);
+
+      assert.isTrue(peerTwoReputationAfter < peerTwoReputationBefore, "Missing flag was not successfully added.");
+    })
+
+    it("Able to remove missing reference flag", async function() {
+      //get peers
+      var peerOneAddress = await platform.peerAddress(accounts[1]);
+      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+
+      var peerTwoAddress = await platform.peerAddress(accounts[2]);
+      var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
+
+      let peerOneReputationBefore = await peerOne.getReputation();
+      let peerTwoReputationBefore = await peerTwo.getReputation();
+      console.log("peerOneReputationBefore " + peerOneReputationBefore);
+      console.log("peerTwoReputationBefore " + peerTwoReputationBefore);
+
+      //submission 1 is missing as a reference in submission 2, so peer 1 flags submission 2
+      //peer 2's reputation decreases
+      let flag = await peerOne.removeMissingReferenceFlag(submissionTwoAddress, submissionOneAddress, {from: accounts[1], gas: gasEstimate});
+      console.log("flag: " + flag);
+
+      let peerOneReputationAfter = await peerOne.getReputation();
+      let peerTwoReputationAfter = await peerTwo.getReputation();
+      console.log("peerOneReputationAfter " + peerOneReputationAfter);
+      console.log("peerTwoReputationAfter " + peerTwoReputationAfter);
+
+      assert.isTrue(peerTwoReputationAfter > peerTwoReputationBefore, "Missing flag was not successfully added.");
     })
 
 });

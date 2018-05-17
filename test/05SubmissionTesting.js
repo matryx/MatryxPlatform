@@ -199,8 +199,10 @@ contract('MatryxSubmission', function(accounts)
 		// gasEstimate = await submissionOne.addReference.estimateGas(submissionTwo.address);
 		// gasEstimate = Math.ceil(gasEstimate * 1.3);
 
-		await submissionOne.addReference(submissionTwo.address, {gas: gasEstimate});
+		let addReference = await submissionOne.addReference(submissionTwo.address, {gas: gasEstimate});
+		console.log("addReference: " + addReference.logs[0]);
 		let references = await submissionOne.getReferences.call();
+		console.log("references: " + references);
 		assert.equal(references[1], submissionTwo.address, "References on submission not updated correctly");
 	})
 
@@ -215,8 +217,10 @@ contract('MatryxSubmission', function(accounts)
 		// gasEstimate = await submissionOne.removeReference.estimateGas(submissionTwo.address);
 		// gasEstimate = Math.ceil(gasEstimate * 2.3);
 
-		await submissionOne.removeReference(submissionTwo.address, {gas: gasEstimate});
+		let removeReference = await submissionOne.removeReference(submissionTwo.address, {gas: gasEstimate});
+		console.log("removeReference: " + removeReference.logs[0]);
 		let references = await submissionOne.getReferences.call();
+		console.log("references: " + references);
 		assert.equal(references[1], 0, "Removed reference was not null");
 	})
 
