@@ -75,19 +75,19 @@ contract MatryxRound is Ownable, IMatryxRound {
 	}
 
 	/// @dev Requires that this round is in the winner selection state.
-	modifier duringReviewPeriod()
-	{
-		//require(endTime != 0);
-		require(isInReview());
-		_;
-	}
+	// modifier duringReviewPeriod()
+	// {
+	// 	//require(endTime != 0);
+	// 	require(isInReview());
+	// 	_;
+	// }
 
 	// @dev Requires that a winner has been selected for this round.
-	modifier afterWinnerSelected()
-	{
-		require(winningSubmissionChosen == true);
-		_;
-	}
+	// modifier afterWinnerSelected()
+	// {
+	// 	require(winningSubmissionChosen == true);
+	// 	_;
+	// }
 
 	modifier onlySubmission()
 	{
@@ -102,12 +102,12 @@ contract MatryxRound is Ownable, IMatryxRound {
 	}
 
 	/// @dev Requires that this round's tournament is open.
-	modifier whileTournamentOpen()
-	{
-		IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
-		require(tournament.isOpen());
-		_;
-	}
+	// modifier whileTournamentOpen()
+	// {
+	// 	IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
+	// 	require(tournament.isOpen());
+	// 	_;
+	// }
 
 	/// @dev Requires that the desired submission is accessible to the requester.
 	modifier whenAccessible(address _requester, uint256 _index)
