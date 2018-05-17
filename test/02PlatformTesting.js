@@ -1,6 +1,7 @@
 var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxTournament = artifacts.require("MatryxTournament");
 var MatryxRound = artifacts.require("MatryxRound");
+var MatryxSubmission = artifacts.require("MatryxSubmission");
 var MatryxToken = artifacts.require("MatryxToken");
 
 contract('MatryxPlatform', function(accounts){
@@ -26,13 +27,7 @@ contract('MatryxPlatform', function(accounts){
       let owner = await platform.owner();
       let getOwner = await platform.getOwner();
       let tournamentCount = await platform.tournamentCount();
-      // console.log("platform: " + platform + "\n\n\n\n");
-      // console.log("platform.address: " + platform.address);
-      // console.log("platform.transactionHash: " + platform.transactionHash);
-      // console.log("platform owner: " + owner);
-      // console.log("platform getOwner: " + owner);
-      // console.log("accounts[0]: " + accounts[0]);
-      // console.log("tournamentCount?: " + tournamentCount);
+
       let peerAddress = await platform.peerAddress(accounts[0]);
       // console.log("peer address: " + peerAddress);
 
@@ -102,7 +97,7 @@ contract('MatryxPlatform', function(accounts){
       //check who owns the tournament
       let creatorIsOwner = await tournament.isOwner.call(accounts[0]);
       assert(creatorIsOwner.valueOf(), true, "The owner and creator of the tournament should be the same"); 
-});
+  });
 
   it("Tournament.openTournament should invoke a TournamentOpened event.", async function() {
 
@@ -130,49 +125,6 @@ contract('MatryxPlatform', function(accounts){
     let isTournamentMine = platform.getTournament_IsMine(tournamentAddress);
     assert.isTrue(isTournamentMine, "Tournament shoud be mine.");
   });
-
-  // it("Tournament.chooseWinner should invoke a TournmamentClosed event.", async function() {
-  //   let winningSumbissionAddress;
-
-  //   //watch for tournament closed event
-  //   platform.TournamentClosed().watch((error, result) => {
-  //     if(!error) {
-  //       assert.equal(winningSumbissionAddress, submissionAddress, "The winning submission index should be 1");
-  //     } else {
-  //       assert.false();
-  //     }
-  //   });
-
-  //   //open tournament
-  //   let tournamentOpen = await tournament.openTournament();
-
-  //   // //get gas estimate for entering tournament
-  //   // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
-  //   // console.log("gasEstimate: " + gasEstimate);
-
-  //   //enter tournament
-  //   let enteredTournament = await platform.enterTournament(tournamentAddress, {gas: gasEstimate});
-
-  //   //create and start round
-  //   let roundAddress = await tournament.createRound(5);
-
-  //   round = await tournament.currentRound();
-  //   roundAddress = round[1];
-
-  //   await tournament.startRound(10, 10, {gas: gasEstimate});
-  //   round = web3.eth.contract(MatryxRound.abi).at(roundAddress);
-
-  //   //open round
-  //   let roundOpen = await round.isOpen();
-
-  //   //create submission
-  //   let submissionCreated = await tournament.createSubmission("submission1", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"], {gas: gasEstimate});
-  //   submissionAddress = submissionCreated.logs[0].args._submissionAddress;
-
-  //   //choose winner
-  //   let closeTournamentTx = await tournament.chooseWinner(submissionAddress);
-  //   winningSumbissionAddress = closeTournamentTx.logs[0].args._submissionAddress;
-  // });
 
   it("Able to recognize a submission", async function(){
     //open tournament
@@ -204,7 +156,19 @@ contract('MatryxPlatform', function(accounts){
     let isSubmission = await platform.isSubmission(submissionAddress);
     assert.isTrue(isSubmission, "Should be a submission.")
   });
+
+    it("Tournament.chooseWinner should invoke a TournmamentClosed event.", async function() {
+    //get my submissions
+    let mySubmissions = await tournament.mySubmissions.call();
+    //choose winner
+    let closeTournamentTx = await tournament.chooseWinner(mySubmissions[0]);
+    console.log("closeTournamentTx.logs: " + closeTournamentTx.logs[0]);
+    //tournament should be closed
+    let isOpen = await tournament.isOpen();
+    assert.isFalse(isOpen, "Tournament should be closed.");
+  });
  });
+
 
 contract('MatryxPlatform', function(accounts) {
 	let platform;
@@ -380,6 +344,27 @@ contract('MatryxPlatform', function(accounts) {
       await platform.setSubmissionGratitude(10);
       let gratitude = await platform.getSubmissionGratitude();
       assert.equal(gratitude, 10, "Submission gratitude is not equal to 10");
+   });
+
+  it("Able to remove a submission.", async function() {
+    //get submissions
+    let mySubmissions = await tournament.mySubmissions.call();
+
+    //delete submission
+    let removeSubmission = await platform.removeSubmission(mySubmissions[0], tournamentAddress);
+    console.log("removeSubmission: " + removeSubmission);
+
+    //try to get the same submission
+    mySubmissions = await tournament.mySubmissions.call();
+    console.log("mySubmissions: " + mySubmissions);
+    //get submission one
+    // submissionOne = await MatryxSubmission.at(mySubmissions[0]);
+    // console.log("submissionOne: " + submissionOne);
+
+    let isSubmission = await platform.isSubmission(mySubmissions[0]);
+    console.log("isSubmission: " + isSubmission);
+
+    assert.isFalse(isSubmission, "The submission was not successfully deleted.");
    });
 });
 
