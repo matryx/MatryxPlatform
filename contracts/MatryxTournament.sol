@@ -160,7 +160,16 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev Requires the function caller to be the platform or the owner of this tournament
     modifier platformOrOwner()
     {
-        require((msg.sender == platformAddress)||(msg.sender == owner));
+        require((msg.sender == platformAddress)||(msg.sender == 
+
+
+
+
+
+
+
+
+            owner));
         _;
     }
 
@@ -248,6 +257,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return platformAddress;
      }
 
+     function getTitle() public view returns (string _title)
+     {
+        return title;
+     }
+
     /// @dev Returns the external address of the tournament.
     /// @return _externalAddress Off-chain content hash of tournament details (ipfs hash)
     function getExternalAddress() public view returns (bytes _externalAddress)
@@ -315,7 +329,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         // {
         //     revert();
         // }
-        revert();
+        //revert();
     }
 
     /*
