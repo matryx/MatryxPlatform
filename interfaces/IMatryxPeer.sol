@@ -13,5 +13,5 @@ interface IMatryxPeer
 	function removeReferenceApproval(address _submissionAddress, address _reference) public;
 	function getApprovedReferenceProportion(address _submissionAddress) public constant returns (uint128);
 	function peersJudged() public constant returns (uint256);
-	function normalizedTrustInPeer(address _peer) public constant returns (uint128);
+	//function normalizedTrustInPeer(address _peer) public constant returns (uint128);
 }

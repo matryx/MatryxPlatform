@@ -127,6 +127,7 @@ contract MatryxPeer is Ownable {
 	{
 		judgedPeerToUnnormalizedTrust[_peer] = judgedPeerToUnnormalizedTrust[_peer].add(one_eighteenDecimal);
 		totalTrustGiven = totalTrustGiven.add(1);
+		judgedPeers.push(_peer);
 
 		MatryxPeer(_peer).receiveTrust(totalTrustGiven, globalTrust);
 	}
@@ -139,6 +140,7 @@ contract MatryxPeer is Ownable {
 			totalTrustGiven = totalTrustGiven.sub(1);
 		}
 
+		judgedPeers.push(_peer);
 		return MatryxPeer(_peer).receiveDistrust(totalTrustGiven, globalTrust);
 	}
 
@@ -264,7 +266,7 @@ contract MatryxPeer is Ownable {
 	/// 	 					  of their works within someone else's submission.
 	/// @param _submissionAddress Address of the submission on which to approve the reference.
 	/// @param _reference 		  Reference to approve.
-	function approveReference(address _submissionAddress, address _reference) public onlyOwner senderOwnsReference(_reference) forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
+	function approveReference(address _submissionAddress, address _reference) public /*onlyOwner senderOwnsReference(_reference)*/ forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
 	{
 		// Require that we're the author of the reference we're attempting to approve
 		// Require that the platform knows the submission.
@@ -284,7 +286,7 @@ contract MatryxPeer is Ownable {
 	/// @param _submissionAddress Address of the submission which was previously given an approval
 	/// 						  for one of its references.
 	/// @param _reference 		  Address of the reference to decry.
-	function removeReferenceApproval(address _submissionAddress, address _reference) public ownerOrSubmission(_submissionAddress) forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
+	function removeReferenceApproval(address _submissionAddress, address _reference) public /*ownerOrSubmission(_submissionAddress)*/ forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
 	{
 		// Require that the platform knows the submission.
 		// Require that the platform knows the reference we'd like to decry.
@@ -320,14 +322,14 @@ contract MatryxPeer is Ownable {
 		return judgedPeers.length;
 	}
 
-	function normalizedTrustInPeer(address _peer) public onlyOwner constant returns (uint128)
-	{
-		uint128 normalizedTrust = judgedPeerToUnnormalizedTrust[_peer].div(totalTrustGiven);
-		if(normalizedTrust > 0)
-		{
-			return normalizedTrust;
-		}
+	// function normalizedTrustInPeer(address _peer) public /*onlyOwner*/ constant returns (uint128)
+	// {
+	// 	uint128 normalizedTrust = judgedPeerToUnnormalizedTrust[_peer].div(totalTrustGiven);
+	// 	if(normalizedTrust > 0)
+	// 	{
+	// 		return normalizedTrust;
+	// 	}
 
-		return 0;
-	}
+	// 	return 0;
+	// }
 }

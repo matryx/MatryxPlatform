@@ -9,6 +9,7 @@ interface IMatryxTournament
     function isInReview() public view returns (bool);
     function roundIsOpen() public constant returns (bool);
     function getPlatform() public view returns (address _platformAddress);
+    function getTitle() public view returns (string _title);
     function getExternalAddress() public view returns (bytes _externalAddress);
     function currentRound() public constant returns (uint256 _currentRound, address _currentRoundAddress);
     function mySubmissions() public view returns (address[]);

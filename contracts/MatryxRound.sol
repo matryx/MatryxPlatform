@@ -123,11 +123,11 @@ contract MatryxRound is Ownable, IMatryxRound {
 	}
 
 	/// @dev Requires the function caller to be the platform or the owner of this tournament
-	modifier tournamentOrOwner()
-    {
-        require((msg.sender == tournamentAddress)||(msg.sender == owner));
-        _;
-    }
+	// modifier tournamentOrOwner()
+ //    {
+ //        require((msg.sender == tournamentAddress)||(msg.sender == owner));
+ //        _;
+ //    }
 
 	/// @dev Requires that the sender be the submission's author.
 	// modifier onlySubmissionAuthor(uint256 _submissionIndex)
