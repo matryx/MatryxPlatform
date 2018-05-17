@@ -136,11 +136,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
   		_;
   	}
 
-  	modifier onlyRound()
-  	{
-  		require(msg.sender == roundAddress);
-  		_;
-  	}
+  	// modifier onlyRound()
+  	// {
+  	// 	require(msg.sender == roundAddress);
+  	// 	_;
+  	// }
 
   	modifier ownerOrRound()
   	{

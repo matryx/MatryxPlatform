@@ -129,18 +129,18 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         _;
     }
 
-    modifier onlySubmission(address _submissionAddress, address _author)
-    {
-        // If the submission does not exist,
-        // the address of the submission we return will not be msg.sender
-        // It will either be 
-        // 1) The first submission, or
-        // 2) all 0s from having deleted it previously.
-        uint256 indexOfSubmission = entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].value;
-        address submissionAddress = entrantToSubmissions[_author][indexOfSubmission];
-        require(_submissionAddress == msg.sender);
-        _;
-    }
+    // modifier onlySubmission(address _submissionAddress, address _author)
+    // {
+    //     // If the submission does not exist,
+    //     // the address of the submission we return will not be msg.sender
+    //     // It will either be 
+    //     // 1) The first submission, or
+    //     // 2) all 0s from having deleted it previously.
+    //     uint256 indexOfSubmission = entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].value;
+    //     address submissionAddress = entrantToSubmissions[_author][indexOfSubmission];
+    //     require(_submissionAddress == msg.sender);
+    //     _;
+    // }
 
     modifier onlyPeerLinked(address _sender)
     {
@@ -160,16 +160,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev Requires the function caller to be the platform or the owner of this tournament
     modifier platformOrOwner()
     {
-        require((msg.sender == platformAddress)||(msg.sender == 
-
-
-
-
-
-
-
-
-            owner));
+        require((msg.sender == platformAddress)||(msg.sender == owner));
         _;
     }
 
@@ -187,17 +178,17 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     //     _;
     // }
 
-    modifier whileRoundsLeft()
-    {
-        require(rounds.length < maxRounds);
-        _;
-    }
+    // modifier whileRoundsLeft()
+    // {
+    //     require(rounds.length < maxRounds);
+    //     _;
+    // }
 
-    modifier whileBountyLeft(uint256 _nextRoundBounty)
-    {
-        require(BountyLeft.sub(_nextRoundBounty) >= 0);
-        _;
-    }
+    // modifier whileBountyLeft(uint256 _nextRoundBounty)
+    // {
+    //     require(BountyLeft.sub(_nextRoundBounty) >= 0);
+    //     _;
+    // }
 
     /*
     * State Maintenance Methods
