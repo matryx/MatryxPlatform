@@ -11,7 +11,10 @@ contract('MatryxRound', function(accounts)
   let tournamentAddress;
 	let round;
 	let token;
+  //for code coverage
   let gasEstimate = 30000000;
+  //for regular testing
+  //let gasEstimate = 3000000;
 
 	it("Submission is accessible to creator", async function() {
     web3.eth.defaultAccount = web3.eth.accounts[0];
@@ -199,7 +202,11 @@ contract('MatryxRound', function(accounts)
 	let round;
 	let token;
   let winningSubmission;
+  //for code coverage
   let gasEstimate = 30000000;
+
+  //for regular testing
+  //let gasEstimate = 3000000;
 
 	it("The number of submissions is 0.", async function() {
     web3.eth.defaultAccount = web3.eth.accounts[0];

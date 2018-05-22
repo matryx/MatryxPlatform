@@ -10,7 +10,11 @@ contract('MatryxTournament', function(accounts) {
     let tournament;
     let round;
     let token;
+    //for code coverage
     let gasEstimate = 30000000;
+
+    //for regular testing
+    //let gasEstimate = 3000000;
 
     it("Created tournament should exist", async function() {
       web3.eth.defaultAccount = web3.eth.accounts[0];
@@ -239,7 +243,10 @@ contract('MatryxTournament', function(accounts) {
     let tournament;
     let round;
     let token;
+    //for code coverage
     let gasEstimate = 30000000;
+    //for regular testing
+    //let gasEstimate = 3000000;
 
     it("Starting a new round opens the tournament", async function() {
       web3.eth.defaultAccount = web3.eth.accounts[0];

@@ -17,7 +17,11 @@ contract('MatryxSubmission', function(accounts)
     let submissionTwo;
     let submissionOneBlocktime;
     let token;
+    //for code coverage
     let gasEstimate = 30000000;
+
+    //for regular testing
+    //let gasEstimate = 3000000;
 
     it("Submission one owner is submission creator", async function() {
     	web3.eth.defaultAccount = web3.eth.accounts[0];

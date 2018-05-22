@@ -19,7 +19,10 @@ contract('ReputationTesting', function(accounts)
     let token;
     let peerZero;
     let peerZeroAddress;
+    //for code coverage
     let gasEstimate = 30000000;
+    //for regular testing
+    //let gasEstimate = 3000000;
 
 	it("Submission is owned by peer.", async function() {
     web3.eth.defaultAccount = web3.eth.accounts[0];
@@ -259,7 +262,10 @@ contract('ReputationTesting', function(accounts)
     let submissionTwo;
     let submissionTwoAddress;
     let token;
+    //for code coverage
     let gasEstimate = 30000000;
+    //for regular testing
+    //let gasEstimate = 3000000;
 
     it("Able to approve a reference", async function() {
       web3.eth.defaultAccount = web3.eth.accounts[0];
