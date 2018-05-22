@@ -253,6 +253,10 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return title;
      }
 
+     function getCategory() public view returns (string _category){
+        return category;
+     }
+
     /// @dev Returns the external address of the tournament.
     /// @return _externalAddress Off-chain content hash of tournament details (ipfs hash)
     function getExternalAddress() public view returns (bytes _externalAddress)
