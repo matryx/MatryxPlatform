@@ -30,7 +30,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   address[] public allTournaments;
   bytes32 public hashOfTopCategory;
   bytes32 public hashOfLastCategory;
-  mapping(uint256=>bytes32) public topCategoryByCount;
+  mapping(uint256=>bytes32) public  topCategoryByCount;
   mapping(bytes32=>category) public categoryIterator;
   string[] public categoryList;
 
@@ -256,9 +256,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
         hashOfTopCategory = hashOfCategory;
         hashOfLastCategory = hashOfCategory;
         // Create a new entry in the iterator for it and don't store previous or next pointers
-        categoryIterator[hashOfCategory] = category({name: _category, count: 1, prev: 0, next: 0, tournaments: new address[](0)});
+        categoryIterator[hashOfCategory] = category({name: _category, count: 1, prev: 0x0, next: 0x0, tournaments: new address[](0)});
         // Store the mapping from count 1 to this category
-        topCategoryByCount[1] = hashOfCategory;
+         topCategoryByCount[1] = hashOfCategory;
       }
       else
       {
@@ -268,9 +268,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
         // Update that previous last category's next pointer (there's one more after it now)
         categoryIterator[hashOfLastCategory].next = hashOfCategory;
 
-        if(topCategoryByCount[1] == 0x0)
+        if( topCategoryByCount[1] == 0x0)
         {
-          topCategoryByCount[1] = hashOfCategory;
+           topCategoryByCount[1] = hashOfCategory;
         }
       }
 
@@ -288,26 +288,26 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     //  If category.next exists, the top category for our previous count becomes category.next,
     //  otherwise (category.next doesn't exist), the top category for our previous count
     //  we set to 0x0.
-    if(topCategoryByCount[categoryIterator[hashOfCategory].count] == hashOfCategory)
-    {
-      if(categoryIterator[hashOfCategory].next != 0x0)
-      {
-        topCategoryByCount[categoryCount] = categoryIterator[hashOfCategory].next;
-      }
-      else
-      {
-        topCategoryByCount[categoryCount] = 0x0;
-      }
-    }
+    // if( topCategoryByCount[categoryCount] == hashOfCategory)
+    // {
+    //   if(categoryIterator[hashOfCategory].next != 0x0)
+    //   {
+    //      topCategoryByCount[categoryCount] = categoryIterator[hashOfCategory].next;
+    //   }
+    //   else
+    //   {
+    //      topCategoryByCount[categoryCount] = 0x0;
+    //   }
+    // }
 
     uint128 newCount = categoryIterator[hashOfCategory].count + 1;
     categoryIterator[hashOfCategory].count = newCount;
 
     // If the top category for our new count is not defined, 
     // define it as this category.
-    if(topCategoryByCount[newCount] == 0)
+    if( topCategoryByCount[newCount] == 0)
     {
-      topCategoryByCount[newCount] = hashOfCategory;
+       topCategoryByCount[newCount] = hashOfCategory;
     }
 
     // If the count of the category is now greater than the previous category
@@ -317,7 +317,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       if(categoryIterator[hashOfCategory].count > categoryIterator[categoryIterator[hashOfCategory].prev].count)
       {
         // define A as the top category of its count
-        bytes32 hashOfTopA = topCategoryByCount[categoryIterator[hashOfCategory].count-1];
+        bytes32 hashOfTopA =  topCategoryByCount[categoryIterator[hashOfCategory].count-1];
         if(hashOfTopA == hashOfTopCategory)
         {
           hashOfTopCategory = hashOfCategory;
@@ -325,7 +325,8 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
         if(hashOfCategory == hashOfLastCategory)
         {
-          hashOfLastCategory = categoryIterator[hashOfCategory].prev;
+          //update pointer to hash of last category
+          hashOfLastCategory = hashOfTopA;
         }
 
         category storage A = categoryIterator[hashOfTopA];
@@ -367,6 +368,16 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
         }
       }
     }
+
+    //update top category by count
+      if(categoryIterator[hashOfCategory].next != 0x0)
+      {
+         topCategoryByCount[categoryCount] = categoryIterator[hashOfCategory].next;
+      }
+      else
+      {
+         topCategoryByCount[categoryCount] = 0x0;
+      }
   }
 
   function getTournamentsByCategory(string _category) external constant returns (address[])
@@ -379,6 +390,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return categoryIterator[keccak256(_category)].count;
   }
 
+  //Get the index-th topmost category (index 0 returns the overall top category)
   function getTopCategory(uint256 _index) external constant returns (string)
   {
     bytes32 categoryHash = hashOfTopCategory;
@@ -396,6 +408,11 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     }
 
     return categoryName;
+  }
+
+  function getCategoryByIndex(uint256 _index) public constant returns (string)
+  {
+    return categoryList[_index];
   }
 
   // function switchTournamentCategory(string discipline) onlyTournament public
