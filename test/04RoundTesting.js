@@ -334,7 +334,6 @@ contract('MatryxRound', function(accounts)
 	});
 
 	it("Address of winning submission is gettable.", async function() {
-    console.log("sinningSubmission: " + winningSubmission);
     let chosenWinner = round.getSubmissionAddress.call(1);
 		let winningSubmissionAddress = await round.getWinningSubmissionAddress.call();
 		assert.equal(winningSubmissionAddress, chosenWinner, "Index of winning submission was not 1.");
