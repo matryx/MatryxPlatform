@@ -39,6 +39,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     // Reward and fee
     uint256 public Bounty;
     uint256 public BountyLeft;
+    uint256 public defaultRoundBounty;
     uint256 public entryFee;
 
     // address roundDelegate;
@@ -366,8 +367,18 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         }
         else
         {
+            defaultRoundBounty = _bountyMTX;
             uint256 remainingBountyAfterRoundCreated = BountyLeft.sub(_bountyMTX);
-            newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, _start, _end, _reviewPeriod, _bountyMTX);
+            if(_bountyMTX == 0x0)
+            {
+                require(defaultRoundBounty != 0x0);
+                newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, _start, _end, _reviewPeriod, defaultRoundBounty);
+            }
+            else
+            {
+                newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, _start, _end, _reviewPeriod, _bountyMTX);
+            }
+            
             BountyLeft = remainingBountyAfterRoundCreated;
             // Transfer the round bounty to the round.
             matryxToken.transfer(newRoundAddress, _bountyMTX);
