@@ -370,6 +370,7 @@ contract('MatryxPlatform', function(accounts) {
 
     assert.isFalse(isSubmission, "The submission was not successfully deleted.");
    });
+
 });
 
 contract('MatryxPlatform', async function(accounts)
@@ -509,7 +510,7 @@ contract('MatryxPlatform', async function(accounts)
   //for regular testing
   //let gasEstimate = 3000000;
 
-  it("Able to get category count.", async function()
+  it("Able to get first category by index.", async function()
   {
       web3.eth.defaultAccount = web3.eth.accounts[0];
       //deploy platform
@@ -548,12 +549,13 @@ contract('MatryxPlatform', async function(accounts)
       //create tournament from address
       tournament = await MatryxTournament.at(tournamentAddress);
 
-      category0 = await platform.getCategoryByIndex(0);
-      console.log("categoryList[0]: " + category0);
+      let topCategory = await platform.getCategoryByIndex(0);
+      assert.equal(topCategory, "art", "The first category should be art.");
 
-      currentCategory = await tournament.getCategory();
-      console.log("currentCategory: " + currentCategory);
+    });
 
+  it("Able to get second category by index.", async function()
+  {
       await token.mint(web3.eth.accounts[0], 100*10**18)
       await token.approve(MatryxPlatform.address, 100*10**18)
       // create a "science" tournament
@@ -575,19 +577,17 @@ contract('MatryxPlatform', async function(accounts)
       // create tournament from address
       tournament = await MatryxTournament.at(tournamentAddress);
 
-      category0 = await platform.getCategoryByIndex(0);
-      console.log("categoryList[0]: " + category0);
-      category1 = await platform.getCategoryByIndex(1);
-      console.log("categoryList[1]: " + category1);
+      let secondCategory = await platform.getCategoryByIndex(1);
+      assert.equal(secondCategory, "science", "The second category should be science.");
 
-      currentCategory = await tournament.getCategory();
-      console.log("currentCategory: " + currentCategory);
+    });
 
+  it("Top category is the one that has the most tournaments.", async function()
+    {
       await token.mint(web3.eth.accounts[0], 100*10**18)
       await token.approve(MatryxPlatform.address, 100*10**18)
       // create a "math" tournament
       await platform.createTournament("math", "mathTournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
-      console.log("third tournament created");
       tournamentCreatedEvent = platform.TournamentCreated();
 
       tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
@@ -604,16 +604,6 @@ contract('MatryxPlatform', async function(accounts)
       tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
       // create tournament from address
       tournament = await MatryxTournament.at(tournamentAddress);
-
-      category0 = await platform.getCategoryByIndex(0);
-      console.log("categoryList[0]: " + category0);
-      category1 = await platform.getCategoryByIndex(1);
-      console.log("categoryList[1]: " + category1);
-      category2 = await platform.getCategoryByIndex(2);
-      console.log("categoryList[2]: " + category2);
-
-      currentCategory = await tournament.getCategory();
-      console.log("currentCategory: " + currentCategory);
 
       await token.mint(web3.eth.accounts[0], 100*10**18)
       await token.approve(MatryxPlatform.address, 100*10**18)
@@ -636,19 +626,15 @@ contract('MatryxPlatform', async function(accounts)
       // create tournament from address
       tournament = await MatryxTournament.at(tournamentAddress);
 
-      category0 = await platform.getCategoryByIndex(0);
-      console.log("categoryList[0]: " + category0);
-      category1 = await platform.getCategoryByIndex(1);
-      console.log("categoryList[1]: " + category1);
-      category2 = await platform.getCategoryByIndex(2);
-      console.log("categoryList[2]: " + category2);
+      let topCategory = await platform.getTopCategory(0);
+      assert.equal(topCategory, "math", "The top category should be math.");
 
-      currentCategory = await tournament.getCategory();
-      console.log("currentCategory: " + currentCategory);
+    });
 
+    it("Last category on the list is medicine.", async function(){
       await token.mint(web3.eth.accounts[0], 100*10**18)
       await token.approve(MatryxPlatform.address, 100*10**18)
-      // create a "math" tournament
+      // create a "medicine" tournament
       await platform.createTournament("medicine", "mathTournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
       tournamentCreatedEvent = platform.TournamentCreated();
 
@@ -667,10 +653,15 @@ contract('MatryxPlatform', async function(accounts)
       // create tournament from address
       tournament = await MatryxTournament.at(tournamentAddress);
 
+      let lastCategory = platform.getTopCategory(3);
+      assert.equal(lastCategory, "medicine", "Last category on the list sohuld be medicine.");
+    });
 
+    it("A 2nd art tournament moves 'art' to 2nd place on the list.", async function()
+    {
       await token.mint(web3.eth.accounts[0], 100*10**18)
       await token.approve(MatryxPlatform.address, 100*10**18)
-      // create a "math" tournament
+      // create an "art" tournament
       await platform.createTournament("art", "mathTournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
       tournamentCreatedEvent = platform.TournamentCreated();
 
@@ -689,90 +680,93 @@ contract('MatryxPlatform', async function(accounts)
       // create tournament from address
       tournament = await MatryxTournament.at(tournamentAddress);
 
-      await token.mint(web3.eth.accounts[0], 100*10**18)
-      await token.approve(MatryxPlatform.address, 100*10**18)
-      // create a "math" tournament
-      await platform.createTournament("science", "mathTournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
-      tournamentCreatedEvent = platform.TournamentCreated();
-
-      tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
-        tournamentCreatedEvent.get((err, res) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(res);
-            }
-        }))
-      tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
-
-      //get tournament address
-      tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
-      // create tournament from address
-      tournament = await MatryxTournament.at(tournamentAddress);
-
-      await token.mint(web3.eth.accounts[0], 100*10**18)
-      await token.approve(MatryxPlatform.address, 100*10**18)
-      // create a "math" tournament
-      await platform.createTournament("science", "mathTournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
-      tournamentCreatedEvent = platform.TournamentCreated();
-
-      tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
-        tournamentCreatedEvent.get((err, res) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(res);
-            }
-        }))
-      tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
-
-      //get tournament address
-      tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
-      // create tournament from address
-      tournament = await MatryxTournament.at(tournamentAddress);
-
-
-      await token.mint(web3.eth.accounts[0], 100*10**18)
-      await token.approve(MatryxPlatform.address, 100*10**18)
-      // create a "math" tournament
-      await platform.createTournament("math", "mathTournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
-      tournamentCreatedEvent = platform.TournamentCreated();
-
-      tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
-        tournamentCreatedEvent.get((err, res) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(res);
-            }
-        }))
-      tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
-
-      //get tournament address
-      tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
-      // create tournament from address
-      tournament = await MatryxTournament.at(tournamentAddress);
-
-
-      category0 = await platform.getCategoryByIndex(0);
-      console.log("categoryList[0]: " + category0);
-      category1 = await platform.getCategoryByIndex(1);
-      console.log("categoryList[1]: " + category1);
-      category2 = await platform.getCategoryByIndex(2);
-      console.log("categoryList[2]: " + category2);
-      category3 = await platform.getCategoryByIndex(3);
-      console.log("categoryList[3]: " + category3);
-      // category4 = await platform.getCategoryByIndex(4);
-      // console.log("categoryList[4]: " + category4);
-      currentCategory = await tournament.getCategory();
-      console.log("currentCategory: " + currentCategory);
-
-      let topCat;
-      for (i=0; i<10; i++){
-        topCat = await platform.getTopCategory(i);
-        console.log("topCategory at index " + i + ": " + topCat);
-      }
-
+      let secondTopCategory = await platform.getTopCategory(1);
+      assert.equal(secondTopCategory, "art", "The 2nd top category should be art.");
 
     });
+
+    it("All categories have multiple submissions.", async function()
+    {
+      await token.mint(web3.eth.accounts[0], 100*10**18)
+      await token.approve(MatryxPlatform.address, 100*10**18)
+      // create a "science" tournament
+      await platform.createTournament("science", "mathTournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
+      tournamentCreatedEvent = platform.TournamentCreated();
+
+      tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
+        tournamentCreatedEvent.get((err, res) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(res);
+            }
+        }))
+      tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
+
+      //get tournament address
+      tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
+      // create tournament from address
+      tournament = await MatryxTournament.at(tournamentAddress);
+
+      await token.mint(web3.eth.accounts[0], 100*10**18)
+      await token.approve(MatryxPlatform.address, 100*10**18)
+      // create a "medicine" tournament
+      await platform.createTournament("medicine", "mathTournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
+      tournamentCreatedEvent = platform.TournamentCreated();
+
+      tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
+        tournamentCreatedEvent.get((err, res) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(res);
+            }
+        }))
+      tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
+
+      //get tournament address
+      tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
+      // create tournament from address
+      tournament = await MatryxTournament.at(tournamentAddress);
+
+      let scienceTournaments = await platform.getTournamentsByCategory("science");
+      let medicineTournaments = await platform.getTournamentsByCategory("medicine");
+
+      let allMultipleTournaments = (scienceTournaments.length > 1) && (medicineTournaments.length > 1);
+
+      assert.isTrue(allMultipleTournaments, "The science and medicine categories should both have more than one tournament.");
+
+    });
+
+    it("Last category on the list is chemistry.", async function(){
+      await token.mint(web3.eth.accounts[0], 100*10**18)
+      await token.approve(MatryxPlatform.address, 100*10**18)
+      // create a "chemistry" tournament
+      await platform.createTournament("chemistry", "mathTournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
+      tournamentCreatedEvent = platform.TournamentCreated();
+
+      tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
+        tournamentCreatedEvent.get((err, res) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(res);
+            }
+        }))
+      tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
+
+      //get tournament address
+      tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
+      // create tournament from address
+      tournament = await MatryxTournament.at(tournamentAddress);
+
+      let lastCategory = platform.getTopCategory(4);
+      assert.equal(lastCategory, "chemistry", "Last category on the list sohuld be medicine.");
+    });
+
+    it("Unable to get top 10th category when there are less than 10 categories.", async function(){
+      let lastCategory = platform.getTopCategory(10);
+      assert.equal(lastCategory, 0x0, "Last category should be null.");
+    });
+
 });
