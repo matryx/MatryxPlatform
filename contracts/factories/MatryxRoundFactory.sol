@@ -11,8 +11,8 @@ contract MatryxRoundFactory {
 		matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
 	}
 
-	function createRound(address _platformAddress, address _tournamentAddress, address _owner, uint256 _bountyMTX) public returns (address _roundAddress) {
-		MatryxRound newRound = new MatryxRound(matryxTokenAddress, _platformAddress, _tournamentAddress, matryxSubmissionFactoryAddress, _owner, _bountyMTX);
+	function createRound(address _platformAddress, address _tournamentAddress, address _owner, uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bountyMTX) public returns (address _roundAddress) {
+		MatryxRound newRound = new MatryxRound(matryxTokenAddress, _platformAddress, _tournamentAddress, matryxSubmissionFactoryAddress, _owner, _start, _end, _reviewPeriod, _bountyMTX);
 		return newRound;
 	}
 }

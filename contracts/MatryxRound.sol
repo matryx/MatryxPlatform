@@ -28,7 +28,6 @@ contract MatryxRound is Ownable, IMatryxRound {
 	uint256 public reviewPeriod;
 	uint256 public bounty;
 	address public winningSubmission;
-	bool winningSubmissionChosen;
 
 	mapping(address=>uint) addressToParticipantType;
  	mapping(address=>address) authorToSubmissionAddress;
@@ -36,7 +35,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	address[] submissions;
 	uint256 numberSubmissionsRemoved;
 
-	function MatryxRound(address _matryxTokenAddress, address _platformAddress, address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, uint256 _bounty) public
+	function MatryxRound(address _matryxTokenAddress, address _platformAddress, address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bounty) public
 	{
 		matryxTokenAddress = _matryxTokenAddress;
 		platformAddress = _platformAddress;
@@ -44,7 +43,8 @@ contract MatryxRound is Ownable, IMatryxRound {
 		owner = _owner;
 		matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
 		bounty = _bounty;
-		winningSubmissionChosen = false;
+
+		Start(_start, _end, _reviewPeriod);
 	}
 
 	/*
@@ -70,7 +70,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @dev Requires that this round is in the open submission state.
 	modifier duringOpenSubmission()
 	{
-		require(isOpen());
+		require(getState() == uint256(RoundState.Open));
 		_;
 	}
 
@@ -78,14 +78,14 @@ contract MatryxRound is Ownable, IMatryxRound {
 	// modifier duringReviewPeriod()
 	// {
 	// 	//require(endTime != 0);
-	// 	require(isInReview());
+	// 	require(getState() == RoundInReview);
 	// 	_;
 	// }
 
 	// @dev Requires that a winner has been selected for this round.
 	// modifier afterWinnerSelected()
 	// {
-	// 	require(winningSubmissionChosen == true);
+	// 	require(winningSubmission != 0x0);
 	// 	_;
 	// }
 
@@ -100,14 +100,6 @@ contract MatryxRound is Ownable, IMatryxRound {
 		require(msg.sender == tournamentAddress);
 		_;
 	}
-
-	/// @dev Requires that this round's tournament is open.
-	// modifier whileTournamentOpen()
-	// {
-	// 	IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
-	// 	require(tournament.isOpen());
-	// 	_;
-	// }
 
 	/// @dev Requires that the desired submission is accessible to the requester.
 	modifier whenAccessible(address _requester, uint256 _index)
@@ -162,24 +154,33 @@ contract MatryxRound is Ownable, IMatryxRound {
      * Access Control Methods
      */
 
-	/// @dev Returns whether or not this round is open to new submissions.
-	/// @return Whether or not this round is open to submissions.
-    function isOpen() public constant returns (bool)
-	{
-		bool roundStartedBeforeNow = startTime <= now;
-		bool roundEndsAfterNow = now <= endTime;
-		bool winningSubmissionNotYetChosen = !winningSubmissionChosen;
-		bool result = roundStartedBeforeNow && roundEndsAfterNow && winningSubmissionNotYetChosen;
-		return result;
-	}
+	enum RoundState { NotYetOpen, Open, InReview, Closed, Abandoned }
 
-	/// @dev Returns whether or not this round is in the review period.
-	/// @return Whether or not the round is being reviewed.
-	function isInReview() public constant returns (bool)
+	// @dev Returns the state of the round. 
+	// The round can be in one of 5 states:
+	// NotYetOpen, Open, InReview, Closed, Abandoned
+	function getState() public constant returns (uint256)
 	{
-		bool roundEndedAfterNow = now >= endTime;
-		bool roundReviewNotOver = now <= endTime+reviewPeriod;
-		return roundEndedAfterNow && roundReviewNotOver && !winningSubmissionChosen;
+		if(now < startTime)
+		{
+			return uint256(RoundState.NotYetOpen);
+		}
+		else if(now > startTime && now < endTime)
+		{
+			return uint256(RoundState.Open);
+		}
+		else if(now >= endTime && now < endTime.add(reviewPeriod))
+		{
+			return uint256(RoundState.InReview);
+		}
+		else if(winningSubmission != 0x0)
+		{
+			return uint256(RoundState.Closed);
+		}
+		else
+		{
+			return uint256(RoundState.Abandoned);
+		}
 	}
 
 	/// @dev Returns whether or not the submission is accessible to the requester.
@@ -274,7 +275,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @return Whether or not a submission has been chosen.
 	function submissionChosen() public constant returns (bool)
 	{
-		return winningSubmissionChosen;
+		return winningSubmission != 0x0;
 	}
 
 	/// @dev Returns the index of this round's winning submission.
@@ -313,7 +314,6 @@ contract MatryxRound is Ownable, IMatryxRound {
 	function chooseWinningSubmission(address _submissionAddress) public onlyTournament ifSubmissionExists(_submissionAddress) /*duringReviewPeriod*/
 	{
 		winningSubmission = _submissionAddress;
-		winningSubmissionChosen = true;
 
 		IMatryxToken token = IMatryxToken(matryxTokenAddress);
 		token.transfer(_submissionAddress, bounty);

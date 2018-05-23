@@ -166,7 +166,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	modifier duringOpenSubmission()
 	{
 		IMatryxRound round = IMatryxRound(roundAddress);
-		require(round.isOpen());
+		require(round.getState() == 1);
 		_;
 	}
 
@@ -191,13 +191,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		bool isRound = _requester == roundAddress;
 		bool ownsThisSubmission = _requester == owner;
 		bool submissionExternallyAccessible = publicallyAccessibleDuringTournament;
-		bool duringReviewPeriod = IMatryxRound(roundAddress).isInReview() || IMatryxTournament(tournamentAddress).isInReview();
+		bool roundAtLeastInReview = IMatryxRound(roundAddress).getState() >= 2;
 		bool requesterIsEntrant = IMatryxTournament(tournamentAddress).isEntrant(_requester);
 		bool requesterOwnsTournament = ownableTournament.isOwner(_requester);
-		bool duringReviewAndRequesterInTournament = duringReviewPeriod && (requesterOwnsTournament || requesterIsEntrant);
-		bool roundClosed = !round.isOpen();
+		bool duringReviewAndRequesterInTournament = roundAtLeastInReview && (requesterOwnsTournament || requesterIsEntrant);
 
-		return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || roundClosed || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester);
+		return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester);
 	}
 
 	function getTitle() public constant whenAccessible(msg.sender) returns(string) {

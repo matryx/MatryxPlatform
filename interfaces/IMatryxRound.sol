@@ -3,8 +3,7 @@ pragma solidity ^0.4.18;
 interface IMatryxRound
 {
 	//function removeSubmission(address _submissionAddress) public returns (bool);
-	function isOpen() public constant returns (bool);
-	function isInReview() public constant returns (bool);
+	function getState() public constant returns (uint256);
 	function submissionIsAccessible(uint256 _index) public constant returns (bool);
 	function requesterIsContributor(address _requester) public constant returns (bool);
 	function setParticipantType(address _participantAddress, uint256 _type) public;

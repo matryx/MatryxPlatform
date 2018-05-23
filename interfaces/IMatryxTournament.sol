@@ -5,9 +5,7 @@ interface IMatryxTournament
 	function invokeSubmissionCreatedEvent(address _submissionAddress) public;
     function removeSubmission(address _submissionAddress, address _author) public returns (bool);
     function isEntrant(address _sender) public view returns (bool);
-    function isOpen() public view returns (bool);
-    function isInReview() public view returns (bool);
-    function roundIsOpen() public constant returns (bool);
+    function getState() public view returns (uint256);
     function getPlatform() public view returns (address _platformAddress);
     function getTitle() public view returns (string _title);
     function getExternalAddress() public view returns (bytes _externalAddress);
