@@ -18,7 +18,7 @@ interface IMatryxTournament
     function setEntryFee(uint256 _entryFee) public;
     function setNumberOfRounds(uint256 _newMaxRounds) public;
     function setCategory(string _category) public;
-    function chooseWinner(address _submissionAddress) public;
+    function chooseWinner(address _submissionAddress, uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bountyMTX) public;
     function createRound(uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bountyMTX) public returns (address _roundAddress) ;
     //function startRound(uint256 _duration, uint256 _reviewPeriod) public;
     function enterUserInTournament(address _entrantAddress) public returns (bool success);

@@ -39,7 +39,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     // Reward and fee
     uint256 public Bounty;
     uint256 public BountyLeft;
-    uint256 public defaultRoundBounty;
     uint256 public entryFee;
 
     // address roundDelegate;
@@ -322,11 +321,10 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Chooses the winner for the round. If this is the last round, closes the tournament.
     /// @param _submissionAddress Address of the winning submission
-    function chooseWinner(address _submissionAddress) public
+    function chooseWinner(address _submissionAddress, uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bountyMTX) public
     {
-        // TODO: Implement popular vote default winner chosen to avoid
-        // locking up MTX in this tournament (would happen if the tournament
-        // poser tried to choose a winner after the review period ended).
+        require(getState() == uint256(TournamentState.RoundInReview));
+        // TODO: Create big red button (new method)
         IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
 
         // End the round.
@@ -336,14 +334,16 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         // Conditionally end the tournament
         if(rounds.length == maxRounds)
         {
-            // UNCOMMENT THIS LATER
-            require(getState() == uint256(TournamentState.RoundInReview));
             tournamentOpen = false;
 
             IMatryxPlatform platform = IMatryxPlatform(platformAddress);
             uint256 bounty = round.getBounty();
             uint256 roundNumber = rounds.length;
             platform.invokeTournamentClosedEvent(address(this), roundNumber, _submissionAddress, bounty);
+        }
+        else
+        {
+            createRound(_start, _end, _reviewPeriod, _bountyMTX);
         }
     }
 
@@ -356,33 +356,24 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         address newRoundAddress;
 
         require((_start < now && now < _end),"Time Parameters are Invalid");
+        require(_bountyMTX <= remainingBounty(), "Round bounty must not exceed remaining tournament bounty.");
         //If the next round is the last round
-        if(rounds.length+1 == maxRounds)
+        if(rounds.length == 0)
         {
-            uint256 lastBounty = BountyLeft;
-            newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, _start, _end, _reviewPeriod, BountyLeft);
-            BountyLeft = 0;
-            // Transfer the round bounty to the round.
-            matryxToken.transfer(newRoundAddress, lastBounty);
+            // Set a flag
+            openTournament();
         }
-        else
+
+        // If a bounty wasn't specified
+        if(_bountyMTX == 0x0)
         {
-            defaultRoundBounty = _bountyMTX;
-            uint256 remainingBountyAfterRoundCreated = BountyLeft.sub(_bountyMTX);
-            if(_bountyMTX == 0x0)
-            {
-                require(defaultRoundBounty != 0x0);
-                newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, _start, _end, _reviewPeriod, defaultRoundBounty);
-            }
-            else
-            {
-                newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, _start, _end, _reviewPeriod, _bountyMTX);
-            }
-            
-            BountyLeft = remainingBountyAfterRoundCreated;
-            // Transfer the round bounty to the round.
-            matryxToken.transfer(newRoundAddress, _bountyMTX);
+            // Use the last one
+            _bountyMTX = IMatryxRound(rounds[rounds.length-1]).getBounty();
         }
+
+        newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, _start, _end, _reviewPeriod, _bountyMTX);
+        // Transfer the round bounty to the round.
+        matryxToken.transfer(newRoundAddress, _bountyMTX);
 
         isRound[newRoundAddress] = true;
         rounds.push(newRoundAddress);
@@ -391,6 +382,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         emit NewRound(_start, _end, _reviewPeriod, newRoundAddress, rounds.length);
 
         return newRoundAddress;
+    }
+
+    // @dev Returns the remaining bounty the tournament is able to award
+    function remainingBounty() public constant returns (uint256)
+    {
+        return IMatryxToken(matryxTokenAddress).balanceOf(this);
     }
 
     event platfromExists(address _platformAddress);
