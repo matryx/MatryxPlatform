@@ -15,7 +15,7 @@ interface IMatryxRound
 	function submissionChosen() public constant returns (bool);
 	function getWinningSubmissionAddress() public constant returns (address);
 	function numberOfSubmissions() public constant returns (uint256);
-	function Start(uint256 _duration, uint256 _reviewPeriod) public;
+	function Start(uint256 _start, uint256 _end, uint256 _reviewPeriod) public;
 	function chooseWinningSubmission(address _submissionAddress) public;
 	//function awardBounty(address _submissionAddress, uint256 _remainingBounty) public;
 	function createSubmission(string _name, address _owner, address _author, bytes _externalAddress, address[] _references, address[] _contributors, uint128[] _contributorRewardDistribution) public returns (address _submissionAddress);

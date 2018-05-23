@@ -100,7 +100,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Events
      */
 
-    event RoundStarted(uint256 _roundIndex);
+    event NewRound(uint256 _startTime, uint256 _endTime, uint256 _reviewPeriod, address _roundAddress, uint256 _roundNumber);
+    //event RoundStarted(uint256 _roundIndex);
     // Fired at the end of every round, one time per submission created in that round
     event SubmissionCreated(uint256 _roundIndex, address _submissionAddress);
     event RoundWinnerChosen(address _submissionAddress);
@@ -360,12 +361,14 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Creates a new round.
     /// @return The new round's address.
-    function createRound(uint256 _bountyMTX) public returns (address _roundAddress) 
+    function createRound(uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bountyMTX) public returns (address _roundAddress)
     {
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
         address newRoundAddress;
 
+        require((_start < now && now < _end),"Time Parameters are Invalid");
+        //If the next round is the last round
         if(rounds.length+1 == maxRounds)
         {
             uint256 lastBounty = BountyLeft;
@@ -374,6 +377,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
             // Transfer the round bounty to the round.
             matryxToken.transfer(newRoundAddress, lastBounty);
         }
+
+        else if(rounds.length == maxRounds)
+        {
+            tournamentClosedTime = _end;
+            reviewPeriod = _reviewPeriod;
+        }
+
         else
         {
             uint256 remainingBountyAfterRoundCreated = BountyLeft.sub(_bountyMTX);
@@ -382,9 +392,15 @@ contract MatryxTournament is Ownable, IMatryxTournament {
             // Transfer the round bounty to the round.
             matryxToken.transfer(newRoundAddress, _bountyMTX);
         }
-        
+
+
+
         isRound[newRoundAddress] = true;
         rounds.push(newRoundAddress);
+
+        //Triggers Event displaying start time, end, address, and round number
+        emit NewRound(_start, _end, _reviewPeriod, newRoundAddress, rounds.length);
+
         return newRoundAddress;
     }
 
@@ -399,6 +415,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         platform.invokeTournamentOpenedEvent(owner, this, title, externalAddress, Bounty, entryFee);
     }
 
+    /*
     /// @dev Starts the latest round.
     /// @param _duration Duration of the round in seconds.
     function startRound(uint256 _duration, uint256 _reviewPeriod) public
@@ -419,7 +436,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         round.Start(_duration, _reviewPeriod);
         RoundStarted(rounds.length-1);
     }
-
+    */
     /*
      * Entrant Methods
      */

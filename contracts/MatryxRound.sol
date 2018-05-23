@@ -295,13 +295,16 @@ contract MatryxRound is Ownable, IMatryxRound {
      * Round Admin Methods
      */
 
-    /// @dev Starts the round (callable only by the owner of the round).
-    /// @param _duration Duration of the round in seconds.
-	function Start(uint256 _duration, uint256 _reviewPeriod) public
+
+	/// @dev Starts the round (callable only by the owner of the round).
+	/// @param _start Start time.
+	/// @param _end End time.
+	/// @param _reviewPeriod Time to review the round submissions
+	function Start(uint256 _start, uint256 _end, uint256 _reviewPeriod) public
 	{
-		require(startTime == 0);
 		startTime = now;
-		endTime = startTime.add(_duration);
+		require((startTime >= _start), "Scheduled Start time occurs later" );
+		endTime = _end;
 		reviewPeriod = _reviewPeriod;
 	}
 
