@@ -97,6 +97,11 @@ contract('MatryxTournament', function(accounts) {
         assert.equal(platformFromTournament, platform.address, "Unable to get platform from tournament.");
     });
 
+    it("Able to get tournament category", async function() {
+        let category = await tournament.getCategory();
+        assert.equal(category, "category", "Unable to get tournament category.");
+    });
+
     it("A user cannot enter a tournament twice", async function() {
         //get gas estimate for entering tournament
         // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
@@ -165,10 +170,8 @@ contract('MatryxTournament', function(accounts) {
 
     it("I can retrieve my personal submissions", async function() {
         let mySubmissions = await tournament.mySubmissions.call();
-        console.log("mySubmissions: " + mySubmissions);
         //get my submission
         mySubmission = await MatryxSubmission.at(mySubmissions[0]);
-        console.log("mySubmission: " + mySubmission);
         let submissionOwner = await mySubmission.owner.call();
         assert.equal(submissionOwner, accounts[0], "A submission given in mySubmissions is not one of my submissions.");
     });
