@@ -1,13 +1,13 @@
 pragma solidity ^0.4.18;
 
-import '../libraries/strings/strings.sol';
-import '../libraries/math/SafeMath.sol';
-import '../interfaces/IMatryxPlatform.sol';
-import '../interfaces/IMatryxTournament.sol';
-import '../interfaces/factories/IMatryxRoundFactory.sol';
-import '../interfaces/IMatryxRound.sol';
-import '../interfaces/IMatryxToken.sol';
-import './Ownable.sol';
+import "../libraries/strings/strings.sol";
+import "../libraries/math/SafeMath.sol";
+import "../interfaces/IMatryxPlatform.sol";
+import "../interfaces/IMatryxTournament.sol";
+import "../interfaces/factories/IMatryxRoundFactory.sol";
+import "../interfaces/IMatryxRound.sol";
+import "../interfaces/IMatryxToken.sol";
+import "./Ownable.sol";
 
 /// @title Tournament - The Matryx tournament.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
@@ -110,7 +110,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @param _submissionAddress Address of the submission.
     function invokeSubmissionCreatedEvent(address _submissionAddress) public onlyRound
     {
-        SubmissionCreated(rounds.length-1, _submissionAddress);
+        emit SubmissionCreated(rounds.length-1, _submissionAddress);
     }
 
     /*
@@ -231,19 +231,20 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Getter Methods
      */
 
-     function getPlatform() public view returns (address _platformAddress)
-     {
+    function getPlatform() public view returns (address _platformAddress)
+    {
         return platformAddress;
-     }
+    }
 
-     function getTitle() public view returns (string _title)
-     {
+    function getTitle() public view returns (string _title)
+    {
         return title;
-     }
+    }
 
-     function getCategory() public view returns (string _category){
+    function getCategory() public view returns (string _category)
+    {
         return category;
-     }
+    }
 
     /// @dev Returns the external address of the tournament.
     /// @return _externalAddress Off-chain content hash of tournament details (ipfs hash)
@@ -254,7 +255,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Returns the current round number.
     /// @return _currentRound Number of the current round.
-    function currentRound() public constant returns (uint256 _currentRound, address _currentRoundAddress)
+    function currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress)
     {
         return (rounds.length, rounds[rounds.length-1]);
     }
@@ -321,35 +322,44 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Chooses the winner for the round. If this is the last round, closes the tournament.
     /// @param _submissionAddress Address of the winning submission
-    function chooseWinner(address _submissionAddress, uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bountyMTX) public
+    function closeRound(address _submissionAddress, uint256 _end, uint256 _reviewPeriod, uint256 _bountyMTX) public onlyOwner
     {
         require(getState() == uint256(TournamentState.RoundInReview));
         // TODO: Create big red button (new method)
-        IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
+        // TODO: Validate that this is done.
 
         // End the round.
-        round.chooseWinningSubmission(_submissionAddress);
-        RoundWinnerChosen(_submissionAddress);
+        IMatryxRound(rounds[rounds.length-1]).chooseWinningSubmission(_submissionAddress);
+        emit RoundWinnerChosen(_submissionAddress);
 
-        // Conditionally end the tournament
-        if(rounds.length == maxRounds)
+        // If there's no bounty left, end the tournament
+        if(remainingBounty() == 0)
         {
             tournamentOpen = false;
-
-            IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-            uint256 bounty = round.getBounty();
-            uint256 roundNumber = rounds.length;
-            platform.invokeTournamentClosedEvent(address(this), roundNumber, _submissionAddress, bounty);
+            IMatryxPlatform(platformAddress).invokeTournamentClosedEvent(address(this), rounds.length, _submissionAddress, IMatryxRound(rounds[rounds.length-1]).getBounty());
         }
         else
         {
-            createRound(_start, _end, _reviewPeriod, _bountyMTX);
+            createRound(now, _end, _reviewPeriod, _bountyMTX);
         }
+    }
+
+    // @dev Chooses the winner of the tournament.
+    function closeTournament(address _submissionAddress) public onlyOwner
+    {
+        // TODO: Validate that this is done.
+        require(getState() == uint256(TournamentState.RoundInReview));
+        //Transfer the remaining MTX in the tournament to the current round
+        require(IMatryxToken(matryxTokenAddress).transfer(rounds[rounds.length-1], remainingBounty()));
+        tournamentOpen = false;
+        IMatryxRound(rounds[rounds.length-1]).chooseWinningSubmission(_submissionAddress);
+        emit RoundWinnerChosen(_submissionAddress);
+        IMatryxPlatform(platformAddress).invokeTournamentClosedEvent(address(this), rounds.length, _submissionAddress, IMatryxRound(rounds[rounds.length-1]).getBounty());
     }
 
     /// @dev Creates a new round.
     /// @return The new round's address.
-    function createRound(uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bountyMTX) public returns (address _roundAddress)
+    function createRound(uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bountyMTX) public onlyOwner returns (address _roundAddress)
     {
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
@@ -397,7 +407,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     {
         tournamentOpen = true;
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-        platfromExists(platformAddress);
+        emit platfromExists(platformAddress);
         platform.invokeTournamentOpenedEvent(owner, this, title, externalAddress, Bounty, entryFee);
     }
 
@@ -445,9 +455,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         //if(transferSuccess)
         //{
             // Finally, change the tournament's state to reflect the user entering.
-            addressToIsEntrant[_entrantAddress].exists = true;
-            addressToIsEntrant[_entrantAddress].value = entryFee;
-            allEntrants.push(_entrantAddress);
+        addressToIsEntrant[_entrantAddress].exists = true;
+        addressToIsEntrant[_entrantAddress].value = entryFee;
+        allEntrants.push(_entrantAddress);
         //}
 
         //return transferSuccess;

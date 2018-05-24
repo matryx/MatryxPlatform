@@ -1,17 +1,17 @@
 pragma solidity ^0.4.18;
 
-import '../libraries/math/SafeMath.sol';
-import '../libraries/math/SafeMath128.sol';
-import './MatryxOracleMessenger.sol';
-import '../interfaces/IMatryxToken.sol';
-import '../interfaces/IMatryxPeer.sol';
-import '../interfaces/IMatryxPlatform.sol';
-import '../interfaces/factories/IMatryxPeerFactory.sol';
-import '../interfaces/factories/IMatryxTournamentFactory.sol';
-import '../interfaces/IMatryxTournament.sol';
-import '../interfaces/IMatryxRound.sol';
-import '../interfaces/IMatryxSubmission.sol';
-import './Ownable.sol';
+import "../libraries/math/SafeMath.sol";
+import "../libraries/math/SafeMath128.sol";
+import "./MatryxOracleMessenger.sol";
+import "../interfaces/IMatryxToken.sol";
+import "../interfaces/IMatryxPeer.sol";
+import "../interfaces/IMatryxPlatform.sol";
+import "../interfaces/factories/IMatryxPeerFactory.sol";
+import "../interfaces/factories/IMatryxTournamentFactory.sol";
+import "../interfaces/IMatryxTournament.sol";
+import "../interfaces/IMatryxRound.sol";
+import "../interfaces/IMatryxSubmission.sol";
+import "./Ownable.sol";
 
 /// @title MatryxPlatform - The Matryx platform contract.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>

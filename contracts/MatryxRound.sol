@@ -1,39 +1,39 @@
 pragma solidity ^0.4.18;
 
-import '../libraries/math/SafeMath.sol';
-import '../interfaces/IMatryxToken.sol';
-import '../interfaces/IMatryxTournament.sol';
-import '../interfaces/IMatryxRound.sol';
-import '../interfaces/factories/IMatryxSubmissionFactory.sol';
-import '../interfaces/IMatryxSubmission.sol';
-import './Ownable.sol';
+import "../libraries/math/SafeMath.sol";
+import "../interfaces/IMatryxToken.sol";
+import "../interfaces/IMatryxTournament.sol";
+import "../interfaces/IMatryxRound.sol";
+import "../interfaces/factories/IMatryxSubmissionFactory.sol";
+import "../interfaces/IMatryxSubmission.sol";
+import "./Ownable.sol";
 
 /// @title MatryxRound - A round within a Matryx tournament.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract MatryxRound is Ownable, IMatryxRound {
-	using SafeMath for uint256;
+    using SafeMath for uint256;
 
-	//TODO: allow for refunds
-	// TODO: condense and put in structs
-	address public platformAddress;
-	address public tournamentAddress;
-	address public matryxSubmissionFactoryAddress;
-	address public matryxTokenAddress;
+    //TODO: allow for refunds
+    // TODO: condense and put in structs
+    address public platformAddress;
+    address public tournamentAddress;
+    address public matryxSubmissionFactoryAddress;
+    address public matryxTokenAddress;
 
-	uint256 public roundIndex;
-	address public previousRound;
-	address public nextRound;
-	uint256 public startTime;
-	uint256 public endTime;
-	uint256 public reviewPeriod;
-	uint256 public bounty;
-	address public winningSubmission;
+    uint256 public roundIndex;
+    address public previousRound;
+    address public nextRound;
+    uint256 public startTime;
+    uint256 public endTime;
+    uint256 public reviewPeriod;
+    uint256 public bounty;
+    address public winningSubmission;
 
-	mapping(address=>uint) addressToParticipantType;
- 	mapping(address=>address) authorToSubmissionAddress;
-	mapping(address=>uint256_optional) addressToSubmissionIndex;
-	address[] submissions;
-	uint256 numberSubmissionsRemoved;
+    mapping(address=>uint) addressToParticipantType;
+    mapping(address=>address) authorToSubmissionAddress;
+    mapping(address=>uint256_optional) addressToSubmissionIndex;
+    address[] submissions;
+    uint256 numberSubmissionsRemoved;
 
 	function MatryxRound(address _matryxTokenAddress, address _platformAddress, address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bounty) public
 	{
@@ -89,30 +89,30 @@ contract MatryxRound is Ownable, IMatryxRound {
 	// 	_;
 	// }
 
-	modifier onlySubmission()
-	{
-		require(addressToSubmissionIndex[msg.sender].exists);
-		_;
-	}
+    modifier onlySubmission()
+    {
+        require(addressToSubmissionIndex[msg.sender].exists);
+        _;
+    }
 
-	modifier onlyTournament()
-	{
-		require(msg.sender == tournamentAddress);
-		_;
-	}
+    modifier onlyTournament()
+    {
+        require(msg.sender == tournamentAddress);
+        _;
+    }
 
 	/// @dev Requires that the desired submission is accessible to the requester.
-	modifier whenAccessible(address _requester, uint256 _index)
-	{
-		require(IMatryxSubmission(submissions[_index]).isAccessible(_requester));
-		_;
-	}
+    modifier whenAccessible(address _requester, uint256 _index)
+    {
+        require(IMatryxSubmission(submissions[_index]).isAccessible(_requester));
+        _;
+    }
 
-	modifier ifSubmissionExists(address _submissionAddress)
-	{
-		require(addressToSubmissionIndex[_submissionAddress].exists);
-		_;
-	}
+    modifier ifSubmissionExists(address _submissionAddress)
+    {
+        require(addressToSubmissionIndex[_submissionAddress].exists);
+        _;
+    }
 
 	/// @dev Requires the function caller to be the platform or the owner of this tournament
 	// modifier tournamentOrOwner()
@@ -154,34 +154,34 @@ contract MatryxRound is Ownable, IMatryxRound {
      * Access Control Methods
      */
 
-	enum RoundState { NotYetOpen, Open, InReview, Closed, Abandoned }
+    enum RoundState { NotYetOpen, Open, InReview, Closed, Abandoned }
 
 	// @dev Returns the state of the round. 
 	// The round can be in one of 5 states:
 	// NotYetOpen, Open, InReview, Closed, Abandoned
-	function getState() public constant returns (uint256)
-	{
-		if(now < startTime)
-		{
-			return uint256(RoundState.NotYetOpen);
-		}
-		else if(now > startTime && now < endTime)
-		{
-			return uint256(RoundState.Open);
-		}
-		else if(now >= endTime && now < endTime.add(reviewPeriod))
-		{
-			return uint256(RoundState.InReview);
-		}
-		else if(winningSubmission != 0x0)
-		{
-			return uint256(RoundState.Closed);
-		}
-		else
-		{
-			return uint256(RoundState.Abandoned);
-		}
-	}
+    function getState() public view returns (uint256)
+    {
+        if(now < startTime)
+        {
+            return uint256(RoundState.NotYetOpen);
+        }
+        else if(now > startTime && now < endTime)
+        {
+            return uint256(RoundState.Open);
+        }
+        else if(now >= endTime && now < endTime.add(reviewPeriod))
+        {
+            return uint256(RoundState.InReview);
+        }
+        else if(winningSubmission != 0x0)
+        {
+            return uint256(RoundState.Closed);
+        }
+        else
+        {
+            return uint256(RoundState.Abandoned);
+        }
+    }
 
 	/// @dev Returns whether or not the submission is accessible to the requester.
 	/// @param _index Index of the submission being requested.
