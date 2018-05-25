@@ -222,9 +222,8 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   {
     require(addressToOwnsSubmission[msg.sender][_submissionAddress]);
     require(tournamentExists[_tournamentAddress]);
-    
-    if(submissionExists[_submissionAddress])
-    {
+    require(submissionExists[_submissionAddress]);
+
       IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
       address owner = Ownable(_submissionAddress).getOwner();
       uint256 submissionIndex = ownerToSubmissionToSubmissionIndex[owner][_submissionAddress].value;
@@ -235,9 +234,6 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
       IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, owner);
       return true;
-    }
-    
-    return false;
   }
 
   function addTournamentToCategory(address _tournamentAddress, string _category) internal
@@ -329,6 +325,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
           hashOfLastCategory = hashOfTopA;
         }
 
+        //flip the two categories and rearrange the pointers
         category storage A = categoryIterator[hashOfTopA];
         category storage B = categoryIterator[hashOfCategory];
 

@@ -197,15 +197,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function removeSubmission(address _submissionAddress, address _author) public onlyPlatform returns (bool)
     {
-        if(entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].exists)
-        {
-            numberOfSubmissions = numberOfSubmissions.sub(1);
-            delete entrantToSubmissions[_author][entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].value];
-            delete entrantToSubmissionToSubmissionIndex[_author][_submissionAddress];
-            return true;
-        }
-
-        return false;
+        require(entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].exists);
+        numberOfSubmissions = numberOfSubmissions.sub(1);
+        delete entrantToSubmissions[_author][entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].value];
+        delete entrantToSubmissionToSubmissionIndex[_author][_submissionAddress];
+        return true;
     }
 
     /*
