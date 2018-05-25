@@ -365,20 +365,25 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
         address newRoundAddress;
 
-        require((_start < now && now < _end),"Time Parameters are Invalid");
-        require(_bountyMTX <= remainingBounty(), "Round bounty must not exceed remaining tournament bounty.");
+        require((_start <= now && now < _end),"Time Parameters are Invalid");
+        // If a bounty wasn't specified
+        uint256 remaining = remainingBounty();
+        if(_bountyMTX == 0x0)
+        {
+            // Use the last one
+            _bountyMTX = IMatryxRound(rounds[rounds.length-1]).getBounty();
+        }
+        // If its more than is left, use what's left.
+        if(_bountyMTX < remaining)
+        {
+            _bountyMTX = remaining;
+        }
+
         //If the next round is the last round
         if(rounds.length == 0)
         {
             // Set a flag
             openTournament();
-        }
-
-        // If a bounty wasn't specified
-        if(_bountyMTX == 0x0)
-        {
-            // Use the last one
-            _bountyMTX = IMatryxRound(rounds[rounds.length-1]).getBounty();
         }
 
         newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, _start, _end, _reviewPeriod, _bountyMTX);
@@ -395,7 +400,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     }
 
     // @dev Returns the remaining bounty the tournament is able to award
-    function remainingBounty() public constant returns (uint256)
+    function remainingBounty() public view returns (uint256)
     {
         return IMatryxToken(matryxTokenAddress).balanceOf(this);
     }
@@ -411,28 +416,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         platform.invokeTournamentOpenedEvent(owner, this, title, externalAddress, Bounty, entryFee);
     }
 
-    /*
-    /// @dev Starts the latest round.
-    /// @param _duration Duration of the round in seconds.
-    function startRound(uint256 _duration, uint256 _reviewPeriod) public
-    {
-        IMatryxRound round = IMatryxRound(rounds[rounds.length-1]);
-        
-        if(!tournamentOpen)
-        {
-            openTournament();
-        }
-
-        if(rounds.length == maxRounds)
-        {
-            tournamentClosedTime = now + _duration;
-            reviewPeriod = _reviewPeriod;
-        }
-        
-        round.Start(_duration, _reviewPeriod);
-        RoundStarted(rounds.length-1);
-    }
-    */
     /*
      * Entrant Methods
      */
