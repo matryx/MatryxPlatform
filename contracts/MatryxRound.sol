@@ -27,7 +27,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     uint256 public endTime;
     uint256 public reviewPeriod;
     uint256 public bounty;
-    address public winningSubmission;
+    address[] public winningSubmissions;
 
     mapping(address=>uint) addressToParticipantType;
     mapping(address=>address) authorToSubmissionAddress;
@@ -85,7 +85,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	// @dev Requires that a winner has been selected for this round.
 	// modifier afterWinnerSelected()
 	// {
-	// 	require(winningSubmission != 0x0);
+	// 	require(winningSubmissions[0] != 0x0);
 	// 	_;
 	// }
 
@@ -108,10 +108,9 @@ contract MatryxRound is Ownable, IMatryxRound {
         _;
     }
 
-    modifier ifSubmissionExists(address _submissionAddress)
+    function submissionExists(address _submissionAddress) internal returns (bool)
     {
-        require(addressToSubmissionIndex[_submissionAddress].exists);
-        _;
+        return addressToSubmissionIndex[_submissionAddress].exists;
     }
 
 	/// @dev Requires the function caller to be the platform or the owner of this tournament
@@ -159,7 +158,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	// @dev Returns the state of the round. 
 	// The round can be in one of 5 states:
 	// NotYetOpen, Open, InReview, Closed, Abandoned
-	//TODO how do we keep track of the startTime, endTime, and winningSubmission?
+	// TODO how do we keep track of the startTime, endTime, and winningSubmissions?
     function getState() public view returns (uint256)
     {
         if(now < startTime)
@@ -174,7 +173,7 @@ contract MatryxRound is Ownable, IMatryxRound {
         {
             return uint256(RoundState.InReview);
         }
-        else if(winningSubmission != 0x0)
+        else if(winningSubmissions[0] != 0x0)
         {
             return uint256(RoundState.Closed);
         }
@@ -198,13 +197,13 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @dev Returns whether or not the submission is accessible to the requester.
 	/// @param _submissionAddress Address of the submission being requested.
     /// @return Whether or not the submission is accessible to the requester.
-	// function submissionIsAccessible(address _submissionAddress) public constant returns (bool)
-	// {
-	// 	require(addressToSubmissionIndex[_submissionAddress]);
+	function submissionIsAccessible(address _submissionAddress) public view returns (bool)
+	{
+		require(addressToSubmissionIndex[_submissionAddress].exists);
 
-	// 	IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
-	// 	return submission.isAccessible(msg.sender);
-	// }
+		IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
+		return submission.isAccessible(msg.sender);
+	}
 
 	/// @dev Returns true if the sender is an entrant in this round.
 	/// @param _requester Address being tested.
@@ -274,16 +273,16 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	/// @dev Returns whether or not a winning submission has been chosen.
 	/// @return Whether or not a submission has been chosen.
-	function submissionChosen() public constant returns (bool)
+	function submissionsChosen() public constant returns (bool)
 	{
-		return winningSubmission != 0x0;
+		return winningSubmissions[0] != 0x0;
 	}
 
 	/// @dev Returns the index of this round's winning submission.
 	/// @return Index of the winning submission.
-	function getWinningSubmissionAddress() public constant returns (address)
+	function getWinningSubmissionAddresses() public constant returns (address[])
 	{
-		return winningSubmission;
+		return winningSubmissions;
 	}
 
 	/// @dev Returns the number of submissions made to this round.
@@ -311,24 +310,22 @@ contract MatryxRound is Ownable, IMatryxRound {
 	}
 
 	/// @dev Choose a winning submission for the round (callable only by the owner of the round).
-    /// @param _submissionAddress Index of the winning submission.
-	function chooseWinningSubmission(address _submissionAddress) public onlyTournament ifSubmissionExists(_submissionAddress) /*duringReviewPeriod*/
+    /// @param _submissionAddresses Index of the winning submission.
+    /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
+	function chooseWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution) public onlyTournament /*duringReviewPeriod*/
 	{
-		winningSubmission = _submissionAddress;
+		require(_submissionAddresses.length == _rewardDistribution.length);
+
+		winningSubmissions = _submissionAddresses;
 
 		IMatryxToken token = IMatryxToken(matryxTokenAddress);
-		token.transfer(_submissionAddress, bounty);
-	}
 
-	/// @dev Award bounty to a submission. Called by tournament to close a tournament after a 
-	/// round winner has been chosen.
-	/// @param _submissionAddress Index of the tournament winning submission.
-	/// @param _remainingBounty Bounty to award the submission.
-	// function awardBounty(address _submissionAddress, uint256 _remainingBounty) public onlyTournament ifSubmissionExists(_submissionAddress)
-	// {
-	// 	IMatryxToken token = IMatryxToken(matryxTokenAddress);
-	// 	token.transfer(_submissionAddress, _remainingBounty);
-	// }
+		for(uint256 i = 0; i < _submissionAddresses.length; i++)
+		{
+			require(submissionExists(_submissionAddresses[i]));
+			token.transfer(_submissionAddresses[i], bounty.mul(1*10**18).div(_rewardDistribution[i]));
+		}
+	}
 
 	/*
      * Entrant Methods
@@ -340,7 +337,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @param _author Author of this submission.
     /// @param _references Addresses of submissions referenced in creating this submission
     /// @param _contributors Contributors to this submission.
-    /// @return _submissionIndex Location of this submission within this round.
+    /// @return _submissionAddress Location of this submission within this round.
 	function createSubmission(string _title, address _owner, address _author, bytes _externalAddress, address[] _references, address[] _contributors, uint128[] _contributorRewardDistribution) public onlyTournament duringOpenSubmission returns (address _submissionAddress)
 	{
 		require(_author != 0x0);

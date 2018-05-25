@@ -103,7 +103,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     //event RoundStarted(uint256 _roundIndex);
     // Fired at the end of every round, one time per submission created in that round
     event SubmissionCreated(uint256 _roundIndex, address _submissionAddress);
-    event RoundWinnerChosen(address _submissionAddress);
+    event RoundWinnersChosen(address[] _submissionAddresses);
 
     /// @dev Allows rounds to invoke SubmissionCreated events on this tournament.
     /// @param _submissionAddress Address of the submission.
@@ -307,27 +307,28 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Chooses the winner(s) of the current round. If this is the last round, 
     //       this method will also close the tournament.
-    /// @param _submissionAddress Address of the winning submission
+    /// @param _submissionAddresses The winning submission addresses
+    /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
     /// @param _end The end time (seconds from unix epoch) of the next round
     /// @param _reviewDuration The duration of time that will be allotted to review the next round
     /// @param _bountyMTX The amount of MTX that can be won during the next round
-    function closeRound(address _submissionAddress, uint256 _end, uint256 _reviewDuration, uint256 _bountyMTX) public onlyOwner
+    function closeRound(address[] _submissionAddresses, uint256[] _rewardDistribution, uint256 _end, uint256 _reviewDuration, uint256 _bountyMTX) public onlyOwner
     {
         // Round must be in review to close
         require(getState() == uint256(TournamentState.RoundInReview), "Round is not in review.");
         // TODO: Create big red button (new method)
 
         // Choose the winning submission(s) on the current round
-        IMatryxRound(rounds[rounds.length-1]).chooseWinningSubmission(_submissionAddress);
+        IMatryxRound(rounds[rounds.length-1]).chooseWinningSubmissions(_submissionAddresses, _rewardDistribution);
 
         // Event to notify web3 of the winning submission address
-        emit RoundWinnerChosen(_submissionAddress);
+        emit RoundWinnersChosen(_submissionAddresses);
 
         // If there's no bounty left, end the tournament
         if(remainingBounty() == 0)
         {
-            closeTournament(_submissionAddress);
-            IMatryxPlatform(platformAddress).invokeTournamentClosedEvent(address(this), rounds.length, _submissionAddress, IMatryxRound(rounds[rounds.length-1]).getBounty());
+            closeTournament(_submissionAddresses, _rewardDistribution);
+            IMatryxPlatform(platformAddress).invokeTournamentClosedEvent(rounds.length, _submissionAddresses, _rewardDistribution, IMatryxRound(rounds[rounds.length-1]).getBounty());
         }
         else
         {
@@ -336,16 +337,16 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     }
 
     // @dev Chooses the winner of the tournament.
-    function closeTournament(address _submissionAddress) public onlyOwner
+    function closeTournament(address[] _submissionAddresses, uint256[] _rewardDistribution) public onlyOwner
     {
         // TODO: Validate that this is done.
         require(getState() == uint256(TournamentState.RoundInReview));
         //Transfer the remaining MTX in the tournament to the current round
         require(IMatryxToken(matryxTokenAddress).transfer(rounds[rounds.length-1], remainingBounty()));
         tournamentOpen = false;
-        IMatryxRound(rounds[rounds.length-1]).chooseWinningSubmission(_submissionAddress);
-        emit RoundWinnerChosen(_submissionAddress);
-        IMatryxPlatform(platformAddress).invokeTournamentClosedEvent(address(this), rounds.length, _submissionAddress, IMatryxRound(rounds[rounds.length-1]).getBounty());
+        IMatryxRound(rounds[rounds.length-1]).chooseWinningSubmissions(_submissionAddresses, _rewardDistribution);
+        emit RoundWinnersChosen(_submissionAddresses);
+        IMatryxPlatform(platformAddress).invokeTournamentClosedEvent(rounds.length, _submissionAddresses, _rewardDistribution, IMatryxRound(rounds[rounds.length-1]).getBounty());
     }
 
     /// @dev Creates a new round.
@@ -404,7 +405,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         tournamentOpen = true;
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
         emit platfromExists(platformAddress);
-        platform.invokeTournamentOpenedEvent(owner, this, title, externalAddress, Bounty, entryFee);
+        platform.invokeTournamentOpenedEvent(owner, title, externalAddress, Bounty, entryFee);
     }
 
     /*

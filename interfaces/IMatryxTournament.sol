@@ -17,8 +17,8 @@ interface IMatryxTournament
     function setExternalAddress(bytes _externalAddress) public;
     function setEntryFee(uint256 _entryFee) public;
     function setCategory(string _category) public;
-    function closeRound(address _submissionAddress, uint256 _end, uint256 _reviewDuration, uint256 _bountyMTX) public;
-    function closeTournament(address _submissionAddress) public;
+    function closeRound(address[] _submissionAddresses, uint256[] _rewardDistribution, uint256 _end, uint256 _reviewDuration, uint256 _bountyMTX) public;
+    function closeTournament(address[] _submissionAddress, uint256[] _rewardDistribution) public;
     function createRound(uint256 _start, uint256 _end, uint256 _reviewDuration, uint256 _bountyMTX) public returns (address _roundAddress) ;
     function enterUserInTournament(address _entrantAddress) public returns (bool success);
     function getEntryFee() public view returns (uint256);

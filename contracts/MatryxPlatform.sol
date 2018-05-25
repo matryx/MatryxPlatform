@@ -80,28 +80,27 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress, uint256 _MTXReward);
+  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, address[] _winningSubmissionAddresses, uint256 _MTXReward);
   event UserEnteredTournament(address _entrant, address _tournamentAddress);
   event QueryID(string queryID);
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
   /// @param _owner Owner of the tournament.
-  /// @param _tournamentAddress Address of the tournament.
   /// @param _tournamentName Name of the tournament.
   /// @param _externalAddress External address of the tournament.
   /// @param _MTXReward Reward for winning the tournament.
   /// @param _entryFee Fee for entering into the tournament.
-  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
+  function invokeTournamentOpenedEvent(address _owner, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
   {
-    TournamentOpened(_owner, _tournamentAddress, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    TournamentOpened(_owner, msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
   }
 
   /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
-  /// @param _tournamentAddress Address of the tournament.
   /// @param _finalRoundNumber Index of the round containing the winning submission.
-  /// @param _winningSubmissionAddress Address of the winning submission.
-  function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress, uint256 _MTXReward) public onlyTournament
+  /// @param _winningSubmissionAddresses Address of the winning submission.
+  /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
+  function invokeTournamentClosedEvent(uint256 _finalRoundNumber, address[] _winningSubmissionAddresses, uint256[] _rewardDistribution, uint256 _MTXReward) public onlyTournament
   {
-    TournamentClosed(_tournamentAddress, _finalRoundNumber, _winningSubmissionAddress, _MTXReward);
+    TournamentClosed(msg.sender, _finalRoundNumber, _winningSubmissionAddresses, _MTXReward);
   }
 
   /* 
