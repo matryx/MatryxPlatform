@@ -345,7 +345,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         emit RoundWinnerChosen(_submissionAddress);
 
         // If there's no bounty left, end the tournament //TODO: else create a new round and start it right now
-        if(remainingBounty() == 0)
+        if(remainingBounty() == 0 || rounds.length == maxRounds)s
         {
             tournamentOpen = false;
             //closeTournament(_submissionAddress);
