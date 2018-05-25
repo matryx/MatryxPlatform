@@ -159,6 +159,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	// @dev Returns the state of the round. 
 	// The round can be in one of 5 states:
 	// NotYetOpen, Open, InReview, Closed, Abandoned
+	//TODO how do we keep track of the startTime, endTime, and winningSubmission?
     function getState() public view returns (uint256)
     {
         if(now < startTime)

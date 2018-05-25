@@ -218,6 +218,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     enum TournamentState { RoundNotYetOpen, RoundOpen, RoundInReview, TournamentClosed, RoundAbandoned}
 
+
+
+    //
     function getState() public view returns (uint256)
     {
         return IMatryxRound(rounds[rounds.length-1]).getState();
@@ -310,6 +313,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         //     revert();
         // }
         //revert();
+        category = _category;
     }
 
     /*
@@ -318,20 +322,29 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Chooses the winner for the round. If this is the last round, closes the tournament.
     /// @param _submissionAddress Address of the winning submission
+    /// @param _end The end time of the the new round round
+    /// @param _reviewPeriod The time designated to review the next round
+    /// @param _bountyMTX The amount of Matryx Tokens assigned to the winner of the next round
     function closeRound(address _submissionAddress, uint256 _end, uint256 _reviewPeriod, uint256 _bountyMTX) public onlyOwner
     {
-        require(getState() == uint256(TournamentState.RoundInReview));
+
+        //State must be in Review
+        require(getState() == uint256(TournamentState.RoundInReview), "State isn't in review Period");
         // TODO: Create big red button (new method)
         // TODO: Validate that this is done.
 
         // End the round.
+        // What does this line do?
         IMatryxRound(rounds[rounds.length-1]).chooseWinningSubmission(_submissionAddress);
+
+        //Event to notify web3 of the winning submission address
         emit RoundWinnerChosen(_submissionAddress);
 
-        // If there's no bounty left, end the tournament
-        if(remainingBounty() == 0)
+        // If there's no bounty left, end the tournament //TODO: else create a new round and start it right now
+        if(remainingBounty() == 0 || rounds.length == maxRounds)s
         {
             tournamentOpen = false;
+            //closeTournament(_submissionAddress);
             IMatryxPlatform(platformAddress).invokeTournamentClosedEvent(address(this), rounds.length, _submissionAddress, IMatryxRound(rounds[rounds.length-1]).getBounty());
         }
         else
@@ -351,6 +364,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         IMatryxRound(rounds[rounds.length-1]).chooseWinningSubmission(_submissionAddress);
         emit RoundWinnerChosen(_submissionAddress);
         IMatryxPlatform(platformAddress).invokeTournamentClosedEvent(address(this), rounds.length, _submissionAddress, IMatryxRound(rounds[rounds.length-1]).getBounty());
+    }
+
+
+    // @dev Big Red Button allows the user to cancel the tournament whenever they please
+    function bigRedButton(address _tournamentAddress) public onlyOwner returns (bool successfullyCanceled) {
+        return true;
     }
 
     /// @dev Creates a new round.
