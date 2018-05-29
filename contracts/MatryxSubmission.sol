@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 pragma experimental ABIEncoderV2;
 
 import '../libraries/math/SafeMath.sol';
+import '../libraries/strings/strings.sol';
 import '../libraries/LibConstruction.sol';
 import './reputation/SubmissionTrust.sol';
 import '../interfaces/IMatryxToken.sol';
@@ -16,6 +17,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	using SafeMath for uint256;
 	using SafeMath for uint128;
 	using SafeMath for uint32;
+	using strings for *;
 
 
 	/************** TODO ******************/
@@ -65,20 +67,20 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	bytes4 fnSelector_revertIfReferenceFlagged = bytes4(keccak256("revertIfReferenceFlagged(address)"));
 
-	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, LibConstruction.SubmissionData submissionData) public
+	function MatryxSubmission(LibConstruction.RequiredSubmissionAddresses requiredAddresses, LibConstruction.SubmissionData submissionData) public
 	{
 		author = IMatryxPlatform(platformAddress).peerAddress(submissionData.owner);
 		require(author != 0x0);
 		
-		platformAddress = _platformAddress;
-		tournamentAddress = _tournamentAddress;
-		roundAddress = _roundAddress;
+		platformAddress = requiredAddresses.platformAddress;
+		tournamentAddress = requiredAddresses.tournamentAddress;
+		roundAddress = requiredAddresses.roundAddress;
 
 		title = submissionData.title;
 		owner = submissionData.owner;
 		externalAddress = submissionData.contentHash;
 		references = submissionData.references;
-		trustDelegate = IMatryxPlatform(_platformAddress).getSubmissionTrustLibrary();
+		trustDelegate = IMatryxPlatform(requiredAddresses.platformAddress).getSubmissionTrustLibrary();
 
 		for(uint32 i = 0; i < references.length;i++)
 		{
@@ -86,12 +88,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 			addressToReferenceInfo[submissionData.references[i]].index = i;
 		}
 
-		require(submissionData.contributors.length == submissionData.contributorRewardDistribution.length);
-		for(uint32 j = 0; j < submissionData.contributors.length; j++)
-		{
-			contributorBountyDivisor = contributorBountyDivisor + submissionData.contributorRewardDistribution[j];
-			contributorToBountyDividend[submissionData.contributors[j]] = submissionData.contributorRewardDistribution[j];
-		}
+		addContributors(submissionData.contributors, submissionData.contributorRewardDistribution);
 		
 		contributors = submissionData.contributors;
 		timeSubmitted = now;
@@ -234,34 +231,59 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	 * Setter Methods
 	 */
 
-	function makeExternallyAccessibleDuringTournament() onlyOwner public
+	function updateAll(LibConstruction.SubmissionModificationData _data)
 	{
-		publicallyAccessibleDuringTournament = true;
+		if(!_data.title.toSlice().empty())
+		{
+			title = _data.title;
+		}
+		if(_data.owner != 0x0)
+		{
+			owner = _data.owner;
+		}
+		if(_data.contentHash.length != 0)
+		{
+			externalAddress = _data.contentHash;
+		}
+		if(_data.contributorsToAdd.length != 0)
+		{
+			require(_data.contributorsToAdd.length == _data.contributorRewardDistribution.length);
+			addContributors(_data.contributorsToAdd, _data.contributorRewardDistribution);
+		}
+		if(_data.contributorsToRemove.length != 0)
+		{
+			removeContributors(_data.contributorsToRemove);
+		}
+	}
+
+	function setExternalAccessibility(bool _accessibility) public onlyOwner 
+	{
+		publicallyAccessibleDuringTournament = _accessibility;
 	}
 
     /// @dev Edit the title of a submission (callable only by submission's owner).
     /// @param _title New title for the submission.
-	function updateTitle(string _title) onlyOwner duringOpenSubmission public 
+	function updateTitle(string _title) public onlyOwner duringOpenSubmission 
 	{
 		title = _title;
 	}
 
 	/// @dev Update the external address of a submission (callable only by submission's owner).
     /// @param _externalAddress New content hash for the body of the submission.
-	function updateExternalAddress(bytes _externalAddress) onlyOwner duringOpenSubmission public
+	function updateExternalAddress(bytes _externalAddress) public onlyOwner duringOpenSubmission 
 	{
 		externalAddress = _externalAddress;
 		timeUpdated = now;
 	}
 
-	function setTrustDelegate(address _newTrustDelegate) onlyPlatform public
+	function setTrustDelegate(address _newTrustDelegate) public onlyPlatform
 	{
 		trustDelegate = _newTrustDelegate;
 	}
 
 	/// @dev Add a missing reference to a submission (callable only by submission's owner).
     /// @param _reference Address of additional reference to include.
-	function addReference(address _reference) /*onlyOwner*/ public 
+	function addReference(address _reference) /*onlyOwner*/ public onlyOwner
 	{
 		require(trustDelegate.delegatecall(fnSelector_addReference, _reference));
 	}
@@ -274,7 +296,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	/// @dev Remove an erroneous reference to a submission (callable only by submission's owner).
     /// @param _reference Address of reference to remove.
-	function removeReference(address _reference) /*onlyOwner*/ public
+	function removeReference(address _reference) /*onlyOwner*/ public onlyOwner
 	{
 		require(trustDelegate.delegatecall(fnSelector_removeReference, _reference));
 	}
@@ -324,7 +346,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	/// @dev Add a contributor to a submission (callable only by submission's owner).
     /// @param _contributor Address of contributor to add to the submission.
-	function addContributor(address _contributor, uint128 _bountyAllocation) onlyOwner public
+	function addContributor(address _contributor, uint128 _bountyAllocation) public onlyOwner
 	{
 		contributors.push(_contributor);
 
@@ -335,14 +357,33 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		round.setParticipantType(_contributor, 2);
 	}
 
+	function addContributors(address[] _contributorsToAdd, uint128[] _distribution) public onlyOwner
+	{
+		require(_contributorsToAdd.length == _distribution.length);
+		for(uint32 j = 0; j < _contributorsToAdd.length; j++)
+		{
+			contributorBountyDivisor = contributorBountyDivisor + _distribution[j];
+			contributorToBountyDividend[_contributorsToAdd[j]] = _distribution[j];
+		}
+	}	
+
 	/// @dev Remove a contributor from a submission (callable only by submission's owner).
     /// @param _contributorIndex Index of the contributor to remove from the submission.
-	function removeContributor(uint256 _contributorIndex) onlyOwner public 
+	function removeContributor(uint256 _contributorIndex) onlyOwner public onlyOwner
 	{
-		contributorToBountyDividend[contributors[_contributorIndex]] = 0x0;
 		contributorBountyDivisor = contributorBountyDivisor - contributorToBountyDividend[contributors[_contributorIndex]];
+		contributorToBountyDividend[contributors[_contributorIndex]] = 0;
 
 		delete contributors[_contributorIndex];
+	}
+
+	function removeContributors(address[] _contributorsToRemove) public onlyOwner
+	{
+		for(uint32 j = 0; j < _contributorsToRemove.length; j++)
+		{
+			contributorBountyDivisor = contributorBountyDivisor - contributorToBountyDividend[_contributorsToRemove[j]];
+			contributorToBountyDividend[_contributorsToRemove[j]] = 0;
+		}
 	}
 
 	function getBalance() public returns (uint256)

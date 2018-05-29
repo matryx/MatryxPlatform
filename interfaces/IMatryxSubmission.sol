@@ -11,7 +11,7 @@ interface IMatryxSubmission {
 	function getContributors() public constant returns(address[]);
 	function getTimeSubmitted() public constant returns(uint256);
 	function getTimeUpdated() public constant returns(uint256);
-	function makeExternallyAccessibleDuringTournament() public;
+	function setExternalAccessibility(bool _accessibility) public;
 	function updateTitle(string _title) public ;
 	function updateExternalAddress(bytes _externalAddress) public;
 	function addReference(address _reference) public ;

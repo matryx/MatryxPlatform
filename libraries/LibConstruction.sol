@@ -17,6 +17,13 @@ library LibConstruction
     	address submissionFactoryAddress;
     }
 
+    struct RequiredSubmissionAddresses
+    {
+    	address platformAddress;
+    	address tournamentAddress;
+    	address roundAddress;
+    }
+
     struct TournamentData
     {
     	string category;
@@ -42,5 +49,15 @@ library LibConstruction
     	address[] contributors;
     	uint128[] contributorRewardDistribution;
     	address[] references;
+    }
+
+    struct SubmissionModificationData
+    {
+    	string title;
+    	address owner;
+    	bytes contentHash;
+    	address[] contributorsToAdd;
+    	uint128[] contributorRewardDistribution;
+    	address[] contributorsToRemove;
     }
 }

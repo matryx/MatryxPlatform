@@ -33,8 +33,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     uint256 public tournamentOpenedTime;
     address[] public rounds;
     mapping(address=>bool) public isRound;
-    uint256 public reviewPeriod;
-    uint256 public tournamentClosedTime;
     bool public tournamentOpen = false;
 
     // Reward and fee
