@@ -210,10 +210,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     }
 
     enum TournamentState { RoundNotYetOpen, RoundOpen, RoundInReview, TournamentClosed, RoundAbandoned}
-
-
-
-    //
+    /// @dev Returns the state of the tournament. One of:
+    /// RoundNotYetOpen, RoundOpen, RoundInReview, TournamentClosed, RoundAbandoned
     function getState() public view returns (uint256)
     {
         return IMatryxRound(rounds[rounds.length-1]).getState();
@@ -353,11 +351,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @return The new round's address.
     function createRound(uint256 _start, uint256 _end, uint256 _reviewDuration, uint256 _bountyMTX) public onlyOwner returns (address _roundAddress)
     {
+        require(rounds.length == 0);
+        require((_start <= now && now < _end), "Time parameters are invalid.");
+
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
         address newRoundAddress;
 
-        require((_start <= now && now < _end),"Time Parameters are Invalid");
         // If a bounty wasn't specified
         uint256 remaining = remainingBounty();
         if(_bountyMTX == 0x0)
@@ -366,7 +366,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
             _bountyMTX = IMatryxRound(rounds[rounds.length-1]).getBounty();
         }
         // If its more than is left, use what's left.
-        if(_bountyMTX < remaining)
+        if(_bountyMTX > remaining)
         {
             _bountyMTX = remaining;
         }
