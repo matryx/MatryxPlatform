@@ -337,17 +337,21 @@ contract MatryxRound is Ownable, IMatryxRound {
      */
 
     /// @dev Create a new submission.
-    /// @param _title Title of the submission.
-    /// @param _externalAddress Off-chain content hash of submission details (ipfs hash)
-    /// @param _author Author of this submission.
-    /// @param _references Addresses of submissions referenced in creating this submission
-    /// @param _contributors Contributors to this submission.
+    /// @param _author of this submission.
+    /// @param submissionData The data of the submission. Includes:
+    ///		title: Title of the submission.
+    ///		owner: The owner of the submission.
+    ///		contentHash: Off-chain content hash of submission details (ipfs hash)
+    ///		contributors: Contributors to this submission.
+    ///		contributorRewardDistribution: Informs how the reward should be distributed among the contributors
+    /// 	should this submission win.
+    ///		references: Addresses of submissions referenced in creating this submission.
     /// @return _submissionAddress Location of this submission within this round.
-	function createSubmission(string _title, address _owner, address _author, bytes _externalAddress, address[] _references, address[] _contributors, uint128[] _contributorRewardDistribution) public onlyTournament duringOpenSubmission returns (address _submissionAddress)
+	function createSubmission(address _author, LibConstruction.SubmissionData submissionData) public onlyTournament duringOpenSubmission returns (address _submissionAddress)
 	{
 		require(_author != 0x0);
 		
-        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(platformAddress, tournamentAddress, this, _title, _owner, _author, _externalAddress, _references, _contributors, _contributorRewardDistribution);
+        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(platformAddress, tournamentAddress, this, submissionData.title, submissionData.owner, _author, submissionData.contentHash, submissionData.references, submissionData.contributors, submissionData.contributorRewardDistribution);
         //submission bookkeeping
         addressToSubmissionIndex[submissionAddress] = uint256_optional({exists:true, value: submissions.length});
         submissions.push(submissionAddress);
@@ -355,16 +359,16 @@ contract MatryxRound is Ownable, IMatryxRound {
         // TODO: Change to 'authors.push' once MatryxPeer is part of MatryxPlatform
         if(authorToSubmissionAddress[msg.sender].length == 0)
         {
-        	submissionOwners.push(_owner);
+        	submissionOwners.push(submissionData.owner);
         }
 
         authorToSubmissionAddress[msg.sender].push(submissionAddress);
 
         // round participant bookkeeping
         addressToParticipantType[_author] = uint(participantType.author);
-        for(uint256 i = 0; i < _contributors.length; i++)
+        for(uint256 i = 0; i < submissionData.contributors.length; i++)
         {
-        	addressToParticipantType[_contributors[i]] = uint(participantType.contributor);
+        	addressToParticipantType[submissionData.contributors[i]] = uint(participantType.contributor);
         }
 
         IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);

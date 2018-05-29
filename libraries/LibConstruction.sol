@@ -33,4 +33,14 @@ library LibConstruction
     	uint256 reviewDuration;
     	uint256 bounty;
     }
+
+    struct SubmissionData
+    {
+    	string title;
+    	address owner;
+    	bytes contentHash;
+    	address[] contributors;
+    	uint128[] contributorRewardDistribution;
+    	address[] references;
+    }
 }

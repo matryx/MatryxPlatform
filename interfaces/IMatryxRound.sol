@@ -1,4 +1,7 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
+
+import '../libraries/LibConstruction.sol';
 
 interface IMatryxRound
 {
@@ -17,6 +20,6 @@ interface IMatryxRound
 	function Start(uint256 _start, uint256 _end, uint256 _reviewPeriod) public;
 	function chooseWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution) public;
 	//function awardBounty(address _submissionAddress, uint256 _remainingBounty) public;
-	function createSubmission(string _name, address _owner, address _author, bytes _externalAddress, address[] _references, address[] _contributors, uint128[] _contributorRewardDistribution) public returns (address _submissionAddress);
+	function createSubmission(address _author, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
 	function getBalance(address _submissionAddress) public constant returns (uint256);
 }

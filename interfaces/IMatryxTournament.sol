@@ -25,5 +25,5 @@ interface IMatryxTournament
     function createRound(LibConstruction.RoundData roundData) public returns (address _roundAddress) ;
     function enterUserInTournament(address _entrantAddress) public returns (bool success);
     function getEntryFee() public view returns (uint256);
-    function createSubmission(string _title, address _owner, bytes _externalAddress, address[] _contributors, uint128[] contributorRewardDistribution, address[] _references) public returns (address _submissionAddress);
+    function createSubmission(LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
 }
