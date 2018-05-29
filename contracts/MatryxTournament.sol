@@ -56,16 +56,16 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     mapping(address=>uint256_optional) private addressToIsEntrant;
     address[] private allEntrants;
 
-    function MatryxTournament(LibConstruction.RequiredTournamentAddresses _addresses, address _owner, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public {
+    function MatryxTournament(LibConstruction.RequiredTournamentAddresses requiredAddresses, address _owner, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public {
         //Clean inputs
         require(_owner != 0x0);
         //require(!_tournamentName.toSlice().empty());
         require(tournamentData.Bounty > 0);
-        require(_addresses.roundFactoryAddress != 0x0);
+        require(requiredAddresses.roundFactoryAddress != 0x0);
         
-        platformAddress = _addresses.platformAddress;
-        matryxTokenAddress = _addresses.matryxTokenAddress;
-        matryxRoundFactoryAddress = _addresses.roundFactoryAddress;
+        platformAddress = requiredAddresses.platformAddress;
+        matryxTokenAddress = requiredAddresses.matryxTokenAddress;
+        matryxRoundFactoryAddress = requiredAddresses.roundFactoryAddress;
 
         timeCreated = now;
         // Identification

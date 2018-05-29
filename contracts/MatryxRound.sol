@@ -40,13 +40,13 @@ contract MatryxRound is Ownable, IMatryxRound {
     address[] submissionOwners;
     uint256 numberSubmissionsRemoved;
 
-	function MatryxRound(address _matryxTokenAddress, address _platformAddress, address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, LibConstruction.RoundData roundData) public
+	function MatryxRound(LibConstruction.RequiredRoundAddresses requiredAddresses, address _owner, LibConstruction.RoundData roundData) public
 	{
-		matryxTokenAddress = _matryxTokenAddress;
-		platformAddress = _platformAddress;
-		tournamentAddress = _tournamentAddress;
+		matryxTokenAddress = requiredAddresses.matryxTokenAddress;
+		platformAddress = requiredAddresses.platformAddress;
+		tournamentAddress = requiredAddresses.tournamentAddress;
 		owner = _owner;
-		matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
+		matryxSubmissionFactoryAddress = requiredAddresses.submissionFactoryAddress;
 		bounty = roundData.bounty;
 
 		Start(roundData.start, roundData.end, roundData.reviewDuration);

@@ -14,7 +14,8 @@ contract MatryxRoundFactory {
 	}
 
 	function createRound(address _platformAddress, address _tournamentAddress, address _owner, LibConstruction.RoundData roundData) public returns (address _roundAddress) {
-		MatryxRound newRound = new MatryxRound(matryxTokenAddress, _platformAddress, _tournamentAddress, matryxSubmissionFactoryAddress, _owner, roundData);
+		LibConstruction.RequiredRoundAddresses memory requiredAddresses = LibConstruction.RequiredRoundAddresses({platformAddress: _platformAddress, matryxTokenAddress: matryxTokenAddress, tournamentAddress: _tournamentAddress, submissionFactoryAddress: matryxSubmissionFactoryAddress});
+		MatryxRound newRound = new MatryxRound(requiredAddresses, _owner, roundData);
 		return newRound;
 	}
 }

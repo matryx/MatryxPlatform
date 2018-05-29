@@ -9,6 +9,14 @@ library LibConstruction
         address roundFactoryAddress;
     }
 
+    struct RequiredRoundAddresses
+    {
+    	address platformAddress;
+    	address matryxTokenAddress;
+    	address tournamentAddress;
+    	address submissionFactoryAddress;
+    }
+
     struct TournamentData
     {
     	string category;
