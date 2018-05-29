@@ -1,6 +1,8 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
 
 import "../libraries/math/SafeMath.sol";
+import "../libraries/LibConstruction.sol";
 import "../interfaces/IMatryxToken.sol";
 import "../interfaces/IMatryxTournament.sol";
 import "../interfaces/IMatryxRound.sol";
@@ -38,16 +40,16 @@ contract MatryxRound is Ownable, IMatryxRound {
     address[] submissionOwners;
     uint256 numberSubmissionsRemoved;
 
-	function MatryxRound(address _matryxTokenAddress, address _platformAddress, address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bounty) public
+	function MatryxRound(address _matryxTokenAddress, address _platformAddress, address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, LibConstruction.RoundData roundData) public
 	{
 		matryxTokenAddress = _matryxTokenAddress;
 		platformAddress = _platformAddress;
 		tournamentAddress = _tournamentAddress;
 		owner = _owner;
 		matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
-		bounty = _bounty;
+		bounty = roundData.bounty;
 
-		Start(_start, _end, _reviewPeriod);
+		Start(roundData.start, roundData.end, roundData.reviewDuration);
 	}
 
 	/*

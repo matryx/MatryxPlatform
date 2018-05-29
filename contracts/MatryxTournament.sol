@@ -78,6 +78,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         BountyLeft = Bounty;
         entryFee = tournamentData.entryFee;
 
+        createRound(roundData);
         // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
     }
 
@@ -309,10 +310,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     //       this method will also close the tournament.
     /// @param _submissionAddresses The winning submission addresses
     /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
-    /// @param _end The end time (seconds from unix epoch) of the next round
-    /// @param _reviewDuration The duration of time that will be allotted to review the next round
-    /// @param _bountyMTX The amount of MTX that can be won during the next round
-    function closeRound(address[] _submissionAddresses, uint256[] _rewardDistribution, uint256 _end, uint256 _reviewDuration, uint256 _bountyMTX) public onlyOwner
+    /// @param roundData Information with which to create the next round. Includes:
+    ///   _start: (Ignored)
+    ///   _end:   The end time (seconds from unix epoch) of the next round
+    ///   _reviewDuration: The duration of time that will be allotted to review the next round
+    ///   _bountyMTX: The amount of MTX that can be won during the next round
+    function closeRound(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData roundData) public onlyOwner
     {
         // Round must be in review to close
         require(getState() == uint256(TournamentState.RoundInReview), "Round is not in review.");
@@ -332,7 +335,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         }
         else
         {
-            createRound(now, _end, _reviewDuration, _bountyMTX);
+            roundData.start = 0;
+            createRound(roundData);
         }
     }
 
@@ -351,10 +355,10 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Creates a new round.
     /// @return The new round's address.
-    function createRound(uint256 _start, uint256 _end, uint256 _reviewDuration, uint256 _bountyMTX) public onlyOwner returns (address _roundAddress)
+    function createRound(LibConstruction.RoundData roundData) public onlyOwner returns (address _roundAddress)
     {
         require(rounds.length == 0);
-        require((_start <= now && now < _end), "Time parameters are invalid.");
+        require((roundData.start <= now && now < roundData.end), "Time parameters are invalid.");
 
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
@@ -362,15 +366,15 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         // If a bounty wasn't specified
         uint256 remaining = remainingBounty();
-        if(_bountyMTX == 0x0)
+        if(roundData.bounty == 0x0)
         {
             // Use the last one
-            _bountyMTX = IMatryxRound(rounds[rounds.length-1]).getBounty();
+            roundData.bounty = IMatryxRound(rounds[rounds.length-1]).getBounty();
         }
         // If its more than is left, use what's left.
-        if(_bountyMTX > remaining)
+        if(roundData.bounty > remaining)
         {
-            _bountyMTX = remaining;
+            roundData.bounty = remaining;
         }
 
         //If the next round is the last round
@@ -380,15 +384,15 @@ contract MatryxTournament is Ownable, IMatryxTournament {
             openTournament();
         }
 
-        newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, _start, _end, _reviewDuration, _bountyMTX);
+        newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, roundData);
         // Transfer the round bounty to the round.
-        matryxToken.transfer(newRoundAddress, _bountyMTX);
+        matryxToken.transfer(newRoundAddress, roundData.bounty);
 
         isRound[newRoundAddress] = true;
         rounds.push(newRoundAddress);
 
         // Triggers Event displaying start time, end, address, and round number
-        emit NewRound(_start, _end, _reviewDuration, newRoundAddress, rounds.length);
+        emit NewRound(roundData.start, roundData.end, roundData.reviewDuration, newRoundAddress, rounds.length);
 
         return newRoundAddress;
     }

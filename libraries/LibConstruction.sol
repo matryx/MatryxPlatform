@@ -20,9 +20,9 @@ library LibConstruction
 
     struct RoundData
     {
-    	uint256 startTime;
-    	uint256 endTime;
+    	uint256 start;
+    	uint256 end;
     	uint256 reviewDuration;
     	uint256 bounty;
     }
-}	
+}

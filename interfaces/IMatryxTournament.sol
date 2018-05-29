@@ -1,4 +1,7 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
+
+import '../libraries/LibConstruction.sol';
 
 interface IMatryxTournament
 {
@@ -17,9 +20,9 @@ interface IMatryxTournament
     function setExternalAddress(bytes _externalAddress) public;
     function setEntryFee(uint256 _entryFee) public;
     function setCategory(string _category) public;
-    function closeRound(address[] _submissionAddresses, uint256[] _rewardDistribution, uint256 _end, uint256 _reviewDuration, uint256 _bountyMTX) public;
+    function closeRound(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData roundData) public;
     function closeTournament(address[] _submissionAddress, uint256[] _rewardDistribution) public;
-    function createRound(uint256 _start, uint256 _end, uint256 _reviewDuration, uint256 _bountyMTX) public returns (address _roundAddress) ;
+    function createRound(LibConstruction.RoundData roundData) public returns (address _roundAddress) ;
     function enterUserInTournament(address _entrantAddress) public returns (bool success);
     function getEntryFee() public view returns (uint256);
     function createSubmission(string _title, address _owner, bytes _externalAddress, address[] _contributors, uint128[] contributorRewardDistribution, address[] _references) public returns (address _submissionAddress);
