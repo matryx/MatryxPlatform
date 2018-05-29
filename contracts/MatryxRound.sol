@@ -27,12 +27,15 @@ contract MatryxRound is Ownable, IMatryxRound {
     uint256 public endTime;
     uint256 public reviewPeriod;
     uint256 public bounty;
+    bool hasBeenWithdrawnFrom;
+    mapping(address=>bool) hasWithdrawn;
     address[] public winningSubmissions;
 
     mapping(address=>uint) addressToParticipantType;
-    mapping(address=>address) authorToSubmissionAddress;
+    mapping(address=>address[]) authorToSubmissionAddress;
     mapping(address=>uint256_optional) addressToSubmissionIndex;
     address[] submissions;
+    address[] submissionOwners;
     uint256 numberSubmissionsRemoved;
 
 	function MatryxRound(address _matryxTokenAddress, address _platformAddress, address _tournamentAddress, address _matryxSubmissionFactoryAddress, address _owner, uint256 _start, uint256 _end, uint256 _reviewPeriod, uint256 _bounty) public
@@ -115,17 +118,17 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	/// @dev Requires the function caller to be the platform or the owner of this tournament
 	// modifier tournamentOrOwner()
- //    {
- //        require((msg.sender == tournamentAddress)||(msg.sender == owner));
- //        _;
- //    }
+    // {
+    //     require((msg.sender == tournamentAddress)||(msg.sender == owner));
+    //     _;
+    // }
 
-	/// @dev Requires that the sender be the submission's author.
-	// modifier onlySubmissionAuthor(uint256 _submissionIndex)
-	// {
-	// 	require(IMatryxSubmission(submissions[_submissionIndex]).getAuthor() == msg.sender);
-	// 	_;
-	// }
+	// @dev Requires that the sender be the submission's author.
+	modifier onlySubmissionAuthor()
+	{
+		require(authorToSubmissionAddress[msg.sender].length != 0);
+		_;
+	}
 
 	/*
 	 * State Maintenance Methods
@@ -346,7 +349,14 @@ contract MatryxRound is Ownable, IMatryxRound {
         //submission bookkeeping
         addressToSubmissionIndex[submissionAddress] = uint256_optional({exists:true, value: submissions.length});
         submissions.push(submissionAddress);
-        authorToSubmissionAddress[msg.sender] = submissionAddress;
+
+        // TODO: Change to 'authors.push' once MatryxPeer is part of MatryxPlatform
+        if(authorToSubmissionAddress[msg.sender].length == 0)
+        {
+        	submissionOwners.push(_owner);
+        }
+
+        authorToSubmissionAddress[msg.sender].push(submissionAddress);
 
         // round participant bookkeeping
         addressToParticipantType[_author] = uint(participantType.author);
@@ -357,5 +367,24 @@ contract MatryxRound is Ownable, IMatryxRound {
 
         IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);
         return submissionAddress;
+	}
+
+	/// @dev Allows contributors to withdraw a part of the round bounty if the round has been abandoned.
+	function withdrawReward() public onlySubmissionAuthor
+	{
+		require(getState() == uint256(RoundState.Abandoned), "This tournament is still valid.");
+		require(!hasWithdrawn[msg.sender]);
+
+		if(!hasBeenWithdrawnFrom)
+		{
+			require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.div(submissionOwners.length).mul(2)));
+		}
+		else
+		{
+			uint256 numberOfOwners = submissionOwners.length;
+			require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.mul(numberOfOwners-2).div(numberOfOwners).div(numberOfOwners-1)));
+		}
+
+		hasWithdrawn[msg.sender] = true;
 	}
 }
