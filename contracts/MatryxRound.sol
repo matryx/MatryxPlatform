@@ -351,7 +351,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	{
 		require(_author != 0x0);
 		
-        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(platformAddress, tournamentAddress, this, submissionData.title, submissionData.owner, _author, submissionData.contentHash, submissionData.references, submissionData.contributors, submissionData.contributorRewardDistribution);
+        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(platformAddress, tournamentAddress, this, submissionData);
         //submission bookkeeping
         addressToSubmissionIndex[submissionAddress] = uint256_optional({exists:true, value: submissions.length});
         submissions.push(submissionAddress);

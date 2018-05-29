@@ -1,6 +1,8 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
 
 import '../libraries/math/SafeMath.sol';
+import '../libraries/LibConstruction.sol';
 import './reputation/SubmissionTrust.sol';
 import '../interfaces/IMatryxToken.sol';
 import '../interfaces/IMatryxPeer.sol';
@@ -63,35 +65,35 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	bytes4 fnSelector_revertIfReferenceFlagged = bytes4(keccak256("revertIfReferenceFlagged(address)"));
 
-	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, string _title, address _submissionOwner, address _submissionAuthor, bytes _externalAddress, address[] _references, address[] _contributors, uint128[] _contributorRewardDistribution) public
+	function MatryxSubmission(address _platformAddress, address _tournamentAddress, address _roundAddress, LibConstruction.SubmissionData submissionData) public
 	{
-		require(_submissionAuthor != 0x0);
+		author = IMatryxPlatform(platformAddress).peerAddress(submissionData.owner);
+		require(author != 0x0);
 		
 		platformAddress = _platformAddress;
 		tournamentAddress = _tournamentAddress;
 		roundAddress = _roundAddress;
 
-		title = _title;
-		owner = _submissionOwner;
-		author = _submissionAuthor;
-		externalAddress = _externalAddress;
-		references = _references;
+		title = submissionData.title;
+		owner = submissionData.owner;
+		externalAddress = submissionData.contentHash;
+		references = submissionData.references;
 		trustDelegate = IMatryxPlatform(_platformAddress).getSubmissionTrustLibrary();
 
 		for(uint32 i = 0; i < references.length;i++)
 		{
-			addressToReferenceInfo[references[i]].exists = true;
-			addressToReferenceInfo[references[i]].index = i;
+			addressToReferenceInfo[submissionData.references[i]].exists = true;
+			addressToReferenceInfo[submissionData.references[i]].index = i;
 		}
 
-		require(_contributors.length == _contributorRewardDistribution.length);
-		for(uint32 j = 0; j < _contributors.length; j++)
+		require(submissionData.contributors.length == submissionData.contributorRewardDistribution.length);
+		for(uint32 j = 0; j < submissionData.contributors.length; j++)
 		{
-			contributorBountyDivisor = contributorBountyDivisor + _contributorRewardDistribution[j];
-			contributorToBountyDividend[_contributors[j]] = _contributorRewardDistribution[j];
+			contributorBountyDivisor = contributorBountyDivisor + submissionData.contributorRewardDistribution[j];
+			contributorToBountyDividend[submissionData.contributors[j]] = submissionData.contributorRewardDistribution[j];
 		}
 		
-		contributors = _contributors;
+		contributors = submissionData.contributors;
 		timeSubmitted = now;
 	}
 
