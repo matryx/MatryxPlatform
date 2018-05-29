@@ -1,7 +1,9 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/math/SafeMath128.sol";
+import "../libraries/LibConstruction.sol";
 import "./MatryxOracleMessenger.sol";
 import "../interfaces/IMatryxToken.sol";
 import "../interfaces/IMatryxPeer.sol";
@@ -447,26 +449,33 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    */
 
   /// @dev Create a new tournament.
-  /// @param _tournamentName Name of the new tournament.
-  /// @param _externalAddress Off-chain content hash of tournament details (ipfs hash)
-  /// @param _BountyMTX Total tournament reward in MTX.
-  /// @param _entryFee Fee to charge participant upon entering into tournament.
-  /// @return _tournamentAddress Address of the newly created tournament
-  function createTournament(string _category, string _tournamentName, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
+  /// @param tournamentData Data to populate the new tournament with. Includes:
+  ///    category: Discipline the tournament falls under.
+  ///    title: Name of the new tournament.
+  ///    contentHash: Off-chain content hash of tournament details (ipfs hash)
+  ///    Bounty: Total tournament reward in MTX.
+  ///    entryFee: Fee to charge participant upon entering into the tournament.
+  /// @param roundData Data to populate the first round of the tournament with. Includes:
+  ///    startTime: The start time (unix-epoch-based) of the first round.
+  ///    endTime: The end time (unix-epoch-based) of the first round.
+  ///    reviewDuration: The amount of the tournament owner has to determine the winners of the round.
+  ///    bounty: The reward for the first round's winners.
+  /// @return _tournamentAddress Address of the newly created tournament.
+  function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
   {
     IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
     // Check that the platform has a sufficient allowance to
     // transfer the reward from the tournament creator to itself
-    require(matryxToken.allowance(msg.sender, this) >= _BountyMTX);
+    require(matryxToken.allowance(msg.sender, this) >= tournamentData.Bounty);
 
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-    address newTournament = tournamentFactory.createTournament(msg.sender, _category, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
-    TournamentCreated(_category, msg.sender, newTournament, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
+    address newTournament = tournamentFactory.createTournament(msg.sender, tournamentData, roundData);
+    TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title, tournamentData.contentHash, tournamentData.Bounty, tournamentData.entryFee);
     
-    addTournamentToCategory(newTournament, _category);
+    addTournamentToCategory(newTournament, tournamentData.category);
 
     //Transfer the MTX reward to the tournament.
-    bool transferSuccess = matryxToken.transferFrom(msg.sender, newTournament, _BountyMTX);
+    bool transferSuccess = matryxToken.transferFrom(msg.sender, newTournament, tournamentData.Bounty);
     require(transferSuccess);
     
     //update data structures
@@ -476,8 +485,6 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
     return newTournament;
   }
-
-
 
   /*
    * Access Control Methods

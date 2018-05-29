@@ -1,5 +1,7 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
 
+import "../../libraries/LibConstruction.sol";
 import '../MatryxTournament.sol';
 import '../Ownable.sol';
 
@@ -13,8 +15,9 @@ contract MatryxTournamentFactory is Ownable {
 		matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
 	}
 
-	function createTournament(address _owner, string _category, string _tournamentTitle, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public returns (address _tournamentAddress) {
-		MatryxTournament newTournament = new MatryxTournament(platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, _owner, _category, _tournamentTitle, _externalAddress, _BountyMTX, _entryFee);
+	function createTournament(address _owner, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress) {
+		LibConstruction.RequiredTournamentAddresses memory addresses = LibConstruction.RequiredTournamentAddresses({platformAddress: platformAddress, matryxTokenAddress: matryxTokenAddress, roundFactoryAddress: matryxRoundFactoryAddress});
+		MatryxTournament newTournament = new MatryxTournament(addresses, _owner, tournamentData, roundData);
 		return newTournament;
 	}
 

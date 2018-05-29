@@ -1,7 +1,9 @@
  pragma solidity ^0.4.18;
+ pragma experimental ABIEncoderV2;
 
 import "../libraries/strings/strings.sol";
 import "../libraries/math/SafeMath.sol";
+import "../libraries/LibConstruction.sol";
 import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
 import "../interfaces/factories/IMatryxRoundFactory.sol";
@@ -54,27 +56,27 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     mapping(address=>uint256_optional) private addressToIsEntrant;
     address[] private allEntrants;
 
-    function MatryxTournament(address _platformAddress, address _matryxTokenAddress, address _matryxRoundFactoryAddress, address _owner, string _category, string _tournamentTitle, bytes _externalAddress, uint256 _Bounty, uint256 _entryFee) public {
+    function MatryxTournament(LibConstruction.RequiredTournamentAddresses _addresses, address _owner, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public {
         //Clean inputs
         require(_owner != 0x0);
         //require(!_tournamentName.toSlice().empty());
-        require(_Bounty > 0);
-        require(_matryxRoundFactoryAddress != 0x0);
+        require(tournamentData.Bounty > 0);
+        require(_addresses.roundFactoryAddress != 0x0);
         
-        platformAddress = _platformAddress;
-        matryxTokenAddress = _matryxTokenAddress;
-        matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
+        platformAddress = _addresses.platformAddress;
+        matryxTokenAddress = _addresses.matryxTokenAddress;
+        matryxRoundFactoryAddress = _addresses.roundFactoryAddress;
 
         timeCreated = now;
         // Identification
         owner = _owner;
-        category = _category;
-        title = _tournamentTitle;
-        externalAddress = _externalAddress;
+        category = tournamentData.category;
+        title = tournamentData.title;
+        externalAddress = tournamentData.contentHash;
         // Reward and fee
-        Bounty = _Bounty;
-        BountyLeft = _Bounty;
-        entryFee = _entryFee;
+        Bounty = tournamentData.Bounty;
+        BountyLeft = Bounty;
+        entryFee = tournamentData.entryFee;
 
         // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
     }

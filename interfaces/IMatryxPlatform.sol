@@ -1,4 +1,7 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
+
+import "../libraries/LibConstruction.sol";
 
 interface IMatryxPlatform
 {
@@ -13,7 +16,7 @@ interface IMatryxPlatform
 	function updateSubmissions(address _owner, address _submission) public;
 	function removeSubmission(address _submissionAddress, address _tournamentAddress) public returns (bool);
 	function enterTournament(address _tournamentAddress) public returns (bool _success);
-	function createTournament(string _category, string _tournamentName, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee, uint256 _roundStart, uint256 _roundEnd, uint256 _roundReviewPeriod, uint256 _roundBountyMTX) public returns (address _tournamentAddress);
+	function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress);
 	function createPeer() public returns (address);
 	function isPeer(address _peerAddress) public constant returns (bool);
 	function hasPeer(address _sender) public constant returns (bool);
