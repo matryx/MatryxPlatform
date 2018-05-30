@@ -14,6 +14,7 @@ interface IMatryxRound
 	function getTokenAddress() public constant returns (address);
 	function getSubmissions() public constant returns (address[] _submissions);
 	function getSubmissionAuthor(uint256 _index) public constant returns (address) ;
+	function getBalance(address _submissionAddress) public constant returns (uint256);
 	function submissionsChosen() public constant returns (bool);
 	function getWinningSubmissionAddresses() public constant returns (address[]);
 	function numberOfSubmissions() public constant returns (uint256);
@@ -21,5 +22,5 @@ interface IMatryxRound
 	function chooseWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution) public;
 	//function awardBounty(address _submissionAddress, uint256 _remainingBounty) public;
 	function createSubmission(address _author, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
-	function getBalance(address _submissionAddress) public constant returns (uint256);
+	function liquidate() public;
 }

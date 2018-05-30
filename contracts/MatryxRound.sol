@@ -376,8 +376,8 @@ contract MatryxRound is Ownable, IMatryxRound {
         return submissionAddress;
 	}
 
-	/// @dev Allows contributors to withdraw a part of the round bounty if the round has been abandoned.
-	function withdrawReward() public onlySubmissionAuthor
+	/// @dev Allows contributors to withdraw a portion of the round bounty if the round has been abandoned.
+	function liquidate() public onlySubmissionAuthor
 	{
 		require(getState() == uint256(RoundState.Abandoned), "This tournament is still valid.");
 		require(!hasWithdrawn[msg.sender]);
