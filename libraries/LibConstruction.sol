@@ -33,6 +33,14 @@ library LibConstruction
     	uint256 entryFee;
     }
 
+    struct TournamentModificationData
+    {
+    	string title;
+    	bytes contentHash;
+    	uint256 entryFee;
+    	bool entryFeeChanged;
+    }
+
     struct RoundData
     {
     	uint256 start;
@@ -56,6 +64,7 @@ library LibConstruction
     	string title;
     	address owner;
     	bytes contentHash;
+    	bool isPublic;
     	address[] contributorsToAdd;
     	uint128[] contributorRewardDistribution;
     	address[] contributorsToRemove;

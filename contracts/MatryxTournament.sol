@@ -275,6 +275,22 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Setter Methods
      */
 
+    function setAll(LibConstruction.TournamentModificationData tournamentData)
+    {
+        if(!tournamentData.title.toSlice().empty())
+        {
+            title = title;
+        }
+        if(tournamentData.contentHash.length != 0)
+        {
+            externalAddress = tournamentData.contentHash;
+        }
+        if(tournamentData.entryFeeChanged)
+        {
+            entryFee = tournamentData.entryFee;
+        }
+    }
+
     function setTitle(string _title) public onlyOwner
     {
         title = _title;

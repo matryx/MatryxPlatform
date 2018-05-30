@@ -55,7 +55,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	uint128 public contributorBountyDivisor;
 	uint256 timeSubmitted;
 	uint256 timeUpdated;
-	bool public publicallyAccessibleDuringTournament;
+	bool public isPublic;
 
 	address public trustDelegate;
 	bytes4 fnSelector_addReference = bytes4(keccak256("addReference(address)"));
@@ -189,7 +189,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		bool isPlatform = _requester == IMatryxTournament(tournamentAddress).getPlatform();
 		bool isRound = _requester == roundAddress;
 		bool ownsThisSubmission = _requester == owner;
-		bool submissionExternallyAccessible = publicallyAccessibleDuringTournament;
+		bool submissionExternallyAccessible = isPublic;
 		bool roundAtLeastInReview = IMatryxRound(roundAddress).getState() >= 2;
 		bool requesterIsEntrant = IMatryxTournament(tournamentAddress).isEntrant(_requester);
 		bool requesterOwnsTournament = ownableTournament.isOwner(_requester);
@@ -245,6 +245,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		{
 			externalAddress = _data.contentHash;
 		}
+		if(_data.isPublic)
+		{
+			isPublic = _data.isPublic;
+		}
 		if(_data.contributorsToAdd.length != 0)
 		{
 			require(_data.contributorsToAdd.length == _data.contributorRewardDistribution.length);
@@ -256,9 +260,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		}
 	}
 
-	function setExternalAccessibility(bool _accessibility) public onlyOwner 
+	/// @dev Sets whether or not this submission can be accessed by anyone
+	/// before the end of the tournament.
+	function setIsPublic(bool _public) public onlyOwner 
 	{
-		publicallyAccessibleDuringTournament = _accessibility;
+		isPublic = _public;
 	}
 
     /// @dev Edit the title of a submission (callable only by submission's owner).
