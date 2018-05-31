@@ -21,9 +21,7 @@ contract('MatryxPlatform', function(accounts){
       //deploy platform
       platform = await MatryxPlatform.deployed();
 
-      // console.log("MatryxToken.address: " + MatryxToken.address);
       token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
-      // console.log("token: " + token);
 
       platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address); 
       let owner = await platform.owner();
@@ -31,53 +29,27 @@ contract('MatryxPlatform', function(accounts){
       let tournamentCount = await platform.tournamentCount();
 
       let peerAddress = await platform.peerAddress(accounts[0]);
-      // console.log("peer address: " + peerAddress);
 
-      // console.log("platform: " + platform);
       await platform.createPeer.sendTransaction({gas: gasEstimate});
-      // console.log("created frist peer??");
       peerAddress = await platform.peerAddress(accounts[0]);
-      // console.log("peer address: " + peerAddress);
-
-      //get gas estimate for creating peers
-      // gasEstimate = await platform.createPeer.estimateGas();
-      // console.log("gasEstimate: " + gasEstimate);
 
       //create peers
       await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[1]});
-      // console.log("sencond peer?");
       peerAddress = await platform.peerAddress(accounts[1]);
-      // console.log("peer address accounts[1]: " + peerAddress);
       await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[2]});
       await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[3]});
       await token.setReleaseAgent(web3.eth.accounts[0]);
-      // console.log("set release agent");
-
-      //get gas estimate for releasing token transfer
-      // gasEstimate = await token.releaseTokenTransfer.estimateGas();
-      // console.log("gasEstimate: " + gasEstimate);
 
       //release token transfer and mint tokens for the accounts
       await token.releaseTokenTransfer.sendTransaction();
-      // console.log("release token transfer");
       await token.mint(web3.eth.accounts[0], 10000*10**18)
       await token.mint(web3.eth.accounts[1], 2*10**18)
       await token.mint(web3.eth.accounts[2], 2*10**18)
       await token.mint(web3.eth.accounts[3], 2*10**18)
-      // console.log("minted all tokens");
       await token.approve(MatryxPlatform.address, 100*10**18)
-      // console.log("approved tokens");
-
-      // //get gas estimate for creating tournament
-      // gasEstimate = await platform.createTournament.estimateGas("category", "tournament", "external address", 100*10**18, 2*10**18);
-      // console.log("gasEstimate: " + gasEstimate);
-      // //since createTournament has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
-      // gasEstimate = Math.ceil(gasEstimate * 1.3);
-      // console.log("gasEstimate * constant: " + gasEstimate);
 
       // create a tournament
       createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
-      // console.log("created tournament??? " + createTournamentTransaction);
       tournamentCreatedEvent = platform.TournamentCreated();
 
       tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
@@ -153,7 +125,6 @@ contract('MatryxPlatform', function(accounts){
     //create submission
     let submissionCreated = await tournament.createSubmission("submission1", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"], {gas: gasEstimate});
     let submissionAddress = submissionCreated.logs[0].args._submissionAddress;
-    console.log("submissionAddress: " + submissionAddress);
 
     let isSubmission = await platform.isSubmission(submissionAddress);
     assert.isTrue(isSubmission, "Should be a submission.")
@@ -164,7 +135,6 @@ contract('MatryxPlatform', function(accounts){
     let mySubmissions = await tournament.mySubmissions.call();
     //choose winner
     let closeTournamentTx = await tournament.chooseWinner(mySubmissions[0]);
-    console.log("closeTournamentTx.logs: " + closeTournamentTx.logs[0]);
     //tournament should be closed
     let isOpen = await tournament.isOpen();
     assert.isFalse(isOpen, "Tournament should be closed.");
@@ -293,25 +263,21 @@ contract('MatryxPlatform', function(accounts) {
 
   it("Able to get top category.", async function() {
       topCategory = await platform.getTopCategory(0);
-      console.log("topCategory: " + topCategory);
       assert.equal(topCategory, "category", "Did not get the top category of the platform.");
    });
 
   it("Able to get category count.", async function() {
       let categoryCount = await platform.getCategoryCount("category");
-      console.log(categoryCount);
       assert.equal(categoryCount.valueOf(), 2, "Was not able to get category count.");
    });
 
   it("Able to get tournaments by category.", async function() {
       let tournamentsbyCategory = await platform.getTournamentsByCategory("category");
-      console.log(tournamentsbyCategory);
       assert.equal(tournamentsbyCategory[0], tournamentAddress, "Could not get tournaments in this category.");
    });
 
   it("Able to get my tournaments.", async function() {
       let myTournaments = await platform.myTournaments();
-      console.log("myTournaments: " + myTournaments);
       assert.equal(myTournaments[0], tournamentAddress, "Could not get the address of my tournaments from the platorm.");
    });
 
@@ -339,7 +305,6 @@ contract('MatryxPlatform', function(accounts) {
       let firstSubmissionAddress = await round.getSubmissionAddress.call(0);
 
       let mySubmissions = await platform.mySubmissions();
-      console.log("mySubmissions: " + mySubmissions);
       assert.equal(mySubmissions[0], firstSubmissionAddress, "Could not get the address of my submissions from the platform");
   });
 
@@ -356,17 +321,10 @@ contract('MatryxPlatform', function(accounts) {
 
     //delete submission
     let removeSubmission = await platform.removeSubmission(mySubmissions[0], tournamentAddress);
-    console.log("removeSubmission: " + removeSubmission);
 
     //try to get the same submission
     mySubmissions = await tournament.mySubmissions.call();
-    console.log("mySubmissions: " + mySubmissions);
-    //get submission one
-    // submissionOne = await MatryxSubmission.at(mySubmissions[0]);
-    // console.log("submissionOne: " + submissionOne);
-
     let isSubmission = await platform.isSubmission(mySubmissions[0]);
-    console.log("isSubmission: " + isSubmission);
 
     assert.isFalse(isSubmission, "The submission was not successfully deleted.");
    });
