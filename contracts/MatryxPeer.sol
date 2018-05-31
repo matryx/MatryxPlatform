@@ -218,7 +218,7 @@ contract MatryxPeer is Ownable {
 	/// 	 					  their works within someone else's submission.
 	/// @param _submissionAddress Address of the submission missing a reference.
 	/// @param _missingReference  Reference that is missing.
-	function flagMissingReference(address _submissionAddress, address _missingReference) public onlyOwner senderOwnsReference(_missingReference) forExistingSubmission(_submissionAddress) forExistingSubmission(_missingReference) returns (bool)
+	function flagMissingReference(address _submissionAddress, address _missingReference) public /*onlyOwner*/ senderOwnsReference(_missingReference) forExistingSubmission(_submissionAddress) forExistingSubmission(_missingReference) returns (bool)
 	{
 		// Require that we're the author of the reference we're claiming is missing.
 		// Require that the platform knows the submission.
@@ -266,7 +266,7 @@ contract MatryxPeer is Ownable {
 	/// 	 					  of their works within someone else's submission.
 	/// @param _submissionAddress Address of the submission on which to approve the reference.
 	/// @param _reference 		  Reference to approve.
-	function approveReference(address _submissionAddress, address _reference) public /*onlyOwner senderOwnsReference(_reference)*/ forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
+	function approveReference(address _submissionAddress, address _reference) public /*onlyOwner*/ senderOwnsReference(_reference) forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
 	{
 		// Require that we're the author of the reference we're attempting to approve
 		// Require that the platform knows the submission.
@@ -286,7 +286,7 @@ contract MatryxPeer is Ownable {
 	/// @param _submissionAddress Address of the submission which was previously given an approval
 	/// 						  for one of its references.
 	/// @param _reference 		  Address of the reference to decry.
-	function removeReferenceApproval(address _submissionAddress, address _reference) public /*ownerOrSubmission(_submissionAddress)*/ forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
+	function removeReferenceApproval(address _submissionAddress, address _reference) public ownerOrSubmission(_submissionAddress) forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
 	{
 		// Require that the platform knows the submission.
 		// Require that the platform knows the reference we'd like to decry.
@@ -320,6 +320,11 @@ contract MatryxPeer is Ownable {
 	function peersJudged() public constant returns (uint256)
 	{
 		return judgedPeers.length;
+	}
+
+	function getJudgingPeerToUnnormalizedTrust(address _peer) public constant returns (uint128)
+	{
+		return judgingPeerToUnnormalizedTrust[_peer];
 	}
 
 	// function normalizedTrustInPeer(address _peer) public /*onlyOwner*/ constant returns (uint128)
