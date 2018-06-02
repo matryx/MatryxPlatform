@@ -21,7 +21,9 @@ contract MatryxPeer is Ownable {
 
 	uint128 globalTrust;
 	mapping(address=>uint128) judgedPeerToUnnormalizedTrust;
+	mapping(address=>bool) haveJudgedPeer;
 	address[] judgedPeers;
+
 	uint128 totalTrustGiven;
 	mapping(address=>uint128) judgingPeerToUnnormalizedTrust;
 	mapping(address=>uint128) judgingPeerToTotalTrustGiven;
@@ -127,7 +129,12 @@ contract MatryxPeer is Ownable {
 	{
 		judgedPeerToUnnormalizedTrust[_peer] = judgedPeerToUnnormalizedTrust[_peer].add(one_eighteenDecimal);
 		totalTrustGiven = totalTrustGiven.add(1);
-		judgedPeers.push(_peer);
+
+		//if I have never judged this peer before, update structs to reflect that I have now
+		if (haveJudgedPeer[_peer] == false){
+			haveJudgedPeer[_peer] = true;
+			judgedPeers.push(_peer);
+		}
 
 		MatryxPeer(_peer).receiveTrust(totalTrustGiven, globalTrust);
 	}
@@ -140,7 +147,12 @@ contract MatryxPeer is Ownable {
 			totalTrustGiven = totalTrustGiven.sub(1);
 		}
 
-		judgedPeers.push(_peer);
+		//if I have never judged this peer before, update structs to reflect that I have now
+		if (haveJudgedPeer[_peer] == false){
+			haveJudgedPeer[_peer] = true;
+			judgedPeers.push(_peer);
+		}
+
 		return MatryxPeer(_peer).receiveDistrust(totalTrustGiven, globalTrust);
 	}
 
@@ -188,9 +200,20 @@ contract MatryxPeer is Ownable {
 			judgingPeers.push(msg.sender);
 		}
 
-		if((judgingPeerToUnnormalizedTrust[msg.sender] < one_eighteenDecimal) || (_newTotalTrust == 0))
+		//I don't have enough trust to be able to deduct some of it for having a submission flagged
+		if(judgingPeerToUnnormalizedTrust[msg.sender] < one_eighteenDecimal)
 		{
-			return false;
+			revert();
+		}
+
+		//if the new total trust is zero, we don't have any new influence to add
+		//so we update the data strustures and return true
+		else if(_newTotalTrust == 0)
+		{
+			judgingPeerToUnnormalizedTrust[msg.sender] = _newTotalTrust;
+			judgingPeerToTotalTrustGiven[msg.sender] = _newTotalTrust;
+			judgingPeerToInfluenceOnMyReputation[msg.sender] = _newTotalTrust;
+			return true;
 		}
 
 		judgingPeerToUnnormalizedTrust[msg.sender] = judgingPeerToUnnormalizedTrust[msg.sender].sub(one_eighteenDecimal);

@@ -179,7 +179,7 @@ contract SubmissionTrust is Ownable
 	///					  in this submission.
 	function removeReferenceApproval(address _reference) public
 	{
-		//require(addressToReferenceInfo[_reference].approved == true);
+		require(addressToReferenceInfo[_reference].approved == true);
 
 		approvedReferences = approvedReferences.sub(1);
 		addressToReferenceInfo[_reference].approved = false;
