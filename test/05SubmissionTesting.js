@@ -273,46 +273,6 @@ contract('MatryxSubmission', function(accounts)
 		console.log("transferAmount: " + transferAmount);
 		assert.equal(transferAmount, 0, "Submission's transfer amount was not zero.");
 	})
-
-	it("Able to get transfer amount after adding a reference to the submission", async function() {
-	  //get peers
-      let peerOneAddress = await platform.peerAddress(accounts[1]);
-      let peerTwoAddress = await platform.peerAddress(accounts[2]);
-      var peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
-      var peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
-
-      let peerOneReputationBefore = await peerOne.getReputation();
-      console.log("peerOneReputationBefore " + peerOneReputationBefore);
-      let peerTwoReputationBefore = await peerTwo.getReputation();
-      console.log("peerTwoReputationBefore " + peerTwoReputationBefore);
-
-      //get submissions
-	  let mySubmissions = await tournament.mySubmissions.call();
-	  //get submission one
-	  submissionOne = mySubmissions[0];
-	  console.log("submissionOne: " + submissionOne);
-      mySubmissions = await tournament.mySubmissions.call({from: accounts[1]});
-	  //get submission
-	  submissionTwo = await mySubmissions[0];
-	  console.log("submissionTwo: " + submissionTwo);
-
-	  console.log("peerOne: " + peerOne);
-
-
-      //peer 1 approves a reference to submission1 within submission2
-      //peer 2's reputation increases
-      await peerOne.approveReference(submissionTwo, submissionOne, {from: accounts[1], gas: gasEstimate});
-
-      let peerOneReputationAfter = await peerOne.getReputation();
-      console.log("peerOneReputationAfter " + peerOneReputationAfter);
-      let peerTwoReputationAfter = await peerTwo.getReputation();
-      console.log("peerTwoReputationAfter " + peerTwoReputationAfter);
-
-
-	  let transferAmount = await submissionOne.getTransferAmount.call();
-	  console.log("transferAmount: " + transferAmount);
-	  assert.isTrue(transferAmount > 0, "Submission's transfer amount should be greater than 0.");
-	})
-
+	
 });
 
