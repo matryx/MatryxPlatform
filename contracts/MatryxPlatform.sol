@@ -437,7 +437,6 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       bool success = tournament.enterUserInTournament(msg.sender);
       if(success)
       {
-        updateUsersTournaments(msg.sender, _tournamentAddress);
         UserEnteredTournament(msg.sender, _tournamentAddress);
       }
 

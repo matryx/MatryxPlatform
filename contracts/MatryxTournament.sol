@@ -369,9 +369,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Creates a new round.
     /// @return The new round's address.
-    function createRound(LibConstruction.RoundData roundData) public onlyOwner returns (address _roundAddress)
+    function createRound(LibConstruction.RoundData roundData) private returns (address _roundAddress)
     {
-        require(rounds.length == 0);
         require((roundData.start <= now && now < roundData.end), "Time parameters are invalid.");
 
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
@@ -385,7 +384,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
             // Use the last one
             roundData.bounty = IMatryxRound(rounds[rounds.length-1]).getBounty();
         }
-        // If its more than is left, use what's left.
+        // If its more than what's left, use what's left.
         if(roundData.bounty > remaining)
         {
             roundData.bounty = remaining;
@@ -420,7 +419,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     event platfromExists(address _platformAddress);
 
     /// @dev Opens this tournament up to submissions; called by startRound.
-    function openTournament() //internal //UNCOMMENT THIS LATER
+    function openTournament() private //UNCOMMENT THIS LATER
     {
         tournamentOpen = true;
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
