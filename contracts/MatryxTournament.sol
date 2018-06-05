@@ -442,20 +442,16 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         }
 
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-        //UNCOMMENT THESE LATER - TODO: Fix matryxToken part
-        //require(matryxToken.allowance(_entrantAddress, this) >= entryFee);
-        //bool transferSuccess = matryxToken.transferFrom(_entrantAddress, this, entryFee);
+        require(matryxToken.allowance(_entrantAddress, this) >= entryFee);
+        if(matryxToken.transferFrom(_entrantAddress, this, entryFee))
+        {
+            //Finally, change the tournament's state to reflect the user entering.
+            addressToIsEntrant[_entrantAddress].exists = true;
+            addressToIsEntrant[_entrantAddress].value = entryFee;
+            allEntrants.push(_entrantAddress);
+        }
 
-        //if(transferSuccess)
-        //{
-            // Finally, change the tournament's state to reflect the user entering.
-        addressToIsEntrant[_entrantAddress].exists = true;
-        addressToIsEntrant[_entrantAddress].value = entryFee;
-        allEntrants.push(_entrantAddress);
-        //}
-
-        //return transferSuccess;
-        return true;
+        return transferSuccess;
     }
 
     /// @dev Returns the fee in MTX to be payed by a prospective entrant.
