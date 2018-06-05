@@ -202,18 +202,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Access Control Methods
      */
 
-    // @dev Adds additional MTX To a specific tournament address
-
-    function addBountyMTX(address _from, uint256 _bountyMTX) public
-    {
-
-        IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-        matryxToken.approve(_from, _bountyMTX);
-        bool transferSuccess = matryxToken.transferFrom(_from, IMatryxToken(matryxTokenAddress), _bountyMTX);
-        require(transferSuccess);
-        Bounty += _bountyMTX;
-    }
-
     /// @dev Returns whether or not the sender is an entrant in this tournament
     /// @param _sender Explicit sender address.
     /// @return Whether or not the sender is an entrant in this tournament.
