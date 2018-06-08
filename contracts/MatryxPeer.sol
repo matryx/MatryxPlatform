@@ -32,6 +32,10 @@ contract MatryxPeer is Ownable {
 	mapping(address=>bool) peerHasJudgedMe;
 	address[] judgingPeers;
 
+	//Keep track of how much trust/distrust was given when approving/flagging a submission
+	mapping(address=>mapping(address=>uint128)) submissionToReferenceToTrustGiven;
+	mapping(address=>mapping(address=>uint128)) submissionToReferenceToDistrustGiven;
+
 	// Tracks the proportion of references this peer has approved on a given submission
 	mapping(address=>uint256) submissionToApprovedReferences;
 	mapping(address=>uint256) submissionToReferenceCount;
@@ -125,7 +129,7 @@ contract MatryxPeer is Ownable {
 		submissionToReferencesMetadata[_submissionAddress].totalReferenceCount = submissionToReferencesMetadata[_submissionAddress].totalReferenceCount.sub(1);
 	}
 
-	function giveTrust(address _peer) internal
+	function giveTrust(address _peer) internal returns (uint128)
 	{
 		judgedPeerToUnnormalizedTrust[_peer] = judgedPeerToUnnormalizedTrust[_peer].add(one_eighteenDecimal);
 		totalTrustGiven = totalTrustGiven.add(1);
@@ -136,10 +140,10 @@ contract MatryxPeer is Ownable {
 			judgedPeers.push(_peer);
 		}
 
-		MatryxPeer(_peer).receiveTrust(totalTrustGiven, globalTrust);
+		return MatryxPeer(_peer).receiveTrust(totalTrustGiven, globalTrust);
 	}
 
-	function giveDistrust(address _peer) internal returns (bool)
+	function giveDistrust(address _peer) internal returns (uint128)
 	{
 		if(judgedPeerToUnnormalizedTrust[_peer] >= one_eighteenDecimal)
 		{
@@ -156,7 +160,7 @@ contract MatryxPeer is Ownable {
 		return MatryxPeer(_peer).receiveDistrust(totalTrustGiven, globalTrust);
 	}
 
-	function receiveTrust(uint128 _newTotalTrust, uint128 _senderReputation) public notMe notOwner onlyPeer
+	function receiveTrust(uint128 _newTotalTrust, uint128 _senderReputation) public notMe notOwner onlyPeer returns (uint128)
 	{	
 		// remove peer's influence on my reputation before adding their new influence
 		if(peerHasJudgedMe[msg.sender])
@@ -172,6 +176,7 @@ contract MatryxPeer is Ownable {
 		}
 
 		// update state variables so we can look at them later
+		uint128 peersOldInfluenceOnMyReputation = judgingPeerToInfluenceOnMyReputation[msg.sender];
 		judgingPeerToUnnormalizedTrust[msg.sender] = judgingPeerToUnnormalizedTrust[msg.sender].add(one_eighteenDecimal);
 		judgingPeerToTotalTrustGiven[msg.sender] = _newTotalTrust;
 		// calculate peer's new influence on my reputation
@@ -183,13 +188,16 @@ contract MatryxPeer is Ownable {
 		judgingPeerToInfluenceOnMyReputation[msg.sender] = peersNewInfluenceOnMyReputation;
 		// add this influence to my reputation
 		globalTrust = globalTrust.add(peersNewInfluenceOnMyReputation);
+		return uint128(peersNewInfluenceOnMyReputation.sub(peersOldInfluenceOnMyReputation));
 	}
 
-	function receiveDistrust(uint128 _newTotalTrust, uint128 _senderReputation) public notMe notOwner onlyPeer returns (bool)
+	function receiveDistrust(uint128 _newTotalTrust, uint128 _senderReputation) public notMe notOwner onlyPeer returns (uint128)
 	{
 		// remove peer's influence on my reputation before adding their new influence
 		if(peerHasJudgedMe[msg.sender])
 		{
+			//store the old influence on my reputation
+			uint128 peersOldInfluenceOnMyReputation = judgingPeerToInfluenceOnMyReputation[msg.sender];
 			globalTrust = globalTrust.sub(judgingPeerToInfluenceOnMyReputation[msg.sender]);
 		}
 		// if we've never been judged by this peer before,
@@ -207,13 +215,13 @@ contract MatryxPeer is Ownable {
 		}
 
 		//if the new total trust is zero, we don't have any new influence to add
-		//so we update the data strustures and return true
+		//so we update the data strustures and return
 		else if(_newTotalTrust == 0)
 		{
 			judgingPeerToUnnormalizedTrust[msg.sender] = _newTotalTrust;
 			judgingPeerToTotalTrustGiven[msg.sender] = _newTotalTrust;
 			judgingPeerToInfluenceOnMyReputation[msg.sender] = _newTotalTrust;
-			return true;
+			return uint128(peersOldInfluenceOnMyReputation);
 		}
 
 		judgingPeerToUnnormalizedTrust[msg.sender] = judgingPeerToUnnormalizedTrust[msg.sender].sub(one_eighteenDecimal);
@@ -227,7 +235,7 @@ contract MatryxPeer is Ownable {
 		judgingPeerToInfluenceOnMyReputation[msg.sender] = peersNewInfluenceOnMyReputation;
 		// add this influence to my reputation
 		globalTrust = globalTrust.add(peersNewInfluenceOnMyReputation);
-		return true;
+		return uint128(peersOldInfluenceOnMyReputation.sub(peersNewInfluenceOnMyReputation));
 	}
 
 	function getPeersInfluenceOnMyReputation(address _peerAddress) public constant returns (uint256)
@@ -241,7 +249,7 @@ contract MatryxPeer is Ownable {
 	/// 	 					  their works within someone else's submission.
 	/// @param _submissionAddress Address of the submission missing a reference.
 	/// @param _missingReference  Reference that is missing.
-	function flagMissingReference(address _submissionAddress, address _missingReference) public /*onlyOwner*/ senderOwnsReference(_missingReference) forExistingSubmission(_submissionAddress) forExistingSubmission(_missingReference) returns (bool)
+	function flagMissingReference(address _submissionAddress, address _missingReference) public onlyOwner senderOwnsReference(_missingReference) forExistingSubmission(_submissionAddress) forExistingSubmission(_missingReference)
 	{
 		// Require that we're the author of the reference we're claiming is missing.
 		// Require that the platform knows the submission.
@@ -256,7 +264,7 @@ contract MatryxPeer is Ownable {
 		submission.flagMissingReference(_missingReference);
 
 		address submissionAuthor = submission.getAuthor();
-		return giveDistrust(submissionAuthor);
+		submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] = giveDistrust(submissionAuthor);
 	}
 
 	function getMissingReferenceCount(address _submissionAddress) public constant returns (uint128, uint128)
@@ -275,12 +283,26 @@ contract MatryxPeer is Ownable {
 		// Require that we're the author of the reference we're attempting to vindicate
 
 		submissionToReferencesMetadata[_submissionAddress].missingReferenceCount = submissionToReferencesMetadata[_submissionAddress].missingReferenceCount.sub(1);
+		totalTrustGiven = totalTrustGiven.add(1);
 
 		IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
 		submission.removeMissingReferenceFlag(_missingReference);
 
 		address submissionAuthor = submission.getAuthor();
-		giveTrust(submissionAuthor);
+
+		judgedPeerToUnnormalizedTrust[submissionAuthor] = judgedPeerToUnnormalizedTrust[submissionAuthor].add(one_eighteenDecimal);
+
+		MatryxPeer(submissionAuthor).restoreTrust(submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference]);
+	}
+
+	function restoreTrust(uint128 _trustRemoved) public
+	{
+		//restore the trust that was taken away upon flagging the submission
+		judgingPeerToUnnormalizedTrust[msg.sender] = judgingPeerToUnnormalizedTrust[msg.sender].add(one_eighteenDecimal);
+		judgingPeerToTotalTrustGiven[msg.sender] = judgingPeerToTotalTrustGiven[msg.sender].add(_trustRemoved);
+		judgingPeerToInfluenceOnMyReputation[msg.sender] = judgingPeerToInfluenceOnMyReputation[msg.sender].add(_trustRemoved);
+
+		globalTrust = globalTrust.add(_trustRemoved);
 	}
 
 	/// @dev 					  Approve of a reference to a submission written by this peer
@@ -289,20 +311,20 @@ contract MatryxPeer is Ownable {
 	/// 	 					  of their works within someone else's submission.
 	/// @param _submissionAddress Address of the submission on which to approve the reference.
 	/// @param _reference 		  Reference to approve.
-	function approveReference(address _submissionAddress, address _reference) public /*onlyOwner*/ senderOwnsReference(_reference) forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
+	function approveReference(address _submissionAddress, address _reference) public onlyOwner senderOwnsReference(_reference) forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
 	{
 		// Require that we're the author of the reference we're attempting to approve
 		// Require that the platform knows the submission.
 		// Require that the platform knows the reference we'd like to approve.
 		
 		// Add 1 to the state var keeping track of the number of approved references on this submission
-		submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.add(one_eighteenDecimal);
+		submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.add(1);
 		
 		IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
 		submission.approveReference(_reference);
 
 		address submissionAuthor = submission.getAuthor();
-		giveTrust(submissionAuthor);
+		submissionToReferenceToTrustGiven[_submissionAddress][_reference] = giveTrust(submissionAuthor);
 	}
 
 	/// @dev 					  Remove approval of a reference from a submission.
@@ -316,13 +338,28 @@ contract MatryxPeer is Ownable {
 		// Require that we're the author of the reference we're attempting to decry.
 
 		// Remove 1 from the state var keeping track of the number of approved references on this submission
-		submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.sub(one_eighteenDecimal);
+		submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.sub(1);
+		totalTrustGiven = totalTrustGiven.sub(1);
 
 		IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
 		submission.removeReferenceApproval(_reference);
 
 		address submissionAuthor = submission.getAuthor();
-		giveDistrust(submissionAuthor);
+
+		//revoke the trust that was given upon approving the submission
+		judgedPeerToUnnormalizedTrust[submissionAuthor] = judgedPeerToUnnormalizedTrust[submissionAuthor].add(one_eighteenDecimal);
+
+		MatryxPeer(submissionAuthor).revokeTrust(submissionToReferenceToTrustGiven[_submissionAddress][_reference]);
+	}
+
+	function revokeTrust(uint128 _trustGiven) public
+	{
+		//revoke the trust that was given upon approving the submission
+		judgingPeerToUnnormalizedTrust[msg.sender] = judgingPeerToUnnormalizedTrust[msg.sender].sub(one_eighteenDecimal);
+		//judgingPeerToTotalTrustGiven[msg.sender] = judgingPeerToTotalTrustGiven[msg.sender].sub(_trustGiven);
+		//judgingPeerToInfluenceOnMyReputation[msg.sender] = judgingPeerToInfluenceOnMyReputation[msg.sender].sub(_trustGiven);
+
+		globalTrust = globalTrust.sub(_trustGiven);
 	}
 
 	function getApprovedAndTotalReferenceCounts(address _submissionAddress) public constant returns (uint128, uint128)
@@ -350,7 +387,7 @@ contract MatryxPeer is Ownable {
 		return judgingPeerToUnnormalizedTrust[_peer];
 	}
 
-	// function normalizedTrustInPeer(address _peer) public /*onlyOwner*/ constant returns (uint128)
+	// function normalizedTrustInPeer(address _peer) public onlyOwner constant returns (uint128)
 	// {
 	// 	uint128 normalizedTrust = judgedPeerToUnnormalizedTrust[_peer].div(totalTrustGiven);
 	// 	if(normalizedTrust > 0)

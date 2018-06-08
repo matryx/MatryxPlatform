@@ -410,7 +410,7 @@ contract('ReputationTesting', function(accounts)
     it("Able to get approved and total reference counts", async function(){
       let approvedAndTotalReferenceCounts = peerOne.getApprovedAndTotalReferenceCounts(submissionTwoAddress, {from: accounts[1]});
       console.log("approvedAndTotalReferenceCounts: " + approvedAndTotalReferenceCounts);
-      assert.equal(approvedAndTotalReferenceCounts[0], 1*10**18, "Approved reference count should be 1.")
+      assert.equal(approvedAndTotalReferenceCounts[0], 1, "Approved reference count should be 1.")
     });
 
     it("Able to get approved reference proportion", async function(){
@@ -517,6 +517,12 @@ contract('ReputationTesting', function(accounts)
       console.log("peerOneReputationBefore " + peerOneReputationBefore);
       console.log("peerTwoReputationBefore " + peerTwoReputationBefore);
 
+      unnormalizedTrust = await peerTwo.getJudgingPeerToUnnormalizedTrust(peerOneAddress);
+      console.log("unnormalizedTrust in peer2 from judging peer1: " + unnormalizedTrust.toNumber());
+
+      unnormalizedTrust = await peerOne.getJudgingPeerToUnnormalizedTrust(peerTwoAddress);
+      console.log("unnormalizedTrust in peer1 from judging peer2: " + unnormalizedTrust.toNumber());
+
       //peer 1 no longer approves of having submission 2 as a reference
       let flag = await peerOne.removeReferenceApproval(submissionTwoAddress, submissionOneAddress, {from: accounts[1], gas: gasEstimate});
       console.log("flag: " + flag);
@@ -526,6 +532,12 @@ contract('ReputationTesting', function(accounts)
       let peerTwoReputationAfter = await peerTwo.getReputation();
       console.log("peerOneReputationAfter " + peerOneReputationAfter);
       console.log("peerTwoReputationAfter " + peerTwoReputationAfter);
+
+      unnormalizedTrust = await peerTwo.getJudgingPeerToUnnormalizedTrust(peerOneAddress);
+      console.log("unnormalizedTrust in peer2 from judging peer1: " + unnormalizedTrust.toNumber());
+
+      unnormalizedTrust = await peerOne.getJudgingPeerToUnnormalizedTrust(peerTwoAddress);
+      console.log("unnormalizedTrust in peer1 from judging peer2: " + unnormalizedTrust.toNumber());
 
       assert.isTrue(peerTwoReputationAfter < peerTwoReputationBefore, "Failed to remove reference approval.");
     })

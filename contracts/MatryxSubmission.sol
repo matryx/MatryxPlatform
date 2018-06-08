@@ -402,6 +402,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		// normalizedAndReferenceCountWeightedTrustInSubmission * 
 		// (1 - submissionGratitude) * 
 		// submissionReward
+
 		uint256 transferAmount = approvalTrust.mul(1*10**18 - IMatryxPlatform(platformAddress).getSubmissionGratitude());
 		transferAmount = transferAmount.div(totalPossibleTrust);
 		transferAmount = transferAmount.mul(submissionReward);
