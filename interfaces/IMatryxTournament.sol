@@ -10,14 +10,14 @@ interface IMatryxTournament
     function isEntrant(address _sender) public view returns (bool);
     function getState() public view returns (uint256);
     function getPlatform() public view returns (address _platformAddress);
-    function getTitle() public view returns (string _title);
-    function getExternalAddress() public view returns (bytes _externalAddress);
+    function getTitle() public view returns (bytes32[4] _title);
+    function getExternalAddress() public view returns (bytes32[2] _externalAddress);
     function currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress);
     function mySubmissions() public view returns (address[]);
     function submissionCount() public view returns (uint256 _submissionCount);
     function entrantCount() public view returns (uint256 _entrantCount);
-    function setTitle(string _title) public;
-    function setExternalAddress(bytes _externalAddress) public;
+    function setTitle(bytes32[4] _title) public;
+    function setExternalAddress(bytes32[2] _externalAddress) public;
     function setEntryFee(uint256 _entryFee) public;
     function setCategory(string _category) public;
     function closeRound(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData roundData) public;

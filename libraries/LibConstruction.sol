@@ -26,17 +26,19 @@ library LibConstruction
 
     struct TournamentData
     {
-    	string category;
-    	string title;
-    	bytes contentHash;
+        // string category;
+        // ^ was causing revert in platform.createTournament
+        bytes32 categoryHash;
+    	bytes32[4] title;
+    	bytes32[2] contentHash;
     	uint256 Bounty;
     	uint256 entryFee;
     }
 
     struct TournamentModificationData
     {
-    	string title;
-    	bytes contentHash;
+    	bytes32[4] title;
+    	bytes32[2] contentHash;
     	uint256 entryFee;
     	bool entryFeeChanged;
     }

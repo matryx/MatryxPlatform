@@ -24,9 +24,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     address public matryxRoundFactoryAddress;
 
     //Tournament identification
-    string public title;
-    bytes public externalAddress;
-    string public category;
+    bytes32[4] public title;
+    bytes32[2] public externalAddress;
+    bytes32 public categoryHash;
 
     // Timing and State
     uint256 public timeCreated;
@@ -54,30 +54,54 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     mapping(address=>uint256_optional) private addressToIsEntrant;
     address[] private allEntrants;
 
-    function MatryxTournament(LibConstruction.RequiredTournamentAddresses requiredAddresses, address _owner, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public {
-        //Clean inputs
-        require(_owner != 0x0);
-        //require(!_tournamentName.toSlice().empty());
-        require(tournamentData.Bounty > 0);
-        require(requiredAddresses.roundFactoryAddress != 0x0);
+    // constructor(LibConstruction.RequiredTournamentAddresses requiredAddresses, address _owner, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public {
+    //     //Clean inputs
+    //     //require(_owner != 0x0);
+    //     //require(!_tournamentName.toSlice().empty());
+    //     //require(tournamentData.Bounty > 0);
+    //     //require(requiredAddresses.roundFactoryAddress != 0x0);
         
-        platformAddress = requiredAddresses.platformAddress;
-        matryxTokenAddress = requiredAddresses.matryxTokenAddress;
-        matryxRoundFactoryAddress = requiredAddresses.roundFactoryAddress;
+    //     // platformAddress = requiredAddresses.platformAddress;
+    //     // matryxTokenAddress = requiredAddresses.matryxTokenAddress;
+    //     // matryxRoundFactoryAddress = requiredAddresses.roundFactoryAddress;
+
+    //     // timeCreated = now;
+    //     // // Identification
+    //     // owner = _owner;
+    //     // category = tournamentData.category;
+    //     // title = tournamentData.title;
+    //     // externalAddress = tournamentData.contentHash;
+    //     // // Reward and fee
+    //     // Bounty = tournamentData.Bounty;
+    //     // //BountyLeft = Bounty;
+    //     // entryFee = tournamentData.entryFee;
+
+    //     //createRound(roundData);
+    //     // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
+    // }
+
+    constructor(LibConstruction.TournamentData memory tournamentData, LibConstruction.RoundData memory roundData, address _platformAddress, address _matryxTokenAddress, address _matryxRoundFactoryAddress, address _owner) 
+    {
+        //Clean inputs
+        //require(_owner != 0x0);
+        //require(!tournamentData.title.toSlice().empty());
+        //require(tournamentData.Bounty > 0);
+        //require(requiredAddresses.roundFactoryAddress != 0x0);
+        
+        platformAddress = _platformAddress;
+        matryxTokenAddress = _matryxTokenAddress;
+        matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
 
         timeCreated = now;
         // Identification
         owner = _owner;
-        category = tournamentData.category;
+        categoryHash = tournamentData.categoryHash;
         title = tournamentData.title;
         externalAddress = tournamentData.contentHash;
         // Reward and fee
         Bounty = tournamentData.Bounty;
         //BountyLeft = Bounty;
         entryFee = tournamentData.entryFee;
-
-        createRound(roundData);
-        // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
     }
 
     /*
@@ -227,19 +251,19 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return platformAddress;
     }
 
-    function getTitle() public view returns (string _title)
+    function getTitle() public view returns (bytes32[4] _title)
     {
         return title;
     }
 
     function getCategory() public view returns (string _category)
     {
-        return category;
+        return IMatryxPlatform(platformAddress).hashForCategory(categoryHash);
     }
 
     /// @dev Returns the external address of the tournament.
     /// @return _externalAddress Off-chain content hash of tournament details (ipfs hash)
-    function getExternalAddress() public view returns (bytes _externalAddress)
+    function getExternalAddress() public view returns (bytes32[2] _externalAddress)
     {
         return externalAddress;
     }
@@ -277,7 +301,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function setAll(LibConstruction.TournamentModificationData tournamentData)
     {
-        if(!tournamentData.title.toSlice().empty())
+        if(tournamentData.title[0] != 0x0)
         {
             title = title;
         }
@@ -291,12 +315,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         }
     }
 
-    function setTitle(string _title) public onlyOwner
+    function setTitle(bytes32[4] _title) public onlyOwner
     {
         title = _title;
     }
 
-    function setExternalAddress(bytes _externalAddress) public onlyOwner
+    function setExternalAddress(bytes32[2] _externalAddress) public onlyOwner
     {
         externalAddress = _externalAddress;
     }
@@ -371,7 +395,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @return The new round's address.
     function createRound(LibConstruction.RoundData roundData) private returns (address _roundAddress)
     {
-        require((roundData.start <= now && now < roundData.end), "Time parameters are invalid.");
+        //require((roundData.start >= now && roundData.start < roundData.end), "Time parameters are invalid.");
 
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
@@ -442,8 +466,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         }
 
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-        require(matryxToken.allowance(_entrantAddress, this) >= entryFee);
-        if(matryxToken.transferFrom(_entrantAddress, this, entryFee))
+        // UNCOMMENT THESE LATER - TODO: Fix matryxToken part
+        // require(matryxToken.allowance(_entrantAddress, this) >= entryFee);
+
+        bool transferSuccess = matryxToken.transferFrom(_entrantAddress, this, entryFee);
+        if(transferSuccess)
         {
             //Finally, change the tournament's state to reflect the user entering.
             addressToIsEntrant[_entrantAddress].exists = true;

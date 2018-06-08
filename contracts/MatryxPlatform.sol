@@ -4,7 +4,6 @@ pragma experimental ABIEncoderV2;
 import "../libraries/math/SafeMath.sol";
 import "../libraries/math/SafeMath128.sol";
 import "../libraries/LibConstruction.sol";
-import "./MatryxOracleMessenger.sol";
 import "../interfaces/IMatryxToken.sol";
 import "../interfaces/IMatryxPeer.sol";
 import "../interfaces/IMatryxPlatform.sol";
@@ -17,7 +16,7 @@ import "./Ownable.sol";
 
 /// @title MatryxPlatform - The Matryx platform contract.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
-contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
+contract MatryxPlatform is Ownable, IMatryxPlatform {
   using SafeMath for uint256;
   using SafeMath128 for uint128;
 
@@ -80,8 +79,8 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    * Events
    */
 
-  event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, bytes32[4] _tournamentName, bytes32[2] _externalAddress, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentOpened(address _owner, address _tournamentAddress, bytes32[4] _tournamentName, bytes32[2] _externalAddress, uint256 _MTXReward, uint256 _entryFee);
   event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, address[] _winningSubmissionAddresses, uint256 _MTXReward);
   event UserEnteredTournament(address _entrant, address _tournamentAddress);
   event QueryID(string queryID);
@@ -91,7 +90,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @param _externalAddress External address of the tournament.
   /// @param _MTXReward Reward for winning the tournament.
   /// @param _entryFee Fee for entering into the tournament.
-  function invokeTournamentOpenedEvent(address _owner, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
+  function invokeTournamentOpenedEvent(address _owner, bytes32[4] _tournamentName, bytes32[2] _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
   {
     TournamentOpened(_owner, msg.sender, _tournamentName, _externalAddress, _MTXReward, _entryFee);
   }
@@ -125,37 +124,6 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   {
     require(hasPeer(_sender));
     _;
-  }
-
-  /* 
-   * MTX Balance Methods
-   */
-
-  /// @dev Prepares the user's MTX balance, allowing them to use the platform.
-  /// @param _toIgnore Request bytes (deprecated).
-  function prepareBalance(uint256 _toIgnore) public
-  {   
-      // Make sure that the user has not already attempted to prepare their balance
-      uint256 response = latestResponseFromOracle(msg.sender);
-      require(response == 0x0);
-
-      this.Query(bytes32(_toIgnore), msg.sender);
-  }
-
-  /// @dev Returns whether or not the user can use the platform.
-  /// @return Whether or not user has a positive balance.
-  function balanceIsNonZero() public view returns (bool)
-  {
-      uint balance = latestResponseFromOracle(msg.sender);
-      return balance != 0;
-  }
-
-  /// @dev Returns the user's balance
-  /// @return Sender's MTX balance.
-  function getBalance() public constant returns (uint256)
-  {
-      uint256 balance = latestResponseFromOracle(msg.sender);
-      return balance;
   }
 
   /*
@@ -460,20 +428,20 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   ///    reviewDuration: The amount of the tournament owner has to determine the winners of the round.
   ///    bounty: The reward for the first round's winners.
   /// @return _tournamentAddress Address of the newly created tournament.
-  function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
+  function createTournament(string _category, LibConstruction.TournamentData memory tournamentData, LibConstruction.RoundData memory roundData) returns (address _tournamentAddress)
   {
     IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-    // Check that the platform has a sufficient allowance to
-    // transfer the reward from the tournament creator to itself
-    require(matryxToken.allowance(msg.sender, this) >= tournamentData.Bounty);
+    // // Check that the platform has a sufficient allowance to
+    // // transfer the reward from the tournament creator to itself
+    // //require(matryxToken.allowance(msg.sender, this) >= tournamentData.Bounty);
 
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-    address newTournament = tournamentFactory.createTournament(msg.sender, tournamentData, roundData);
-    TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title, tournamentData.contentHash, tournamentData.Bounty, tournamentData.entryFee);
+    address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
+    TournamentCreated(_category, msg.sender, newTournament, tournamentData.title, tournamentData.contentHash, tournamentData.Bounty, tournamentData.entryFee);
     
-    addTournamentToCategory(newTournament, tournamentData.category);
+    addTournamentToCategory(newTournament, _category);
 
-    require(matryxToken.transferFrom(msg.sender, newTournament, tournamentData.Bounty));
+    //require(matryxToken.transferFrom(msg.sender, newTournament, tournamentData.Bounty));
     
     //update data structures
     allTournaments.push(newTournament);
@@ -524,6 +492,11 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   function isSubmission(address _submissionAddress) public constant returns (bool)
   {
     return submissionExists[_submissionAddress];
+  }
+
+  function hashForCategory(bytes32 _categoryHash) public constant returns (string _category)
+  {
+    return "temporary category";
   }
 
   /// @dev Returns whether or not the given tournament belongs to the sender.
