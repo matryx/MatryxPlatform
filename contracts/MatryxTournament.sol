@@ -33,8 +33,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     uint256 public tournamentOpenedTime;
     address[] public rounds;
     mapping(address=>bool) public isRound;
-    bool public tournamentOpen = false;
-
     // Reward and fee
     uint256 public Bounty;
     uint256 public BountyLeft;
@@ -391,7 +389,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         require(getState() == uint256(TournamentState.RoundInReview));
         //Transfer the remaining MTX in the tournament to the current round
         require(IMatryxToken(matryxTokenAddress).transfer(rounds[rounds.length-1], remainingBounty()));
-        tournamentOpen = false;
         IMatryxRound(rounds[rounds.length-1]).chooseWinningSubmissions(_submissionAddresses, _rewardDistribution);
         emit RoundWinnersChosen(_submissionAddresses);
         IMatryxPlatform(platformAddress).invokeTournamentClosedEvent(rounds.length, _submissionAddresses, _rewardDistribution, IMatryxRound(rounds[rounds.length-1]).getBounty());
@@ -418,13 +415,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         if(roundData.bounty > remaining)
         {
             roundData.bounty = remaining;
-        }
-
-        //If this is the first round
-        if(rounds.length == 0)
-        {
-            // Set a flag
-            tournamentOpen = true;
         }
 
         newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, roundData);
