@@ -309,7 +309,6 @@ contract MatryxRound is Ownable, IMatryxRound {
 	function scheduleStart(uint256 _start, uint256 _end, uint256 _reviewPeriod) internal
 	{
 		startTime = _start;
-		// require((now <= _start), "Scheduled start time has already passed! Please choose a start time in the future.");
 		endTime = _end;
 		reviewPeriod = _reviewPeriod;
 	}

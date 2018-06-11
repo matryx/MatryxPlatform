@@ -407,25 +407,25 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         // IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
         address newRoundAddress;
 
-        // // If a bounty wasn't specified
-        // uint256 remaining = remainingBounty();
-        // if(roundData.bounty == 0x0)
-        // {
-        //     // Use the last one
-        //     roundData.bounty = IMatryxRound(rounds[rounds.length-1]).getBounty();
-        // }
-        // // If its more than what's left, use what's left.
-        // if(roundData.bounty > remaining)
-        // {
-        //     roundData.bounty = remaining;
-        // }
+        // If a bounty wasn't specified
+        uint256 remaining = remainingBounty();
+        if(roundData.bounty == 0x0)
+        {
+            // Use the last one
+            roundData.bounty = IMatryxRound(rounds[rounds.length-1]).getBounty();
+        }
+        // If its more than what's left, use what's left.
+        if(roundData.bounty > remaining)
+        {
+            roundData.bounty = remaining;
+        }
 
-        // //If the next round is the last round
-        // if(rounds.length == 0)
-        // {
-        //     // Set a flag
-        //     openTournament();
-        // }
+        //If this is the first round
+        if(rounds.length == 0)
+        {
+            // Set a flag
+            tournamentOpen = true;
+        }
 
         newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, roundData);
         // Transfer the round bounty to the round.
@@ -444,17 +444,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function remainingBounty() public view returns (uint256)
     {
         return IMatryxToken(matryxTokenAddress).balanceOf(this);
-    }
-
-    event platfromExists(address _platformAddress);
-
-    /// @dev Opens this tournament up to submissions; called by startRound.
-    function openTournament() private //UNCOMMENT THIS LATER
-    {
-        tournamentOpen = true;
-        IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-        emit platfromExists(platformAddress);
-        platform.invokeTournamentOpenedEvent(owner, title[0], title[1], title[2], descriptionHash[0], descriptionHash[1], Bounty, entryFee);
     }
 
     /*
@@ -517,6 +506,10 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         // Send out reference requests to the authors of other submissions
         IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(submissionAddress, submissionData.references);
 
+        if(numberOfSubmissions == 0)
+        {
+            IMatryxPlatform(platformAddress).invokeTournamentOpenedEvent(owner, title[0], title[1], title[2], descriptionHash[0], descriptionHash[1], Bounty, entryFee);
+        }
         numberOfSubmissions = numberOfSubmissions.add(1);
         entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress] = uint256_optional({exists:true, value:entrantToSubmissions[msg.sender].length});
         entrantToSubmissions[msg.sender].push(submissionAddress);
