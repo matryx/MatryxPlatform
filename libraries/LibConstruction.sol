@@ -29,8 +29,11 @@ library LibConstruction
         // string category;
         // ^ was causing revert in platform.createTournament
         bytes32 categoryHash;
-    	bytes32[4] title;
-    	bytes32[2] contentHash;
+    	bytes32 title_1;
+        bytes32 title_2;
+        bytes32 title_3;
+    	bytes32 contentHash_1;
+        bytes32 contentHash_2;
     	uint256 Bounty;
     	uint256 entryFee;
     }

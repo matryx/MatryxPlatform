@@ -24,8 +24,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     address public matryxRoundFactoryAddress;
 
     //Tournament identification
-    bytes32[4] public title;
-    bytes32[2] public externalAddress;
+    bytes32[3] public title;
+    bytes32[2] public descriptionHash;
     bytes32 public categoryHash;
 
     // Timing and State
@@ -70,7 +70,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     //     // owner = _owner;
     //     // category = tournamentData.category;
     //     // title = tournamentData.title;
-    //     // externalAddress = tournamentData.contentHash;
+    //     // descriptionHash = tournamentData.contentHash;
     //     // // Reward and fee
     //     // Bounty = tournamentData.Bounty;
     //     // //BountyLeft = Bounty;
@@ -96,8 +96,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         // Identification
         owner = _owner;
         categoryHash = tournamentData.categoryHash;
-        title = tournamentData.title;
-        externalAddress = tournamentData.contentHash;
+        title[0] = tournamentData.title_1;
+        title[1] = tournamentData.title_2;
+        title[2] = tournamentData.title_3;
+        descriptionHash[0] = tournamentData.contentHash_1;
+        descriptionHash[1] = tournamentData.contentHash_2;
         // Reward and fee
         Bounty = tournamentData.Bounty;
         //BountyLeft = Bounty;
@@ -251,7 +254,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return platformAddress;
     }
 
-    function getTitle() public view returns (bytes32[4] _title)
+    function getTitle() public view returns (bytes32[3] _title)
     {
         return title;
     }
@@ -262,10 +265,10 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     }
 
     /// @dev Returns the external address of the tournament.
-    /// @return _externalAddress Off-chain content hash of tournament details (ipfs hash)
-    function getExternalAddress() public view returns (bytes32[2] _externalAddress)
+    /// @return _descriptionHash Off-chain content hash of tournament details (ipfs hash)
+    function getDescriptionHash() public view returns (bytes32[2] _descriptionHash)
     {
-        return externalAddress;
+        return descriptionHash;
     }
 
     /// @dev Returns the current round number.
@@ -307,7 +310,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         }
         if(tournamentData.contentHash.length != 0)
         {
-            externalAddress = tournamentData.contentHash;
+            descriptionHash = tournamentData.contentHash;
         }
         if(tournamentData.entryFeeChanged)
         {
@@ -315,14 +318,14 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         }
     }
 
-    function setTitle(bytes32[4] _title) public onlyOwner
+    function setTitle(bytes32[3] _title) public onlyOwner
     {
         title = _title;
     }
 
-    function setExternalAddress(bytes32[2] _externalAddress) public onlyOwner
+    function setDescriptionHash(bytes32[2] _descriptionHash) public onlyOwner
     {
-        externalAddress = _externalAddress;
+        descriptionHash = _descriptionHash;
     }
 
     function setEntryFee(uint256 _entryFee) public onlyOwner
@@ -448,7 +451,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         tournamentOpen = true;
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
         emit platfromExists(platformAddress);
-        platform.invokeTournamentOpenedEvent(owner, title, externalAddress, Bounty, entryFee);
+        platform.invokeTournamentOpenedEvent(owner, title[0], title[1], title[2], descriptionHash[0], descriptionHash[1], Bounty, entryFee);
     }
 
     /*

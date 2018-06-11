@@ -5,11 +5,9 @@ var MatryxTournamentFactory = artifacts.require("MatryxTournamentFactory");
 var MatryxRoundFactory = artifacts.require("MatryxRoundFactory");
 
 module.exports = function(deployer) {
-	deployer.link(SafeMath, MatryxTournamentFactory).then(function() {
-        deployer.link(Strings, MatryxTournamentFactory).then(function() {
+	deployer.link(SafeMath, MatryxTournamentFactory);
+        deployer.link(Strings, MatryxTournamentFactory);
             return deployer.deploy(MatryxTournamentFactory, MatryxToken.address, MatryxRoundFactory.address);
-        })
-	})
 	//deployer.link(Strings, MatryxTournamentFactory);
 	//return deployer.deploy(MatryxTournamentFactory, MatryxToken.address, MatryxRoundFactory.address);
 };
