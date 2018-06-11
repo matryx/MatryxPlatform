@@ -84,9 +84,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     {
         //Clean inputs
         //require(_owner != 0x0);
-        //require(!tournamentData.title.toSlice().empty());
+        //require(tournamentData.title[0] != 0x0);
         //require(tournamentData.Bounty > 0);
-        //require(requiredAddresses.roundFactoryAddress != 0x0);
+        //require(_matryxRoundFactoryAddress != 0x0);
         
         platformAddress = _platformAddress;
         matryxTokenAddress = _matryxTokenAddress;
@@ -105,6 +105,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         Bounty = tournamentData.Bounty;
         //BountyLeft = Bounty;
         entryFee = tournamentData.entryFee;
+
+        createRound(roundData);
+        // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
     }
 
     /*
@@ -401,32 +404,32 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         //require((roundData.start >= now && roundData.start < roundData.end), "Time parameters are invalid.");
 
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
-        IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
+        // IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
         address newRoundAddress;
 
-        // If a bounty wasn't specified
-        uint256 remaining = remainingBounty();
-        if(roundData.bounty == 0x0)
-        {
-            // Use the last one
-            roundData.bounty = IMatryxRound(rounds[rounds.length-1]).getBounty();
-        }
-        // If its more than what's left, use what's left.
-        if(roundData.bounty > remaining)
-        {
-            roundData.bounty = remaining;
-        }
+        // // If a bounty wasn't specified
+        // uint256 remaining = remainingBounty();
+        // if(roundData.bounty == 0x0)
+        // {
+        //     // Use the last one
+        //     roundData.bounty = IMatryxRound(rounds[rounds.length-1]).getBounty();
+        // }
+        // // If its more than what's left, use what's left.
+        // if(roundData.bounty > remaining)
+        // {
+        //     roundData.bounty = remaining;
+        // }
 
-        //If the next round is the last round
-        if(rounds.length == 0)
-        {
-            // Set a flag
-            openTournament();
-        }
+        // //If the next round is the last round
+        // if(rounds.length == 0)
+        // {
+        //     // Set a flag
+        //     openTournament();
+        // }
 
         newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, roundData);
         // Transfer the round bounty to the round.
-        matryxToken.transfer(newRoundAddress, roundData.bounty);
+        // matryxToken.transfer(newRoundAddress, roundData.bounty);
 
         isRound[newRoundAddress] = true;
         rounds.push(newRoundAddress);

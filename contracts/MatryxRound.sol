@@ -40,16 +40,16 @@ contract MatryxRound is Ownable, IMatryxRound {
     address[] submissionOwners;
     uint256 numberSubmissionsRemoved;
 
-	function MatryxRound(LibConstruction.RequiredRoundAddresses requiredAddresses, address _owner, LibConstruction.RoundData roundData) public
+	constructor(address _platformAddress, address _matryxTokenAddress, address _tournamentAddress, address _submissionFactoryAddress, address _owner, LibConstruction.RoundData roundData) public
 	{
-		matryxTokenAddress = requiredAddresses.matryxTokenAddress;
-		platformAddress = requiredAddresses.platformAddress;
-		tournamentAddress = requiredAddresses.tournamentAddress;
+		matryxTokenAddress = _matryxTokenAddress;
+		platformAddress = _platformAddress;
+		tournamentAddress = _tournamentAddress;
 		owner = _owner;
-		matryxSubmissionFactoryAddress = requiredAddresses.submissionFactoryAddress;
+		matryxSubmissionFactoryAddress = _submissionFactoryAddress;
 		bounty = roundData.bounty;
 
-		Start(roundData.start, roundData.end, roundData.reviewDuration);
+		scheduleStart(roundData.start, roundData.end, roundData.reviewDuration);
 	}
 
 	/*
@@ -306,10 +306,10 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @param _start Start time.
 	/// @param _end End time.
 	/// @param _reviewPeriod Time to review the round submissions
-	function Start(uint256 _start, uint256 _end, uint256 _reviewPeriod) public
+	function scheduleStart(uint256 _start, uint256 _end, uint256 _reviewPeriod) internal
 	{
-		startTime = now;
-		require((startTime >= _start), "Scheduled Start time occurs later" );
+		startTime = _start;
+		// require((now <= _start), "Scheduled start time has already passed! Please choose a start time in the future.");
 		endTime = _end;
 		reviewPeriod = _reviewPeriod;
 	}
