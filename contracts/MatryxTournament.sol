@@ -238,6 +238,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return addressToIsEntrant[_sender].exists;
     }
 
+
+    //enum RoundState { NotYetOpen, Open, InReview, Closed, Abandoned }
     enum TournamentState { RoundNotYetOpen, RoundOpen, RoundInReview, TournamentClosed, RoundAbandoned}
     /// @dev Returns the state of the tournament. One of:
     /// RoundNotYetOpen, RoundOpen, RoundInReview, TournamentClosed, RoundAbandoned
@@ -420,7 +422,10 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, roundData);
         // Transfer the round bounty to the round.
         // matryxToken.transfer(newRoundAddress, roundData.bounty);
-
+//        if(rounds.length > 1)
+//        {
+//            matryxToken.transfer(newRoundAddress, roundData.bounty);
+//        }
         isRound[newRoundAddress] = true;
         rounds.push(newRoundAddress);
 
@@ -428,6 +433,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         emit NewRound(roundData.start, roundData.end, roundData.reviewDuration, newRoundAddress, rounds.length);
 
         return newRoundAddress;
+    }
+
+    function sendBountyToRound(uint256 _roundIndex, uint256 _bountyIndex, uint256 _bountyMTX) public onlyPlatform
+    {
+        IMatryxToken(matryxTokenAddress).transfer(rounds[_roundIndex], _bountyMTX);
     }
 
     // @dev Returns the remaining bounty the tournament is able to award
@@ -486,15 +496,15 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     //     return false;
     // }
 
-    function createSubmission(LibConstruction.SubmissionData submissionData) public onlyEntrant onlyPeerLinked(msg.sender) whileTournamentOpen returns (address _submissionAddress)
+    function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.SubmissionData submissionData) public onlyEntrant onlyPeerLinked(msg.sender) whileTournamentOpen returns (address _submissionAddress)
     {
         // This check is critical for MatryxPeer.
         address peerAddress = IMatryxPlatform(platformAddress).peerAddress(submissionData.owner);
         require(peerAddress != 0x0);
 
-        address submissionAddress = IMatryxRound(rounds[rounds.length-1]).createSubmission(peerAddress, submissionData);
+        address submissionAddress = IMatryxRound(rounds[rounds.length-1]).createSubmission(_contributors, _contributorRewardDistribution, _references, peerAddress, submissionData);
         // Send out reference requests to the authors of other submissions
-        IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(submissionAddress, submissionData.references);
+        IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(submissionAddress, _references);
 
         if(numberOfSubmissions == 0)
         {

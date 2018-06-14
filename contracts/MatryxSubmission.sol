@@ -67,7 +67,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	bytes4 fnSelector_revertIfReferenceFlagged = bytes4(keccak256("revertIfReferenceFlagged(address)"));
 
-	function MatryxSubmission(LibConstruction.RequiredSubmissionAddresses requiredAddresses, LibConstruction.SubmissionData submissionData) public
+	function MatryxSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.RequiredSubmissionAddresses requiredAddresses, LibConstruction.SubmissionData submissionData) public
 	{
 		author = IMatryxPlatform(platformAddress).peerAddress(submissionData.owner);
 		require(author != 0x0);
@@ -79,18 +79,18 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		title = submissionData.title;
 		owner = submissionData.owner;
 		externalAddress = submissionData.contentHash;
-		references = submissionData.references;
+		references = _references;
 		trustDelegate = IMatryxPlatform(requiredAddresses.platformAddress).getSubmissionTrustLibrary();
 
 		for(uint32 i = 0; i < references.length;i++)
 		{
-			addressToReferenceInfo[submissionData.references[i]].exists = true;
-			addressToReferenceInfo[submissionData.references[i]].index = i;
+			addressToReferenceInfo[references[i]].exists = true;
+			addressToReferenceInfo[references[i]].index = i;
 		}
 
-		addContributors(submissionData.contributors, submissionData.contributorRewardDistribution);
+		addContributors(_contributors, _contributorRewardDistribution);
 		
-		contributors = submissionData.contributors;
+		contributors = _contributors;
 		timeSubmitted = now;
 	}
 
@@ -231,7 +231,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	 * Setter Methods
 	 */
 
-	function updateAll(LibConstruction.SubmissionModificationData _data)
+	function updateAll(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove,LibConstruction.SubmissionModificationData _data)
 	{
 		if(!_data.title.toSlice().empty())
 		{
@@ -249,14 +249,14 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		{
 			isPublic = _data.isPublic;
 		}
-		if(_data.contributorsToAdd.length != 0)
+		if(_contributorsToAdd.length != 0)
 		{
-			require(_data.contributorsToAdd.length == _data.contributorRewardDistribution.length);
-			addContributors(_data.contributorsToAdd, _data.contributorRewardDistribution);
+			require(_contributorsToAdd.length == _contributorRewardDistribution.length);
+			addContributors(_contributorsToAdd, _contributorRewardDistribution);
 		}
-		if(_data.contributorsToRemove.length != 0)
+		if(_contributorsToRemove.length != 0)
 		{
-			removeContributors(_data.contributorsToRemove);
+			removeContributors(_contributorsToRemove);
 		}
 	}
 

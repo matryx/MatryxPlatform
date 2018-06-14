@@ -346,7 +346,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// 	should this submission win.
     ///		references: Addresses of submissions referenced in creating this submission.
     /// @return _submissionAddress Location of this submission within this round.
-	function createSubmission(address _author, LibConstruction.SubmissionData submissionData) public onlyTournament duringOpenSubmission returns (address _submissionAddress)
+	function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, address _author, LibConstruction.SubmissionData submissionData) public onlyTournament duringOpenSubmission returns (address _submissionAddress)
 	{
 		require(_author != 0x0);
 		
@@ -366,9 +366,9 @@ contract MatryxRound is Ownable, IMatryxRound {
 
         // round participant bookkeeping
         addressToParticipantType[_author] = uint(participantType.author);
-        for(uint256 i = 0; i < submissionData.contributors.length; i++)
+        for(uint256 i = 0; i < _contributors.length; i++)
         {
-        	addressToParticipantType[submissionData.contributors[i]] = uint(participantType.contributor);
+        	addressToParticipantType[_contributors[i]] = uint(participantType.contributor);
         }
 
         IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);

@@ -59,9 +59,9 @@ library LibConstruction
     	string title;
     	address owner;
     	bytes contentHash;
-    	address[] contributors;
-    	uint128[] contributorRewardDistribution;
-    	address[] references;
+    	//address[] contributors;
+    	//uint128[] contributorRewardDistribution;
+    	//address[] references;
     }
 
     struct SubmissionModificationData
@@ -70,8 +70,8 @@ library LibConstruction
     	address owner;
     	bytes contentHash;
     	bool isPublic;
-    	address[] contributorsToAdd;
-    	uint128[] contributorRewardDistribution;
-    	address[] contributorsToRemove;
+    	//address[] contributorsToAdd;
+    	//uint128[] contributorRewardDistribution;
+    	//address[] contributorsToRemove;
     }
 }

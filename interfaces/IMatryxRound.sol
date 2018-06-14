@@ -20,6 +20,6 @@ interface IMatryxRound
 	function numberOfSubmissions() public constant returns (uint256);
 	function chooseWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution) public;
 	//function awardBounty(address _submissionAddress, uint256 _remainingBounty) public;
-	function createSubmission(address _author, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
+	function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references,address _author, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
 	function liquidate() public;
 }

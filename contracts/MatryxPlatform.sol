@@ -440,6 +440,7 @@ contract MatryxPlatform is Ownable, IMatryxPlatform {
 
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
     address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
+    //MatryxToken.transferFrom(newTournament, **round_address**, uint256 bounty);
     TournamentCreated(_category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.contentHash_1, tournamentData.contentHash_2, tournamentData.Bounty, tournamentData.entryFee);
     
     addTournamentToCategory(newTournament, _category);
