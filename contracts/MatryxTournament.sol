@@ -52,32 +52,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     mapping(address=>uint256_optional) private addressToIsEntrant;
     address[] private allEntrants;
 
-    // constructor(LibConstruction.RequiredTournamentAddresses requiredAddresses, address _owner, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public {
-    //     //Clean inputs
-    //     //require(_owner != 0x0);
-    //     //require(!_tournamentName.toSlice().empty());
-    //     //require(tournamentData.Bounty > 0);
-    //     //require(requiredAddresses.roundFactoryAddress != 0x0);
-        
-    //     // platformAddress = requiredAddresses.platformAddress;
-    //     // matryxTokenAddress = requiredAddresses.matryxTokenAddress;
-    //     // matryxRoundFactoryAddress = requiredAddresses.roundFactoryAddress;
-
-    //     // timeCreated = now;
-    //     // // Identification
-    //     // owner = _owner;
-    //     // category = tournamentData.category;
-    //     // title = tournamentData.title;
-    //     // descriptionHash = tournamentData.contentHash;
-    //     // // Reward and fee
-    //     // Bounty = tournamentData.Bounty;
-    //     // //BountyLeft = Bounty;
-    //     // entryFee = tournamentData.entryFee;
-
-    //     //createRound(roundData);
-    //     // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
-    // }
-
     constructor(LibConstruction.TournamentData memory tournamentData, LibConstruction.RoundData memory roundData, address _platformAddress, address _matryxTokenAddress, address _matryxRoundFactoryAddress, address _owner) 
     {
         //Clean inputs
@@ -403,7 +377,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         //require((roundData.start >= now && roundData.start < roundData.end), "Time parameters are invalid.");
 
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
-        // IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
         address newRoundAddress;
 
         // If a bounty wasn't specified
@@ -421,11 +394,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, roundData);
         // Transfer the round bounty to the round.
-        // matryxToken.transfer(newRoundAddress, roundData.bounty);
-//        if(rounds.length > 1)
-//        {
-//            matryxToken.transfer(newRoundAddress, roundData.bounty);
-//        }
+
+        if(rounds.length > 1)
+        {
+            IMatryxToken(matryxTokenAddress).transfer(newRoundAddress, roundData.bounty);
+        }
         isRound[newRoundAddress] = true;
         rounds.push(newRoundAddress);
 
@@ -434,8 +407,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         return newRoundAddress;
     }
-
-    function sendBountyToRound(uint256 _roundIndex, uint256 _bountyIndex, uint256 _bountyMTX) public onlyPlatform
+  function sendBountyToRound(uint256 _roundIndex, uint256 _bountyIndex, uint256 _bountyMTX) public onlyPlatform
     {
         IMatryxToken(matryxTokenAddress).transfer(rounds[_roundIndex], _bountyMTX);
     }

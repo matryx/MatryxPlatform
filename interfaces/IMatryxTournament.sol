@@ -21,6 +21,7 @@ interface IMatryxTournament
     function setEntryFee(uint256 _entryFee) public;
     function setCategory(string _category) public;
     function closeRound(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData roundData) public;
+    function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public;
     function closeTournament(address[] _submissionAddress, uint256[] _rewardDistribution) public;
     function enterUserInTournament(address _entrantAddress) public returns (bool success);
     function getEntryFee() public view returns (uint256);
