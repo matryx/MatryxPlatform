@@ -433,19 +433,14 @@ contract MatryxPlatform is Ownable, IMatryxPlatform {
   /// @return _tournamentAddress Address of the newly created tournament.
   function createTournament(string _category, LibConstruction.TournamentData memory tournamentData, LibConstruction.RoundData memory roundData) returns (address _tournamentAddress)
   {
-    IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-    // // Check that the platform has a sufficient allowance to
-    // // transfer the reward from the tournament creator to itself
-    // //require(matryxToken.allowance(msg.sender, this) >= tournamentData.Bounty);
-
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
     address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
     TournamentCreated(_category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.contentHash_1, tournamentData.contentHash_2, tournamentData.Bounty, tournamentData.entryFee);
     
     addTournamentToCategory(newTournament, _category);
 
-    //require(matryxToken.transferFrom(msg.sender, newTournament, tournamentData.Bounty));
-    
+    require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.Bounty));
+    IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
     //update data structures
     allTournaments.push(newTournament);
     tournamentExists[newTournament] = true;
