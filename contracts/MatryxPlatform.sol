@@ -398,17 +398,19 @@ contract MatryxPlatform is Ownable, IMatryxPlatform {
   /// @return _success Whether or not user was successfully entered into the tournament.
   function enterTournament(address _tournamentAddress) public onlyPeerLinked(msg.sender) returns (bool _success)
   {
-      // TODO: Consider scheme: 
-      // submission owner: peer linked account
-      // submission author: peer
       require(tournamentExists[_tournamentAddress]);
       
       IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
+      uint256 entryFee = tournament.getEntryFee();
 
-      bool success = tournament.enterUserInTournament(msg.sender);
+      bool success = IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, _tournamentAddress, entryFee);
       if(success)
       {
-        UserEnteredTournament(msg.sender, _tournamentAddress);
+        success = tournament.enterUserInTournament(msg.sender);
+        if(success)
+        {
+          UserEnteredTournament(msg.sender, _tournamentAddress);
+        }
       }
 
       return success;
