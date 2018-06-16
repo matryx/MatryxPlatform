@@ -166,26 +166,27 @@ contract MatryxRound is Ownable, IMatryxRound {
 	// TODO how do we keep track of the startTime, endTime, and winningSubmissions?
     function getState() public view returns (uint256)
     {
-        if(now < startTime)
-        {
-            return uint256(RoundState.NotYetOpen);
-        }
-        else if(now > startTime && now < endTime)
-        {
-            return uint256(RoundState.Open);
-        }
-        else if(now >= endTime && now < endTime.add(reviewPeriod))
-        {
-            return uint256(RoundState.InReview);
-        }
-        else if(winningSubmissions[0] != 0x0)
-        {
-            return uint256(RoundState.Closed);
-        }
-        else
-        {
-            return uint256(RoundState.Abandoned);
-        }
+    	return 1;
+        // if(now < startTime)
+        // {
+        //     return uint256(RoundState.NotYetOpen);
+        // }
+        // else if(now > startTime && now < endTime)
+        // {
+        //     return uint256(RoundState.Open);
+        // }
+        // else if(now >= endTime && now < endTime.add(reviewPeriod))
+        // {
+        //     return uint256(RoundState.InReview);
+        // }
+        // else if(winningSubmissions.length > 0)
+        // {
+        //     return uint256(RoundState.Closed);
+        // }
+        // else
+        // {
+        //     return uint256(RoundState.Abandoned);
+        // }
     }
 
 	/// @dev Returns whether or not the submission is accessible to the requester.
@@ -351,8 +352,8 @@ contract MatryxRound is Ownable, IMatryxRound {
 		require(_author != 0x0);
 		
 		LibConstruction.RequiredSubmissionAddresses memory requiredSubmissionAddresses = LibConstruction.RequiredSubmissionAddresses({platformAddress: platformAddress, tournamentAddress: tournamentAddress, roundAddress: this});
-        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(requiredSubmissionAddresses, submissionData);
-        //submission bookkeeping
+        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(_contributors, _contributorRewardDistribution, _references, requiredSubmissionAddresses, submissionData);
+        // submission bookkeeping
         addressToSubmissionIndex[submissionAddress] = uint256_optional({exists:true, value: submissions.length});
         submissions.push(submissionAddress);
 

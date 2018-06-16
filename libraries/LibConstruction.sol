@@ -40,8 +40,11 @@ library LibConstruction
 
     struct TournamentModificationData
     {
-    	bytes32[4] title;
-    	bytes32[2] contentHash;
+    	bytes32 title_1;
+        bytes32 title_2;
+        bytes32 title_3;
+        bytes32 contentHash_1;
+        bytes32 contentHash_2;
     	uint256 entryFee;
     	bool entryFeeChanged;
     }
@@ -59,6 +62,7 @@ library LibConstruction
     	string title;
     	address owner;
     	bytes contentHash;
+        bool isPublic;
     	//address[] contributors;
     	//uint128[] contributorRewardDistribution;
     	//address[] references;

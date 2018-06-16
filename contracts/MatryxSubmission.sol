@@ -67,20 +67,20 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	bytes4 fnSelector_revertIfReferenceFlagged = bytes4(keccak256("revertIfReferenceFlagged(address)"));
 
-	function MatryxSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.RequiredSubmissionAddresses requiredAddresses, LibConstruction.SubmissionData submissionData) public
+	constructor(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.RequiredSubmissionAddresses requiredAddresses, LibConstruction.SubmissionData submissionData) public
 	{
-		author = IMatryxPlatform(platformAddress).peerAddress(submissionData.owner);
-		require(author != 0x0);
-		
 		platformAddress = requiredAddresses.platformAddress;
 		tournamentAddress = requiredAddresses.tournamentAddress;
 		roundAddress = requiredAddresses.roundAddress;
 
 		title = submissionData.title;
 		owner = submissionData.owner;
+		author = IMatryxPlatform(platformAddress).peerAddress(owner);
+		require(author != 0x0);
 		externalAddress = submissionData.contentHash;
 		references = _references;
 		trustDelegate = IMatryxPlatform(requiredAddresses.platformAddress).getSubmissionTrustLibrary();
+		isPublic = submissionData.isPublic;
 
 		for(uint32 i = 0; i < references.length;i++)
 		{
@@ -88,7 +88,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 			addressToReferenceInfo[references[i]].index = i;
 		}
 
-		addContributors(_contributors, _contributorRewardDistribution);
+		_addContributors(_contributors, _contributorRewardDistribution);
 		
 		contributors = _contributors;
 		timeSubmitted = now;
@@ -365,13 +365,20 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	function addContributors(address[] _contributorsToAdd, uint128[] _distribution) public onlyOwner
 	{
+		_addContributors(_contributorsToAdd, _distribution);
+	}
+
+	function _addContributors(address[] _contributorsToAdd, uint128[] _distribution) internal
+	{
 		require(_contributorsToAdd.length == _distribution.length);
 		for(uint32 j = 0; j < _contributorsToAdd.length; j++)
 		{
+			// if one of the contributors is already there, revert
+			// otherwise, add it to the list
 			contributorBountyDivisor = contributorBountyDivisor + _distribution[j];
 			contributorToBountyDividend[_contributorsToAdd[j]] = _distribution[j];
 		}
-	}	
+	}
 
 	/// @dev Remove a contributor from a submission (callable only by submission's owner).
     /// @param _contributorIndex Index of the contributor to remove from the submission.

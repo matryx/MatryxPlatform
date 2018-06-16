@@ -281,13 +281,16 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function setAll(LibConstruction.TournamentModificationData tournamentData)
     {
-        if(tournamentData.title[0] != 0x0)
+        if(tournamentData.title_1 != 0x0)
         {
-            title = title;
+            title[0] = tournamentData.title_1;
+            title[1] = tournamentData.title_2;
+            title[2] = tournamentData.title_3;
         }
-        if(tournamentData.contentHash.length != 0)
+        if(tournamentData.contentHash_1 != 0x0)
         {
-            descriptionHash = tournamentData.contentHash;
+            descriptionHash[0] = tournamentData.contentHash_1;
+            descriptionHash[1] = tournamentData.contentHash_2;
         }
         if(tournamentData.entryFeeChanged)
         {
@@ -407,7 +410,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         return newRoundAddress;
     }
-  function sendBountyToRound(uint256 _roundIndex, uint256 _bountyIndex, uint256 _bountyMTX) public onlyPlatform
+    function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public onlyPlatform
     {
         IMatryxToken(matryxTokenAddress).transfer(rounds[_roundIndex], _bountyMTX);
     }
@@ -470,9 +473,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.SubmissionData submissionData) public onlyEntrant onlyPeerLinked(msg.sender) whileTournamentOpen returns (address _submissionAddress)
     {
-        // This check is critical for MatryxPeer.
         address peerAddress = IMatryxPlatform(platformAddress).peerAddress(submissionData.owner);
-        require(peerAddress != 0x0);
 
         address submissionAddress = IMatryxRound(rounds[rounds.length-1]).createSubmission(_contributors, _contributorRewardDistribution, _references, peerAddress, submissionData);
         // Send out reference requests to the authors of other submissions
@@ -482,6 +483,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         {
             IMatryxPlatform(platformAddress).invokeTournamentOpenedEvent(owner, title[0], title[1], title[2], descriptionHash[0], descriptionHash[1], Bounty, entryFee);
         }
+
         numberOfSubmissions = numberOfSubmissions.add(1);
         entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress] = uint256_optional({exists:true, value:entrantToSubmissions[msg.sender].length});
         entrantToSubmissions[msg.sender].push(submissionAddress);
