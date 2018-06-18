@@ -14,8 +14,8 @@ interface IMatryxSubmission {
 	function getContributors() public constant returns(address[]);
 	function getTimeSubmitted() public constant returns(uint256);
 	function getTimeUpdated() public constant returns(uint256);
-	function updateAll(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove,LibConstruction.SubmissionModificationData _data);
-	function setIsPublic(bool _public) public;
+	function update(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove,LibConstruction.SubmissionModificationData _data);
+	function updateIsPublic(bool _public) public;
 	function updateTitle(string _title) public ;
 	function updateExternalAddress(bytes _externalAddress) public;
 	function addReference(address _reference) public ;

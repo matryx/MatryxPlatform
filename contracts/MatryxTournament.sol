@@ -279,7 +279,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Setter Methods
      */
 
-    function setAll(LibConstruction.TournamentModificationData tournamentData)
+    function update(LibConstruction.TournamentModificationData tournamentData)
     {
         if(tournamentData.title_1 != 0x0)
         {
@@ -298,22 +298,22 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         }
     }
 
-    function setTitle(bytes32[3] _title) public onlyOwner
+    function updateTitle(bytes32[3] _title) public onlyOwner
     {
         title = _title;
     }
 
-    function setDescriptionHash(bytes32[2] _descriptionHash) public onlyOwner
+    function updateDescriptionHash(bytes32[2] _descriptionHash) public onlyOwner
     {
         descriptionHash = _descriptionHash;
     }
 
-    function setEntryFee(uint256 _entryFee) public onlyOwner
+    function updateEntryFee(uint256 _entryFee) public onlyOwner
     {
         entryFee = _entryFee;
     }
 
-    function setCategory(string _category) public onlyOwner
+    function updateCategory(string _category) public onlyOwner
     {
         // if(!category.toSlice().empty())
         // {

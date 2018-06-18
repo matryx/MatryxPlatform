@@ -231,7 +231,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	 * Setter Methods
 	 */
 
-	function updateAll(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove,LibConstruction.SubmissionModificationData _data)
+	function update(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove,LibConstruction.SubmissionModificationData _data)
 	{
 		if(!_data.title.toSlice().empty())
 		{
@@ -262,7 +262,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
 	/// @dev Sets whether or not this submission can be accessed by anyone
 	/// before the end of the tournament.
-	function setIsPublic(bool _public) public onlyOwner 
+	function updateIsPublic(bool _public) public onlyOwner 
 	{
 		isPublic = _public;
 	}

@@ -16,10 +16,11 @@ interface IMatryxTournament
     function mySubmissions() public view returns (address[]);
     function submissionCount() public view returns (uint256 _submissionCount);
     function entrantCount() public view returns (uint256 _entrantCount);
-    function setTitle(bytes32[3] _title) public;
-    function setDescriptionHash(bytes32[2] _externalAddress) public;
-    function setEntryFee(uint256 _entryFee) public;
-    function setCategory(string _category) public;
+    function update(LibConstruction.TournamentModificationData tournamentData);
+    function updateTitle(bytes32[3] _title) public;
+    function updateDescriptionHash(bytes32[2] _externalAddress) public;
+    function updateEntryFee(uint256 _entryFee) public;
+    function updateCategory(string _category) public;
     function closeRound(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData roundData) public;
     function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public;
     function closeTournament(address[] _submissionAddress, uint256[] _rewardDistribution) public;
