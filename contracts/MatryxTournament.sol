@@ -25,6 +25,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     //Tournament identification
     bytes32[3] public title;
+    string public titleTwo;
     bytes32[2] public descriptionHash;
     bytes32 public categoryHash;
 
@@ -52,7 +53,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     mapping(address=>uint256_optional) private addressToIsEntrant;
     address[] private allEntrants;
 
-    constructor(LibConstruction.TournamentData memory tournamentData, LibConstruction.RoundData memory roundData, address _platformAddress, address _matryxTokenAddress, address _matryxRoundFactoryAddress, address _owner) 
+    constructor(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _platformAddress, address _matryxTokenAddress, address _matryxRoundFactoryAddress, address _owner) 
     {
         //Clean inputs
         //require(_owner != 0x0);

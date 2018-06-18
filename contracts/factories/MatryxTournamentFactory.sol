@@ -15,7 +15,7 @@ contract MatryxTournamentFactory is Ownable {
 		matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
 	}
 
-	function createTournament(LibConstruction.TournamentData memory tournamentData, LibConstruction.RoundData memory roundData, address _owner) returns (address _tournamentAddress) {
+	function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _owner) returns (address _tournamentAddress) {
 		MatryxTournament newTournament = new MatryxTournament(tournamentData, roundData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, _owner);
 		return newTournament;
 	}

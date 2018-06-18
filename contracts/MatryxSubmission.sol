@@ -231,7 +231,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	 * Setter Methods
 	 */
 
-	function update(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove,LibConstruction.SubmissionModificationData _data)
+	function update(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove, LibConstruction.SubmissionModificationData _data)
 	{
 		if(!_data.title.toSlice().empty())
 		{
