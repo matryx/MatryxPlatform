@@ -30,18 +30,12 @@ contract('MatryxSubmission', function(accounts)
       token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
       platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address)
 
-      //get gas estimate for creating peers
-      // gasEstimate = await platform.createPeer.estimateGas();
-
       //create peers
       await platform.createPeer.sendTransaction({gas: gasEstimate});
       await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[1]});
       await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[2]});
       await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[3]});
       await token.setReleaseAgent(web3.eth.accounts[0]);
-
-      //get gas estimate for releasing token transfer
-      // gasEstimate = await token.releaseTokenTransfer.estimateGas();
 
       //release token transfer and mint tokens for the accounts
       await token.releaseTokenTransfer.sendTransaction({gas: gasEstimate});
@@ -50,11 +44,6 @@ contract('MatryxSubmission', function(accounts)
       await token.mint(web3.eth.accounts[2], 2*10**18)
       await token.mint(web3.eth.accounts[3], 2*10**18)
       await token.approve(MatryxPlatform.address, 100*10**18)
-
-      //get gas estimate for creating tournament
-      // gasEstimate = await platform.createTournament.estimateGas("category", "tournament", "external address", 100*10**18, 2*10**18);
-      //since createTournament has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
-      // gasEstimate = Math.ceil(gasEstimate * 1.3);
 
       // create a tournament
       createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
@@ -75,15 +64,8 @@ contract('MatryxSubmission', function(accounts)
       // create tournament from address
       tournament = await MatryxTournament.at(tournamentAddress);
 
-      //get gas estimate for opening tournament
-      // gasEstimate = await tournament.openTournament.estimateGas();
-      // gasEstimate = Math.ceil(gasEstimate * 1.3);
-
       //open tournament
       let tournamentOpen = await tournament.openTournament({gas: gasEstimate});
-
-      //get gas estimate for entering tournament
-      // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
 
       //enter tournament
       let enteredTournament = await platform.enterTournament(tournamentAddress, {gas: gasEstimate});
@@ -93,20 +75,12 @@ contract('MatryxSubmission', function(accounts)
       round = await tournament.currentRound();
       roundAddress = round[1];
 
-      //get gas estimate for starting round
-      // gasEstimate = await tournament.startRound.estimateGas(10, 10);
-
       //start round
       await tournament.startRound(10, 10, {gas: gasEstimate});
       round = web3.eth.contract(MatryxRound.abi).at(roundAddress);
 
       //open round
       let roundOpen = await round.isOpen();
-
-      //get gas estimate for creating submission
-      // gasEstimate = await tournament.createSubmission.estimateGas("submission1", accounts[0], "external address 1", ["0x0"], ["0x0"], ["0x0"]);
-      //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
-      // gasEstimate = Math.ceil(gasEstimate * 1.3);
 
       //create submission
       let submissionOneTx = await tournament.createSubmission("submission1", accounts[0], "external address 1", ["0x0"], ["0x0"], ["0x0"], {gas: gasEstimate});
@@ -125,18 +99,7 @@ contract('MatryxSubmission', function(accounts)
 	});
 
   it("Submission two owner is submission creator", async function() {
-    //get gas estimate for entering tournament
-    // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress);
-    //gasEstimate underestimates again here
-    // gasEstimate = Math.ceil(gasEstimate * 5.5);
-
     let enteredTournament = await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: gasEstimate});
-
-    //get gas estimate for creating submission
-    // gasEstimate = await tournament.createSubmission.estimateGas("submission1", accounts[0], "external address 1", ["0x0"], ["0x0"], ["0x0"]);
-    //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
-    // gasEstimate = Math.ceil(gasEstimate * 1.3);
-
     	//create submission
 		await tournament.createSubmission("submission2", accounts[1], "external address 2", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1], gas: gasEstimate});
 
@@ -214,10 +177,6 @@ contract('MatryxSubmission', function(accounts)
 	})
 
 	it("Able to add to a submission's references", async function() {
-		//estimate gas for adding a reference to a submisssion
-		// gasEstimate = await submissionOne.addReference.estimateGas(submissionTwo.address);
-		// gasEstimate = Math.ceil(gasEstimate * 1.3);
-
 		let addReference = await submissionOne.addReference(submissionTwo.address, {gas: gasEstimate});
 		console.log("addReference: " + addReference.logs);
 		let references = await submissionOne.getReferences.call();
@@ -232,10 +191,6 @@ contract('MatryxSubmission', function(accounts)
 	})
 
 	it("Able to delete a submission's references", async function() {
-		//estimate gas for removing a reference
-		// gasEstimate = await submissionOne.removeReference.estimateGas(submissionTwo.address);
-		// gasEstimate = Math.ceil(gasEstimate * 2.3);
-
 		let removeReference = await submissionOne.removeReference(submissionTwo.address, {gas: gasEstimate});
 		console.log("removeReference: " + removeReference.logs[0]);
 		let references = await submissionOne.getReferences.call();
@@ -244,20 +199,12 @@ contract('MatryxSubmission', function(accounts)
 	})
 
 	it("Able to add to a submission's contributors", async function() {
-		//estimate gas for adding a contributor to a submisssion
-		// gasEstimate = await submissionOne.addContributor.estimateGas(accounts[6], 100);
-		// gasEstimate = Math.ceil(gasEstimate * 1.3);
-
 		await submissionOne.addContributor(accounts[6], 100, {gas: gasEstimate});
 		let contributors = await submissionOne.getContributors.call();
 		assert.equal(contributors[1], accounts[6], "References on submission not updated correctly");
 	})
 
 	it("Able to delete a submission's contributors", async function() {
-		//estimate gas for removing a contributor
-		// gasEstimate = await submissionOne.removeContributor.estimateGas(1);
-		// gasEstimate = Math.ceil(gasEstimate * 2);
-
 		await submissionOne.removeContributor(1, {gas: gasEstimate});
 		let contributors = await submissionOne.getContributors.call();
 		assert.equal(contributors[1], 0, "Removed reference was not null");

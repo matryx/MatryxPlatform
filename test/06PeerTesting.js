@@ -433,6 +433,16 @@ contract('ReputationTesting', function(accounts)
       assert.isTrue(transferAmount > 0, "Submission's transfer amount should be greater than 0.");
     })
 
+    it("Unable to flag a missing reference of someone with not enough reputation", async function() {
+      try {
+          await peerTwo.flagMissingReference(submissionOneAddress, submissionTwoAddress, {gas: gasEstimate});
+          assert.fail('Expected revert not received');
+        } catch (error) {
+          const revertFound = error.message.search('revert') >= 0;
+          assert(revertFound, 'Unable to catch revert');
+        }
+    });
+
     it("Able to flag a missing reference", async function() {
       submissionA = await tournament.createSubmission("submissionA", accounts[1], "external address A", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1], gas: gasEstimate});
       submissionAAddress = submissionA.logs[0].args._submissionAddress;
@@ -544,8 +554,8 @@ contract('ReputationTesting', function(accounts)
 
     it("Able to get flagged by peer who has never judged me before", async function() {
       //get 3rd peer
-      peerThreeAddress = await platform.peerAddress(accounts[3]);
-      peerThree = web3.eth.contract(MatryxPeer.abi).at(peerThreeAddress);
+      let peerThreeAddress = await platform.peerAddress(accounts[3]);
+      let peerThree = web3.eth.contract(MatryxPeer.abi).at(peerThreeAddress);
 
       //make 3rd submission
       await platform.enterTournament(tournamentAddress, {from: accounts[3], gas: gasEstimate});
