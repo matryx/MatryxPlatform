@@ -25,9 +25,7 @@ contract MatryxPeerFactory is Ownable {
 	{
 		uint128 integralTopValue = fastSigmoid(peerCount+2);
 		uint128 integralBottomValue = fastSigmoid(peerCount+1);
-		uint128 trustValue = integralTopValue - integralBottomValue;
-		require(trustValue >= 0);
-		require(trustValue <= 1*10**18);
+		uint128 trustValue = integralTopValue.sub(integralBottomValue);
 
 		return trustValue;
 	}
