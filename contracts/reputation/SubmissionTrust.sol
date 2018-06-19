@@ -133,8 +133,8 @@ contract SubmissionTrust is Ownable
 	/// _reference Reference being approved by msg.sender.
 	function approveReference(address _reference) public
 	{
-		//require(addressToReferenceInfo[_reference].exists == true);
-  		//require(addressToReferenceInfo[_reference].approved == false);
+		require(addressToReferenceInfo[_reference].exists == true);
+  		require(addressToReferenceInfo[_reference].approved == false);
 
   		// Update state variables regarding the approved reference
   		approvedReferences = approvedReferences.add(1);
@@ -246,7 +246,7 @@ contract SubmissionTrust is Ownable
 	function removeMissingReferenceFlag(address _reference) public
 	{
 		//Ensure that this reference was previously flagged as missing (MatryxSubmission)
-		//require(addressToReferenceInfo[_reference].flagged == true);
+		require(addressToReferenceInfo[_reference].flagged == true);
 
 		missingReferenceToIndex[_reference].exists = false;
 		addressToReferenceInfo[_reference].flagged = false;
