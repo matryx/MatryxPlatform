@@ -220,9 +220,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   function removeSubmission(address _submissionAddress, address _tournamentAddress) public returns (bool)
   {
-    require(addressToOwnsSubmission[msg.sender][_submissionAddress]);
     require(tournamentExists[_tournamentAddress]);
     require(submissionExists[_submissionAddress]);
+    require(addressToOwnsSubmission[msg.sender][_submissionAddress]);
 
       IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
       address owner = Ownable(_submissionAddress).getOwner();
@@ -592,5 +592,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
      require(_index >= 0);
      require(_index < allTournaments.length);
      return allTournaments[_index];
+   }
+
+   function forceRevert(){
+    revert();
    }
 }
