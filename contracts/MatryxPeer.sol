@@ -72,17 +72,17 @@ contract MatryxPeer is Ownable {
 		_;
 	}
 
-	modifier notMe()
-	{
-		require(msg.sender != address(this));
-		_;
-	}
+	// modifier notMe()
+	// {
+	// 	require(msg.sender != address(this));
+	// 	_;
+	// }
 
-	modifier notOwner()
-	{
-		require(msg.sender != owner);
-		_;
-	}
+	// modifier notOwner()
+	// {
+	// 	require(msg.sender != owner);
+	// 	_;
+	// }
 
 	modifier ownerOrSubmission(address _submission)
 	{
@@ -160,7 +160,7 @@ contract MatryxPeer is Ownable {
 		return MatryxPeer(_peer).receiveDistrust(totalTrustGiven, globalTrust);
 	}
 
-	function receiveTrust(uint128 _newTotalTrust, uint128 _senderReputation) public notMe notOwner onlyPeer returns (uint128)
+	function receiveTrust(uint128 _newTotalTrust, uint128 _senderReputation) public /*notMe notOwner*/ onlyPeer returns (uint128)
 	{	
 		// remove peer's influence on my reputation before adding their new influence
 		if(peerHasJudgedMe[msg.sender])
@@ -191,7 +191,7 @@ contract MatryxPeer is Ownable {
 		return uint128(peersNewInfluenceOnMyReputation.sub(peersOldInfluenceOnMyReputation));
 	}
 
-	function receiveDistrust(uint128 _newTotalTrust, uint128 _senderReputation) public notMe notOwner onlyPeer returns (uint128)
+	function receiveDistrust(uint128 _newTotalTrust, uint128 _senderReputation) public /*notMe notOwner*/ onlyPeer returns (uint128)
 	{
 		// remove peer's influence on my reputation before adding their new influence
 		if(peerHasJudgedMe[msg.sender])
@@ -211,7 +211,7 @@ contract MatryxPeer is Ownable {
 		//I don't have enough trust to be able to deduct some of it for having a submission flagged
 		if(judgingPeerToUnnormalizedTrust[msg.sender] < one_eighteenDecimal)
 		{
-			revert();
+			//revert();
 		}
 
 		//if the new total trust is zero, we don't have any new influence to add
@@ -281,6 +281,8 @@ contract MatryxPeer is Ownable {
 		// Require that the platform knows the submission.
 		// Require that the platform knows the reference we'd like to vindicate.
 		// Require that we're the author of the reference we're attempting to vindicate
+		// Require that we've flagged the submission before.
+		//require(submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] > 0);
 
 		submissionToReferencesMetadata[_submissionAddress].missingReferenceCount = submissionToReferencesMetadata[_submissionAddress].missingReferenceCount.sub(1);
 		totalTrustGiven = totalTrustGiven.add(1);
@@ -293,6 +295,9 @@ contract MatryxPeer is Ownable {
 		judgedPeerToUnnormalizedTrust[submissionAuthor] = judgedPeerToUnnormalizedTrust[submissionAuthor].add(one_eighteenDecimal);
 
 		MatryxPeer(submissionAuthor).restoreTrust(submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference]);
+
+		//clean up previous distrust given
+		submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] = 0;
 	}
 
 	function restoreTrust(uint128 _trustRemoved) public
@@ -336,6 +341,8 @@ contract MatryxPeer is Ownable {
 		// Require that the platform knows the submission.
 		// Require that the platform knows the reference we'd like to decry.
 		// Require that we're the author of the reference we're attempting to decry.
+		// Require that we have approvel the reference before
+		//require(submissionToReferenceToTrustGiven[_submissionAddress][_reference] > 0);
 
 		// Remove 1 from the state var keeping track of the number of approved references on this submission
 		submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.sub(1);
@@ -350,6 +357,9 @@ contract MatryxPeer is Ownable {
 		judgedPeerToUnnormalizedTrust[submissionAuthor] = judgedPeerToUnnormalizedTrust[submissionAuthor].add(one_eighteenDecimal);
 
 		MatryxPeer(submissionAuthor).revokeTrust(submissionToReferenceToTrustGiven[_submissionAddress][_reference]);
+
+		//clean up previous trust given
+		submissionToReferenceToTrustGiven[_submissionAddress][_reference] = 0;
 	}
 
 	function revokeTrust(uint128 _trustGiven) public
