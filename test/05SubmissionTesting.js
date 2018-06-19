@@ -184,6 +184,17 @@ contract('MatryxSubmission', function(accounts)
 		assert.equal(references[1], submissionTwo.address, "References on submission not updated correctly");
 	})
 
+	it("Unable to add same reference twice", async function() {
+		try {
+          await submissionOne.addReference(submissionTwo.address, {gas: gasEstimate});
+          assert.fail('Expected revert not received');
+        } catch (error) {
+          console.log(error);
+          const revertFound = error.message.search('revert') >= 0;
+          assert(revertFound, 'Unable to catch revert');
+        }
+	})
+
 	it("Able to withdraw reward", async function() {
 		let reward = await submissionOne.withdrawReward.call(accounts[0]);
 		console.log("reward: " + reward);

@@ -660,8 +660,7 @@ contract('RevertsMatryxPeer', function(accounts){
       try {
     			await peerOne.flagMissingReference(0x0, submissionOneAddress, {from: accounts[1], gas: gasEstimate});
    				assert.fail('Expected revert not received');
-  			} catch (error) {
-  				console.log(error);
+  		} catch (error) {
     			const revertFound = error.message.search('revert') >= 0;
     			assert(revertFound, 'Unable to catch revert');
   			}

@@ -40,9 +40,10 @@ contract('Ownable', function(accounts) {
   			}
 	});
 
-	it("Unable to transfer ownership from account that is not current owner", async function() {
+	it("Only the current owner is able to transfer ownership", async function() {
 		ownable = await Ownable.new({from: web3.eth.accounts[0]});
 		try {
+				//accounts[3] should not be able to call transfer ownership
     			await ownable.transferOwnership(accounts[3], {from: accounts[1]});
    				assert.fail('Expected revert not received');
   			} catch (error) {
