@@ -15,7 +15,7 @@ import "./Ownable.sol";
 
 /// @title MatryxPlatform - The Matryx platform contract.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
-contract MatryxPlatform is Ownable, IMatryxPlatform {
+contract MatryxPlatform is Ownable {
   using SafeMath for uint256;
   using SafeMath128 for uint128;
 

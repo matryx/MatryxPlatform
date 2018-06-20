@@ -25,7 +25,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     //Tournament identification
     bytes32[3] public title;
-    string public titleTwo;
     bytes32[2] public descriptionHash;
     bytes32 public categoryHash;
 

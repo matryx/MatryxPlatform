@@ -188,6 +188,11 @@ contract MatryxRound is Ownable, IMatryxRound {
         }
     }
 
+    function getNow() public view returns (uint256)
+    {
+    	return now;
+    }
+
 	/// @dev Returns whether or not the submission is accessible to the requester.
 	/// @param _index Index of the submission being requested.
     /// @return Whether or not the submission is accessible to the requester.
