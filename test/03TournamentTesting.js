@@ -239,7 +239,27 @@ contract('MatryxTournament', function(accounts) {
         // assert that the tournament is closed
         assert.equal(roundOpen.valueOf(), false, "The round should be closed.");
     });
-  });
+
+    it("Unable to enter user in tournament after the tournament is closed", async function() {
+        try {
+          await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: gasEstimate});;
+          assert.fail('Expected revert not received');
+        } catch (error) {
+          const revertFound = error.message.search('revert') >= 0;
+          assert(revertFound, 'Unable to catch revert');
+        }
+    });
+
+    it("Unable to create submission after the tournament is closed", async function() {
+        try {
+          await tournament.createSubmission("submissionTry", accounts[0], "external address T", ["0x0"], ["0x0"], ["0x0"], {gas: gasEstimate});
+          assert.fail('Expected revert not received');
+        } catch (error) {
+          const revertFound = error.message.search('revert') >= 0;
+          assert(revertFound, 'Unable to catch revert');
+        }
+    });
+});
 
 contract('MatryxTournament', function(accounts) {
     let platform;

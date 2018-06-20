@@ -726,6 +726,8 @@ contract('ReputationTesting', function(accounts)
 
       //peer3 flags submission2 as missing a reference to submission3
       //peer2's reputation decreases
+      let judgingPeerToUnnormalizedTrust = await peerTwo.getJudgingPeerToUnnormalizedTrust(peerThreeAddress);
+      console.log("judgingPeerToUnnormalizedTrust: " + judgingPeerToUnnormalizedTrust);
       await peerThree.flagMissingReference(submissionTwoAddress, submissionThreeAddress, {from: accounts[3], gas: gasEstimate});
       console.log("flag added");
 
@@ -739,6 +741,17 @@ contract('ReputationTesting', function(accounts)
       //peer1 tries to approve reference to submission1 within submission2 again
       try {
           await peerOne.approveReference(submissionTwoAddress, submissionOneAddress, {from: accounts[1], gas: gasEstimate});
+          assert.fail('Expected revert not received');
+        } catch (error) {
+          const revertFound = error.message.search('revert') >= 0;
+          assert(revertFound, 'Unable to catch revert');
+        }
+    });
+
+    it("Unable to approve reference that wasn't added by submission first.", async function() {
+      //peer1 tries to approve reference to submission1 within submission2 again
+      try {
+          await peerTwo.approveReference(submissionOneAddress, submissionTwoAddress, {from: accounts[2], gas: gasEstimate});
           assert.fail('Expected revert not received');
         } catch (error) {
           const revertFound = error.message.search('revert') >= 0;
@@ -788,8 +801,7 @@ contract('ReputationTesting', function(accounts)
           await peerOne.flagMissingReference(submissionThreeAddress, submissionOneAddress, {from: accounts[1], gas: gasEstimate});
           assert.fail('Expected revert not received');
         } catch (error) {
-          console.log(error);
-          const revertFound = error.message.search('revert') >= 0;
+          const revertFound = (error.message.search('revert') >= 0) || (error.message.search('invalid opcode') >= 0);
           assert(revertFound, 'Unable to catch revert');
         }
     });
@@ -800,8 +812,7 @@ contract('ReputationTesting', function(accounts)
           await peerTwo.removeMissingReferenceFlag(submissionOneAddress, submissionTwoAddress, {from: accounts[2], gas: gasEstimate});
           assert.fail('Expected revert not received');
         } catch (error) {
-          console.log(error);
-          const revertFound = error.message.search('revert') >= 0;
+          const revertFound = (error.message.search('revert') >= 0) || (error.message.search('invalid opcode') >= 0);
           assert(revertFound, 'Unable to catch revert');
         }
     });
@@ -812,22 +823,219 @@ contract('ReputationTesting', function(accounts)
           await peerTwo.removeReferenceApproval(submissionOneAddress, submissionTwoAddress, {from: accounts[2], gas: gasEstimate});
           assert.fail('Expected revert not received');
         } catch (error) {
-          console.log(error);
-          const revertFound = error.message.search('revert') >= 0;
+          const revertFound = (error.message.search('revert') >= 0) || (error.message.search('invalid opcode') >= 0);
           assert(revertFound, 'Unable to catch revert');
         }
     });
 
     it("Able to remove reference after it has been approved", async function() {
+      console.log("submissionThreeAddress: " + submissionThreeAddress);
+      let references = await submissionTwo.getReferences.call();
+      console.log("references before: " + references);
+      await submissionTwo.removeReference(submissionThreeAddress, {from: accounts[2], gas: gasEstimate});
+      references = await submissionTwo.getReferences.call();
+      console.log("references after: " + references);
+      assert.equal(references[3], 0, "Reference was not successfully removed.");
+    });
+
+});
+
+
+contract('ReputationTesting', function(accounts)
+{
+    let platform;
+    let token;
+
+    let tournamentAddress;
+    let tournament;
+
+    let submissionOne;
+    let submissionOneAddress;
+    let submissionTwo;
+    let submissionTwoAddress;
+    let submissionThree;
+    let submissionThreeAddress;
+
+    let peerOne;
+    let peerTwo;
+    let peerThree;
+    let peerOneAddress;
+    let peerTwoAddress;
+    let peerThreeAddress;
+
+    //for code coverage
+    let gasEstimate = 30000000;
+    //for regular testing
+    //let gasEstimate = 3000000;
+
+    it("Able approve a reference in my submission after I have been flagged for missing the reference", async function() {
+      web3.eth.defaultAccount = web3.eth.accounts[0];
+      //deploy platform
+      platform = await MatryxPlatform.deployed();
+      token = web3.eth.contract(MatryxToken.abi).at(MatryxToken.address);
+      platform = web3.eth.contract(MatryxPlatform.abi).at(MatryxPlatform.address);
+
+      //create peers
+      await platform.createPeer.sendTransaction({gas: gasEstimate});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[1]});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[2]});
+      await platform.createPeer.sendTransaction({gas: gasEstimate, from: web3.eth.accounts[3]});
+
+      await token.setReleaseAgent(web3.eth.accounts[0]);
+
+      //release token transfer and mint tokens for the accounts
+      await token.releaseTokenTransfer.sendTransaction({gas: gasEstimate});
+      await token.mint(web3.eth.accounts[0], 10000*10**18)
+      await token.mint(web3.eth.accounts[1], 2*10**18)
+      await token.mint(web3.eth.accounts[2], 2*10**18)
+      await token.mint(web3.eth.accounts[3], 2*10**18)
+
+      await token.approve(MatryxPlatform.address, 100*10**18)
+
+      // create a tournament
+      createTournamentTransaction = await platform.createTournament("category", "tournament", "external address", 100*10**18, 2*10**18, {gas: gasEstimate});
+      tournamentCreatedEvent = platform.TournamentCreated();
+
+      tournamentCreatedEventsPromise = new Promise((resolve, reject) =>
+        tournamentCreatedEvent.get((err, res) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(res);
+            }
+        }))
+      var tournamentsCreatedEvents = await tournamentCreatedEventsPromise;
+
+      //get tournament address
+      tournamentAddress = tournamentsCreatedEvents[0].args._tournamentAddress;
+      // create tournament from address
+      tournament = await MatryxTournament.at(tournamentAddress);
+
+      //open tournament
+      let tournamentOpen = await tournament.openTournament({gas: gasEstimate});
+
+      //enter tournament
+      let enteredTournament = await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: gasEstimate});
+
+      //create and start round
+      let roundAddress = await tournament.createRound(5);
+      round = await tournament.currentRound();
+      roundAddress = round[1];
+
+      //start round
+      await tournament.startRound(10, 10, {gas: gasEstimate});
+      round = web3.eth.contract(MatryxRound.abi).at(roundAddress);
+
+      //open round
+      let roundOpen = await round.isOpen();
+
+      //accounts[1] enters tournament
+      await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: gasEstimate});
+
+      //make a sumbission from account1
+      submissionOne = await tournament.createSubmission("submission1", accounts[1], "external address 1", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1], gas: gasEstimate});
+      submissionOneAddress = submissionOne.logs[0].args._submissionAddress;
+
+      //accounts[2] enters tournament
+      await platform.enterTournament(tournamentAddress, {from: accounts[2], gas: gasEstimate});
+
+      //make a sumbission from account2
+      submissionTwo = await tournament.createSubmission("submission2", accounts[2], "external address 2", ["0x0"], ["0x0"], ["0x0"], {from: accounts[2], gas: gasEstimate});
+      submissionTwoAddress = submissionTwo.logs[0].args._submissionAddress;
       //get my submissions
-      mySubmissions = await tournament.mySubmissions.call({from: accounts[2]});
+      let mySubmissions = await tournament.mySubmissions.call({from: accounts[2]});
       //get submission two
       submissionTwo = await MatryxSubmission.at(mySubmissions[0]);
 
-      await submissionTwo.removeReference(submissionThreeAddress, {from: accounts[2], gas: gasEstimate});
+      //accounts[3] enters tournament
+      await platform.enterTournament(tournamentAddress, {from: accounts[3], gas: gasEstimate});
+
+      //make a sumbission from account3
+      submissionThree = await tournament.createSubmission("submission3", accounts[3], "external address 3", ["0x0"], ["0x0"], ["0x0"], {from: accounts[3], gas: gasEstimate});
+      submissionThreeAddress = submissionThree.logs[0].args._submissionAddress;
+
+      //get peers
+      peerOneAddress = await platform.peerAddress(accounts[1]);
+      peerTwoAddress = await platform.peerAddress(accounts[2]);
+      peerThreeAddress = await platform.peerAddress(accounts[3]);
+      peerOne = web3.eth.contract(MatryxPeer.abi).at(peerOneAddress);
+      peerTwo = web3.eth.contract(MatryxPeer.abi).at(peerTwoAddress);
+      peerThree = web3.eth.contract(MatryxPeer.abi).at(peerThreeAddress);
+
+      await submissionTwo.addReference(submissionOneAddress, {from: accounts[2]});
+
+      //peer 1 approves a reference to submission1 within submission2
+      //peer 2's reputation increases
+      await peerOne.approveReference(submissionTwoAddress, submissionOneAddress, {from: accounts[1], gas: gasEstimate});
+      console.log("1st approval");
+
+      //make another submission from accounts[1]
+      submissionOneB = await tournament.createSubmission("submission1B", accounts[1], "external address 1B", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1], gas: gasEstimate});
+      submissionOneBAddress = submissionOneB.logs[0].args._submissionAddress;
+
+      await submissionTwo.addReference(submissionOneBAddress, {from: accounts[2]});
+      //give some more trust to peer2
+      await peerOne.approveReference(submissionTwoAddress, submissionOneBAddress, {from: accounts[1], gas: gasEstimate});
+      console.log("2nd approval");
+
+      //get my submissions
+      mySubmissions = await tournament.mySubmissions.call({from: accounts[3]});
+      //get submission two
+      submissionThree = await MatryxSubmission.at(mySubmissions[0]);
+
+      //peer3 flags submission2 as missing a reference to submission3
+      //peer2's reputation decreases
+      await peerThree.flagMissingReference(submissionTwoAddress, submissionThreeAddress, {from: accounts[3], gas: gasEstimate});
+      console.log("flag added");
+
+      //now submisison2 adds submission 3 and peer3 approves the submission reference
+      await submissionTwo.addReference(submissionThreeAddress, {from: accounts[2]});
+      await peerThree.approveReference(submissionTwoAddress, submissionThreeAddress, {from: accounts[3]});
+      console.log("submisison2 now cites submisison3 as a reference");
+
+      //get my references
       let references = await submissionTwo.getReferences.call();
       console.log("references: " + references);
-      assert.equal(references[1], 0, "Reference was not successfully removed.");
+      console.log("submissionThreeAddress: " + submissionThreeAddress);
+
+      assert.equal(references[3], submissionThreeAddress, "Reference was not successfully approved.");
+    });
+
+    it("Able to remove reference approval if already flagged submission for missing the reference", async function() {
+      let peerTwoReputationBefore = await peerTwo.getReputation();
+      console.log("peerTwoReputationBefore " + peerTwoReputationBefore);
+
+      let references = await submissionTwo.getReferences.call();
+      console.log("references before: " + references);
+
+      await peerThree.removeReferenceApproval(submissionTwoAddress, submissionThreeAddress, {from: accounts[3]});
+      //get my references
+      references = await submissionTwo.getReferences.call();
+      console.log("references after: " + references);
+      console.log("submissionThreeAddress: " + submissionThreeAddress);
+
+      let peerTwoReputationAfter = await peerTwo.getReputation();
+      console.log("peerTwoReputationAfter " + peerTwoReputationAfter);
+
+      assert.isTrue(peerTwoReputationAfter < peerTwoReputationBefore, "Reference approval was not successfully removed.");
+    });
+
+    it("Able to add multiple missing reference flags to one submisison", async function() {
+      let peerTwoReputationBefore = await peerTwo.getReputation();
+      console.log("peerTwoReputationBefore " + peerTwoReputationBefore);
+
+      //make another sumbission from account3
+      let submissionThreeB = await tournament.createSubmission("submission3B", accounts[3], "external address 3B", ["0x0"], ["0x0"], ["0x0"], {from: accounts[3], gas: gasEstimate});
+      let submissionThreeBAddress = submissionThreeB.logs[0].args._submissionAddress;
+
+      //peer3 adds a second misisng reference flag to submission2
+      await peerThree.flagMissingReference(submissionTwoAddress, submissionThreeBAddress, {from: accounts[3], gas: gasEstimate});
+      console.log("flag added");
+
+      let peerTwoReputationAfter = await peerTwo.getReputation();
+      console.log("peerTwoReputationAfter " + peerTwoReputationAfter);
+
+      assert.equal(peerTwoReputationAfter < peerTwoReputationBefore, "Reference approval was not successfully removed.");
     });
 
 });

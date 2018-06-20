@@ -295,6 +295,17 @@ contract('RevertsMatryxTournament', function(accounts){
   			}
 	});
 
+  it("Unable to create tournament with 0 bounty", async function() {
+        try {
+          await platform.createTournament("category", "tournament", "external address", 0, 2*10**18, {from: accounts[1], gas: gasEstimate});
+          assert.fail('Expected revert not received');
+        } catch (error) {
+          console.log(error);
+          const revertFound = (error.message.search('revert') >= 0);
+          assert(revertFound, 'Unable to catch revert');
+        }
+  });
+
 	//Testing modifiers
 	it("Unable to invoke submission created event from tournament (only round)", async function() {
   			try {
