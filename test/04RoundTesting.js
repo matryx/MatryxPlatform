@@ -116,20 +116,8 @@ contract('MatryxRound', function(accounts)
 	});
 
 	it("Submission is accessible to tournament owner", async function() {
-    //get gas estimate for entering tournament
-    // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress, {from: accounts[1]});
-
-    //gas estimate seems to be wayyyy underestimating here
-    //TODO: look into these gas costs
-    // gasEstimate = Math.ceil(gasEstimate * 15);
-
     //enter tournament
 		let enteredTournament = await platform.enterTournament(tournamentAddress, {from: accounts[1], gas: gasEstimate});
-
-    //get gas estimate for creating submission
-    // gasEstimate = await tournament.createSubmission.estimateGas("submission2", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"]);
-    //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
-    // gasEstimate = Math.ceil(gasEstimate * 1.3);
 
     //create submission2
 		let submission2 = await tournament.createSubmission("submission2", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"], {from: accounts[1], gas: gasEstimate});
@@ -139,20 +127,8 @@ contract('MatryxRound', function(accounts)
 	});
 
 	it("Submission is not externally accessible", async function() {
-    //get gas estimate for entering tournament
-    // gasEstimate = await platform.enterTournament.estimateGas(tournamentAddress, {from: accounts[3]});
-
-    //gas estimate seems to be wayyyy underestimating here
-    //TODO: look into these gas costs
-    // gasEstimate = Math.ceil(gasEstimate * 15);
-
 		// Theo enters the tournament and makes a submission
 		let enteredTournament = await platform.enterTournament(tournamentAddress, {from: accounts[3], gas: gasEstimate});
-
-    //get gas estimate for creating submission
-    // gasEstimate = await tournament.createSubmission.estimateGas("submission3", accounts[0], "external address", ["0x0"], ["0x0"], ["0x0"]);
-    //since createSubmission has so many parameters we need to multiply the gas estimate by some constant ~ 1.3
-    // gasEstimate = Math.ceil(gasEstimate * 1.3);
 
     //create submission
 		let submissionTheo = await tournament.createSubmission("submission3", accounts[3], "external address", ["0x0"], ["0x0"], ["0x0"], {from: accounts[3], gas: gasEstimate});
@@ -164,6 +140,16 @@ contract('MatryxRound', function(accounts)
 
 		assert.isFalse(submissionAccessibleToTimmy, "Submission is accessible to Timmy");
 	});
+
+  it("Unable to get submission author externally", async function() {
+    try {
+          await round.getSubmissionAuthor.call(2, {from: accounts[2]});
+          assert.fail('Expected revert not received');
+        } catch (error) {
+          const revertFound = error.message.search('revert') >= 0;
+          assert(revertFound, 'Unable to catch revert');
+        }
+  });
 
   it("Submission is requested by Fred (non-entrant) during tournament", async function() {
     let firstSubmissionAccessibleToFred = await round.submissionIsAccessible.call(0, {from: accounts[4]});
