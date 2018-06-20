@@ -12,7 +12,15 @@ module.exports = {
 	  		host: "localhost",
 	  		port: 8545,
 	    	network_id: "*", // match any network
-	     	gas: 4241593,
+	     	gas: 4541593,
+  			gasPrice: 30000000
+		},
+		testing:
+		{
+			host: "localhost",
+	  		port: 8545,
+	    	network_id: "*", // match any network
+	     	gas: 6741593,
   			gasPrice: 30000000
 		},
 		coverage: 
@@ -21,9 +29,14 @@ module.exports = {
 			network_id: "*",
 			port: 8545,     // <-- If you change this, also set the port option in .solcover.js.
 			gas: 9000000000, // <-- Use this high gas value
-			gasPrice: 10000000000     // <-- Use this low gas price
+			gasPrice: 100000     // <-- Use this low gas price
     	}
 	},
+	mocha: 
+	{
+        enableTimeouts: false
+    },
+
 	solc: 
 	{
   		optimizer: 

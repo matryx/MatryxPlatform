@@ -1,6 +1,8 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
 
 import '../MatryxRound.sol';
+import "../../libraries/LibConstruction.sol";
 
 contract MatryxRoundFactory {
 	address public matryxSubmissionFactoryAddress;
@@ -11,8 +13,8 @@ contract MatryxRoundFactory {
 		matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
 	}
 
-	function createRound(address _platformAddress, address _tournamentAddress, address _owner, uint256 _bountyMTX) public returns (address _roundAddress) {
-		MatryxRound newRound = new MatryxRound(matryxTokenAddress, _platformAddress, _tournamentAddress, matryxSubmissionFactoryAddress, _owner, _bountyMTX);
+	function createRound(address _platformAddress, address _tournamentAddress, address _owner, LibConstruction.RoundData roundData) public returns (address _roundAddress) {
+		MatryxRound newRound = new MatryxRound(_platformAddress, matryxTokenAddress, _tournamentAddress, matryxSubmissionFactoryAddress, _owner, roundData);
 		return newRound;
 	}
 }

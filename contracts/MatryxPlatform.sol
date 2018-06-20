@@ -1,21 +1,21 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
 
-import '../libraries/math/SafeMath.sol';
-import '../libraries/math/SafeMath128.sol';
-import './MatryxOracleMessenger.sol';
-import '../interfaces/IMatryxToken.sol';
-import '../interfaces/IMatryxPeer.sol';
-import '../interfaces/IMatryxPlatform.sol';
-import '../interfaces/factories/IMatryxPeerFactory.sol';
-import '../interfaces/factories/IMatryxTournamentFactory.sol';
-import '../interfaces/IMatryxTournament.sol';
-import '../interfaces/IMatryxRound.sol';
-import '../interfaces/IMatryxSubmission.sol';
-import './Ownable.sol';
+import "../libraries/math/SafeMath.sol";
+import "../libraries/math/SafeMath128.sol";
+import "../interfaces/IMatryxToken.sol";
+import "../interfaces/IMatryxPeer.sol";
+import "../interfaces/IMatryxPlatform.sol";
+import "../interfaces/factories/IMatryxPeerFactory.sol";
+import "../interfaces/factories/IMatryxTournamentFactory.sol";
+import "../interfaces/IMatryxTournament.sol";
+import "../interfaces/IMatryxRound.sol";
+import "../interfaces/IMatryxSubmission.sol";
+import "./Ownable.sol";
 
 /// @title MatryxPlatform - The Matryx platform contract.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
-contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
+contract MatryxPlatform is Ownable {
   using SafeMath for uint256;
   using SafeMath128 for uint128;
 
@@ -23,18 +23,19 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   address public matryxTokenAddress;
   address matryxPeerFactoryAddress;
   address matryxTournamentFactoryAddress;
+  address matryxSubmissionFactoryAddress;
   address matryxSubmissionTrustLibAddress;
   address matryxRoundLibAddress;
 
   address[] public allTournaments;
   bytes32 public hashOfTopCategory;
   bytes32 public hashOfLastCategory;
-  mapping(uint256=>bytes32) public topCategoryByCount;
+  mapping(uint256=>bytes32) public  topCategoryByCount;
   mapping(bytes32=>category) public categoryIterator;
   string[] public categoryList;
 
   mapping(address=>bool) peerExists;
-  mapping(address=>address) ownerToPeerAndPeerToOwner;
+  mapping(address=>address) public ownerToPeerAndPeerToOwner;
   mapping(address=>mapping(address=>bool)) addressToOwnsSubmission;
   mapping(address=>bool) tournamentExists;
   mapping(address=>bool) submissionExists;
@@ -45,11 +46,12 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
   uint256_optional submissionGratitude = uint256_optional({exists: true, value: 2*10**17});
 
-  function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionTrustLibAddress) public
+  function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress, address _matryxSubmissionTrustLibAddress) public
   {
     matryxTokenAddress = _matryxTokenAddress;
     matryxPeerFactoryAddress = _matryxPeerFactoryAddress;
     matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
+    matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
     matryxSubmissionTrustLibAddress = _matryxSubmissionTrustLibAddress;
   }
 
@@ -76,30 +78,32 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    * Events
    */
 
-  event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentOpened(address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress, uint256 _MTXReward);
+  event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentOpened(address _owner, address _tournamentAddress, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, address[] _winningSubmissionAddresses, uint256 _MTXReward);
   event UserEnteredTournament(address _entrant, address _tournamentAddress);
   event QueryID(string queryID);
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
   /// @param _owner Owner of the tournament.
-  /// @param _tournamentAddress Address of the tournament.
-  /// @param _tournamentName Name of the tournament.
-  /// @param _externalAddress External address of the tournament.
+  /// @param _tournamentName_1 First part of the tournament name.
+  /// @param _tournamentName_2 Second part of the tournament name.
+  /// @param _tournamentName_3 Third part of the tournament name.
+  /// @param _externalAddress_1 First part of the external address of the tournament.
+  /// @param _externalAddress_2 Second part of the external address of the tournament.
   /// @param _MTXReward Reward for winning the tournament.
   /// @param _entryFee Fee for entering into the tournament.
-  function invokeTournamentOpenedEvent(address _owner, address _tournamentAddress, string _tournamentName, bytes _externalAddress, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
+  function invokeTournamentOpenedEvent(address _owner, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
   {
-    TournamentOpened(_owner, _tournamentAddress, _tournamentName, _externalAddress, _MTXReward, _entryFee);
+    TournamentOpened(_owner, msg.sender, _tournamentName_1, _tournamentName_2, _tournamentName_3, _externalAddress_1, _externalAddress_2, _MTXReward, _entryFee);
   }
 
   /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
-  /// @param _tournamentAddress Address of the tournament.
   /// @param _finalRoundNumber Index of the round containing the winning submission.
-  /// @param _winningSubmissionAddress Address of the winning submission.
-  function invokeTournamentClosedEvent(address _tournamentAddress, uint256 _finalRoundNumber, address _winningSubmissionAddress, uint256 _MTXReward) public onlyTournament
+  /// @param _winningSubmissionAddresses Address of the winning submission.
+  /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
+  function invokeTournamentClosedEvent(uint256 _finalRoundNumber, address[] _winningSubmissionAddresses, uint256[] _rewardDistribution, uint256 _MTXReward) public onlyTournament
   {
-    TournamentClosed(_tournamentAddress, _finalRoundNumber, _winningSubmissionAddress, _MTXReward);
+    TournamentClosed(msg.sender, _finalRoundNumber, _winningSubmissionAddresses, _MTXReward);
   }
 
   /* 
@@ -122,38 +126,6 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   {
     require(hasPeer(_sender));
     _;
-  }
-
-  /* 
-   * MTX Balance Methods
-   */
-
-  /// @dev Prepares the user's MTX balance, allowing them to use the platform.
-  /// @param _toIgnore Request bytes (deprecated).
-  function prepareBalance(uint256 _toIgnore) public
-  {   
-      // Make sure that the user has not already attempted to prepare their balance
-      uint256 qID = fromQuerierToQueryID[msg.sender];
-      uint256 queryResponse = queryResponses[qID];
-      require(queryResponse == 0x0);
-
-      this.Query(bytes32(_toIgnore), msg.sender);
-  }
-
-  /// @dev Returns whether or not the user can use the platform.
-  /// @return Whether or not user has a positive balance.
-  function balanceIsNonZero() public view returns (bool)
-  {
-      uint balance = latestResponseFromOracle(msg.sender);
-      return balance != 0;
-  }
-
-  /// @dev Returns the user's balance
-  /// @return Sender's MTX balance.
-  function getBalance() public constant returns (uint256)
-  {
-      uint256 balance = latestResponseFromOracle(msg.sender);
-      return balance;
   }
 
   /*
@@ -221,9 +193,8 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   {
     require(addressToOwnsSubmission[msg.sender][_submissionAddress]);
     require(tournamentExists[_tournamentAddress]);
-    
-    if(submissionExists[_submissionAddress])
-    {
+    require(submissionExists[_submissionAddress]);
+
       IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
       address owner = Ownable(_submissionAddress).getOwner();
       uint256 submissionIndex = ownerToSubmissionToSubmissionIndex[owner][_submissionAddress].value;
@@ -234,9 +205,6 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
       IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, owner);
       return true;
-    }
-    
-    return false;
   }
 
   function addTournamentToCategory(address _tournamentAddress, string _category) internal
@@ -255,9 +223,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
         hashOfTopCategory = hashOfCategory;
         hashOfLastCategory = hashOfCategory;
         // Create a new entry in the iterator for it and don't store previous or next pointers
-        categoryIterator[hashOfCategory] = category({name: _category, count: 1, prev: 0, next: 0, tournaments: new address[](0)});
+        categoryIterator[hashOfCategory] = category({name: _category, count: 1, prev: 0x0, next: 0x0, tournaments: new address[](0)});
         // Store the mapping from count 1 to this category
-        topCategoryByCount[1] = hashOfCategory;
+         topCategoryByCount[1] = hashOfCategory;
       }
       else
       {
@@ -267,9 +235,9 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
         // Update that previous last category's next pointer (there's one more after it now)
         categoryIterator[hashOfLastCategory].next = hashOfCategory;
 
-        if(topCategoryByCount[1] == 0x0)
+        if( topCategoryByCount[1] == 0x0)
         {
-          topCategoryByCount[1] = hashOfCategory;
+           topCategoryByCount[1] = hashOfCategory;
         }
       }
 
@@ -287,26 +255,26 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     //  If category.next exists, the top category for our previous count becomes category.next,
     //  otherwise (category.next doesn't exist), the top category for our previous count
     //  we set to 0x0.
-    if(topCategoryByCount[categoryIterator[hashOfCategory].count] == hashOfCategory)
-    {
-      if(categoryIterator[hashOfCategory].next != 0x0)
-      {
-        topCategoryByCount[categoryCount] = categoryIterator[hashOfCategory].next;
-      }
-      else
-      {
-        topCategoryByCount[categoryCount] = 0x0;
-      }
-    }
+    // if( topCategoryByCount[categoryCount] == hashOfCategory)
+    // {
+    //   if(categoryIterator[hashOfCategory].next != 0x0)
+    //   {
+    //      topCategoryByCount[categoryCount] = categoryIterator[hashOfCategory].next;
+    //   }
+    //   else
+    //   {
+    //      topCategoryByCount[categoryCount] = 0x0;
+    //   }
+    // }
 
     uint128 newCount = categoryIterator[hashOfCategory].count + 1;
     categoryIterator[hashOfCategory].count = newCount;
 
     // If the top category for our new count is not defined, 
     // define it as this category.
-    if(topCategoryByCount[newCount] == 0)
+    if( topCategoryByCount[newCount] == 0)
     {
-      topCategoryByCount[newCount] = hashOfCategory;
+       topCategoryByCount[newCount] = hashOfCategory;
     }
 
     // If the count of the category is now greater than the previous category
@@ -316,7 +284,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
       if(categoryIterator[hashOfCategory].count > categoryIterator[categoryIterator[hashOfCategory].prev].count)
       {
         // define A as the top category of its count
-        bytes32 hashOfTopA = topCategoryByCount[categoryIterator[hashOfCategory].count-1];
+        bytes32 hashOfTopA =  topCategoryByCount[categoryIterator[hashOfCategory].count-1];
         if(hashOfTopA == hashOfTopCategory)
         {
           hashOfTopCategory = hashOfCategory;
@@ -324,9 +292,11 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
 
         if(hashOfCategory == hashOfLastCategory)
         {
-          hashOfLastCategory = categoryIterator[hashOfCategory].prev;
+          //update pointer to hash of last category
+          hashOfLastCategory = hashOfTopA;
         }
 
+        //flip the two categories and rearrange the pointers
         category storage A = categoryIterator[hashOfTopA];
         category storage B = categoryIterator[hashOfCategory];
 
@@ -366,6 +336,16 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
         }
       }
     }
+
+    //update top category by count
+      if(categoryIterator[hashOfCategory].next != 0x0)
+      {
+         topCategoryByCount[categoryCount] = categoryIterator[hashOfCategory].next;
+      }
+      else
+      {
+         topCategoryByCount[categoryCount] = 0x0;
+      }
   }
 
   function getTournamentsByCategory(string _category) external constant returns (address[])
@@ -378,6 +358,7 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return categoryIterator[keccak256(_category)].count;
   }
 
+  //Get the index-th topmost category (index 0 returns the overall top category)
   function getTopCategory(uint256 _index) external constant returns (string)
   {
     bytes32 categoryHash = hashOfTopCategory;
@@ -397,10 +378,15 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return categoryName;
   }
 
-  function switchTournamentCategory(string discipline) onlyTournament public
+  function getCategoryByIndex(uint256 _index) public constant returns (string)
   {
-    revert();
+    return categoryList[_index];
   }
+
+  // function switchTournamentCategory(string discipline) onlyTournament public
+  // {
+  //   revert();
+  // }
 
   /* 
    * Tournament Entry Methods
@@ -411,18 +397,19 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   /// @return _success Whether or not user was successfully entered into the tournament.
   function enterTournament(address _tournamentAddress) public onlyPeerLinked(msg.sender) returns (bool _success)
   {
-      // TODO: Consider scheme: 
-      // submission owner: peer linked account
-      // submission author: peer
       require(tournamentExists[_tournamentAddress]);
       
       IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
+      uint256 entryFee = tournament.getEntryFee();
 
-      bool success = tournament.enterUserInTournament(msg.sender);
+      bool success = IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, _tournamentAddress, entryFee);
       if(success)
       {
-        updateUsersTournaments(msg.sender, _tournamentAddress);
-        UserEnteredTournament(msg.sender, _tournamentAddress);
+        success = tournament.enterUserInTournament(msg.sender);
+        if(success)
+        {
+          UserEnteredTournament(msg.sender, _tournamentAddress);
+        }
       }
 
       return success;
@@ -433,31 +420,33 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    */
 
   /// @dev Create a new tournament.
-  /// @param _tournamentName Name of the new tournament.
-  /// @param _externalAddress Off-chain content hash of tournament details (ipfs hash)
-  /// @param _BountyMTX Total tournament reward in MTX.
-  /// @param _entryFee Fee to charge participant upon entering into tournament.
-  /// @return _tournamentAddress Address of the newly created tournament
-  function createTournament(string _category, string _tournamentName, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public onlyPeerLinked(msg.sender) returns (address _tournamentAddress)
+  /// @param tournamentData Data to populate the new tournament with. Includes:
+  ///    category: Discipline the tournament falls under.
+  ///    title: Name of the new tournament.
+  ///    contentHash: Off-chain content hash of tournament details (ipfs hash)
+  ///    Bounty: Total tournament reward in MTX.
+  ///    entryFee: Fee to charge participant upon entering into the tournament.
+  /// @param roundData Data to populate the first round of the tournament with. Includes:
+  ///    startTime: The start time (unix-epoch-based) of the first round.
+  ///    endTime: The end time (unix-epoch-based) of the first round.
+  ///    reviewDuration: The amount of the tournament owner has to determine the winners of the round.
+  ///    bounty: The reward for the first round's winners.
+  /// @return _tournamentAddress Address of the newly created tournament.
+  function createTournament(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) returns (address _tournamentAddress)
   {
-    IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-    // Check that the platform has a sufficient allowance to
-    // transfer the reward from the tournament creator to itself
-    require(matryxToken.allowance(msg.sender, this) >= _BountyMTX);
-
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-    address newTournament = tournamentFactory.createTournament(msg.sender, _category, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
-    TournamentCreated(_category, msg.sender, newTournament, _tournamentName, _externalAddress, _BountyMTX, _entryFee);
+    address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
+    //MatryxToken.transferFrom(newTournament, **round_address**, uint256 bounty);
+    TournamentCreated(_category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.contentHash_1, tournamentData.contentHash_2, tournamentData.Bounty, tournamentData.entryFee);
     
     addTournamentToCategory(newTournament, _category);
 
-    // Transfer the MTX reward to the tournament.
-    bool transferSuccess = matryxToken.transferFrom(msg.sender, newTournament, _BountyMTX);
-    require(transferSuccess);
-    
-    // update data structures
+    require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.Bounty));
+    IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
+    //update data structures
     allTournaments.push(newTournament);
     tournamentExists[newTournament] = true;
+    updateUsersTournaments(msg.sender, newTournament);
 
     return newTournament;
   }
@@ -481,13 +470,11 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
     return peerExists[_peerAddress];
   }
 
-  // TODO: add constant
   function hasPeer(address _sender) public constant returns (bool)
   {
     return (ownerToPeerAndPeerToOwner[_sender] != 0x0);
   }
 
-  // TODO: add constant
   function peerExistsAndOwnsSubmission(address _peer, address _reference) public constant returns (bool)
   {
     bool isAPeer = peerExists[_peer];
@@ -505,6 +492,11 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
   function isSubmission(address _submissionAddress) public constant returns (bool)
   {
     return submissionExists[_submissionAddress];
+  }
+
+  function hashForCategory(bytes32 _categoryHash) public constant returns (string _category)
+  {
+    return "temporary category";
   }
 
   /// @dev Returns whether or not the given tournament belongs to the sender.
@@ -543,11 +535,6 @@ contract MatryxPlatform is MatryxOracleMessenger, IMatryxPlatform {
    function getSubmissionTrustLibrary() public constant returns (address)
    {
       return matryxSubmissionTrustLibAddress;
-   }
-
-   function getRoundLibAddress() public constant returns (address)
-   {
-      return matryxRoundLibAddress;
    }
 
    /// @dev    Returns a weight from 0 to 1 (18 decimal uint) indicating
