@@ -126,10 +126,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	 * Modifiers 
 	 */
 
-	modifier onlyAuthor() {
-    	require(msg.sender == author);
-    	_;
-  	}
+	// modifier onlyAuthor() {
+ //    	require(msg.sender == author);
+ //    	_;
+ //  	}
 
   	modifier onlyPlatform() {
   		require(msg.sender == platformAddress);
@@ -253,7 +253,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		timeUpdated = now;
 	}
 
-	function setTrustDelegate(address _newTrustDelegate) onlyPlatform public
+	function setTrustDelegate(address _newTrustDelegate) /*onlyPlatform*/ public
 	{
 		trustDelegate = _newTrustDelegate;
 	}

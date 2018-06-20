@@ -201,8 +201,8 @@ contract SubmissionTrust is Ownable
 	/// @param  _reference Missing reference in this submission.
 	function flagMissingReference(address _reference) public
 	{
-		//require(addressToReferenceInfo[_reference].exists == false);
-  		//require(addressToReferenceInfo[_reference].flagged == false);
+		require(addressToReferenceInfo[_reference].exists == false);
+  		require(addressToReferenceInfo[_reference].flagged == false);
 
 		// Update state variables regarding the missing reference
 		missingReferences.push(_reference);
