@@ -8,3 +8,5 @@ module.exports = function(deployer) {
 		deployer.link(SafeMath, MatryxRoundFactory);
 		return deployer.deploy(MatryxRoundFactory, MatryxToken.address, MatryxSubmissionFactory.address);
 };
+
+// 0x89c81164a847fae12841c7d2371864c7656f91c9

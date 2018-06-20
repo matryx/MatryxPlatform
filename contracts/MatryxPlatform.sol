@@ -3,7 +3,6 @@ pragma experimental ABIEncoderV2;
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/math/SafeMath128.sol";
-import "../libraries/LibConstruction.sol";
 import "../interfaces/IMatryxToken.sol";
 import "../interfaces/IMatryxPeer.sol";
 import "../interfaces/IMatryxPlatform.sol";
@@ -36,7 +35,7 @@ contract MatryxPlatform is Ownable, IMatryxPlatform {
   string[] public categoryList;
 
   mapping(address=>bool) peerExists;
-  mapping(address=>address) ownerToPeerAndPeerToOwner;
+  mapping(address=>address) public ownerToPeerAndPeerToOwner;
   mapping(address=>mapping(address=>bool)) addressToOwnsSubmission;
   mapping(address=>bool) tournamentExists;
   mapping(address=>bool) submissionExists;
@@ -433,7 +432,7 @@ contract MatryxPlatform is Ownable, IMatryxPlatform {
   ///    reviewDuration: The amount of the tournament owner has to determine the winners of the round.
   ///    bounty: The reward for the first round's winners.
   /// @return _tournamentAddress Address of the newly created tournament.
-  function createTournament(string _category, LibConstruction.TournamentData memory tournamentData, LibConstruction.RoundData memory roundData) returns (address _tournamentAddress)
+  function createTournament(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) returns (address _tournamentAddress)
   {
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
     address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);

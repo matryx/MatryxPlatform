@@ -99,7 +99,7 @@ contract MatryxPeer is Ownable {
 		_;
 	}
 
-	function MatryxPeer(address _platformAddress, address _owner, uint128 _initialTrust) public
+	constructor(address _platformAddress, address _owner, uint128 _initialTrust) public
 	{
 		platformAddress = _platformAddress;
 		owner = _owner;

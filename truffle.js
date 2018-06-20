@@ -12,7 +12,15 @@ module.exports = {
 	  		host: "localhost",
 	  		port: 8545,
 	    	network_id: "*", // match any network
-	     	gas: 5241593,
+	     	gas: 4541593,
+  			gasPrice: 30000000
+		},
+		testing:
+		{
+			host: "localhost",
+	  		port: 8545,
+	    	network_id: "*", // match any network
+	     	gas: 6741593,
   			gasPrice: 30000000
 		},
 		coverage: 

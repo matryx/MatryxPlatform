@@ -166,27 +166,26 @@ contract MatryxRound is Ownable, IMatryxRound {
 	// TODO how do we keep track of the startTime, endTime, and winningSubmissions?
     function getState() public view returns (uint256)
     {
-    	return 1;
-        // if(now < startTime)
-        // {
-        //     return uint256(RoundState.NotYetOpen);
-        // }
-        // else if(now > startTime && now < endTime)
-        // {
-        //     return uint256(RoundState.Open);
-        // }
-        // else if(now >= endTime && now < endTime.add(reviewPeriod))
-        // {
-        //     return uint256(RoundState.InReview);
-        // }
-        // else if(winningSubmissions.length > 0)
-        // {
-        //     return uint256(RoundState.Closed);
-        // }
-        // else
-        // {
-        //     return uint256(RoundState.Abandoned);
-        // }
+        if(now < startTime)
+        {
+            return uint256(RoundState.NotYetOpen);
+        }
+        else if(now > startTime && now < endTime)
+        {
+            return uint256(RoundState.Open);
+        }
+        else if(now >= endTime && now < endTime.add(reviewPeriod))
+        {
+            return uint256(RoundState.InReview);
+        }
+        else if(winningSubmissions.length > 0)
+        {
+            return uint256(RoundState.Closed);
+        }
+        else
+        {
+            return uint256(RoundState.Abandoned);
+        }
     }
 
 	/// @dev Returns whether or not the submission is accessible to the requester.
@@ -325,10 +324,13 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 		IMatryxToken token = IMatryxToken(matryxTokenAddress);
 
+		uint256 distributionTotal;
 		for(uint256 i = 0; i < _submissionAddresses.length; i++)
 		{
+			distributionTotal = distributionTotal + _rewardDistribution[i];
+			require(distributionTotal <= 1*10**18);
 			require(submissionExists(_submissionAddresses[i]));
-			token.transfer(_submissionAddresses[i], bounty.mul(1*10**18).div(_rewardDistribution[i]));
+			token.transfer(_submissionAddresses[i], bounty.mul(_rewardDistribution[i]).div(1*10**18));
 		}
 	}
 
