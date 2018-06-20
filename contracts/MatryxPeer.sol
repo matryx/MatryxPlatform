@@ -193,11 +193,12 @@ contract MatryxPeer is Ownable {
 
 	function receiveDistrust(uint128 _newTotalTrust, uint128 _senderReputation) public /*notMe notOwner*/ onlyPeer returns (uint128)
 	{
+		uint128 peersOldInfluenceOnMyReputation = 0;
 		// remove peer's influence on my reputation before adding their new influence
 		if(peerHasJudgedMe[msg.sender])
 		{
 			//store the old influence on my reputation
-			uint128 peersOldInfluenceOnMyReputation = judgingPeerToInfluenceOnMyReputation[msg.sender];
+			peersOldInfluenceOnMyReputation = judgingPeerToInfluenceOnMyReputation[msg.sender];
 			globalTrust = globalTrust.sub(judgingPeerToInfluenceOnMyReputation[msg.sender]);
 		}
 		// if we've never been judged by this peer before,
@@ -206,21 +207,23 @@ contract MatryxPeer is Ownable {
 		{
 			peerHasJudgedMe[msg.sender] = true;
 			judgingPeers.push(msg.sender);
+			//globalTrust = globalTrust.sub(one_eighteenDecimal);
 		}
 
 		//I don't have enough trust to be able to deduct some of it for having a submission flagged
-		if(judgingPeerToUnnormalizedTrust[msg.sender] < one_eighteenDecimal)
-		{
-			//revert();
-		}
+		// if(judgingPeerToUnnormalizedTrust[msg.sender] < one_eighteenDecimal)
+		// {
+		// 	revert();
+		// 	//return 0;
+		// }
 
 		//if the new total trust is zero, we don't have any new influence to add
 		//so we update the data strustures and return
-		else if(_newTotalTrust == 0)
+		if(_newTotalTrust == 0 || judgingPeerToUnnormalizedTrust[msg.sender] < one_eighteenDecimal)
 		{
-			judgingPeerToUnnormalizedTrust[msg.sender] = _newTotalTrust;
-			judgingPeerToTotalTrustGiven[msg.sender] = _newTotalTrust;
-			judgingPeerToInfluenceOnMyReputation[msg.sender] = _newTotalTrust;
+			judgingPeerToUnnormalizedTrust[msg.sender] = 0;
+			judgingPeerToTotalTrustGiven[msg.sender] = 0;
+			judgingPeerToInfluenceOnMyReputation[msg.sender] = 0;
 			return uint128(peersOldInfluenceOnMyReputation);
 		}
 
