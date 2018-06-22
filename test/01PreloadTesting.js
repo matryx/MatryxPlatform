@@ -38,7 +38,8 @@ contract('MatryxPlatform', function(accounts) {
         }
 
         platform = new ethers.Contract(MatryxPlatform.address, MatryxPlatform.abi, wallet);
-
+        var ts = Math.round((new Date()).getTime() / 1000);
+        console.log("DATE: ", ts)
         assert.ok(platform);
     });
 });
@@ -145,8 +146,18 @@ contract('MatryxPlatform', function(accounts) {
         }
 
         roundData = {start: 5, end: 5, reviewDuration: 5, bounty: "5000000000000000000"}
-        t = platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
-        console.log(t)
-        assert.ok(t);
+        await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
+        let tournamentAddress = await platform.allTournaments(0);
+
+        tournament = await web3.eth.contract(MatryxTournament.abi).at(tournamentAddress);
+        console.log("tournamentAddress: " + tournamentAddress);
+        console.log("able to get tournament from platform");
+        console.log("tournament: " + tournament.tx);
+        console.log("tournament: " + tournament.tx);
+        r = web3.eth.contract(MatryxRound.abi).at(tournament.rounds(0))
+        console.log("round: " + r);
+        let state = await tournament.getState();
+        console.log("state: " + state);
+        assert.isTrue(r != 0, "Round does not exist");
     });
 });
