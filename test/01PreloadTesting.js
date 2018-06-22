@@ -153,7 +153,6 @@ contract('MatryxPlatform', function(accounts) {
         console.log("tournamentAddress: " + tournamentAddress);
         console.log("able to get tournament from platform");
         console.log("tournament: " + tournament.tx);
-        console.log("tournament: " + tournament.tx);
         r = web3.eth.contract(MatryxRound.abi).at(tournament.rounds(0))
         console.log("round: " + r);
         let state = await tournament.getState();
