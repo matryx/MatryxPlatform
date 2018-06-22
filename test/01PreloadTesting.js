@@ -13,12 +13,12 @@ contract('MatryxPlatform', function(accounts){
     //for code coverage
     let gasEstimate = 30000000;
 
-    it("Testing Deployment", async function() {
+    it("PreLoad Testing", async function() {
 
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
         ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x73a6a9bc6ef17fadf3d3d7920b04282ee99ebd6a25db7489f3fe6589024d3a1f")
+        wallet = new ethers.Wallet("0xce2ee81b85f68129a028c816af755be8b0980918c0621f168f284ca495d1e5da")
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
 
         console.log("Wallet was created!")
@@ -51,7 +51,7 @@ contract('MatryxPlatform', function(accounts){
         await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
 
         tournament = platform.allTournaments(0).then((address) => { return t = web3.eth.contract(MatryxTournament.abi).at(address);})
-        r = web3.eth.contract(MatryxRound.abi).at(t.rounds(0))
+        r = web3.eth.contract(MatryxRound.abi).at(tournament.rounds(0))
         assert.true();
     });
 });

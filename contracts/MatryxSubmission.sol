@@ -1,6 +1,7 @@
 pragma solidity ^0.4.18;
 pragma experimental ABIEncoderV2;
 
+
 import '../libraries/math/SafeMath.sol';
 import '../libraries/strings/strings.sol';
 import '../libraries/LibConstruction.sol';
