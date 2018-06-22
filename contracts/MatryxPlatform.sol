@@ -21,11 +21,11 @@ contract MatryxPlatform is Ownable {
 
   // TODO: condense and put in structs
   address public matryxTokenAddress;
-  address matryxPeerFactoryAddress;
-  address matryxTournamentFactoryAddress;
-  address matryxSubmissionFactoryAddress;
-  address matryxSubmissionTrustLibAddress;
-  address matryxRoundLibAddress;
+  address public matryxPeerFactoryAddress;
+  address public matryxTournamentFactoryAddress;
+  address public matryxSubmissionFactoryAddress;
+  address public matryxSubmissionTrustLibAddress;
+  address public matryxRoundLibAddress;
 
   address[] public allTournaments;
   bytes32 public hashOfTopCategory;
@@ -34,7 +34,7 @@ contract MatryxPlatform is Ownable {
   mapping(bytes32=>category) public categoryIterator;
   string[] public categoryList;
 
-  mapping(address=>bool) peerExists;
+  mapping(address=>bool) public peerExists;
   mapping(address=>address) public ownerToPeerAndPeerToOwner;
   mapping(address=>mapping(address=>bool)) addressToOwnsSubmission;
   mapping(address=>bool) tournamentExists;
@@ -542,15 +542,15 @@ contract MatryxPlatform is Ownable {
    /// @return Relative amount of MTX going to references of submissions under this tournament.
    function getSubmissionGratitude() public constant returns (uint256)
    {
-      require(submissionGratitude.exists);
-      return submissionGratitude.value;
+    require(submissionGratitude.exists);
+    return submissionGratitude.value;
    }
 
    /// @dev Returns addresses for submissions the sender has created.
    /// @return Address array representing submissions.
    function myTournaments() public constant returns (address[])
    {
-      return entrantToTournamentArray[msg.sender];
+    return entrantToTournamentArray[msg.sender];
    }
 
    function mySubmissions() public constant returns (address[])

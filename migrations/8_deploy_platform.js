@@ -1,6 +1,6 @@
 var SafeMath = artifacts.require("../libraries/math/SafeMath.sol");
 var Strings = artifacts.require("../libraries/strings/strings.sol");
-var MatryxToken = artifacts.require("./MatryxToken/MatryxToken.sol");
+// var MatryxToken = artifacts.require("./MatryxToken/MatryxToken.sol");
 var SubmissionTrust = artifacts.require("SubmissionTrust");
 var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxPeerFactory = artifacts.require("MatryxPeerFactory");
@@ -8,7 +8,7 @@ var MatryxTournamentFactory = artifacts.require("MatryxTournamentFactory");
 var MatryxSubmissionFactory = artifacts.require("MatryxSubmissionFactory");
 
 module.exports = function(deployer) {
-	return deployer.deploy(MatryxPlatform, MatryxToken.address, MatryxPeerFactory.address, MatryxTournamentFactory.address, MatryxSubmissionFactory.address, SubmissionTrust.address).then(() =>
+	return deployer.deploy(MatryxPlatform, "0xf35a0f92848bdfdb2250b60344e87b176b499a8f", MatryxPeerFactory.address, MatryxTournamentFactory.address, MatryxSubmissionFactory.address, SubmissionTrust.address).then(() =>
 	{
 		// Supply the platform address to the contracts that need it.
 		MatryxTournamentFactory.deployed().then((tournamentFactory) =>
