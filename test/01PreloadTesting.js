@@ -334,7 +334,10 @@ contract('MatryxPlatform', function(accounts) {
         ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
         wallet = new ethers.Wallet("0x50a0e9ac46ad63da3cca4e40b77ebb5d3260022bc36bc32c6a9aa48e287de22c")
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
-        web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
+        let sendEtherTxHash = web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
+
+        minedTx = await getMinedTx(sendEtherTxHash, 1000);
+        console.log("Mined Transaction: ", minedTx);
 
         function stringToBytes32(text, requiredLength) {
             var data = ethers.utils.toUtf8Bytes(text);
@@ -350,6 +353,10 @@ contract('MatryxPlatform', function(accounts) {
             }
             return data;
         }
+
+        // funtion bytes32ArrayToString(array) {
+        //     //TODO -- Function to convert bytes32 array back into string **CHECK FOR TRAILING ZEROS**
+        // }
 
         platform = new ethers.Contract(MatryxPlatform.address, MatryxPlatform.abi, wallet);
 
@@ -375,12 +382,13 @@ contract('MatryxPlatform', function(accounts) {
         }
 
         var ts = Math.round((new Date()).getTime() / 1000);
+        var endR = ts + 10000000000000
         console.log("DATE: ", ts)
-        roundData = {start: 5, end: 5, reviewDuration: 5, bounty: "5000000000000000000"}
+        roundData = {start: ts, end: endR, reviewDuration: 1000000, bounty: "5000000000000000000"}
         await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
         let tournamentAddress = await platform.allTournaments(0);
 
-        tournament = new ethers.Contract(tournamentAddress, MatryxTournament.abi, wallet);
+        tournament = await new ethers.Contract(tournamentAddress, MatryxTournament.abi, wallet);
         console.log("tournamentAddress: " + tournamentAddress);
         console.log("able to get tournament from platform");
         console.log("tournament: " + tournament);
@@ -391,17 +399,52 @@ contract('MatryxPlatform', function(accounts) {
         //r = web3.eth.contract(MatryxRound.abi).at(tournament.rounds(0))
         r = new ethers.Contract(round_address, MatryxRound.abi, wallet);
         console.log("round: " + r);
+
+        minedTime = await r.getNow();
+        minedTime = toString(minedTime)
+        console.log("TIME OF LAST MINED BLOCK: ", minedTime);
+
         let state = await tournament.getState();
         console.log("state: " + state);
 
-        token.approve(MatryxPlatform.address, 0);
-        token.approve(MatryxPlatform.address, tournamentData.entryFee);
-        platform.enterTournament(tournamentAddress, {gasLimit: 5000000});
+        await token.approve(MatryxPlatform.address, 0);
+        await token.approve(MatryxPlatform.address, tournamentData.entryFee);
 
+        console.log("New Token Allowance Approved");
+
+        enter = await platform.enterTournament(tournamentAddress, {gasLimit: 6500000});
+        //enteredMinedTx = await getMinedTx(enter, 1000);
+
+        //console.log("Entering Tournament Transaction Hash: ", enteredMinedTx);
+        console.log("Entered: ", enter);
         submissionData = {title: "A submission", owner: web3.eth.accounts[0], contentHash: "0xabcdef1124124124124", isPublic: false}
-        sub = tournament.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
-
+        sub = await tournament.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
         console.log("Submission: ", sub);
         assert.ok(sub, "Submission Failed :(")
     });
 });
+
+
+
+
+const getMinedTx = function(txReceipt, interval) {
+    if (!txReceipt)
+        return Promise.reject(new Error("getMinedTx() requires a valid receipt"))
+
+    return new Promise((resolve, reject) => {
+        // TODO: Change to setTimeout and calling itself
+        const myIntvl = setInterval(() => {
+            /* istanbul ignore next */
+            web3.eth.getTransaction(txReceipt, (err, res) => {
+                /* istanbul ignore next */
+                if (err) {
+                    reject(err)
+                    clearInterval(myIntvl)
+                } else if (res.blockNumber) {
+                    resolve(res)
+                    clearInterval(myIntvl)
+                }
+            })
+        }, interval || 1000)
+    })
+}
