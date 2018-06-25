@@ -27,6 +27,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     bytes32[3] public title;
     bytes32[2] public descriptionHash;
     bytes32 public categoryHash;
+    address public owner;
 
     // Timing and State
     uint256 public timeCreated;
@@ -173,6 +174,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         _;
     }
 
+    modifier onlyOwner()
+    {
+        require(msg.sender == owner);
+        _;
+    }
+
     // /// @dev Requires the tournament to be open.
     // modifier duringReviewPeriod()
     // {
@@ -239,6 +246,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function getCategory() public view returns (string _category)
     {
         return IMatryxPlatform(platformAddress).hashForCategory(categoryHash);
+    }
+
+    function getOwner() public view returns (address _owner)
+    {
+        return owner;
     }
 
     /// @dev Returns the external address of the tournament.
