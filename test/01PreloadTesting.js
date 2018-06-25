@@ -18,7 +18,7 @@ contract('MatryxPlatform', function(accounts) {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
         ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x50a0e9ac46ad63da3cca4e40b77ebb5d3260022bc36bc32c6a9aa48e287de22c")
+        wallet = new ethers.Wallet("0xb8597f10f304aed0e72054a6911474cd23d8d6c5bcce7eb05fdd3a875ef5def1")
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -56,7 +56,7 @@ contract('MatryxPlatform', function(accounts) {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
         ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x50a0e9ac46ad63da3cca4e40b77ebb5d3260022bc36bc32c6a9aa48e287de22c")
+        wallet = new ethers.Wallet("0xb8597f10f304aed0e72054a6911474cd23d8d6c5bcce7eb05fdd3a875ef5def1")
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -102,7 +102,7 @@ contract('MatryxPlatform', function(accounts) {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
         ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x50a0e9ac46ad63da3cca4e40b77ebb5d3260022bc36bc32c6a9aa48e287de22c")
+        wallet = new ethers.Wallet("0xb8597f10f304aed0e72054a6911474cd23d8d6c5bcce7eb05fdd3a875ef5def1")
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -176,7 +176,7 @@ contract('MatryxPlatform', function(accounts) {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
         ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x50a0e9ac46ad63da3cca4e40b77ebb5d3260022bc36bc32c6a9aa48e287de22c")
+        wallet = new ethers.Wallet("0xb8597f10f304aed0e72054a6911474cd23d8d6c5bcce7eb05fdd3a875ef5def1")
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -250,7 +250,7 @@ contract('MatryxPlatform', function(accounts) {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
         ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x50a0e9ac46ad63da3cca4e40b77ebb5d3260022bc36bc32c6a9aa48e287de22c")
+        wallet = new ethers.Wallet("0xb8597f10f304aed0e72054a6911474cd23d8d6c5bcce7eb05fdd3a875ef5def1")
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -332,7 +332,7 @@ contract('MatryxPlatform', function(accounts) {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
         ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x50a0e9ac46ad63da3cca4e40b77ebb5d3260022bc36bc32c6a9aa48e287de22c")
+        wallet = new ethers.Wallet("0xb8597f10f304aed0e72054a6911474cd23d8d6c5bcce7eb05fdd3a875ef5def1")
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         let sendEtherTxHash = web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -384,7 +384,14 @@ contract('MatryxPlatform', function(accounts) {
         var ts = Math.round((new Date()).getTime() / 1000);
         var endR = ts + 10000000000000
         console.log("DATE: ", ts)
-        roundData = {start: ts, end: endR, reviewDuration: 1000000, bounty: "5000000000000000000"}
+
+        blockTime = await platform.getNow();
+        blockTime = blockTime.toNumber();
+        startTime = blockTime - 100;
+        endTime = blockTime + 1000000000000;
+
+
+        roundData = {start: startTime, end: endTime, reviewDuration: 1000000, bounty: "5000000000000000000"}
         await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
         let tournamentAddress = await platform.allTournaments(0);
 
@@ -401,8 +408,11 @@ contract('MatryxPlatform', function(accounts) {
         console.log("round: " + r);
 
         minedTime = await r.getNow();
-        minedTime = toString(minedTime)
-        console.log("TIME OF LAST MINED BLOCK: ", minedTime);
+        minedTimeString = toString(minedTime)
+
+
+        console.log("Big Number Mined Block", minedTime.toNumber());
+        console.log("TIME OF LAST MINED BLOCK: ", minedTimeString);
 
         let state = await tournament.getState();
         console.log("state: " + state);
@@ -413,13 +423,15 @@ contract('MatryxPlatform', function(accounts) {
         console.log("New Token Allowance Approved");
 
         enter = await platform.enterTournament(tournamentAddress, {gasLimit: 6500000});
-        //enteredMinedTx = await getMinedTx(enter, 1000);
 
+        //enteredMinedTx = await getMinedTx(enter, 1000);
         //console.log("Entering Tournament Transaction Hash: ", enteredMinedTx);
-        console.log("Entered: ", enter);
+
+        console.log("Entered: ", enter.from);
+
         submissionData = {title: "A submission", owner: web3.eth.accounts[0], contentHash: "0xabcdef1124124124124", isPublic: false}
         sub = await tournament.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
-        console.log("Submission: ", sub);
+        console.log("Submission: ", sub.data);
         assert.ok(sub, "Submission Failed :(")
     });
 });

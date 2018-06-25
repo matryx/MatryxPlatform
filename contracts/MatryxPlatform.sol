@@ -513,15 +513,23 @@ contract MatryxPlatform is Ownable {
    * Setter Methods
    */ 
 
-    /// @dev              Set the relative amount of MTX to be delivered to a submission's
-    ///                   references
-    /// @param _gratitude Weight from 0 to 1 (18 decimal uint) specifying enforced submission 
-    ///                   gratitude
-    function setSubmissionGratitude(uint256 _gratitude) public onlyOwner
-    {
-        assert(_gratitude >= 0 && _gratitude <= (1*10**18));
-        submissionGratitude = uint256_optional({exists: true, value: _gratitude});
-    }
+  /// @dev              Set the relative amount of MTX to be delivered to a submission's
+  ///                   references
+  /// @param _gratitude Weight from 0 to 1 (18 decimal uint) specifying enforced submission
+  ///                   gratitude
+  function setSubmissionGratitude(uint256 _gratitude) public onlyOwner
+  {
+      assert(_gratitude >= 0 && _gratitude <= (1*10**18));
+      submissionGratitude = uint256_optional({exists: true, value: _gratitude});
+  }
+
+  event TimeStamp(uint256 time);
+
+  function getNow() public view returns (uint256)
+  {
+    emit TimeStamp(now);
+    return now;
+  }
 
   /*
    * Getter Methods
