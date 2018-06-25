@@ -170,7 +170,7 @@ contract MatryxRound is Ownable, IMatryxRound {
         {
             return uint256(RoundState.NotYetOpen);
         }
-        else if(now > startTime && now < endTime)
+        else if(now >= startTime && now < endTime)
         {
             return uint256(RoundState.Open);
         }
@@ -188,8 +188,13 @@ contract MatryxRound is Ownable, IMatryxRound {
         }
     }
 
+
+
+	event TimeStamp(uint256 time);
+
     function getNow() public view returns (uint256)
     {
+		emit TimeStamp(now);
     	return now;
     }
 
@@ -380,6 +385,7 @@ contract MatryxRound is Ownable, IMatryxRound {
         }
 
         IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);
+		emit TimeStamp(now);
         return submissionAddress;
 	}
 
