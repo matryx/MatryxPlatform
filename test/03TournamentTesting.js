@@ -108,7 +108,7 @@ contract('MatryxTournament', function(accounts) {
 
     it("Able to get platform from tournament", async function() {
         let platformFromTournament = await tournament.getPlatform();
-        assert.equal(platformFromTournament, platform.address, "Unable to get platform from tournament.");
+        assert.equal(web3.toChecksumAddress(platformFromTournament), web3.toChecksumAddress(platform.address), "Unable to get platform from tournament.");
     });
 
     it("Able to get tournament category", async function() {
@@ -181,7 +181,7 @@ contract('MatryxTournament', function(accounts) {
         mySubmission = await MatryxSubmission.at(mySubmissions[0]);
         let submissionOwner = await mySubmission.owner.call();
         console.log("submissionOwner: " + submissionOwner);
-        assert.equal(submissionOwner, wallet.address, "A submission given in mySubmissions is not one of my submissions.");
+        assert.equal(web3.toChecksumAddress(submissionOwner), web3.toChecksumAddress(wallet.address), "A submission given in mySubmissions is not one of my submissions.");
     });
 
     it("There is 1 Submission", async function() {
