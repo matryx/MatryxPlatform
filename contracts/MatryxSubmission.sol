@@ -141,9 +141,9 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
   	// 	_;
   	// }
 
-  	modifier ownerOrRound()
+  	modifier ownerContributorOrRound()
   	{
-  		require(msg.sender == owner || msg.sender == roundAddress);
+  		require(msg.sender == owner || contributorToBountyDividend[msg.sender] != 0 || msg.sender == roundAddress);
   		_;
   	}
 
@@ -193,9 +193,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		bool roundAtLeastInReview = IMatryxRound(roundAddress).getState() >= 2;
 		bool requesterIsEntrant = IMatryxTournament(tournamentAddress).isEntrant(_requester);
 		bool requesterOwnsTournament = ownableTournament.isOwner(_requester);
-		bool duringReviewAndRequesterInTournament = roundAtLeastInReview && (requesterOwnsTournament || requesterIsEntrant);
+		bool requesterIsContributor = IMatryxRound(roundAddress).requesterIsContributor(_requester);
+		bool duringReviewAndRequesterInTournament = roundAtLeastInReview && (requesterOwnsTournament || requesterIsEntrant || requesterIsContributor);
+  		bool tournamentIsClosed = IMatryxTournament(tournamentAddress).getState() >= 4;
 
-		return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester);
+		return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester) || tournamentIsClosed;
 	}
 
 	function getTitle() public constant whenAccessible(msg.sender) returns(string) {
@@ -406,9 +408,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 		return _balance;
 	}
 	
-	function withdrawReward(address _recipient) public ownerOrRound
+	function withdrawReward(address _recipient) public ownerContributorOrRound
 	{
-		uint submissionReward = getBalance();
+		// TODO: Replace with method that tells round to transfer MTX to this submission
+		uint256 submissionReward = IMatryxRound(roundAddress).pullPayoutIntoSubmission();
 		IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
 
 		// Transfer reward to submission author and contributors

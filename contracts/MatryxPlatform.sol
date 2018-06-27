@@ -80,7 +80,7 @@ contract MatryxPlatform is Ownable {
 
   event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee);
   event TournamentOpened(address _owner, address _tournamentAddress, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, address[] _winningSubmissionAddresses, uint256 _MTXReward);
+  event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _MTXReward);
   event UserEnteredTournament(address _entrant, address _tournamentAddress);
   event QueryID(string queryID);
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
@@ -99,11 +99,9 @@ contract MatryxPlatform is Ownable {
 
   /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
   /// @param _finalRoundNumber Index of the round containing the winning submission.
-  /// @param _winningSubmissionAddresses Address of the winning submission.
-  /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
-  function invokeTournamentClosedEvent(uint256 _finalRoundNumber, address[] _winningSubmissionAddresses, uint256[] _rewardDistribution, uint256 _MTXReward) public onlyTournament
+  function invokeTournamentClosedEvent(uint256 _finalRoundNumber, uint256 _MTXReward) public onlyTournament
   {
-    TournamentClosed(msg.sender, _finalRoundNumber, _winningSubmissionAddresses, _MTXReward);
+    TournamentClosed(msg.sender, _finalRoundNumber, _MTXReward);
   }
 
   /* 
@@ -435,13 +433,13 @@ contract MatryxPlatform is Ownable {
   function createTournament(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) returns (address _tournamentAddress)
   {
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-    address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
+    address newTournament = tournamentFactory.createTournament(_category, tournamentData, roundData, msg.sender);
     //MatryxToken.transferFrom(newTournament, **round_address**, uint256 bounty);
-    TournamentCreated(_category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.contentHash_1, tournamentData.contentHash_2, tournamentData.Bounty, tournamentData.entryFee);
+    TournamentCreated(_category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.descriptionHash_1, tournamentData.descriptionHash_2, tournamentData.bounty, tournamentData.entryFee);
     
     addTournamentToCategory(newTournament, _category);
 
-    require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.Bounty));
+    require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.bounty));
     IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
     //update data structures
     allTournaments.push(newTournament);

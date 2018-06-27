@@ -10,6 +10,8 @@ interface IMatryxRound
 	function submissionIsAccessible(uint256 _index) public constant returns (bool);
 	function requesterIsContributor(address _requester) public constant returns (bool);
 	function setParticipantType(address _participantAddress, uint256 _type) public;
+	function getStartTime() public view returns (uint256);
+	function getEndTime() public view returns (uint256);
 	function getBounty() public constant returns (uint256);
 	function getTokenAddress() public constant returns (address);
 	function getSubmissions() public constant returns (address[] _submissions);
@@ -18,8 +20,9 @@ interface IMatryxRound
 	function submissionsChosen() public constant returns (bool);
 	function getWinningSubmissionAddresses() public constant returns (address[]);
 	function numberOfSubmissions() public constant returns (uint256);
-	function chooseWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution) public;
+	function selectWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution) public;
 	//function awardBounty(address _submissionAddress, uint256 _remainingBounty) public;
 	function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references,address _author, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
-	function liquidate() public;
+	function transferBountyToTournament() public;
+	function pullPayoutIntoSubmission() public returns (uint256);
 }
