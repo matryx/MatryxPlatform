@@ -16,7 +16,7 @@ interface IMatryxTournament
     function mySubmissions() public view returns (address[]);
     function submissionCount() public view returns (uint256 _submissionCount);
     function entrantCount() public view returns (uint256 _entrantCount);
-    function update(LibConstruction.TournamentModificationData tournamentData);
+    function update(string _category, LibConstruction.TournamentModificationData tournamentData);
     function updateTitle(bytes32[3] _title) public;
     function updateDescriptionHash(bytes32[2] _externalAddress) public;
     function updateEntryFee(uint256 _entryFee) public;

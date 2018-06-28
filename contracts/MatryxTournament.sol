@@ -436,7 +436,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         // Event to notify web3 of the winning submission address
         emit RoundWinnersChosen(_submissionAddresses);
         IMatryxRound(currentRoundAddress).selectWinningSubmissions(_submissionAddresses, _rewardDistribution);
-
     }
 
     //Manually close round and start the next one, or close tournament and don't start a new round
@@ -454,8 +453,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         {
             nextRound(roundData);
         }
-
-
     }
 
     // @dev Chooses the winner of the tournament.

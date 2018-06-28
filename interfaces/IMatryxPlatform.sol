@@ -12,10 +12,12 @@ interface IMatryxPlatform
 	function handleCancelledReferenceRequestForSubmission(address _reference) public returns (bool);
 	function updateSubmissions(address _owner, address _submission) public;
 	function removeSubmission(address _submissionAddress, address _tournamentAddress) public returns (bool);
-	function getTournamentsByCategory(string _category) external constant returns (address[]);
-	function getCategoryCount(string _category) external constant returns (uint256);
-	function getTopCategory(uint256 _index) external constant returns (string);
+	function getTournamentsByCategory(string _category) external view returns (address[]);
+	function getCategoryCount(string _category) external view returns (uint256);
+	// function getTopCategory(uint256 _index) external view returns (string);
 	function getCategoryByIndex(uint256 _index) public constant returns (string);
+	function addTournamentToCategory(address _tournamentAddress, string _category) public;
+	function removeTournamentFromCategory(address _tournamentAddress, string _category) public;
 	function switchTournamentCategory(string discipline) public;
 	function enterTournament(address _tournamentAddress) public returns (bool _success);
 	function createTournament(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) returns (address _tournamentAddress);
