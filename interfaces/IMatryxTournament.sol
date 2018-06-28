@@ -21,10 +21,14 @@ interface IMatryxTournament
     function updateDescriptionHash(bytes32[2] _externalAddress) public;
     function updateEntryFee(uint256 _entryFee) public;
     function updateCategory(string _category) public;
-    function closeRound(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData roundData) public;
+    function selectWinners(address[] _submissionAddresses, uint256[] _rewardDistribution) public;
     function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public;
-    function closeTournament(address[] _submissionAddress, uint256[] _rewardDistribution) public;
+    function endReviewPeriod(LibConstruction.RoundData roundData, bool _closeTournament, bool _closeRound) public;
+    function nextRound(LibConstruction.RoundData roundData) public;
+    function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress);
     function enterUserInTournament(address _entrantAddress) public returns (bool success);
     function getEntryFee() public view returns (uint256);
     function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
+    function withdraw() public;
+    function pullRemainingBountyIntoRound() public;
 }

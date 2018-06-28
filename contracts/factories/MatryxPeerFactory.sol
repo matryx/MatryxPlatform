@@ -9,12 +9,18 @@ contract MatryxPeerFactory is Ownable {
 	address public platformAddress;
 	uint64 public peerCount;
 
+	modifier onlyPlatform
+	{
+		require(msg.sender == platformAddress);
+		_;
+	}
+
 	function setPlatform(address _platformAddress) public onlyOwner
 	{
 		platformAddress = _platformAddress;
 	}
 
-	function createPeer(address _owner) public returns (address _peerAddress) {
+	function createPeer(address _owner) public onlyPlatform returns (address _peerAddress) {
 		uint128 trust = getTrustForNewPeer();
 		MatryxPeer peerAddress = new MatryxPeer(platformAddress, _owner, trust);
 		peerCount  = uint64(uint128(peerCount).add(1));

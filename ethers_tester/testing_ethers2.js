@@ -21,9 +21,10 @@ token.approve(MatryxPlatform.address, 100*10**18)
 platform.createPeer({gasLimit: 4000000})
 
 title = stringToBytes32("the title of the tournament", 3);
-categoryHash = stringToBytes32("contentHash", 2);
+categoryHash = stringToBytes32("category hash", 2);
+contentHash = stringToBytes32("contentHash", 2);
 
-tournamentData = { categoryHash: web3.sha3("math"), title_1: title[0], title_2: title[1], title_3: title[2], contentHash_1: categoryHash[0], contentHash_2: categoryHash[1], Bounty: 5, entryFee: 2}
+tournamentData = { categoryHash: categoryHash[0], title_1: title[0], title_2: title[1], title_3: title[2], descriptionHash_1: contentHash[0], descriptionHash_2: contentHash[1], Bounty: 5, entryFee: 2}
 
 roundData = { start: 5, end: 5, reviewDuration: 5, bounty: 5}
 platform.createTournament("math", tournamentData, roundData, {gasLimit: 4000000})
