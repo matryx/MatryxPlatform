@@ -18,7 +18,7 @@ interface IMatryxPlatform
 	function getCategoryByIndex(uint256 _index) public constant returns (string);
 	function addTournamentToCategory(address _tournamentAddress, string _category) public;
 	function removeTournamentFromCategory(address _tournamentAddress, string _category) public;
-	function switchTournamentCategory(string discipline) public;
+	function switchTournamentCategory(address _tournamentAddress, string _oldCategory, string _newCategory) public;
 	function enterTournament(address _tournamentAddress) public returns (bool _success);
 	function createTournament(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) returns (address _tournamentAddress);
 	function createPeer() public returns (address);
