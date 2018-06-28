@@ -18,7 +18,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     using strings for *;
     
     // TODO: condense and put in structs
-    //Platform identification
+    // Platform identification
     address public platformAddress;
     address public matryxTokenAddress;
     address public matryxRoundFactoryAddress;
@@ -69,7 +69,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         timeCreated = now;
         // Identification
         owner = _owner;
-        categoryHash = tournamentData.categoryHash;
         category = _category;
         title[0] = tournamentData.title_1;
         title[1] = tournamentData.title_2;
@@ -131,12 +130,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     modifier onlyRound()
     {
         require(isRound[msg.sender]);
-        _;
-    }
-
-    modifier onlyRoundOrThis()
-    {
-        require(isRound[msg.sender] || this == msg.sender);
         _;
     }
 
@@ -350,8 +343,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Setter Methods
      */
 
-    function update(LibConstruction.TournamentModificationData tournamentData)
+    function update(string _category, LibConstruction.TournamentModificationData tournamentData)
     {
+        // TODO: Update the category on the platform
+        if(category.toSlice().empty() == false)
+        {
+            category = _category;
+        }
         if(tournamentData.title_1 != 0x0)
         {
             title[0] = tournamentData.title_1;
@@ -466,8 +464,10 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Creates a new round.
     /// @return The new round's address.
-    function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public onlyRoundOrThis returns (address _roundAddress)
+    function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress)
     {
+        // only this, the tournamentFactory or rounds can call createRound
+        require(msg.sender == address(this) || msg.sender == IMatryxPlatform(platformAddress).getTournamentFactoryAddress() || isRound[msg.sender]);
         require((roundData.start >= now && roundData.start < roundData.end), "Time parameters are invalid.");
 
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);

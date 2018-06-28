@@ -26,7 +26,6 @@ library LibConstruction
 
     struct TournamentData
     {
-        bytes32 categoryHash;
     	bytes32 title_1;
         bytes32 title_2;
         bytes32 title_3;
@@ -38,7 +37,6 @@ library LibConstruction
 
     struct TournamentModificationData
     {
-        bytes32 categoryHash;
     	bytes32 title_1;
         bytes32 title_2;
         bytes32 title_3;

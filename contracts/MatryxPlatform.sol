@@ -530,6 +530,11 @@ contract MatryxPlatform is Ownable {
       return matryxTokenAddress;
    }
 
+   function getTournamentFactoryAddress() public view returns (address)
+   {
+      return matryxTournamentFactoryAddress;
+   }
+
    function getSubmissionTrustLibrary() public constant returns (address)
    {
       return matryxSubmissionTrustLibAddress;

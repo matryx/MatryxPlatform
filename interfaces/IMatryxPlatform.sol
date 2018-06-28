@@ -29,6 +29,7 @@ interface IMatryxPlatform
 	function getTournament_IsMine(address _tournamentAddress) public constant returns (bool _isMine);
 	function setSubmissionGratitude(uint256 _gratitude) public;
 	function getTokenAddress() public constant returns (address);
+	function getTournamentFactoryAddress() public view returns (address);
 	function getSubmissionTrustLibrary() public constant returns (address);
 	function getSubmissionGratitude() public constant returns (uint256);
 	function myTournaments() public constant returns (address[]);
