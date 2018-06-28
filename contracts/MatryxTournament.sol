@@ -363,6 +363,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         // TODO: Update the category on the platform
         if(category.toSlice().empty() == false)
         {
+            IMatryxPlatform(platformAddress).switchTournamentCategory(address(this), category, _category);
             category = _category;
         }
         if(tournamentData.title_1 != 0x0)
@@ -399,12 +400,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function updateCategory(string _category) public onlyOwner
     {
-        // if(!category.toSlice().empty())
-        // {
-        //     revert();
-        // }
-        // revert();
-        // category = _category;
+        require(_category.toSlice().empty() == false);
+        IMatryxPlatform(platformAddress).switchTournamentCategory(address(this), category, _category);
+        category = _category;
     }
 
     /*

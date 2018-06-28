@@ -131,7 +131,7 @@ contract MatryxPlatform is Ownable {
 
   modifier onlyTournamentOwnerOrPlatform(address _tournamentAddress)
   {
-    require(entrantToOwnsTournament[msg.sender][_tournamentAddress] || msg.sender == address(this));
+    require(msg.sender == _tournamentAddress || entrantToOwnsTournament[msg.sender][_tournamentAddress] || msg.sender == address(this));
     _;
   }
 
