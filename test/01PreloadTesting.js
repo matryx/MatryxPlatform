@@ -4,6 +4,9 @@ var MatryxRound = artifacts.require("MatryxRound");
 var MatryxSubmission = artifacts.require("MatryxSubmission");
 var MatryxToken = artifacts.require("MatryxToken");
 
+var ethersLocal = '/Users/marinatorras/Projects/Matryx/ethers.js';
+var walletAddress = "0x5bf05914acdca8a03aae65bcb11a9041c1843d6632c77bb4fae40ed0299578a4";
+
 contract('MatryxPlatform', function(accounts) {
 
     let platform;
@@ -13,12 +16,11 @@ contract('MatryxPlatform', function(accounts) {
     //for code coverage
     let gasEstimate = 30000000;
 
-
     it("Platform Preloading", async function () {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
-        ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x030e1a90e78869c412c3b31150cda7fb198ebd14b6341ff39bdb7b85542595e9")
+        ethers = require(ethersLocal); // local ethers pull
+        wallet = new ethers.Wallet(walletAddress)
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -55,8 +57,8 @@ contract('MatryxPlatform', function(accounts) {
     it("Token Minting", async function () {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
-        ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x030e1a90e78869c412c3b31150cda7fb198ebd14b6341ff39bdb7b85542595e9")
+        ethers = require(ethersLocal); // local ethers pull
+        wallet = new ethers.Wallet(walletAddress)
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -113,8 +115,8 @@ contract('MatryxPlatform', function(accounts) {
     it("Tournament Creation", async function () {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
-        ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x030e1a90e78869c412c3b31150cda7fb198ebd14b6341ff39bdb7b85542595e9")
+        ethers = require(ethersLocal); // local ethers pull
+        wallet = new ethers.Wallet(walletAddress)
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -146,10 +148,9 @@ contract('MatryxPlatform', function(accounts) {
 
         title = stringToBytes32("the title of the tournament", 3);
         categoryHash = stringToBytes32("contentHash", 2);
-        hope = stringToBytes32("math", 1)
+        //hope = stringToBytes32("math", 1)
 
         tournamentData = {
-            categoryHash: hope[0],
             title_1: title[0],
             title_2: title[1],
             title_3: title[2],
@@ -161,7 +162,10 @@ contract('MatryxPlatform', function(accounts) {
 
         console.log("Tokens have been minted");
 
-        roundData = {start: 5, end: 5, reviewDuration: 5, bounty: "5000000000000000000"}
+        var startTime = Math.floor((new Date() / 1000 + 15));
+        var endTime = startTime + 120;
+
+        roundData = {start: startTime, end: endTime, reviewDuration: 5, bounty: "5000000000000000000"}
         await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
 
         console.log("Tournament was created");
@@ -181,7 +185,7 @@ contract('MatryxPlatform', function(accounts) {
 });
 
 
-/*
+
 contract('MatryxPlatform', function(accounts) {
 
     let platform;
@@ -195,8 +199,8 @@ contract('MatryxPlatform', function(accounts) {
     it("Tournament Contract w/ EthersJS", async function () {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
-        ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x030e1a90e78869c412c3b31150cda7fb198ebd14b6341ff39bdb7b85542595e9")
+        ethers = require(ethersLocal); // local ethers pull
+        wallet = new ethers.Wallet(walletAddress)
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -269,8 +273,8 @@ contract('MatryxPlatform', function(accounts) {
     it("Round Contract w/ EthersJS", async function () {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
-        ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x030e1a90e78869c412c3b31150cda7fb198ebd14b6341ff39bdb7b85542595e9")
+        ethers = require(ethersLocal); // local ethers pull
+        wallet = new ethers.Wallet(walletAddress)
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -351,8 +355,8 @@ contract('MatryxPlatform', function(accounts) {
     it("Successful Submission", async function () {
 
         web3.eth.defaultAccount = web3.eth.accounts[0]
-        ethers = require('/Users/kenmiyachi/crypto/ethers.js'); // local ethers pull
-        wallet = new ethers.Wallet("0x030e1a90e78869c412c3b31150cda7fb198ebd14b6341ff39bdb7b85542595e9")
+        ethers = require(ethersLocal); // local ethers pull
+        wallet = new ethers.Wallet(walletAddress)
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         let sendEtherTxHash = web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
@@ -466,7 +470,7 @@ contract('MatryxPlatform', function(accounts) {
         assert.ok(sub, "Submission Failed :(")
     });
 });
-*/
+
 
 const getMinedTx = function(txReceipt, interval) {
     if (!txReceipt)
