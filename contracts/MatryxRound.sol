@@ -27,7 +27,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     address public nextRound;
     uint256 startTime;
     uint256 endTime;
-    uint256 public reviewPeriod;
+    uint256 public reviewPeriodDuration;
     uint256 public bounty;
     address[] public winningSubmissions;
     uint256[] public rewardDistribution;
@@ -53,7 +53,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 		matryxSubmissionFactoryAddress = _submissionFactoryAddress;
 		bounty = roundData.bounty;
         
-		scheduleStart(roundData.start, roundData.end, roundData.reviewDuration);
+		scheduleStart(roundData.start, roundData.end, roundData.reviewPeriodDuration);
 	}
 
 	/*
@@ -184,7 +184,7 @@ contract MatryxRound is Ownable, IMatryxRound {
         {
             return uint256(RoundState.Open);
         }
-        else if(now >= endTime && now < endTime.add(reviewPeriod))
+        else if(now >= endTime && now < endTime.add(reviewPeriodDuration))
         {
             if(closed)
             {
@@ -344,54 +344,95 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @dev Starts the round (callable only by the owner of the round).
 	/// @param _start Start time.
 	/// @param _end End time.
-	/// @param _reviewPeriod Time to review the round submissions
-	function scheduleStart(uint256 _start, uint256 _end, uint256 _reviewPeriod) internal
+	/// @param _reviewPeriodDuration Time to review the round submissions
+	function scheduleStart(uint256 _start, uint256 _end, uint256 _reviewPeriodDuration) internal
 	{
 		startTime = _start;
 		endTime = _end;
-		reviewPeriod = _reviewPeriod;
+		reviewPeriodDuration = _reviewPeriodDuration;
 	}
 
+    /// @dev Allows the tournament to edit the 
+    function editRound(uint256 _currentRoundEndTime, LibConstruction.RoundData _roundData) public onlyTournament
+    {
+        require(_roundData.start > _currentRoundEndTime);
+        require(_roundData.end > _roundData.start);
+        require(_roundData.reviewPeriodDuration > 0);
+        require(_roundData.end.sub(_roundData.start) > 0);
+
+        startTime = _roundData.start;
+        endTime = _roundData.end;
+        reviewPeriodDuration = _roundData.reviewPeriodDuration;
+    }
+
+    enum SelectWinnerAction { DoNothing, StartNextRound, CloseTournament }
 	/// @dev Choose a winning submission for the round (callable only by the owner of the round).
     /// @param _submissionAddresses Index of the winning submission.
     /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
-	function selectWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution) public onlyTournament duringReviewPeriod
+	function selectWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution, uint256 _selectWinnerAction) public onlyTournament duringReviewPeriod
 	{
 		require(_submissionAddresses.length == _rewardDistribution.length);
-        require(_submissionAddresses.length != 0 || winningSubmissions.length != 0);
+        require(_submissionAddresses.length != 0 && winningSubmissions.length == 0);
 
-        if(_submissionAddresses.length != 0)
+        winningSubmissions = _submissionAddresses;
+        rewardDistribution = _rewardDistribution;
+
+        uint256 _rewardDistributionTotal;
+        for(uint256 i = 0; i < rewardDistribution.length; i++)
         {
-            winningSubmissions = _submissionAddresses;
-            rewardDistribution = _rewardDistribution;
-
-            uint256 _rewardDistributionTotal;
-            for(uint256 i = 0; i < rewardDistribution.length; i++)
-            {
-                _rewardDistributionTotal = _rewardDistributionTotal.add(rewardDistribution[i]);
-            }
-
-            rewardDistributionTotal = _rewardDistributionTotal;
+            _rewardDistributionTotal = _rewardDistributionTotal.add(rewardDistribution[i]);
         }
 
-        uint256 newBounty;
-        uint256 tournamentBalance = IMatryxToken(matryxTokenAddress).balanceOf(tournamentAddress);
+        rewardDistributionTotal = _rewardDistributionTotal;
 
-        if(tournamentBalance < bounty)
-        {
-            newBounty = tournamentBalance;
-        }
-        else
-        {
-            newBounty = bounty;
-        }
-
+        // DoNothing and StartNextRound cases
         if(newRound == 0x0)
         {
-            LibConstruction.RoundData memory roundData = LibConstruction.RoundData({start: endTime+reviewPeriod, end: endTime+reviewPeriod+(endTime-startTime), reviewDuration: reviewPeriod, bounty: newBounty});
-            newRound = IMatryxTournament(tournamentAddress).createRound(roundData, true);
+            uint256 newBounty;
+            uint256 tournamentBalance = IMatryxToken(matryxTokenAddress).balanceOf(tournamentAddress);
+
+            if(tournamentBalance < bounty)
+            {
+                newBounty = tournamentBalance;
+            }
+            else
+            {
+                newBounty = bounty;
+            }
+
+            LibConstruction.RoundData memory roundData;
+            if(_selectWinnerAction == uint256(SelectWinnerAction.DoNothing))
+            {
+                roundData = LibConstruction.RoundData({start: endTime.add(reviewPeriodDuration), end: endTime.add(reviewPeriodDuration).add(endTime.sub(startTime)), reviewPeriodDuration: reviewPeriodDuration, bounty: newBounty});
+                newRound = IMatryxTournament(tournamentAddress).createRound(roundData, true);
+            }
+            else if(_selectWinnerAction == uint256(SelectWinnerAction.StartNextRound))
+            {
+                closed = true;
+                roundData = LibConstruction.RoundData({start: now, end: now.add((endTime.sub(startTime))), reviewPeriodDuration: reviewPeriodDuration, bounty: newBounty});
+                newRound = IMatryxTournament(tournamentAddress).createRound(roundData, false);
+            }
+        }
+
+        // CloseTournament Case
+        if(_selectWinnerAction == uint256(SelectWinnerAction.CloseTournament))
+        {
+            closed = true;
         }
 	}
+
+    function startNow() public onlyTournament
+    {
+        uint256 duration = endTime.sub(startTime);
+        startTime = now;
+        endTime = startTime.add(duration);
+    }
+
+    function closeRound() public onlyTournament
+    {
+        require(getState() == uint256(RoundState.HasWinners));
+        closed = true;
+    }
 
 	/*
      * Entrant Methods

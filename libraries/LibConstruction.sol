@@ -31,6 +31,8 @@ library LibConstruction
         bytes32 title_3;
     	bytes32 descriptionHash_1;
         bytes32 descriptionHash_2;
+        bytes32 fileHash_1;
+        bytes32 fileHash_2;
     	uint256 bounty;
     	uint256 entryFee;
     }
@@ -42,6 +44,8 @@ library LibConstruction
         bytes32 title_3;
         bytes32 descriptionHash_1;
         bytes32 descriptionHash_2;
+        bytes32 fileHash_1;
+        bytes32 fileHash_2;
     	uint256 entryFee;
     	bool entryFeeChanged;
     }
@@ -50,7 +54,7 @@ library LibConstruction
     {
     	uint256 start;
     	uint256 end;
-    	uint256 reviewDuration;
+    	uint256 reviewPeriodDuration;
     	uint256 bounty;
     }
 

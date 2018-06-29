@@ -50,6 +50,7 @@ contract MatryxPlatform is Ownable {
   mapping(address=>address[]) ownerToSubmissionArray;
   mapping(address=>mapping(address=>uint256_optional))  ownerToSubmissionToSubmissionIndex;
 
+  // Hyperparams
   uint256_optional submissionGratitude = uint256_optional({exists: true, value: 2*10**17});
 
   function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress, address _matryxSubmissionTrustLibAddress) public
@@ -314,7 +315,7 @@ contract MatryxPlatform is Ownable {
   /// @param roundData Data to populate the first round of the tournament with. Includes:
   ///    startTime: The start time (unix-epoch-based) of the first round.
   ///    endTime: The end time (unix-epoch-based) of the first round.
-  ///    reviewDuration: The amount of the tournament owner has to determine the winners of the round.
+  ///    reviewPeriodDuration: The amount of the tournament owner has to determine the winners of the round.
   ///    bounty: The reward for the first round's winners.
   /// @return _tournamentAddress Address of the newly created tournament.
   function createTournament(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) returns (address _tournamentAddress)
