@@ -326,6 +326,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return descriptionHash;
     }
 
+    function getFileHash() public view returns (bytes32[2] _fileHash)
+    {
+        return fileHash;
+    }
+
     /// @dev Returns the current round number.
     /// @return _currentRound Number of the current round.
     function currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress)

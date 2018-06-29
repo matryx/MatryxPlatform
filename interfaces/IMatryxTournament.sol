@@ -12,6 +12,7 @@ interface IMatryxTournament
     function getPlatform() public view returns (address _platformAddress);
     function getTitle() public view returns (bytes32[3] _title);
     function getDescriptionHash() public view returns (bytes32[2] _descriptionHash);
+    function getFileHash() public view returns (bytes32[2] _fileHash);
     function currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress);
     function mySubmissions() public view returns (address[]);
     function submissionCount() public view returns (uint256 _submissionCount);
