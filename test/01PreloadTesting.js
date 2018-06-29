@@ -444,7 +444,7 @@ contract('MatryxPlatform', function(accounts) {
 
         console.log("Tournament Parameters have been created ! ");
 
-        var startTime = Math.floor((new Date() / 1000 + 15));
+        var startTime = Math.floor((new Date() / 1000 ));
         var endTime = startTime + 120;
 
         roundData = {start: startTime, end: endTime, reviewPeriodDuration: 5, bounty: "5000000000000000000"}
@@ -473,7 +473,7 @@ contract('MatryxPlatform', function(accounts) {
         console.log("round: " + r);
 
         let state = await r.getState();
-        console.log("state: " + state);
+        console.log("round state: " + state);
 
         await token.approve(MatryxPlatform.address, 0);
         await token.approve(MatryxPlatform.address, tournamentData.entryFee);
@@ -489,9 +489,9 @@ contract('MatryxPlatform', function(accounts) {
         console.log("Submission: ", sub.data);
 
 
-        setTimeout(logStuff, 100000000000);
-        newState = r.getState();
-        console.log("New State: ", newState);
+        //setTimeout(logStuff, 100000000000);
+        //newState = r.getState();
+        //console.log("New State: ", newState);
 
         assert.ok(sub, "Submission Failed :(")
     });
