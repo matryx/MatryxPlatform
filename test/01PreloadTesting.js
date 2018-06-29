@@ -4,8 +4,8 @@ var MatryxRound = artifacts.require("MatryxRound");
 var MatryxSubmission = artifacts.require("MatryxSubmission");
 var MatryxToken = artifacts.require("MatryxToken");
 
-var ethersLocal = '/Users/kenmiyachi/crypto/ethers.js';
-var walletAddress = "0xb48ae4ac52cb33dec13b203a7b78f7110fa9c38da10751d14dea5846e6fa488b";
+var ethersLocal = '/Users/marinatorras/Projects/Matryx/ethers.js';
+var walletAddress = "0x8932984178a6b07aa6947e23876878da663401986c0e5539092395bca5901707";
 
 contract('MatryxPlatform', function(accounts) {
 
@@ -168,8 +168,7 @@ contract('MatryxPlatform', function(accounts) {
         var endTime = startTime + 120;
 
         roundData = {start: startTime, end: endTime, reviewPeriodDuration: 5, bounty: "5000000000000000000"}
-
-        await platform.createTournament("math", tournamentData, roundData, {gasLimit: 700000})
+        await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
 
         console.log("Tournament was created");
 
@@ -445,14 +444,10 @@ contract('MatryxPlatform', function(accounts) {
 
         console.log("Tournament Parameters have been created ! ");
 
-        currentBlock = await platform.getNow();
-        console.log("BLOCK NUMBER: " + currentBlock)
-        var startTime = currentBlock - 10;
-        var endTime = currentBlock + 100;
+        var startTime = Math.floor((new Date() / 1000 + 15));
+        var endTime = startTime + 120;
 
-        roundData = {start: startTime, end: endTime, reviewPeriodDuration: 100, bounty: "5000000000000000000"}
-
-
+        roundData = {start: startTime, end: endTime, reviewPeriodDuration: 5, bounty: "5000000000000000000"}
         await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
 
         console.log("Tournament was created");
@@ -463,11 +458,13 @@ contract('MatryxPlatform', function(accounts) {
         console.log("tournamentAddress: " + tournamentAddress);
         console.log("able to get tournament from platform");
 
-        currentBlock = platform.getNow();
-        st = currentBlock - 10;
-        et = currentBlock + 10000000000;
+        // currentBlock = platform.getNow();
+        // st = currentBlock - 10;
+        // et = currentBlock + 10000000000;
 
+        console.log("Getting current round...");
         round_info = await tournament.currentRound();
+        console.log("round_info: " + round_info);
         round_address = round_info[1]
         console.log(round_address)
 
