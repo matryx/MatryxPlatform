@@ -472,6 +472,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function editGhostRound(LibConstruction.RoundData _roundData) public onlyOwner
     {
+
         (uint256 ghostRoundIndex, address ghostRoundAddress) = getGhostRound();
         (,address currentRoundAddress) = currentRound();
         if(ghostRoundAddress != 0x0)
@@ -507,7 +508,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev This function should be called after the user selects winners for their tournament and chooses the "DoNothing" option
     function jumpToNextRound() public onlyOwner
     {
-        (uint256 currentRoundIndex, address currentRoundAddress) = currentRound();
+        uint256 currentRoundIndex;
+        address currentRoundAddress;
+        (currentRoundIndex, currentRoundAddress) = currentRound();
         IMatryxRound(currentRoundAddress).closeRound();
         IMatryxRound(rounds[currentRoundIndex+1]).startNow();
     }
@@ -515,7 +518,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev This function closes the tournament after the tournament owner selects their winners with the "DoNothing" option
     function stopTournament() public onlyOwner
     {
-        (,address currentRoundAddress) = currentRound();
+        address currentRoundAddress;
+        (, currentRoundAddress) = currentRound();
         IMatryxRound(currentRoundAddress).closeRound();
         closeTournament();
     }
