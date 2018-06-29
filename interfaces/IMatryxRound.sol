@@ -20,12 +20,16 @@ interface IMatryxRound
 	function submissionsChosen() public constant returns (bool);
 	function getWinningSubmissionAddresses() public constant returns (address[]);
 	function numberOfSubmissions() public constant returns (uint256);
+	function getParticipantType(address _participant) public view returns (uint256);
 	function editRound(uint256 _currentRoundEndTime, LibConstruction.RoundData _roundData) public;
-	function selectWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution, uint256 _selectWinnerAction) public;
+	function transferToTournament(uint256 _amount) public;
+	function selectWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData _roundData, uint256 _selectWinnerAction) public;
+	function transferAllToWinners(uint256 _tournamentBalance) public;
 	function startNow() public;
 	function closeRound() public;
+	function becomeEntrant(address _entrant) public;
+	function becomeNonentrant(address _entrant) public;
 	//function awardBounty(address _submissionAddress, uint256 _remainingBounty) public;
 	function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references,address _author, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
-	function transferBountyToTournament() public;
-	function pullPayoutIntoSubmission() public returns (uint256);
+	function transferBountyToTournament() public returns (uint256);
 }

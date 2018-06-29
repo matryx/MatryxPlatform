@@ -70,7 +70,8 @@ contract MatryxRound is Ownable, IMatryxRound {
      * Enums
      */
     enum RoundState { NotYetOpen, Unfunded, Open, InReview, HasWinners, Closed, Abandoned }
-	enum ParticipantType { nonentrant, entrant, contributor, author }
+    enum TournamentState { NotYetOpen, OnHold, Open, Closed, Abandoned}
+	enum ParticipantType { Nonentrant, Entrant, Contributor, Author }
 
 	/*
      * Modifiers
@@ -336,6 +337,11 @@ contract MatryxRound is Ownable, IMatryxRound {
 		return submissions.length - numberSubmissionsRemoved;
 	}
 
+    function getParticipantType(address _participant) public view returns (uint256)
+    {
+        return addressToParticipantType[_participant];
+    }
+
 	/*
      * Round Admin Methods
      */
@@ -365,11 +371,17 @@ contract MatryxRound is Ownable, IMatryxRound {
         reviewPeriodDuration = _roundData.reviewPeriodDuration;
     }
 
+    function transferToTournament(uint256 _amount) public onlyTournament 
+    {
+        require(getState() == uint256(RoundState.NotYetOpen));
+        require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, _amount));
+    }
+
     enum SelectWinnerAction { DoNothing, StartNextRound, CloseTournament }
 	/// @dev Choose a winning submission for the round (callable only by the owner of the round).
     /// @param _submissionAddresses Index of the winning submission.
     /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
-	function selectWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution, uint256 _selectWinnerAction) public onlyTournament duringReviewPeriod
+	function selectWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData _roundData, uint256 _selectWinnerAction) public onlyTournament duringReviewPeriod
 	{
 		require(_submissionAddresses.length == _rewardDistribution.length);
         require(_submissionAddresses.length != 0 && winningSubmissions.length == 0);
@@ -385,9 +397,18 @@ contract MatryxRound is Ownable, IMatryxRound {
 
         rewardDistributionTotal = _rewardDistributionTotal;
 
+
         // DoNothing and StartNextRound cases
-        if(newRound == 0x0)
+        if(_selectWinnerAction == uint256(SelectWinnerAction.DoNothing) || _selectWinnerAction == uint256(SelectWinnerAction.StartNextRound))
         {
+            for(uint256 j = 0; j < winningSubmissions.length; j++)
+            {
+                // Calculate total reward denominator and store it somewhere when
+                uint256 reward = (rewardDistribution[j].mul(1*10**18).div(rewardDistributionTotal)).mul(bounty);
+                // Transfer the reward to the submission
+                require(IMatryxToken(matryxTokenAddress).transfer(winningSubmissions[j], reward));
+            }
+
             uint256 newBounty;
             uint256 tournamentBalance = IMatryxToken(matryxTokenAddress).balanceOf(tournamentAddress);
 
@@ -409,17 +430,28 @@ contract MatryxRound is Ownable, IMatryxRound {
             else if(_selectWinnerAction == uint256(SelectWinnerAction.StartNextRound))
             {
                 closed = true;
-                roundData = LibConstruction.RoundData({start: now, end: now.add((endTime.sub(startTime))), reviewPeriodDuration: reviewPeriodDuration, bounty: newBounty});
+                roundData = LibConstruction.RoundData({start: now, end: _roundData.end, reviewPeriodDuration: _roundData.reviewPeriodDuration, bounty: _roundData.bounty});
                 newRound = IMatryxTournament(tournamentAddress).createRound(roundData, false);
             }
         }
-
-        // CloseTournament Case
-        if(_selectWinnerAction == uint256(SelectWinnerAction.CloseTournament))
+        else
         {
+            // CloseTournament case
             closed = true;
         }
 	}
+
+    function transferAllToWinners(uint256 _tournamentBalance) public onlyTournament
+    {
+        for(uint256 i = 0; i < winningSubmissions.length; i++)
+        {
+            // Calculate total reward denominator and store it somewhere when
+            uint totalBalance = bounty.add(_tournamentBalance);
+            uint256 reward = (rewardDistribution[i].mul(1*10**18).div(rewardDistributionTotal)).mul(totalBalance);
+            // Transfer the reward to the submission
+            IMatryxToken(matryxTokenAddress).transfer(winningSubmissions[i], reward);
+        }
+    }
 
     function startNow() public onlyTournament
     {
@@ -437,6 +469,16 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/*
      * Entrant Methods
      */
+
+    function becomeEntrant(address _entrant) public onlyTournament
+    {
+        addressToParticipantType[_entrant] = uint256(ParticipantType.Entrant);
+    }
+
+    function becomeNonentrant(address _entrant) public onlyTournament
+    {
+        addressToParticipantType[_entrant] = uint256(ParticipantType.Nonentrant);
+    }
 
     /// @dev Create a new submission.
     /// @param _author of this submission.
@@ -468,10 +510,10 @@ contract MatryxRound is Ownable, IMatryxRound {
         authorToSubmissionAddress[msg.sender].push(submissionAddress);
 
         // round participant bookkeeping
-        addressToParticipantType[_author] = uint(ParticipantType.author);
+        addressToParticipantType[_author] = uint(ParticipantType.Author);
         for(uint256 i = 0; i < _contributors.length; i++)
         {
-        	addressToParticipantType[_contributors[i]] = uint(ParticipantType.contributor);
+        	addressToParticipantType[_contributors[i]] = uint(ParticipantType.Contributor);
         }
 
         IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);
@@ -480,49 +522,51 @@ contract MatryxRound is Ownable, IMatryxRound {
 	}
 
 	/// @dev Allows contributors to withdraw a portion of the round bounty if the round has been abandoned.
-	function transferBountyToTournament() public onlyTournament
-	{
-        IMatryxToken(matryxTokenAddress).transfer(tournamentAddress, remainingBounty());
+	function transferBountyToTournament() public onlyTournament returns (uint256)
+	{  
+        uint256 remaining = remainingBounty();
+        IMatryxToken(matryxTokenAddress).transfer(tournamentAddress, remaining);
+        return remaining;
 	}
 
-    function pullPayoutIntoSubmission() public onlySubmission returns (uint256)
-    {
-        require(getState() == uint256(RoundState.Closed));
-        // If the submission's already been paid, revert
-        require(submissionToHasBeenPayed[msg.sender] == false);
-        // If the tournament closed, we need to pull the tournament funds into this round.
-        if(IMatryxTournament(tournamentAddress).getState() == 5 && remainingBounty() > 0)
-        {
-            IMatryxTournament(tournamentAddress).pullRemainingBountyIntoRound();
-        }
+    // function pullPayoutIntoSubmission() public onlySubmission returns (uint256)
+    // {
+    //     require(getState() == uint256(RoundState.Closed));
+    //     // If the submission's already been paid, revert
+    //     require(submissionToHasBeenPayed[msg.sender] == false);
+    //     // If the tournament closed, we need to pull the tournament funds into this round.
+    //     if(IMatryxTournament(tournamentAddress).getState() == uint256(TournamentState.Closed) && remainingBounty() > 0)
+    //     {
+    //         IMatryxTournament(tournamentAddress).pullRemainingBountyIntoRound();
+    //     }
 
-        // Transfer the reward to its recipient if it deserves a reward (and mark that its been given out)
+    //     // Transfer the reward to its recipient if it deserves a reward (and mark that its been given out)
         
-        for(uint256 i = 0; i < winningSubmissions.length; i++)
-        {
-            if(msg.sender == winningSubmissions[i])
-            {
-                submissionToHasBeenPayed[msg.sender] = true;
-                // Calculate total reward denominator and store it somewhere when
-                uint256 reward = (rewardDistribution[i].mul(1*10**18).div(rewardDistributionTotal)).mul(bounty);
-                // Transfer the reward to the submission
-                IMatryxToken(matryxTokenAddress).transfer(msg.sender, reward);
-                return reward;
-            }
-        }
+    //     for(uint256 i = 0; i < winningSubmissions.length; i++)
+    //     {
+    //         if(msg.sender == winningSubmissions[i])
+    //         {
+    //             submissionToHasBeenPayed[msg.sender] = true;
+    //             // Calculate total reward denominator and store it somewhere when
+    //             uint256 reward = (rewardDistribution[i].mul(1*10**18).div(rewardDistributionTotal)).mul(bounty);
+    //             // Transfer the reward to the submission
+    //             IMatryxToken(matryxTokenAddress).transfer(msg.sender, reward);
+    //             return reward;
+    //         }
+    //     }
 
-        // TODO:
-        // Or we could never transfer funds to the round in the first place.
-        // This would allow this function to exist on the tournament instead of the round.
-        // I'd need to reintroduce bountyLeft so that the tournament knew how much is left for the round.
-        // If I reintroduced it, it would be to the tournament, so that submission.withdrawReward wouldn't have to call round.bountyLeft to figure out how much to ask the tournament for.
-        // The tournament would just transfer as much as the submission deserved into it.
-        // bountyLeft would be stored as a value under a rounds structure.
-        // This would eventually involve writing a library to do round functions.
-        // For now, this can be a hardcoded library.
-        // Eventually, this library will be part of the upgrade system.
-        // Upgrade system will eventually allow for data, data migration and code contracts to exist and be swapped per contract
-        // All data and code contract addresses will be sourced from one contract, the MatryxVersionManager.
-        // This contract will also contain data migrators to migrate from one version to another (for when data structures change)
-    }
+    //     // TODO:
+    //     // Or we could never transfer funds to the round in the first place.
+    //     // This would allow this function to exist on the tournament instead of the round.
+    //     // I'd need to reintroduce bountyLeft so that the tournament knew how much is left for the round.
+    //     // If I reintroduced it, it would be to the tournament, so that submission.withdrawReward wouldn't have to call round.bountyLeft to figure out how much to ask the tournament for.
+    //     // The tournament would just transfer as much as the submission deserved into it.
+    //     // bountyLeft would be stored as a value under a rounds structure.
+    //     // This would eventually involve writing a library to do round functions.
+    //     // For now, this can be a hardcoded library.
+    //     // Eventually, this library will be part of the upgrade system.
+    //     // Upgrade system will eventually allow for data, data migration and code contracts to exist and be swapped per contract
+    //     // All data and code contract addresses will be sourced from one contract, the MatryxVersionManager.
+    //     // This contract will also contain data migrators to migrate from one version to another (for when data structures change)
+    // }
 }

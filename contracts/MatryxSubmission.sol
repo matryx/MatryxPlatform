@@ -414,9 +414,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 	
 	function withdrawReward(address _recipient) public ownerContributorOrRound
 	{
-		// TODO: Replace with method that tells round to transfer MTX to this submission
-		uint256 submissionReward = IMatryxRound(roundAddress).pullPayoutIntoSubmission();
 		IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
+		uint256 submissionReward = IMatryxToken(token).balanceOf(address(this));
 
 		// Transfer reward to submission author and contributors
 		uint256 transferAmount = getTransferAmount();
