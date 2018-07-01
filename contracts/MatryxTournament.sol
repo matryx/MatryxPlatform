@@ -506,6 +506,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function allocateMoreToRound(uint256 _mtxAllocation) public onlyOwner
     {
         (, address currentRoundAddress) = currentRound();
+        uint256 currentRoundState = IMatryxRound(currentRoundAddress).getState();
+        require(currentRoundState == uint256(RoundState.NotYetOpen) || 
+                currentRoundState == uint256(RoundState.Unfunded) || 
+                currentRoundState == uint256(RoundState.Open));
+
         roundBountyAllocation = roundBountyAllocation.add(_mtxAllocation);
         require(IMatryxToken(matryxTokenAddress).transfer(currentRoundAddress, _mtxAllocation));
     }
@@ -513,9 +518,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev This function should be called after the user selects winners for their tournament and chooses the "DoNothing" option
     function jumpToNextRound() public onlyOwner
     {
-        uint256 currentRoundIndex;
-        address currentRoundAddress;
-        (currentRoundIndex, currentRoundAddress) = currentRound();
+        (uint256 currentRoundIndex, address currentRoundAddress) = currentRound();
         IMatryxRound(currentRoundAddress).closeRound();
         IMatryxRound(rounds[currentRoundIndex+1]).startNow();
     }
@@ -676,12 +679,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
             uint256 roundBounty = IMatryxRound(currentRoundAddress).transferBountyToTournament();
             roundBountyAllocation = roundBountyAllocation.sub(roundBounty);
             returnEntryFeeToEntrant(msg.sender);
-            require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, getBalance().div(numberOfEntrants).mul(2)));
+            require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, getBounty().div(numberOfEntrants).mul(2)));
         }
         else
         {
             returnEntryFeeToEntrant(msg.sender);
-            require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, getBalance().mul(numberOfEntrants.sub(2)).div(numberOfEntrants).div(numberOfEntrants.sub(1))));
+            require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, getBounty().mul(numberOfEntrants.sub(2)).div(numberOfEntrants).div(numberOfEntrants.sub(1))));
         }
 
         hasWithdrawn[msg.sender] = true;
