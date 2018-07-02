@@ -26,6 +26,7 @@ library LibConstruction
 
     struct TournamentData
     {
+        string category;
     	bytes32 title_1;
         bytes32 title_2;
         bytes32 title_3;

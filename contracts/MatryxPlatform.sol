@@ -83,12 +83,11 @@ contract MatryxPlatform is Ownable {
    */
 
   event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee);
-  event TournamentOpened(address _owner, address _tournamentAddress, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee);
+  event TournamentOpened(address _tournamentAddress, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee);
   event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _MTXReward);
   event UserEnteredTournament(address _entrant, address _tournamentAddress);
   event QueryID(string queryID);
   /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
-  /// @param _owner Owner of the tournament.
   /// @param _tournamentName_1 First part of the tournament name.
   /// @param _tournamentName_2 Second part of the tournament name.
   /// @param _tournamentName_3 Third part of the tournament name.
@@ -96,9 +95,9 @@ contract MatryxPlatform is Ownable {
   /// @param _externalAddress_2 Second part of the external address of the tournament.
   /// @param _MTXReward Reward for winning the tournament.
   /// @param _entryFee Fee for entering into the tournament.
-  function invokeTournamentOpenedEvent(address _owner, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
+  function invokeTournamentOpenedEvent(bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
   {
-    TournamentOpened(_owner, msg.sender, _tournamentName_1, _tournamentName_2, _tournamentName_3, _externalAddress_1, _externalAddress_2, _MTXReward, _entryFee);
+    TournamentOpened(msg.sender, _tournamentName_1, _tournamentName_2, _tournamentName_3, _externalAddress_1, _externalAddress_2, _MTXReward, _entryFee);
   }
 
   /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
