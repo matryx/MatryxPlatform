@@ -21,7 +21,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     using SafeMath for uint256;
     using strings for *;
     using LibTournamentAdminMethods for LibConstruction.TournamentData;
-    
+
     // TODO: condense and put in structs
     // Platform identification
     address public platformAddress;
@@ -238,6 +238,16 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function getData() public view returns (LibConstruction.TournamentData _data)
     {
         return data;
+    }
+
+    function isRound(address _roundAddress) public view returns (bool _isRound)
+    {
+        return stateData.isRound[_roundAddress];
+    }
+
+    function getRounds() public view returns (address[] _rounds)
+    {
+        return stateData.rounds;
     }
 
     function getTitle() public view returns (bytes32[3] _title)

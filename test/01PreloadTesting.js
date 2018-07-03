@@ -5,7 +5,7 @@ var MatryxSubmission = artifacts.require("MatryxSubmission");
 var MatryxToken = artifacts.require("MatryxToken");
 
 var ethersLocal = '/Users/marinatorras/Projects/Matryx/ethers.js';
-var walletAddress = "0x8932984178a6b07aa6947e23876878da663401986c0e5539092395bca5901707";
+var walletAddress = "0x1f2f539638f07fca5d83c0d584bc6be5351d5e1ef9e13e809a72c5e802060a67";
 
 contract('MatryxPlatform', function(accounts) {
 
@@ -50,9 +50,6 @@ contract('MatryxPlatform', function(accounts) {
     let tournament;
     let token;
     let submissionAddress;
-    //for code coverage
-    let gasEstimate = 30000000;
-
 
     it("Token Minting", async function () {
 
@@ -82,9 +79,6 @@ contract('MatryxPlatform', function(accounts) {
         await platform.createPeer({gasLimit: 4000000})
 
         token = await new ethers.Contract(MatryxToken.address, MatryxToken.abi, wallet);
-
-        //console.log("Token Contract Instance: ", token);
-
 
         await token.setReleaseAgent(wallet.address)
 
@@ -119,8 +113,6 @@ contract('MatryxPlatform', function(accounts) {
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
-        //function stringToBytes32(text, requiredLength) {var data = ethers.utils.toUtf8Bytes(text); var l = data.length; var pad_length = 64 - (l*2 % 64); data = ethers.utils.hexlify(data);data = data + "0".repeat(pad_length);data = data.substring(2); data = data.match(/.{1,64}/g);data = data.map(v => "0x" + v); while(data.length < requiredLength) { data.push("0x0"); }return data;}
-
         function stringToBytes32(text, requiredLength) {
             var data = ethers.utils.toUtf8Bytes(text);
             var l = data.length;
@@ -142,23 +134,24 @@ contract('MatryxPlatform', function(accounts) {
         token = new ethers.Contract(MatryxToken.address, MatryxToken.abi, wallet);
         await token.setReleaseAgent(wallet.address)
         await token.releaseTokenTransfer({gasLimit: 1000000})
-        await token.mint(wallet.address, "10000000000000000000000")
-        await token.approve(MatryxPlatform.address, "100000000000000000000")
+        await token.mint(wallet.address, "1000000000000000000000")
+        await token.approve(MatryxPlatform.address, "1000000000000000000000")
 
         console.log("Tokens were minted !")
         title = stringToBytes32("the title of the tournament", 3);
         categoryHash = stringToBytes32("descriptionHash", 2);
-        //hope = stringToBytes32("math", 1)
+        fileHash = stringToBytes32("fileHash", 2)
 
         tournamentData = {
+            category: 'math',
             title_1: title[0],
             title_2: title[1],
             title_3: title[2],
             descriptionHash_1: categoryHash[0],
             descriptionHash_2: categoryHash[1],
-            fileHash_1: categoryHash[0],
-            fileHash_2: categoryHash[1],
-            bounty: "10000000000000000000",
+            fileHash_1: fileHash[0],
+            fileHash_2: fileHash[1],
+            bounty: "100000000000000000000",
             entryFee: "2000000000000000000"
         }
 
@@ -167,8 +160,8 @@ contract('MatryxPlatform', function(accounts) {
         var startTime = Math.floor((new Date() / 1000 + 15));
         var endTime = startTime + 120;
 
-        roundData = {start: startTime, end: endTime, reviewPeriodDuration: 5, bounty: "5000000000000000000"}
-        await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
+        roundData = {start: startTime, end: endTime, reviewPeriodDuration: 5, bounty: "100000"}
+        await platform.createTournament(tournamentData, roundData, {gasLimit: 6500000})
 
         console.log("Tournament was created");
 
@@ -177,11 +170,34 @@ contract('MatryxPlatform', function(accounts) {
         tournament = await web3.eth.contract(MatryxTournament.abi).at(tournamentAddress);
         console.log("tournamentAddress: " + tournamentAddress);
         console.log("able to get tournament from platform");
-        console.log("tournament: " + tournament.tx);
-        r = web3.eth.contract(MatryxRound.abi).at(tournament.rounds(0))
+        console.log("tournament: " + tournament);
+
+        let tournamentState = await tournament.getState();
+        console.log("tournamentState: " + tournamentState);
+
+        [currentRoundIndex, currentRoundAddress] = tournament.currentRound();
+        console.log("currentRoundAddress: " + currentRoundAddress);
+
+        console.log("tournament.platformAddress: " + tournament.platformAddress);
+
+        // let getData = await tournament.getData();
+        // console.log("getData: " + getData);
+
+        let isRound = tournament.isRound(currentRoundAddress);
+        console.log("isRound: " + isRound);
+
+        let rounds = tournament.getRounds();
+        console.log("rounds: " + rounds);
+
+        r = web3.eth.contract(MatryxRound.abi).at(currentRoundAddress);
         console.log("round: " + r);
+
         let state = await r.getState();
         console.log("state: " + state);
+
+        let roundBalance = await r.getRoundBalance();
+        console.log("roundBalance: " + roundBalance);
+
         assert.isTrue(r != 0, "Round does not exist");
     });
 });
@@ -210,8 +226,6 @@ contract('MatryxPlatform', function(accounts) {
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
-        //function stringToBytes32(text, requiredLength) {var data = ethers.utils.toUtf8Bytes(text); var l = data.length; var pad_length = 64 - (l*2 % 64); data = ethers.utils.hexlify(data);data = data + "0".repeat(pad_length);data = data.substring(2); data = data.match(/.{1,64}/g);data = data.map(v => "0x" + v); while(data.length < requiredLength) { data.push("0x0"); }return data;}
-
         function stringToBytes32(text, requiredLength) {
             var data = ethers.utils.toUtf8Bytes(text);
             var l = data.length;
@@ -239,16 +253,17 @@ contract('MatryxPlatform', function(accounts) {
         console.log("Tokens were minted !")
         title = stringToBytes32("the title of the tournament", 3);
         categoryHash = stringToBytes32("descriptionHash", 2);
-        //hope = stringToBytes32("math", 1)
+        fileHash = stringToBytes32("fileHash", 2)
 
         tournamentData = {
+            category: 'math',
             title_1: title[0],
             title_2: title[1],
             title_3: title[2],
             descriptionHash_1: categoryHash[0],
             descriptionHash_2: categoryHash[1],
-            fileHash_1: categoryHash[0],
-            fileHash_2: categoryHash[1],
+            fileHash_1: fileHash[0],
+            fileHash_2: fileHash[1],
             bounty: "10000000000000000000",
             entryFee: "2000000000000000000"
         }
@@ -259,7 +274,7 @@ contract('MatryxPlatform', function(accounts) {
         var endTime = startTime + 120;
 
         roundData = {start: startTime, end: endTime, reviewPeriodDuration: 5, bounty: "5000000000000000000"}
-        await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
+        await platform.createTournament(tournamentData, roundData, {gasLimit: 6500000})
 
         console.log("Tournament was created");
 
@@ -300,8 +315,6 @@ contract('MatryxPlatform', function(accounts) {
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
-        //function stringToBytes32(text, requiredLength) {var data = ethers.utils.toUtf8Bytes(text); var l = data.length; var pad_length = 64 - (l*2 % 64); data = ethers.utils.hexlify(data);data = data + "0".repeat(pad_length);data = data.substring(2); data = data.match(/.{1,64}/g);data = data.map(v => "0x" + v); while(data.length < requiredLength) { data.push("0x0"); }return data;}
-
         function stringToBytes32(text, requiredLength) {
             var data = ethers.utils.toUtf8Bytes(text);
             var l = data.length;
@@ -329,16 +342,17 @@ contract('MatryxPlatform', function(accounts) {
         console.log("Tokens were minted !")
         title = stringToBytes32("the title of the tournament", 3);
         categoryHash = stringToBytes32("descriptionHash", 2);
-        //hope = stringToBytes32("math", 1)
+        fileHash = stringToBytes32("fileHash", 2)
 
         tournamentData = {
+            category: 'math',
             title_1: title[0],
             title_2: title[1],
             title_3: title[2],
             descriptionHash_1: categoryHash[0],
             descriptionHash_2: categoryHash[1],
-            fileHash_1: categoryHash[0],
-            fileHash_2: categoryHash[1],
+            fileHash_1: fileHash[0],
+            fileHash_2: fileHash[1],
             bounty: "10000000000000000000",
             entryFee: "2000000000000000000"
         }
@@ -349,7 +363,7 @@ contract('MatryxPlatform', function(accounts) {
         var endTime = startTime + 120;
 
         roundData = {start: startTime, end: endTime, reviewPeriodDuration: 5, bounty: "5000000000000000000"}
-        await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
+        await platform.createTournament(tournamentData, roundData, {gasLimit: 6500000})
 
         console.log("Tournament was created");
 
@@ -399,8 +413,6 @@ contract('MatryxPlatform', function(accounts) {
         wallet.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545')
         web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wallet.address, value: 30 * 10 ** 18})
 
-        //function stringToBytes32(text, requiredLength) {var data = ethers.utils.toUtf8Bytes(text); var l = data.length; var pad_length = 64 - (l*2 % 64); data = ethers.utils.hexlify(data);data = data + "0".repeat(pad_length);data = data.substring(2); data = data.match(/.{1,64}/g);data = data.map(v => "0x" + v); while(data.length < requiredLength) { data.push("0x0"); }return data;}
-
         function stringToBytes32(text, requiredLength) {
             var data = ethers.utils.toUtf8Bytes(text);
             var l = data.length;
@@ -428,27 +440,28 @@ contract('MatryxPlatform', function(accounts) {
         console.log("Tokens were minted !")
         title = stringToBytes32("the title of the tournament", 3);
         categoryHash = stringToBytes32("descriptionHash", 2);
-        //hope = stringToBytes32("math", 1)
+        fileHash = stringToBytes32("fileHash", 2)
 
         tournamentData = {
+            category: 'math',
             title_1: title[0],
             title_2: title[1],
             title_3: title[2],
             descriptionHash_1: categoryHash[0],
             descriptionHash_2: categoryHash[1],
-            fileHash_1: categoryHash[0],
-            fileHash_2: categoryHash[1],
+            fileHash_1: fileHash[0],
+            fileHash_2: fileHash[1],
             bounty: "10000000000000000000",
             entryFee: "2000000000000000000"
         }
 
         console.log("Tournament Parameters have been created ! ");
 
-        var startTime = Math.floor((new Date() / 1000 ));
+        var startTime = Math.floor((new Date() / 1000 + 15));
         var endTime = startTime + 120;
 
         roundData = {start: startTime, end: endTime, reviewPeriodDuration: 5, bounty: "5000000000000000000"}
-        await platform.createTournament("math", tournamentData, roundData, {gasLimit: 6500000})
+        await platform.createTournament(tournamentData, roundData, {gasLimit: 6500000})
 
         console.log("Tournament was created");
 
