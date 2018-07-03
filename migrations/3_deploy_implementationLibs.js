@@ -5,13 +5,19 @@ var LibTournamentAdminMethods = artifacts.require("../libraries/tournament/LibTo
 var LibTournamentEntrantMethods = artifacts.require("../libraries/tournament/LibTournamentEntrantMethods.sol");
 var LibTournamentStateManagement = artifacts.require("../libraries/tournament/LibTournamentStateManagement.sol");
 
-module.exports = async function(deployer) {
-		deployer.link(SafeMath, SubmissionTrust);
-		deployer.link(SafeMath128, SubmissionTrust);
-		await deployer.deploy(SubmissionTrust);
-        await deployer.deploy(LibTournamentStateManagement);
-        deployer.link(LibTournamentStateManagement, LibTournamentAdminMethods);
-        await deployer.deploy(LibTournamentAdminMethods);
-        deployer.link(LibTournamentStateManagement, LibTournamentEntrantMethods);
-        return deployer.deploy(LibTournamentEntrantMethods);      
+module.exports = function(deployer) {
+	deployer.link(SafeMath, SubmissionTrust);
+	deployer.link(SafeMath128, SubmissionTrust);
+    return deployer.deploy(SubmissionTrust).then(() =>
+    {
+        return deployer.deploy(LibTournamentStateManagement).then(() =>
+        {
+            deployer.link(LibTournamentStateManagement, LibTournamentAdminMethods);
+            return deployer.deploy(LibTournamentAdminMethods).then(() =>
+            {
+                deployer.link(LibTournamentStateManagement, LibTournamentEntrantMethods);
+                return deployer.deploy(LibTournamentEntrantMethods);
+            });
+        });
+    });
 };

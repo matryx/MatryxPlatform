@@ -317,21 +317,20 @@ contract MatryxPlatform is Ownable {
   ///    reviewPeriodDuration: The amount of the tournament owner has to determine the winners of the round.
   ///    bounty: The reward for the first round's winners.
   /// @return _tournamentAddress Address of the newly created tournament.
-  function createTournament(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) returns (address _tournamentAddress)
+  function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) returns (address _tournamentAddress)
   {
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-    address newTournament = tournamentFactory.createTournament(_category, tournamentData, roundData, msg.sender);
-    //MatryxToken.transferFrom(newTournament, **round_address**, uint256 bounty);
-    TournamentCreated(_category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.descriptionHash_1, tournamentData.descriptionHash_2, tournamentData.bounty, tournamentData.entryFee);
+    address newTournament = tournamentFactory.createTournament(tournamentData.category, tournamentData, roundData, msg.sender);
+    TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.descriptionHash_1, tournamentData.descriptionHash_2, tournamentData.bounty, tournamentData.entryFee);
     
     require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.bounty));
-    IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
-    //update data structures
+    // IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
+    // update data structures
     allTournaments.push(newTournament);
     tournamentExists[newTournament] = true;
     updateUsersTournaments(msg.sender, newTournament);
 
-    addTournamentToCategory(newTournament, _category);
+    addTournamentToCategory(newTournament, tournamentData.category);
 
     return newTournament;
   }

@@ -287,13 +287,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     }
 
     ///@dev Returns this tournament's bounty.
-    function getBounty() public returns (uint256 _tournamentBounty)
+    function getBounty() public view returns (uint256 _tournamentBounty)
     {  
         return IMatryxToken(matryxTokenAddress).balanceOf(address(this)).sub(stateData.entryFeesTotal).add(stateData.roundBountyAllocation);
     }
 
     // @dev Returns the remaining bounty this tournament is able to award.
-    function getBalance() public returns (uint256 _tournamentBalance)
+    function getBalance() public view returns (uint256 _tournamentBalance)
     {
         return IMatryxToken(matryxTokenAddress).balanceOf(address(this)).sub(stateData.entryFeesTotal);
     }
@@ -376,7 +376,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @return The new round's address.
     function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress)
     {
-        LibTournamentAdminMethods.createRound(stateData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, roundData, _automaticCreation);
+        return LibTournamentAdminMethods.createRound(stateData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, roundData, _automaticCreation);
     }
 
     function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public onlyPlatform

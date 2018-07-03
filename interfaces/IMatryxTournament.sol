@@ -12,8 +12,8 @@ interface IMatryxTournament
     function getPlatform() public view returns (address _platformAddress);
     function getData() public view returns (LibConstruction.TournamentData _data);
     function currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress);
-    function getBounty() public returns (uint256 _tournamentBounty);
-    function getBalance() public returns (uint256 _tournamentBalance);
+    function getBounty() public view returns (uint256 _tournamentBounty);
+    function getBalance() public view returns (uint256 _tournamentBalance);
     function mySubmissions() public view returns (address[]);
     function submissionCount() public view returns (uint256 _submissionCount);
     function entrantCount() public view returns (uint256 _entrantCount);
