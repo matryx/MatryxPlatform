@@ -50,7 +50,7 @@ createTournamentData = web3Utils.encodeFunctionCall(MatryxPlatform.abi[create_to
 platform.createTournament(tournamentData, roundData, {gasLimit: 6359000, gasPrice: 21e9})
 
 platform.allTournaments(0).then((address) => { return t = new ethers.Contract(address, MatryxTournament.abi, wallet);})
-t.rounds(0).then((address) => { return r = web3.eth.contract(MatryxRound.abi).at(address);})
+t.getRounds().then((addresses) => { return r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);})
 
 token.approve(MatryxPlatform.address, 0);
 token.approve(MatryxPlatform.address, tournamentData.entryFee);

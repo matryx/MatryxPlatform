@@ -165,15 +165,16 @@ library LibTournamentAdminMethods
             successfulCreation = true;
         }
 
-        stateData.rounds.push(newRoundAddress);
-        stateData.isRound[newRoundAddress] = true;
-
         // Transfer the round bounty to the round.
+        // If this is the first round, the bounty is transfered to the round *by the platform in createTournament* (by tournament.sendBountyToRound)
         if(stateData.rounds.length != 0 && roundData.bounty != 0)
         {
             stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(roundData.bounty);
             IMatryxToken(matryxTokenAddress).transfer(newRoundAddress, roundData.bounty);
         }
+
+        stateData.rounds.push(newRoundAddress);
+        stateData.isRound[newRoundAddress] = true;
 
         // Triggers Event displaying start time, end, address, and round number
         emit NewRound(roundData.start, roundData.end, roundData.reviewPeriodDuration, newRoundAddress, stateData.rounds.length);
