@@ -21,10 +21,10 @@ wallet.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
 platform = new ethers.Contract(MatryxPlatform.address, MatryxPlatform.abi, wallet);
 platform.createPeer({gasLimit: 4500000})
 
+// token = web3.eth.contract(tokenABI).at(tokenAddress)
 tokenAddress = MatryxToken.address
 tokenABI = MatryxToken.abi
-token = new ethers.Contract(tokenAddress, tokenABI, wallet)
-// token = web3.eth.contract(tokenABI).at(tokenAddress)
+token = web3.eth.contract(tokenABI).at(tokenAddress);
 token.setReleaseAgent(web3.eth.accounts[0])
 token.releaseTokenTransfer({gasLimit: 1000000})
 token.mint(web3.eth.accounts[0], "100000000000000000000000")
@@ -35,7 +35,7 @@ var descriptionHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGR
 var fileHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
 var tournamentData = { category: "math", title_1: title[0], title_2: title[1], title_3: title[2], descriptionHash_1: descriptionHash[0], descriptionHash_2: descriptionHash[1], fileHash_1: fileHash[0], fileHash_2: fileHash[1], bounty: "10000000000000000000", entryFee: "2000000000000000000"}
 var startTime = Math.floor((new Date() / 1000 + 10));
-var endTime = startTime + 30000000;
+var endTime = startTime + 20;
 var roundData = { start: startTime, end: endTime, reviewPeriodDuration: 300, bounty: "5000000000000000000"}
 
 tournamentData = [web3.sha3("math"), title[0], title[1], title[2], descriptionHash[0], descriptionHash[1], "10000000000000000000", "2000000000000000000"]
@@ -47,18 +47,18 @@ roundData = [startTime, endTime, 300, "5000000000000000000"]
 var create_tournament_index = getFunction("createTournament", MatryxPlatform.abi);
 createTournamentData = web3Utils.encodeFunctionCall(MatryxPlatform.abi[create_tournament_index], ["math", tournamentData, roundData])
 
-platform.createTournament(tournamentData, roundData, {gasLimit: 6359000, gasPrice: 21e9})
+platform.createTournament(tournamentData, roundData, {gasLimit: 8000000, gasPrice: 21e9})
+platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);}) })
 
-platform.allTournaments(0).then((address) => { return t = new ethers.Contract(address, MatryxTournament.abi, wallet);})
-t.getRounds().then((addresses) => { return r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);})
-
-token.approve(MatryxPlatform.address, 0);
-token.approve(MatryxPlatform.address, tournamentData.entryFee);
+// token.approve(MatryxPlatform.address, 0);
+// token.approve(MatryxPlatform.address, tournamentData.entryFee);
 platform.enterTournament(t.address, {gasLimit: 5000000});
 
 var content = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 1);
 submissionData = {title: "A submission", owner: web3.eth.accounts[0], contentHash: content[0]+content[1].substr(2), isPublic: false}
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
+
+s = new ethers.Contract(r.getSubmissions()[0], MatryxSubmission.abi, wallet)
 
 tournamentUpdates = {title_1: "0x6e6577206e616d65000000000000000000000000000000000000000000000000", title_2: "0x0000000000000000000000000000000000000000000000000000000000000000", title_3: "0x0000000000000000000000000000000000000000000000000000000000000000", contentHash_1: "0x0000000000000000000000000000000000000000000000000000000000000000", contentHash_2: "0x0000000000000000000000000000000000000000000000000000000000000000", entryFee: "10000000000000000000", entryFeeChanged: true}
 t.update(tournamentUpdates, {gasLimit: 6500000})
@@ -66,3 +66,13 @@ t.update(tournamentUpdates, {gasLimit: 6500000})
 submission_data = {title: "this may not work", owner: "0x0000000000000000000000000000000000000000", contentHash: "0xabcdef123456789", isPublic: true}
 
 s.update([web3.eth.accounts[2], web3.eth.accounts[3]], [1,4], [], submission_data, {gasLimit: 5000000})
+
+var winners = [s.address]
+var distribution = ['1']//[web3.toWei(1)]
+var roundStart = Math.floor((new Date() / 1000 + 30));
+var roundData = {start: roundStart, end: roundStart+180, reviewPeriodDuration: 300, bounty: 0}
+
+platform.setContractAddress(web3.sha3("hello"), web3.eth.accounts[0])
+
+t.selectWinners(winners, distribution, roundData, "0");
+
