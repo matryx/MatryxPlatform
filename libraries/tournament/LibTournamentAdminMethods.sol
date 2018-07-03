@@ -172,7 +172,7 @@ library LibTournamentAdminMethods
         if(stateData.rounds.length != 0 && roundData.bounty != 0)
         {
             stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(roundData.bounty);
-            //IMatryxToken(matryxTokenAddress).transfer(newRoundAddress, roundData.bounty);
+            IMatryxToken(matryxTokenAddress).transfer(newRoundAddress, roundData.bounty);
         }
 
         // Triggers Event displaying start time, end, address, and round number
