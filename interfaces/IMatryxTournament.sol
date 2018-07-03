@@ -10,6 +10,10 @@ interface IMatryxTournament
     function isEntrant(address _sender) public view returns (bool);
     function getState() public view returns (uint256);
     function getPlatform() public view returns (address _platformAddress);
+    function getTitle() public view returns (bytes32[3] _title);
+    function getCategory() public view returns (string _category);
+    function getDescriptionHash() public view returns (bytes32[2] _descriptionHash);
+    function getFileHash() public view returns (bytes32[2] _fileHash);
     function getData() public view returns (LibConstruction.TournamentData _data);
     function currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress);
     function getBounty() public view returns (uint256 _tournamentBounty);

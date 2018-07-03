@@ -240,44 +240,44 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return data;
     }
 
-    // function getTitle() public view returns (bytes32[3] _title)
-    // {
-    //     bytes32[3] memory title;
-    //     title[0] = data.title_1;
-    //     title[1] = data.title_2;
-    //     title[2] = data.title_3;
-    //     return title;
-    // }
+    function getTitle() public view returns (bytes32[3] _title)
+    {
+        bytes32[3] memory title;
+        title[0] = data.title_1;
+        title[1] = data.title_2;
+        title[2] = data.title_3;
+        return title;
+    }
 
-    // function getCategory() public view returns (string _category)
-    // {
-    //     // return IMatryxPlatform(platformAddress).hashForCategory(categoryHash);
-    //     // TODO: Fix me
-    //     return data.category;
-    // }
+    function getCategory() public view returns (string _category)
+    {
+        // return IMatryxPlatform(platformAddress).hashForCategory(categoryHash);
+        // TODO: Fix me
+        return data.category;
+    }
 
     function getOwner() public view returns (address _owner)
     {
         return owner;
     }
 
-    /// @dev Returns the external address of the tournament.
-    /// @return _descriptionHash Off-chain content hash of tournament details (ipfs hash)
-    // function getDescriptionHash() public view returns (bytes32[2] _descriptionHash)
-    // {
-    //     bytes32[2] memory descriptionHash;
-    //     descriptionHash[0] = data.descriptionHash_1;
-    //     descriptionHash[1] = data.descriptionHash_2;
-    //     return descriptionHash;
-    // }
+    // @dev Returns the external address of the tournament.
+    // @return _descriptionHash Off-chain content hash of tournament details (ipfs hash)
+    function getDescriptionHash() public view returns (bytes32[2] _descriptionHash)
+    {
+        bytes32[2] memory descriptionHash;
+        descriptionHash[0] = data.descriptionHash_1;
+        descriptionHash[1] = data.descriptionHash_2;
+        return descriptionHash;
+    }
 
-    // function getFileHash() public view returns (bytes32[2] _fileHash)
-    // {
-    //     bytes32[2] memory fileHash;
-    //     fileHash[0] = data.fileHash_1;
-    //     fileHash[1] = data.fileHash_2;
-    //     return fileHash;
-    // }
+    function getFileHash() public view returns (bytes32[2] _fileHash)
+    {
+        bytes32[2] memory fileHash;
+        fileHash[0] = data.fileHash_1;
+        fileHash[1] = data.fileHash_2;
+        return fileHash;
+    }
 
     /// @dev Returns the current round number.
     /// @return _currentRound Number of the current round.
