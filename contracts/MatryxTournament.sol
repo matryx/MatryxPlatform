@@ -389,6 +389,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return _createRound(roundData, _automaticCreation);
     }
 
+    function createRoundTwo(LibConstruction.RoundData roundData, bool _automaticCreation) public onlyRound returns (address _roundAddress)
+    {
+        return LibTournamentAdminMethods.createRoundTwo(stateData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, roundData, _automaticCreation);
+    }
+
     function _createRound(LibConstruction.RoundData roundData, bool _automaticCreation) private returns (address _roundAddress)
     {
         return LibTournamentAdminMethods.createRound(stateData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, roundData, _automaticCreation);

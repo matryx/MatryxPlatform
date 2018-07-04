@@ -65,10 +65,10 @@ library LibTournamentAdminMethods
         // Event to notify web3 of the winning submission address
         emit RoundWinnersChosen(_submissionAddresses);
         IMatryxRound(currentRoundAddress).selectWinningSubmissions(_submissionAddresses, _rewardDistribution, _roundData, _selectWinnerAction);
-        // if(_selectWinnerAction == uint256(SelectWinnerAction.CloseTournament))
-        // {
-        //     closeTournament(stateData, platformAddress, matryxTokenAddress, remainingBalance, currentRoundAddress);
-        // }
+        if(_selectWinnerAction == uint256(SelectWinnerAction.CloseTournament))
+        {
+            closeTournament(stateData, platformAddress, matryxTokenAddress, remainingBalance, currentRoundAddress);
+        }
     }
 
     function editGhostRound(LibTournamentStateManagement.StateData storage stateData, LibConstruction.RoundData _roundData, address matryxTokenAddress) public
@@ -132,7 +132,7 @@ library LibTournamentAdminMethods
     function closeTournament(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, uint256 remainingBalance, address currentRoundAddress) public
     {
         uint256 roundState = uint256(IMatryxRound(currentRoundAddress).getState());
-        require(IMatryxRound(currentRoundAddress).getState() == uint256(RoundState.HasWinners));
+        require(IMatryxRound(currentRoundAddress).getState() == uint256(RoundState.Closed));
         // Transfer the remaining MTX in the tournament to the current round
         stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(remainingBalance);
         IMatryxToken(matryxTokenAddress).transfer(currentRoundAddress, remainingBalance);
@@ -160,6 +160,38 @@ library LibTournamentAdminMethods
 
         newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, stateData.rounds.length, roundData);
 
+        // Transfer the round bounty to the round.
+        // If this is the first round, the bounty is transfered to the round *by the platform in createTournament* (by tournament.sendBountyToRound)
+        if(stateData.rounds.length != 0 && roundData.bounty != 0)
+        {
+            stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(roundData.bounty);
+            IMatryxToken(matryxTokenAddress).transfer(newRoundAddress, roundData.bounty);
+        }
+
+        stateData.rounds.push(newRoundAddress);
+        stateData.isRound[newRoundAddress] = true;
+
+        // Triggers Event displaying start time, end, address, and round number
+        emit NewRound(roundData.start, roundData.end, roundData.reviewPeriodDuration, newRoundAddress, stateData.rounds.length);
+
+        return newRoundAddress;
+    }
+
+    function createRoundTwo(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, address matryxRoundFactoryAddress, LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress)
+    {
+        // only this, the tournamentFactory or rounds can call createRound
+        require(msg.sender == address(this) || msg.sender == IMatryxPlatform(platformAddress).getTournamentFactoryAddress() || stateData.isRound[msg.sender]);
+        require((roundData.start >= now && roundData.start < roundData.end), "Time parameters are invalid.");
+
+        IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
+        address newRoundAddress;
+
+        if(_automaticCreation == false)
+        {
+            require(roundData.bounty > 0);
+        }
+
+        newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, stateData.rounds.length, roundData);
         // Transfer the round bounty to the round.
         // If this is the first round, the bounty is transfered to the round *by the platform in createTournament* (by tournament.sendBountyToRound)
         if(stateData.rounds.length != 0 && roundData.bounty != 0)

@@ -46,7 +46,6 @@ contract MatryxRound is Ownable, IMatryxRound {
     address[] submissionOwners;
     uint256 numberSubmissionsRemoved;
 
-    event GiveAddress(address _address, string _identifier);
 	constructor(address _platformAddress, address _matryxTokenAddress, address _tournamentAddress, address _submissionFactoryAddress, address _owner, uint256 _roundIndex, LibConstruction.RoundData roundData) public
 	{
 		matryxTokenAddress = _matryxTokenAddress;
@@ -456,7 +455,7 @@ contract MatryxRound is Ownable, IMatryxRound {
             {
                 closed = true;
                 roundData = LibConstruction.RoundData({start: now, end: _roundData.end, reviewPeriodDuration: _roundData.reviewPeriodDuration, bounty: _roundData.bounty});
-                newRound = IMatryxTournament(tournamentAddress).createRound(roundData, false);
+                newRound = IMatryxTournament(tournamentAddress).createRoundTwo(roundData, false);
             }
         }
         else
@@ -472,7 +471,7 @@ contract MatryxRound is Ownable, IMatryxRound {
         {
             // Calculate total reward denominator and store it somewhere when
             uint totalBalance = bounty.add(_tournamentBalance);
-            uint256 reward = (rewardDistribution[i].mul(1*10**18).div(rewardDistributionTotal)).mul(totalBalance);
+            uint256 reward = rewardDistribution[i].mul(1*10**18).div(rewardDistributionTotal).mul(totalBalance).div(1*10**18);
             // Transfer the reward to the submission
             IMatryxToken(matryxTokenAddress).transfer(winningSubmissions[i], reward);
         }

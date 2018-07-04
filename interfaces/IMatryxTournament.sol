@@ -28,6 +28,7 @@ interface IMatryxTournament
     function jumpToNextRound() public;
     function stopTournament() public;
     function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress);
+    function createRoundTwo(LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress);
     function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public;
     function enterUserInTournament(address _entrantAddress) public returns (bool _success);
     function getEntryFee() public view returns (uint256);

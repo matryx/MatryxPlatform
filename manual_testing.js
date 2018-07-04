@@ -13,7 +13,7 @@ mnemonic = "fix tired congress gold type flight access jeans payment echo chef h
 wallet = new ethers.Wallet.fromMnemonic(mnemonic);
 wallet.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
 // wallet.provider = new ethers.providers.InfuraProvider('ropsten')
-// wallet = new ethers.Wallet.fromMnemonic(getFileContents("/Users/maxhoward/Desktop/Ethereum/Development/Matryx/Projects/keys/dev_wallet_mnemonic.txt"))
+// wallet = new ethers.Wallet.fromMnemonic(getFileContents(osHomedir() + "/Desktop/Ethereum/Development/Matryx/Projects/keys/dev_wallet_mnemonic.txt"))
 // wallet = new ethers.Wallet.fromMnemonic("candy maple cake sugar pudding cream honey rich smooth crumble sweet treat");
 // wallet = new ethers.Wallet('0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3');
 
@@ -35,17 +35,9 @@ var descriptionHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGR
 var fileHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
 var tournamentData = { category: "math", title_1: title[0], title_2: title[1], title_3: title[2], descriptionHash_1: descriptionHash[0], descriptionHash_2: descriptionHash[1], fileHash_1: fileHash[0], fileHash_2: fileHash[1], bounty: "10000000000000000000", entryFee: "2000000000000000000"}
 var startTime = Math.floor((new Date() / 1000 + 10));
-var endTime = startTime + 20;
+var endTime = startTime + 10;
 var roundData = { start: startTime, end: endTime, reviewPeriodDuration: 300, bounty: "5000000000000000000"}
 
-tournamentData = [web3.sha3("math"), title[0], title[1], title[2], descriptionHash[0], descriptionHash[1], "10000000000000000000", "2000000000000000000"]
-roundData = [startTime, endTime, 300, "5000000000000000000"]
-
-// ********************************
-// |  TODO: RESUME RIGHT HERE     | --------------------------------vvvvv
-// ********************************
-var create_tournament_index = getFunction("createTournament", MatryxPlatform.abi);
-createTournamentData = web3Utils.encodeFunctionCall(MatryxPlatform.abi[create_tournament_index], ["math", tournamentData, roundData])
 
 platform.createTournament(tournamentData, roundData, {gasLimit: 8000000, gasPrice: 21e9})
 platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);}) })
@@ -70,9 +62,10 @@ s.update([web3.eth.accounts[2], web3.eth.accounts[3]], [1,4], [], submission_dat
 var winners = [s.address]
 var distribution = ['1']//[web3.toWei(1)]
 var roundStart = Math.floor((new Date() / 1000 + 30));
-var roundData = {start: roundStart, end: roundStart+180, reviewPeriodDuration: 300, bounty: 0}
+var roundEnd = roundStart + 180
+var roundData = {start: roundStart, end: roundEnd, reviewPeriodDuration: 300, bounty: "10"}
 
 platform.setContractAddress(web3.sha3("hello"), web3.eth.accounts[0])
 
-t.selectWinners(winners, distribution, roundData, "0", {gasLimit: 3000000});
+t.selectWinners(winners, distribution, roundData, "1", {gasLimit: 5000000});
 
