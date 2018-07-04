@@ -64,7 +64,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         data = tournamentData;
         data.category = _category;
 
-        createRound(roundData, false);
+        _createRound(roundData, false);
         // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
     }
 
@@ -384,7 +384,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Creates a new round.
     /// @return The new round's address.
-    function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress)
+    function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public onlyRound returns (address _roundAddress)
+    {
+        return _createRound(roundData, _automaticCreation);
+    }
+
+    function _createRound(LibConstruction.RoundData roundData, bool _automaticCreation) private returns (address _roundAddress)
     {
         return LibTournamentAdminMethods.createRound(stateData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, roundData, _automaticCreation);
     }

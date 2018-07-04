@@ -58,17 +58,17 @@ library LibTournamentAdminMethods
     function selectWinners(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData _roundData, uint256 _selectWinnerAction) public
     {
         // Round must be in review or have winners to close
+        (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 roundState = uint256(IMatryxRound(currentRoundAddress).getState());
         require(roundState == uint256(RoundState.InReview) || roundState == uint256(RoundState.HasWinners), "Round is not in review or winners have not been chosen.");
         uint256 remainingBalance = IMatryxTournament(this).getBalance();
-        (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         // Event to notify web3 of the winning submission address
         emit RoundWinnersChosen(_submissionAddresses);
         IMatryxRound(currentRoundAddress).selectWinningSubmissions(_submissionAddresses, _rewardDistribution, _roundData, _selectWinnerAction);
-        if(_selectWinnerAction == uint256(SelectWinnerAction.CloseTournament))
-        {
-            closeTournament(stateData, platformAddress, matryxTokenAddress, remainingBalance, currentRoundAddress);
-        }
+        // if(_selectWinnerAction == uint256(SelectWinnerAction.CloseTournament))
+        // {
+        //     closeTournament(stateData, platformAddress, matryxTokenAddress, remainingBalance, currentRoundAddress);
+        // }
     }
 
     function editGhostRound(LibTournamentStateManagement.StateData storage stateData, LibConstruction.RoundData _roundData, address matryxTokenAddress) public
@@ -159,11 +159,6 @@ library LibTournamentAdminMethods
         }
 
         newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, stateData.rounds.length, roundData);
-        bool successfulCreation;
-        if(newRoundAddress != 0x0)
-        {
-            successfulCreation = true;
-        }
 
         // Transfer the round bounty to the round.
         // If this is the first round, the bounty is transfered to the round *by the platform in createTournament* (by tournament.sendBountyToRound)

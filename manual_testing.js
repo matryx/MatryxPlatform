@@ -74,5 +74,5 @@ var roundData = {start: roundStart, end: roundStart+180, reviewPeriodDuration: 3
 
 platform.setContractAddress(web3.sha3("hello"), web3.eth.accounts[0])
 
-t.selectWinners(winners, distribution, roundData, "0");
+t.selectWinners(winners, distribution, roundData, "0", {gasLimit: 3000000});
 
