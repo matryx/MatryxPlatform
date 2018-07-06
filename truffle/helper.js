@@ -2,7 +2,7 @@ const ethers = require('ethers')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
 // key from ganache
-const key = '0x' + '0a34d2ebe665f03daae1c728242671e5bccfe6c0b32fd0d5bb408385ebd4f668'
+const key = '0x' + '2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea'
 
 module.exports = {
   stringToBytes32(text, requiredLength) {
