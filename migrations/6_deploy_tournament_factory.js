@@ -5,7 +5,7 @@ var LibTournamentEntrantMethods = artifacts.require("../libraries/tournament/Lib
 var LibTournamentStateManagement = artifacts.require("../libraries/tournament/LibTournamentStateManagement.sol");
 var MatryxTournamentFactory = artifacts.require("MatryxTournamentFactory");
 var MatryxRoundFactory = artifacts.require("MatryxRoundFactory");
-var matryxTokenAddress = "0x0c484097e2f000aadaef0450ab35aa00652481a1"
+var matryxTokenAddress = "0xf35a0f92848bdfdb2250b60344e87b176b499a8f"
 
 module.exports = function(deployer) {
 	deployer.link(SafeMath, MatryxTournamentFactory);
