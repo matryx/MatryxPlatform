@@ -15,7 +15,7 @@ getFileContents = path => fs.readFileSync(path).toString()
 ethers = require('ethers')
 
 // wallet key from ganache
-wallet = new ethers.Wallet('0x' + 'f7d0ecaecde3010efb7ffc0b0efbf98619a1f960694d52836e38a43edd88c2a7')
+wallet = new ethers.Wallet('0x' + '2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea')
 wallet.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
 
 module.exports = {

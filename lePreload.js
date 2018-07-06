@@ -1,9 +1,9 @@
 // Ganache call
-// ganache-cli -u 0,1,2,3 -i 3 -m "fix tired congress gold type flight access jeans payment echo chef host"
+// ganache-cli -l 8e6 -i 3 -m "fix tired congress gold type flight access jeans payment echo chef host"
 
 
-/* 
-SETUP 
+/*
+SETUP
 */
 var fs = require('fs')
 const osHomedir = require('os-homedir');
@@ -30,8 +30,8 @@ token.mint(web3.eth.accounts[0], "100000000000000000000000")
 token.approve(MatryxPlatform.address, "100000000000000000000000", {gasPrice: 21e9})
 
 
-/* 
-Start of Preload Sequence. See the Engineering guide for details: https://docs.google.com/document/d/139owX8aHyaWLdme-xaujEwHMcuUsbXK_1irWU1TP4_8/edit#heading=h.g5ke2xg059jc 
+/*
+Start of Preload Sequence. See the Engineering guide for details: https://docs.google.com/document/d/139owX8aHyaWLdme-xaujEwHMcuUsbXK_1irWU1TP4_8/edit#heading=h.g5ke2xg059jc
 */
 
 // Scenario 1: Tournament Created, round 1 not yet open ( STATE: Tournament: NotYetOpen, Round: NotYetOpen)
@@ -189,7 +189,7 @@ s3 = new ethers.Contract(r.getSubmissions()[2], MatryxSubmission.abi, wallet)
 // Scenario 9: Tournament Created, round 1 in review with 3 submissions and Choose winners and close tournament (STATE: Tournament: Closed, Round: Closed) -- Golden Path
 
 
-/* 
+/*
 Template Calls  (Save these)
 */
 var title = stringToBytes32("Design A Silly Mug", 3);
@@ -229,4 +229,3 @@ var roundData = {start: roundStart, end: roundEnd, reviewPeriodDuration: 300, bo
 platform.setContractAddress(web3.sha3("hello"), web3.eth.accounts[0])
 
 t.selectWinners(winners, distribution, roundData, "1", {gasLimit: 5000000});
-
