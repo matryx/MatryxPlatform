@@ -2,7 +2,7 @@ const ethers = require('ethers')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
 // key from ganache
-const key = '0x' + 'f7d0ecaecde3010efb7ffc0b0efbf98619a1f960694d52836e38a43edd88c2a7'
+const key = '0x' + '0a34d2ebe665f03daae1c728242671e5bccfe6c0b32fd0d5bb408385ebd4f668'
 
 module.exports = {
   stringToBytes32(text, requiredLength) {
@@ -47,7 +47,7 @@ module.exports = {
       await token.setReleaseAgent(account)
       await token.releaseTokenTransfer({ gasLimit: 1e6 })
       await token.mint(account, tokens)
-      await token.approve(MatryxPlatform.address, tokens, { gasPrice: 21e9 })
+      await token.approve(MatryxPlatform.address, tokens, { gasPrice: 25})
 
       const balance = await token.balanceOf(account) / 1e18 | 0
       console.log('New balance: ' + balance + ' MTX')
