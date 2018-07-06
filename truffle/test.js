@@ -43,7 +43,7 @@ const createTournament = async () => {
     bounty: web3.toWei(5)
   }
 
-  await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 21e9 })
+  await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
 
   const address = await platform.allTournaments(count)
   const tournament = new ethers.Contract(address, MatryxTournament.abi, wallet)
