@@ -8,16 +8,22 @@ var HDWalletProvider = require("truffle-hdwallet-provider");
 
 var mnemonic;
 
-getFileContents = function(path) {
-	return fs.readFileSync(path).toString();
-}
+// SETUP GLOBALS FOR CLI REPL
+stringToBytes32 = require('./truffle/helper').stringToBytes32
+getFileContents = path => fs.readFileSync(path).toString()
+
+ethers = require('ethers')
+
+// wallet key from ganache
+wallet = new ethers.Wallet('0x' + 'f7d0ecaecde3010efb7ffc0b0efbf98619a1f960694d52836e38a43edd88c2a7')
+wallet.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
   // to customize your Truffle configuration!
-	networks: 
+	networks:
 	{
-	  	development: 
+	  	development:
 	  	{
 	  		host: "localhost",
 	  		port: 8545,
@@ -40,7 +46,7 @@ module.exports = {
 	     	gas: 6741593,
   			gasPrice: 30000000
 		},
-		coverage: 
+		coverage:
 		{
 			host: "localhost",
 			network_id: "*",
@@ -49,14 +55,14 @@ module.exports = {
 			gasPrice: 100000     // <-- Use this low gas price
     	}
 	},
-	mocha: 
+	mocha:
 	{
         enableTimeouts: false
     },
 
-	solc: 
+	solc:
 	{
-  		optimizer: 
+  		optimizer:
   		{
 	    	enabled: true,
 	    	runs: 4000
