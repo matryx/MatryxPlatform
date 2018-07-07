@@ -6,8 +6,7 @@ var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxPeerFactory = artifacts.require("MatryxPeerFactory");
 var MatryxTournamentFactory = artifacts.require("MatryxTournamentFactory");
 var MatryxSubmissionFactory = artifacts.require("MatryxSubmissionFactory");
-
-var matryxTokenAddress = "0xf35a0f92848bdfdb2250b60344e87b176b499a8f";
+var matryxTokenAddress = require('./tokenAddress');
 
 
 module.exports = function(deployer) {

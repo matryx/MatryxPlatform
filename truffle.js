@@ -11,7 +11,7 @@ var mnemonic;
 // SETUP GLOBALS FOR CLI REPL
 stringToBytes32 = require('./truffle/helper').stringToBytes32
 getFileContents = path => fs.readFileSync(path).toString()
-contract = (address, abi) => new ethers.Contract(address, abi, wallet)
+contract = (address, { abi }) => new ethers.Contract(address, abi, wallet)
 
 ethers = require('ethers')
 
@@ -19,6 +19,9 @@ ethers = require('ethers')
 wallet = new ethers.Wallet('0x' + '2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea')
 wallet.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
 
+console.log('Setup to copy paste:\n')
+console.log('platform = contract(MatryxPlatform.address, MatryxPlatform)')
+console.log('token = contract(MatryxToken.address, MatryxToken)\n')
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>

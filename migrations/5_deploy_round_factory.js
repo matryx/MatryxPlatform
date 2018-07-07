@@ -4,7 +4,7 @@ var Strings = artifacts.require("../libraries/strings/strings.sol");
 var LibTournamentAdminMethods = artifacts.require("../libraries/tournament/LibTournamentAdminMethods.sol");
 var MatryxRoundFactory = artifacts.require("MatryxRoundFactory");
 var MatryxSubmissionFactory = artifacts.require("MatryxSubmissionFactory");
-var matryxTokenAddress = "0xf35a0f92848bdfdb2250b60344e87b176b499a8f"
+var matryxTokenAddress = require('./tokenAddress');
 
 module.exports = function(deployer) {
 		deployer.link(SafeMath, MatryxRoundFactory);
