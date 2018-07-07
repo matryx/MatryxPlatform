@@ -15,6 +15,7 @@ web3.eth.defaultAccount = web3.eth.accounts[0]
 tokenAddress = "0xf35a0f92848bdfdb2250b60344e87b176b499a8f"
 web3Utils = require('/Desktop/Ethereum/Development/web3/web3.js/packages/web3-eth-abi/src/index.js');
 ethers = require('/Users/marinatorras/Projects/Matryx/ethers.js');
+mnemonic = '';
 wallet = new ethers.Wallet.fromMnemonic(mnemonic);
 wallet.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
 
@@ -37,62 +38,60 @@ Start of Preload Sequence. See the Engineering guide for details: https://docs.g
 // Scenario 1: Tournament Created, round 1 not yet open ( STATE: Tournament: NotYetOpen, Round: NotYetOpen)
 
 var title = stringToBytes32("Scenario 1", 3);
-var descriptionHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
-var fileHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
+var descriptionHash = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 2); //real hash
+var fileHash = stringToBytes32("QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g", 2); //real hash
 var tournamentData = { category: "math", title_1: title[0], title_2: title[1], title_3: title[2], descriptionHash_1: descriptionHash[0], descriptionHash_2: descriptionHash[1], fileHash_1: fileHash[0], fileHash_2: fileHash[1], bounty: "10000000000000000000", entryFee: "2000000000000000000"}
-var startTime = Math.floor((new Date() / 1000 + 86000));
+var startTime = Math.floor((new Date() / 1000 + 86000)); //these parameters work
 var endTime = startTime + 10;
 var roundData = { start: startTime, end: endTime, reviewPeriodDuration: 300, bounty: "5000000000000000000"}
 
-
 platform.createTournament(tournamentData, roundData, {gasLimit: 6000000, gasPrice: 21e9})
-platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);}) })
+platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = new ethers.Contract(addresses[0], MatryxRound.abi, wallet);}) })
 
 
 // Scenario 2: Tournament Created, round 1 open with 0 submissions and winner not chosen (STATE: Tournament: Open, Round: Open)
 
 var title = stringToBytes32("Scenario 2", 3);
-var descriptionHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
-var fileHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
+var descriptionHash = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 2);
+var fileHash = stringToBytes32("QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g", 2);
 var tournamentData = { category: "math", title_1: title[0], title_2: title[1], title_3: title[2], descriptionHash_1: descriptionHash[0], descriptionHash_2: descriptionHash[1], fileHash_1: fileHash[0], fileHash_2: fileHash[1], bounty: "10000000000000000000", entryFee: "2000000000000000000"}
-var startTime = Math.floor((new Date() / 1000 + 10));
-var endTime = startTime + 86000;
+var startTime = Math.floor((new Date() / 1000 + 20));
+var endTime = startTime + 50;
 var roundData = { start: startTime, end: endTime, reviewPeriodDuration: 300, bounty: "5000000000000000000"}
 
-platform.createTournament(tournamentData, roundData, {gasLimit: 8000000, gasPrice: 21e9})
-platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);}) })
+platform.createTournament(tournamentData, roundData, {gasLimit: 6000000, gasPrice: 21e9})
+platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = new ethers.Contract(addresses[0], MatryxRound.abi, wallet);}) })
 
 // Scenario 3: Tournament Created, round 1 in review with 0 submissions and winner not chosen (STATE: Tournament: Open, Round: InReview)
 
 var title = stringToBytes32("Scenario 3", 3);
-var descriptionHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
-var fileHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
+var descriptionHash = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 2);
+var fileHash = stringToBytes32("QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g", 2);
 var tournamentData = { category: "math", title_1: title[0], title_2: title[1], title_3: title[2], descriptionHash_1: descriptionHash[0], descriptionHash_2: descriptionHash[1], fileHash_1: fileHash[0], fileHash_2: fileHash[1], bounty: "10000000000000000000", entryFee: "2000000000000000000"}
-var startTime = Math.floor((new Date() / 1000 + 10));
-var endTime = startTime + 5;
-var roundData = { start: startTime , end: endTime, reviewPeriodDuration: 86000, bounty: "5000000000000000000"}
+var startTime = Math.floor((new Date() / 1000 + 20));
+var endTime = startTime + 10;
+var roundData = { start: startTime , end: endTime, reviewPeriodDuration: 300, bounty: "5000000000000000000"}
 
-platform.createTournament(tournamentData, roundData, {gasLimit: 8000000, gasPrice: 21e9})
-platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);}) })
-
+platform.createTournament(tournamentData, roundData, {gasLimit: 6000000, gasPrice: 21e9})
+platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = new ethers.Contract(addresses[0], MatryxRound.abi, wallet);}) })
 
 // Scenario 4: Tournament Created, round 1 OPEN with 3 submissions and winner not chosen  (STATE: Tournament: Open, Round: Open)
 
-var title = stringToBytes32("Scenario 4", 3);
-var descriptionHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
-var fileHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
+var title = stringToBytes32("Scenario 2", 3);
+var descriptionHash = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 2);
+var fileHash = stringToBytes32("QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g", 2);
 var tournamentData = { category: "math", title_1: title[0], title_2: title[1], title_3: title[2], descriptionHash_1: descriptionHash[0], descriptionHash_2: descriptionHash[1], fileHash_1: fileHash[0], fileHash_2: fileHash[1], bounty: "10000000000000000000", entryFee: "2000000000000000000"}
-var startTime = Math.floor((new Date() / 1000 + 10));
-var endTime = startTime + 86000;
+var startTime = Math.floor((new Date() / 1000 + 20));
+var endTime = startTime + 50;
 var roundData = { start: startTime, end: endTime, reviewPeriodDuration: 300, bounty: "5000000000000000000"}
 
-platform.createTournament(tournamentData, roundData, {gasLimit: 8000000, gasPrice: 21e9})
-platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);}) })
+platform.createTournament(tournamentData, roundData, {gasLimit: 6000000, gasPrice: 21e9})
+platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = new ethers.Contract(addresses[0], MatryxRound.abi, wallet);}) })
 
-platform.enterTournament(t.address, {gasLimit: 5000000});
+platform.enterTournament(t.address, {gasLimit: 6000000});
 
-var content = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 1);
-submissionData = {title: "A submission", owner: web3.eth.accounts[0], contentHash: content[0]+content[1].substr(2), isPublic: false}
+var content = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 1);
+submissionData = {title: "A submission", owner: wallet.address, contentHash: content[0]+content[1].substr(2), isPublic: false}
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
@@ -104,20 +103,20 @@ s3 = new ethers.Contract(r.getSubmissions()[2], MatryxSubmission.abi, wallet)
 // Scenario 5: Tournament Created, round 1 in review with 3 submissions and winner not chosen (STATE: Tournament: Open, Round: InReview)
 
 var title = stringToBytes32("Scenario 5", 3);
-var descriptionHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
-var fileHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
+var descriptionHash = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 2);
+var fileHash = stringToBytes32("QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g", 2);
 var tournamentData = { category: "math", title_1: title[0], title_2: title[1], title_3: title[2], descriptionHash_1: descriptionHash[0], descriptionHash_2: descriptionHash[1], fileHash_1: fileHash[0], fileHash_2: fileHash[1], bounty: "10000000000000000000", entryFee: "2000000000000000000"}
 var startTime = Math.floor((new Date() / 1000 + 5));
 var endTime = startTime + 5;
 var roundData = { start: startTime , end: endTime, reviewPeriodDuration: 86000, bounty: "5000000000000000000"}
 
-platform.createTournament(tournamentData, roundData, {gasLimit: 8000000, gasPrice: 21e9})
-platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);}) })
+platform.createTournament(tournamentData, roundData, {gasLimit: 6000000, gasPrice: 21e9})
+platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = new ethers.Contract(addresses[0], MatryxRound.abi, wallet);}) })
 
 platform.enterTournament(t.address, {gasLimit: 5000000});
 
-var content = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 1);
-submissionData = {title: "A submission", owner: web3.eth.accounts[0], contentHash: content[0]+content[1].substr(2), isPublic: false}
+var content = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 1);
+submissionData = {title: "A submission", owner: wallet.address, contentHash: content[0]+content[1].substr(2), isPublic: false}
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
@@ -129,20 +128,20 @@ s3 = new ethers.Contract(r.getSubmissions()[2], MatryxSubmission.abi, wallet)
 // Scenario 6: Tournament Created, Round 1 in review with 3 submissions, review period ends, still no winners (STATE: Tournament: Abandoned, Round: Abandoned)
 
 var title = stringToBytes32("Scenario 6", 3);
-var descriptionHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
-var fileHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
+var descriptionHash = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 2);
+var fileHash = stringToBytes32("QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g", 2);
 var tournamentData = { category: "math", title_1: title[0], title_2: title[1], title_3: title[2], descriptionHash_1: descriptionHash[0], descriptionHash_2: descriptionHash[1], fileHash_1: fileHash[0], fileHash_2: fileHash[1], bounty: "10000000000000000000", entryFee: "2000000000000000000"}
 var startTime = Math.floor((new Date() / 1000 + 5));
 var endTime = startTime + 5;
 var roundData = { start: startTime , end: endTime, reviewPeriodDuration: 1, bounty: "5000000000000000000"}
 
-platform.createTournament(tournamentData, roundData, {gasLimit: 8000000, gasPrice: 21e9})
-platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);}) })
+platform.createTournament(tournamentData, roundData, {gasLimit: 6000000, gasPrice: 21e9})
+platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = new ethers.Contract(addresses[0], MatryxRound.abi, wallet);}) })
 
 platform.enterTournament(t.address, {gasLimit: 5000000});
 
-var content = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 1);
-submissionData = {title: "A submission", owner: web3.eth.accounts[0], contentHash: content[0]+content[1].substr(2), isPublic: false}
+var content = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 1);
+submissionData = {title: "A submission", owner: wallet.address, contentHash: content[0]+content[1].substr(2), isPublic: false}
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
@@ -154,20 +153,20 @@ s3 = new ethers.Contract(r.getSubmissions()[2], MatryxSubmission.abi, wallet)
 // Scenario 7: Tournament Created, round 1 in review with 3 submissions and Choose winners and wait (STATE: Tournament: Open, Round: HasWinners)
 
 var title = stringToBytes32("Scenario 7", 3);
-var descriptionHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
-var fileHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
+var descriptionHash = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 2);
+var fileHash = stringToBytes32("QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g", 2);
 var tournamentData = { category: "math", title_1: title[0], title_2: title[1], title_3: title[2], descriptionHash_1: descriptionHash[0], descriptionHash_2: descriptionHash[1], fileHash_1: fileHash[0], fileHash_2: fileHash[1], bounty: "10000000000000000000", entryFee: "2000000000000000000"}
 var startTime = Math.floor((new Date() / 1000 + 5));
 var endTime = startTime + 5;
 var roundData = { start: startTime , end: endTime, reviewPeriodDuration: 86000, bounty: "5000000000000000000"}
 
-platform.createTournament(tournamentData, roundData, {gasLimit: 8000000, gasPrice: 21e9})
-platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = web3.eth.contract(MatryxRound.abi).at(addresses[0]);}) })
+platform.createTournament(tournamentData, roundData, {gasLimit: 6000000, gasPrice: 21e9})
+platform.allTournaments(0).then((address) => { t = new ethers.Contract(address, MatryxTournament.abi, wallet); t.getRounds().then((addresses) => { r = new ethers.Contract(addresses[0], MatryxRound.abi, wallet);}) })
 
 platform.enterTournament(t.address, {gasLimit: 5000000});
 
-var content = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 1);
-submissionData = {title: "A submission", owner: web3.eth.accounts[0], contentHash: content[0]+content[1].substr(2), isPublic: false}
+var content = stringToBytes32("QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK", 1);
+submissionData = {title: "A submission", owner: wallet.address, contentHash: content[0]+content[1].substr(2), isPublic: false}
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
 t.createSubmission([],[],[], submissionData, {gasLimit: 6500000});
@@ -190,7 +189,7 @@ s3 = new ethers.Contract(r.getSubmissions()[2], MatryxSubmission.abi, wallet)
 
 
 /*
-Template Calls  (Save these)
+Template Calls  (Save these) (Somewhat deprecated)
 */
 var title = stringToBytes32("Design A Silly Mug", 3);
 var categoryHash = stringToBytes32("QmewXg6HCJ8kVcCKSrBXk8fawLru5Po3XaNgd4aGRrNa1N", 2);
