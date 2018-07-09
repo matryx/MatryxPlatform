@@ -154,7 +154,15 @@ library LibTournamentAdminMethods
     {
         // only this, the tournamentFactory or rounds can call createRound
         require(msg.sender == address(this) || msg.sender == IMatryxPlatform(platformAddress).getTournamentFactoryAddress() || stateData.isRound[msg.sender]);
-        require((roundData.start >= now && roundData.start < roundData.end), "Time parameters are invalid.");
+        require(roundData.start < roundData.end, "Time parameters are invalid.");
+    
+        // Argument for start & duration instead of start & end
+        if(roundData.start < now)
+        {
+            uint256 duration = roundData.end.sub(roundData.start);
+            roundData.start = now;
+            roundData.end = now + duration;
+        }
 
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
         address newRoundAddress;
