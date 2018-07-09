@@ -25,7 +25,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     // TODO: condense and put in structs
     // Platform identification
     address public platformAddress;
-    address public matryxTokenAddress;
     address public matryxRoundFactoryAddress;
 
     // TODO: Create setter for this (resume here for upgrade system.)
@@ -55,7 +54,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         //require(_matryxRoundFactoryAddress != 0x0);
         
         platformAddress = _platformAddress;
-        matryxTokenAddress = _matryxTokenAddress;
         matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
 
         timeCreated = now;
@@ -235,6 +233,11 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return platformAddress;
     }
 
+    function getTokenAddress() public view returns (address _matryxTokenAddress)
+    {
+        return IMatryxPlatform(platformAddress).getTokenAddress();
+    }
+
     function getData() public view returns (LibConstruction.TournamentData _data)
     {
         return data;
@@ -299,13 +302,15 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     ///@dev Returns this tournament's bounty.
     function getBounty() public view returns (uint256 _tournamentBounty)
     {  
-        return IMatryxToken(matryxTokenAddress).balanceOf(address(this)).sub(stateData.entryFeesTotal).add(stateData.roundBountyAllocation);
+        IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
+        return token.balanceOf(address(this)).sub(stateData.entryFeesTotal).add(stateData.roundBountyAllocation);
     }
 
     // @dev Returns the remaining bounty this tournament is able to award.
     function getBalance() public view returns (uint256 _tournamentBalance)
     {
-        return IMatryxToken(matryxTokenAddress).balanceOf(address(this)).sub(stateData.entryFeesTotal);
+        IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
+        return token.balanceOf(address(this)).sub(stateData.entryFeesTotal);
     }
 
     ///@dev Returns the round that was created implicitly for the user after they chose the "DoNothing" option
@@ -355,18 +360,20 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
     function selectWinners(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData _roundData, uint256 _selectWinnerAction) public onlyOwner
     {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         LibTournamentAdminMethods.selectWinners(stateData, platformAddress, matryxTokenAddress, _submissionAddresses, _rewardDistribution, _roundData, _selectWinnerAction);
     }
 
     function editGhostRound(LibConstruction.RoundData _roundData) public onlyOwner
     {
-
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         LibTournamentAdminMethods.editGhostRound(stateData, _roundData, matryxTokenAddress);
     }
 
     ///@dev Allocates some of this tournament's balance to the current round
     function allocateMoreToRound(uint256 _mtxAllocation) public onlyOwner
     {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         LibTournamentAdminMethods.allocateMoreToRound(stateData, _mtxAllocation, matryxTokenAddress);
     }
 
@@ -379,6 +386,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev This function closes the tournament after the tournament owner selects their winners with the "DoNothing" option
     function stopTournament() public onlyOwner
     {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         LibTournamentAdminMethods.stopTournament(stateData, platformAddress, matryxTokenAddress);
     }
 
@@ -391,18 +399,21 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function createRoundTwo(LibConstruction.RoundData roundData, bool _automaticCreation) public onlyRound returns (address _roundAddress)
     {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         return LibTournamentAdminMethods.createRoundTwo(stateData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, roundData, _automaticCreation);
     }
 
     function _createRound(LibConstruction.RoundData roundData, bool _automaticCreation) private returns (address _roundAddress)
     {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         return LibTournamentAdminMethods.createRound(stateData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, roundData, _automaticCreation);
     }
 
     function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public onlyPlatform
     {
         stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(_bountyMTX);
-        require(IMatryxToken(matryxTokenAddress).transfer(stateData.rounds[_roundIndex], _bountyMTX));
+        IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
+        require(token.transfer(stateData.rounds[_roundIndex], _bountyMTX));
     }
 
     /*
@@ -427,6 +438,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function collectMyEntryFee() public
     {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         LibTournamentEntrantMethods.collectMyEntryFee(stateData, entryData, matryxTokenAddress);
     }
 
@@ -442,6 +454,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function withdrawFromAbandoned() public onlyEntrant
     {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         LibTournamentEntrantMethods.withdrawFromAbandoned(stateData, entryData, matryxTokenAddress);
     }
 }

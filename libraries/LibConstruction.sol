@@ -5,14 +5,12 @@ library LibConstruction
 	struct RequiredTournamentAddresses
     {
         address platformAddress;
-        address matryxTokenAddress;
         address roundFactoryAddress;
     }
 
     struct RequiredRoundAddresses
     {
     	address platformAddress;
-    	address matryxTokenAddress;
     	address tournamentAddress;
     	address submissionFactoryAddress;
     }

@@ -3,20 +3,20 @@ pragma experimental ABIEncoderV2;
 
 import "../Ownable.sol";
 import '../MatryxRound.sol';
+import "../../interfaces/IMatryxPlatform.sol";
 import "../../libraries/LibConstruction.sol";
 
 contract MatryxRoundFactory is Ownable {
 	address public matryxSubmissionFactoryAddress;
-	address public matryxTokenAddress;
 
 	mapping(bytes32=>address) contracts;
 
 	function MatryxRoundFactory(address _matryxTokenAddress, address _matryxSubmissionFactoryAddress) public {
-		matryxTokenAddress = _matryxTokenAddress;
 		matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
 	}
 
 	function createRound(address _platformAddress, address _tournamentAddress, address _owner, uint256 _roundIndex, LibConstruction.RoundData roundData) public returns (address _roundAddress) {
+		address matryxTokenAddress = IMatryxPlatform(_platformAddress).getTokenAddress();
 		MatryxRound newRound = new MatryxRound(_platformAddress, matryxTokenAddress, _tournamentAddress, matryxSubmissionFactoryAddress, _owner, _roundIndex, roundData);
 		return newRound;
 	}

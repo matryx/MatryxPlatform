@@ -158,6 +158,12 @@ contract MatryxPlatform is Ownable {
       contracts[_nameHash] = _contractAddress;
    }
 
+
+   function setTokenAddress(address _matryxTokenAddress) public onlyOwner
+   {
+      matryxTokenAddress = _matryxTokenAddress;
+   }
+
    /// @dev Gets the address of a contract the platform knows about.
    /// @param _nameHash Keccak256 hash of the name of the contract to look for.
    /// @return Address of the contract with the designated name.

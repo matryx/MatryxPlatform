@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 import "../libraries/math/SafeMath.sol";
 import "../libraries/LibConstruction.sol";
 import "../interfaces/IMatryxToken.sol";
+import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
 import "../interfaces/IMatryxRound.sol";
 import "../interfaces/factories/IMatryxRoundFactory.sol";
@@ -21,7 +22,6 @@ contract MatryxRound is Ownable, IMatryxRound {
     address public platformAddress;
     address public tournamentAddress;
     address public matryxSubmissionFactoryAddress;
-    address public matryxTokenAddress;
 
     mapping(bytes32=>address) private contracts;
 
@@ -48,7 +48,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	constructor(address _platformAddress, address _matryxTokenAddress, address _tournamentAddress, address _submissionFactoryAddress, address _owner, uint256 _roundIndex, LibConstruction.RoundData roundData) public
 	{
-		matryxTokenAddress = _matryxTokenAddress;
+		//matryxTokenAddress = _matryxTokenAddress;
 		platformAddress = _platformAddress;
 		tournamentAddress = _tournamentAddress;
 		owner = _owner;
@@ -297,12 +297,12 @@ contract MatryxRound is Ownable, IMatryxRound {
 
     function remainingBounty() public constant returns (uint256)
     {
-        return IMatryxToken(matryxTokenAddress).balanceOf(this);
+        return IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).balanceOf(this);
     }
 
     function getTokenAddress() public constant returns (address)
     {
-    	return matryxTokenAddress;
+    	return IMatryxPlatform(platformAddress).getTokenAddress();
     }
 
 	/// @dev Returns all submissions made to this round.
@@ -333,12 +333,12 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @return Balance of the bounty 
 	function getBalance(address _submissionAddress) public constant returns (uint256)
 	{
-		return IMatryxToken(matryxTokenAddress).balanceOf(_submissionAddress);
+		return IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).balanceOf(_submissionAddress);
 	}
 
     function getRoundBalance() public view returns (uint256)
     {
-        return IMatryxToken(matryxTokenAddress).balanceOf(this);
+        return IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).balanceOf(this);
     }
 
 	/// @dev Returns whether or not a winning submission has been chosen.
@@ -399,7 +399,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     function transferToTournament(uint256 _amount) public onlyTournament 
     {
         require(getState() == uint256(RoundState.NotYetOpen));
-        require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, _amount));
+        require(IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(msg.sender, _amount));
     }
 
     enum SelectWinnerAction { DoNothing, StartNextRound, CloseTournament }
@@ -430,11 +430,11 @@ contract MatryxRound is Ownable, IMatryxRound {
                 // Calculate total reward denominator and store it somewhere when
                 uint256 reward = rewardDistribution[j].mul(1*10**18).div(rewardDistributionTotal).mul(bounty).div(1*10**18);
                 // Transfer the reward to the submission
-                require(IMatryxToken(matryxTokenAddress).transfer(winningSubmissions[j], reward));
+                require(IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(winningSubmissions[j], reward));
             }
 
             uint256 newBounty;
-            uint256 tournamentBalance = IMatryxToken(matryxTokenAddress).balanceOf(tournamentAddress);
+            uint256 tournamentBalance = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).balanceOf(tournamentAddress);
 
             if(tournamentBalance < bounty)
             {
@@ -473,7 +473,7 @@ contract MatryxRound is Ownable, IMatryxRound {
             uint totalBalance = bounty.add(_tournamentBalance);
             uint256 reward = rewardDistribution[i].mul(1*10**18).div(rewardDistributionTotal).mul(totalBalance).div(1*10**18);
             // Transfer the reward to the submission
-            IMatryxToken(matryxTokenAddress).transfer(winningSubmissions[i], reward);
+            IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(winningSubmissions[i], reward);
         }
     }
 
@@ -549,7 +549,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	function transferBountyToTournament() public onlyTournament returns (uint256)
 	{  
         uint256 remaining = remainingBounty();
-        IMatryxToken(matryxTokenAddress).transfer(tournamentAddress, remaining);
+        IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(tournamentAddress, remaining);
         return remaining;
 	}
 
