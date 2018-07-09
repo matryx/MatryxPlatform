@@ -350,6 +350,17 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         data.update(tournamentData, _category, platformAddress);
     }
 
+    function addFunds(uint256 _fundsToAdd) public
+    {
+        uint256 tournamentState = this.getState();
+        require(tournamentState == uint256(TournamentState.NotYetOpen) || 
+                tournamentState == uint256(TournamentState.Open) || 
+                tournamentState == uint256(TournamentState.OnHold));
+
+        require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, address(this), _fundsToAdd));
+        data.updateBounty(data, _fundsToAdd);
+    }
+
     /*
      * Tournament Admin Methods
      */

@@ -51,6 +51,12 @@ library LibTournamentAdminMethods
         }
     }
 
+    function updateBounty(LibConstruction.TournamentData storage self, uint256 _fundsToAdd)
+    {
+        require(_fundsToAdd > 0);
+        self.bounty = self.bounty.add(_fundsToAdd);
+    }
+
     /// @dev Chooses the winner(s) of the current round. If this is the last round, 
     //       this method will also close the tournament.
     /// @param _submissionAddresses The winning submission addresses
