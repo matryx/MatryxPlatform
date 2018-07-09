@@ -359,7 +359,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, address(this), _fundsToAdd));
-        data.updateBounty(data, _fundsToAdd);
+        data.updateBounty(_fundsToAdd);
     }
 
     /*
