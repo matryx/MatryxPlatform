@@ -182,36 +182,4 @@ library LibTournamentAdminMethods
 
         return newRoundAddress;
     }
-
-    function createRoundTwo(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, address matryxRoundFactoryAddress, LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress)
-    {
-        // only this, the tournamentFactory or rounds can call createRound
-        require(msg.sender == address(this) || msg.sender == IMatryxPlatform(platformAddress).getTournamentFactoryAddress() || stateData.isRound[msg.sender]);
-        require((roundData.start >= now && roundData.start < roundData.end), "Time parameters are invalid.");
-
-        IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
-        address newRoundAddress;
-
-        if(_automaticCreation == false)
-        {
-            require(roundData.bounty > 0);
-        }
-
-        newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, stateData.rounds.length, roundData);
-        // Transfer the round bounty to the round.
-        // If this is the first round, the bounty is transfered to the round *by the platform in createTournament* (by tournament.sendBountyToRound)
-        if(stateData.rounds.length != 0 && roundData.bounty != 0)
-        {
-            stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(roundData.bounty);
-            IMatryxToken(matryxTokenAddress).transfer(newRoundAddress, roundData.bounty);
-        }
-
-        stateData.rounds.push(newRoundAddress);
-        stateData.isRound[newRoundAddress] = true;
-
-        // Triggers Event displaying start time, end, address, and round number
-        emit NewRound(roundData.start, roundData.end, roundData.reviewPeriodDuration, newRoundAddress, stateData.rounds.length);
-
-        return newRoundAddress;
-    }
 }

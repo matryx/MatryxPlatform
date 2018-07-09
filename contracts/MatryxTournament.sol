@@ -357,8 +357,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
                 tournamentState == uint256(TournamentState.Open) || 
                 tournamentState == uint256(TournamentState.OnHold));
 
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, address(this), _fundsToAdd));
-        data.updateBounty(data, _fundsToAdd);
+        data.updateBounty(_fundsToAdd);
     }
 
     /*
@@ -406,12 +407,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public onlyRound returns (address _roundAddress)
     {
         return _createRound(roundData, _automaticCreation);
-    }
-
-    function createRoundTwo(LibConstruction.RoundData roundData, bool _automaticCreation) public onlyRound returns (address _roundAddress)
-    {
-        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
-        return LibTournamentAdminMethods.createRoundTwo(stateData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, roundData, _automaticCreation);
     }
 
     function _createRound(LibConstruction.RoundData roundData, bool _automaticCreation) private returns (address _roundAddress)

@@ -455,7 +455,7 @@ contract MatryxRound is Ownable, IMatryxRound {
             {
                 closed = true;
                 roundData = LibConstruction.RoundData({start: now, end: _roundData.end, reviewPeriodDuration: _roundData.reviewPeriodDuration, bounty: _roundData.bounty});
-                newRound = IMatryxTournament(tournamentAddress).createRoundTwo(roundData, false);
+                newRound = IMatryxTournament(tournamentAddress).createRound(roundData, false);
             }
         }
         else
