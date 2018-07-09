@@ -359,7 +359,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, address(this), _fundsToAdd));
-        data.updateBounty(_fundsToAdd);
     }
 
     /*
@@ -452,7 +451,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     {
         if(entryData.numberOfSubmissions == 0)
         {
-            IMatryxPlatform(platformAddress).invokeTournamentOpenedEvent(data.title_1, data.title_2, data.title_3, data.descriptionHash_1, data.descriptionHash_2, data.bounty, data.entryFee);
+            IMatryxPlatform(platformAddress).invokeTournamentOpenedEvent(data.title_1, data.title_2, data.title_3, data.descriptionHash_1, data.descriptionHash_2, data.initialBounty, data.entryFee);
         }
 
         return LibTournamentEntrantMethods.createSubmission(stateData, entryData, platformAddress, _contributors, _contributorRewardDistribution, _references, submissionData);

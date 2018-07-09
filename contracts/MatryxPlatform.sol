@@ -16,8 +16,8 @@ import "./Ownable.sol";
 /// @title MatryxPlatform - The Matryx platform contract.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
 contract MatryxPlatform is Ownable {
-  using SafeMath for uint256;
-  using SafeMath128 for uint128;
+    using SafeMath for uint256;
+    using SafeMath128 for uint128;
 
   // TODO: condense and put in structs
   address public matryxTokenAddress;
@@ -354,7 +354,7 @@ contract MatryxPlatform is Ownable {
   ///    category: Discipline the tournament falls under.
   ///    title: Name of the new tournament.
   ///    contentHash: Off-chain content hash of tournament details (ipfs hash)
-  ///    Bounty: Total tournament reward in MTX.
+  ///    initialBounty: Total tournament reward in MTX.
   ///    entryFee: Fee to charge participant upon entering into the tournament.
   /// @param roundData Data to populate the first round of the tournament with. Includes:
   ///    startTime: The start time (unix-epoch-based) of the first round.
@@ -366,9 +366,9 @@ contract MatryxPlatform is Ownable {
   {
     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
     address newTournament = tournamentFactory.createTournament(tournamentData.category, tournamentData, roundData, msg.sender);
-    TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.descriptionHash_1, tournamentData.descriptionHash_2, tournamentData.bounty, tournamentData.entryFee);
+    TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.descriptionHash_1, tournamentData.descriptionHash_2, tournamentData.initialBounty, tournamentData.entryFee);
     
-    require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.bounty));
+    require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.initialBounty));
     IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
     // update data structures
     allTournaments.push(newTournament);

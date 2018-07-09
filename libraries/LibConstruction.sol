@@ -32,7 +32,7 @@ library LibConstruction
         bytes32 descriptionHash_2;
         bytes32 fileHash_1;
         bytes32 fileHash_2;
-    	uint256 bounty;
+    	uint256 initialBounty;
     	uint256 entryFee;
     }
 
