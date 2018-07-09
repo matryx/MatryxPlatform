@@ -146,6 +146,12 @@ contract MatryxPlatform is Ownable {
     _;
   }
 
+  modifier notOwner(address _tournamentAddress)
+  {
+    require(entrantToOwnsTournament[msg.sender][_tournamentAddress] == false);
+    _;
+  }
+
   /*
    * State Maintenance Methods
    */
@@ -313,7 +319,7 @@ contract MatryxPlatform is Ownable {
   /// @dev Enter the user into a tournament and charge the entry fee.
   /// @param _tournamentAddress Address of the tournament to enter into.
   /// @return _success Whether or not user was successfully entered into the tournament.
-  function enterTournament(address _tournamentAddress) public onlyPeerLinked(msg.sender) returns (bool _success)
+  function enterTournament(address _tournamentAddress) public onlyPeerLinked(msg.sender) notOwner(_tournamentAddress) returns (bool _success)
   {
       require(tournamentExists[_tournamentAddress]);
       
