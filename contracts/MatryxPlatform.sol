@@ -148,7 +148,8 @@ contract MatryxPlatform is Ownable {
 
   modifier notOwner(address _tournamentAddress)
   {
-    require(entrantToOwnsTournament[msg.sender][_tournamentAddress] == false);
+      require(true);
+    // require(entrantToOwnsTournament[msg.sender][_tournamentAddress] == false);
     _;
   }
 
