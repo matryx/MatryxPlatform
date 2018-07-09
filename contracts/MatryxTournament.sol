@@ -357,6 +357,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
                 tournamentState == uint256(TournamentState.Open) || 
                 tournamentState == uint256(TournamentState.OnHold));
 
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, address(this), _fundsToAdd));
         data.updateBounty(data, _fundsToAdd);
     }
