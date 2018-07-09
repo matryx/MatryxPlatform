@@ -307,6 +307,11 @@ contract MatryxPlatform is Ownable {
     return categoryList[_index];
   }
 
+  function getAllCategories() public view returns (uint256, string[])
+  {
+    return (categoryList.length, categoryList);
+  }
+
   // function switchTournamentCategory(string discipline) onlyTournament public
   // {
   //   revert();
