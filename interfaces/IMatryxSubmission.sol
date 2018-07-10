@@ -9,7 +9,8 @@ interface IMatryxSubmission {
 	function isAccessible(address _requester) public constant returns (bool);
 	function getTitle() public constant returns(string);
 	function getAuthor() public constant returns(address);
-	function getExternalAddress() public constant returns (bytes);
+	function getDescriptionHash() public constant returns (bytes);
+    function getFileHash() public constant returns (bytes);
 	function getReferences() public constant returns(address[]);
 	function getContributors() public constant returns(address[]);
 	function getTimeSubmitted() public constant returns(uint256);
@@ -17,7 +18,8 @@ interface IMatryxSubmission {
 	function update(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove,LibConstruction.SubmissionModificationData _data);
 	function updateIsPublic(bool _public) public;
 	function updateTitle(string _title) public ;
-	function updateExternalAddress(bytes _externalAddress) public;
+	function updateDescription(bytes _externalAddress) public;
+    function updateFile(bytes _fileHash) public;
 	function addReference(address _reference) public ;
 	function removeReference(address _reference) public;
 	function receiveReferenceRequest() public;
