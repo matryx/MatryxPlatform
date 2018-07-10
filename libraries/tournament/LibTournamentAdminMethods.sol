@@ -101,6 +101,7 @@ library LibTournamentAdminMethods
     ///@dev Allocates some of this tournament's balance to the current round
     function allocateMoreToRound(LibTournamentStateManagement.StateData storage stateData, uint256 _mtxAllocation, address matryxTokenAddress) public
     {
+        require(_mtxAllocation <= IMatryxTournament(this).getBalance());
         (, address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 currentRoundState = IMatryxRound(currentRoundAddress).getState();
         require(currentRoundState == uint256(RoundState.NotYetOpen) || 

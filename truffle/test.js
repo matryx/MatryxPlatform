@@ -1,5 +1,5 @@
 const ethers = require('ethers')
-const { setup, stringToBytes, stringToBytes32 } = require('./helper')
+const { setup, stringToBytes32, stringToBytes, Contract } = require('./helper')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
 let MatryxTournament, MatryxRound, platform, token, wallet
@@ -7,17 +7,19 @@ let MatryxTournament, MatryxRound, platform, token, wallet
 const genId = length => new Array(length).fill(0).map(() => Math.floor(36 * Math.random()).toString(36)).join('')
 
 const init = async () => {
-  const data = await setup(artifacts, web3)
+  const data = await setup(artifacts, web3, 0)
   MatryxTournament = data.MatryxTournament
   MatryxRound = data.MatryxRound
-  account = data.account
   wallet = data.wallet
   platform = data.platform
   token = data.token
 }
 
-const createTournament = async () => {
+const createTournament = async (bounty, roundData, accountNumber) => {
+  // const { platform } = await setup(artifacts, web3, accountNumber)
   let count = +await platform.tournamentCount()
+
+  console.log("platform using account", platform.wallet.address)
 
   const suffix = ('0' + (count + 1)).substr(-2)
   const title = stringToBytes32('Test Tournament ' + suffix, 3)
@@ -32,28 +34,34 @@ const createTournament = async () => {
     descriptionHash_2: descriptionHash[1],
     fileHash_1: fileHash[0],
     fileHash_2: fileHash[1],
-    initialBounty: web3.toWei(10),
+    initialBounty: bounty,
     entryFee: web3.toWei(2)
   }
-  const startTime = Math.floor(new Date() / 1000)
-  const endTime = startTime + 60
-  const roundData = {
-    start: startTime,
-    end: endTime,
-    reviewPeriodDuration: 60,
-    bounty: web3.toWei(5)
-  }
+//   const startTime = Math.floor(new Date() / 1000)
+//   const endTime = startTime + 60
+  // const roundData = {
+  //   start: startTime,
+  //   end: endTime,
+  //   reviewPeriodDuration,
+  //   bounty
+  // }
 
   await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
 
   const address = await platform.allTournaments(count)
-  const tournament = new ethers.Contract(address, MatryxTournament.abi, wallet)
+  const tournament = Contract(address, MatryxTournament, accountNumber)
   console.log('Tournament: ' + address)
 
   return tournament
 }
 
-const createSubmission = async tournament => {
+const createSubmission = async (tournament, accountNumber) => {
+  await setup(artifacts, web3, accountNumber)
+
+  tournament.accountNumber = accountNumber
+  platform.accountNumber = accountNumber
+  const account = tournament.wallet.address
+  
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
 
@@ -75,17 +83,23 @@ const createSubmission = async tournament => {
 const logSubmissions = async tournament => {
   const rounds = await tournament.getRounds()
   console.log('Round 1: ' + rounds[0])
-  const round = new ethers.Contract(rounds[0], MatryxRound.abi, wallet)
+  const round = Contract(rounds[0], MatryxRound)
   console.log(await round.getSubmissions())
 }
 
 module.exports = async exit => {
   try {
     await init()
-    const tournament = await createTournament()
-    await createSubmission(tournament)
-    await createSubmission(tournament)
-    await createSubmission(tournament)
+    let roundData = { 
+      start: Math.floor(Date.now()/1000), 
+      end: Math.floor(Date.now()/1000) + 60, 
+      reviewPeriodDuration: 60, 
+      bounty: web3.toWei(5)
+    } 
+    const tournament = await createTournament(web3.toWei(10), roundData, 0)
+    await createSubmission(tournament, 1)
+    await createSubmission(tournament, 2)
+    await createSubmission(tournament, 3)
     await logSubmissions(tournament)
   } catch (err) {
     console.log(err.message)
