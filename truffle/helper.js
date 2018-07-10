@@ -5,6 +5,11 @@ const sleep = ms => new Promise(done => setTimeout(done, ms))
 const key = '0x' + '2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea'
 
 module.exports = {
+  stringToBytes(text) {
+    let bytes = ethers.utils.toUtf8Bytes(text)
+    return ethers.utils.hexlify(bytes)
+  },
+
   stringToBytes32(text, requiredLength) {
     var data = ethers.utils.toUtf8Bytes(text)
     var l = data.length

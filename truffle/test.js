@@ -1,5 +1,5 @@
 const ethers = require('ethers')
-const { setup, stringToBytes32 } = require('./helper')
+const { setup, stringToBytes, stringToBytes32 } = require('./helper')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
 let MatryxTournament, MatryxRound, platform, token, wallet
@@ -19,7 +19,8 @@ const init = async () => {
 const createTournament = async () => {
   let count = +await platform.tournamentCount()
 
-  const title = stringToBytes32('Test Tournament ' + (count + 1), 3)
+  const suffix = ('0' + (count + 1)).substr(-2)
+  const title = stringToBytes32('Test Tournament ' + suffix, 3)
   const descriptionHash = stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2)
   const fileHash = stringToBytes32('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2)
   const tournamentData = {
@@ -35,11 +36,11 @@ const createTournament = async () => {
     entryFee: web3.toWei(2)
   }
   const startTime = Math.floor(new Date() / 1000)
-  const endTime = startTime + 10
+  const endTime = startTime + 60
   const roundData = {
     start: startTime,
     end: endTime,
-    reviewPeriodDuration: 300,
+    reviewPeriodDuration: 60,
     bounty: web3.toWei(5)
   }
 
@@ -56,11 +57,14 @@ const createSubmission = async tournament => {
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
 
-  const content = stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 1)
+  const descriptionHash = stringToBytes('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke')
+  const fileHash = stringToBytes('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke')
+
   const submissionData = {
     title: 'A submission ' + genId(6),
     owner: account,
-    contentHash: content[0] + content[1].substr(2),
+    descriptionHash,
+    fileHash,
     isPublic: false
   }
   await tournament.createSubmission([], [], [], submissionData, { gasLimit: 6.5e6 })
