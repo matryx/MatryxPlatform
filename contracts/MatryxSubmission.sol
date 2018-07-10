@@ -195,7 +195,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         bool submissionExternallyAccessible = isPublic;
         bool roundAtLeastInReview = IMatryxRound(roundAddress).getState() >= 2;
         bool requesterIsEntrant = IMatryxTournament(tournamentAddress).isEntrant(_requester);
-        bool requesterOwnsTournament = ownableTournament.isOwner(_requester);
+        bool requesterOwnsTournament = ownableTournament.getOwner() == _requester;
         bool requesterIsContributor = IMatryxRound(roundAddress).requesterIsContributor(_requester);
         bool duringReviewAndRequesterInTournament = roundAtLeastInReview && (requesterOwnsTournament || requesterIsEntrant || requesterIsContributor);
         bool tournamentIsClosed = IMatryxTournament(tournamentAddress).getState() >= 4;

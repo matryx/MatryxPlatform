@@ -31,7 +31,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     // address public libTournamentStateManagement;
 
     //Tournament identification
-    address public owner;
     LibConstruction.TournamentData data;
     // Timing and State
     uint256 public timeCreated;
