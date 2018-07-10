@@ -172,6 +172,11 @@ contract MatryxRound is Ownable, IMatryxRound {
     // 	return false;
     // }
 
+    function addBounty(uint256 _mtxAllocation) public onlyTournamentOrLib
+    {
+        bounty = bounty.add(_mtxAllocation);
+    }
+
     /*
      * Access Control Methods
      */

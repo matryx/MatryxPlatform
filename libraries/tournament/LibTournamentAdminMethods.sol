@@ -110,6 +110,7 @@ library LibTournamentAdminMethods
 
         stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(_mtxAllocation);
         require(IMatryxToken(matryxTokenAddress).transfer(currentRoundAddress, _mtxAllocation));
+        IMatryxRound(currentRoundAddress).addBounty(_mtxAllocation);
     }
 
     /// @dev This function should be called after the user selects winners for their tournament and chooses the "DoNothing" option
