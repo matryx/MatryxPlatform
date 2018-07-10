@@ -438,7 +438,7 @@ contract MatryxRound is Ownable, IMatryxRound {
             }
 
             uint256 newBounty;
-            uint256 tournamentBalance = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).balanceOf(tournamentAddress);
+            uint256 tournamentBalance = IMatryxTournament(tournamentAddress).getBalance();
 
             if(tournamentBalance < bounty)
             {
@@ -467,7 +467,7 @@ contract MatryxRound is Ownable, IMatryxRound {
             // CloseTournament case
             closed = true;
         }
-	}
+    }
 
     function transferAllToWinners(uint256 _tournamentBalance) public onlyTournament
     {
