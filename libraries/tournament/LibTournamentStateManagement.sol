@@ -21,6 +21,7 @@ library LibTournamentStateManagement
         uint256 entryFeesTotal;
         uint256 roundBountyAllocation;
         bool closed;
+        bool hasBeenWithdrawnFrom;
     }
 
     struct EntryData

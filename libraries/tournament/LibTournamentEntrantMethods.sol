@@ -96,20 +96,25 @@ library LibTournamentEntrantMethods
         (, currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 numberOfEntrants = entryData.numberOfEntrants;
         uint256 bounty = IMatryxTournament(this).getBounty();
-        // If this is the first withdrawal being made...
-        if(IMatryxToken(matryxTokenAddress).balanceOf(currentRoundAddress) > 0)
+        if(entryData.hasWithdrawn[msg.sender] == false)
         {
-            uint256 roundBounty = IMatryxRound(currentRoundAddress).transferBountyToTournament();
-            stateData.roundBountyAllocation = stateData.roundBountyAllocation.sub(roundBounty);
-            returnEntryFeeToEntrant(stateData, entryData, msg.sender, matryxTokenAddress);
-            require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.div(entryData.numberOfEntrants).mul(2)));
-        }
-        else
-        {
-            returnEntryFeeToEntrant(stateData, entryData, msg.sender, matryxTokenAddress);
-            require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.mul(numberOfEntrants.sub(2)).div(numberOfEntrants).div(numberOfEntrants.sub(1))));
-        }
+            // If this is the first withdrawal being made...
+            if(stateData.hasBeenWithdrawnFrom == false)
+            {
+                uint256 roundBounty = IMatryxRound(currentRoundAddress).transferBountyToTournament();
+                stateData.roundBountyAllocation = stateData.roundBountyAllocation.sub(roundBounty);
+                returnEntryFeeToEntrant(stateData, entryData, msg.sender, matryxTokenAddress);
+                require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.div(entryData.numberOfEntrants).mul(2)));
+                
+                stateData.hasBeenWithdrawnFrom = true;
+            }
+            else
+            {
+                returnEntryFeeToEntrant(stateData, entryData, msg.sender, matryxTokenAddress);
+                require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.mul(numberOfEntrants.sub(2)).div(numberOfEntrants).div(numberOfEntrants.sub(1))));
+            }
 
-        entryData.hasWithdrawn[msg.sender] = true;
+            entryData.hasWithdrawn[msg.sender] = true;
+        }
     }
 }
