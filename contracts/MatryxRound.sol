@@ -216,6 +216,10 @@ contract MatryxRound is Ownable, IMatryxRound {
             {
                 return uint256(RoundState.Closed);
             }
+            else if(submissions.length == 0)
+            {
+                return uint256(RoundState.Abandoned);
+            }
             else if(winningSubmissions.length > 0)
             {
                 return uint256(RoundState.HasWinners);
