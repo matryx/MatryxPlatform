@@ -31,7 +31,7 @@ const createTournament = async () => {
     descriptionHash_2: descriptionHash[1],
     fileHash_1: fileHash[0],
     fileHash_2: fileHash[1],
-    bounty: web3.toWei(10),
+    initialBounty: web3.toWei(10),
     entryFee: web3.toWei(2)
   }
   const startTime = Math.floor(new Date() / 1000)
