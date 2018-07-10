@@ -394,17 +394,17 @@ contract MatryxPlatform is Ownable {
         ownerToPeerAndPeerToOwner[peer] = msg.sender;
     }
 
-    function isPeer(address _peerAddress) public constant returns (bool)
+    function isPeer(address _peerAddress) public view returns (bool)
     {
         return peerExists[_peerAddress];
     }
 
-    function hasPeer(address _sender) public constant returns (bool)
+    function hasPeer(address _sender) public view returns (bool)
     {
         return (ownerToPeerAndPeerToOwner[_sender] != 0x0);
     }
 
-    function peerExistsAndOwnsSubmission(address _peer, address _reference) public constant returns (bool)
+    function peerExistsAndOwnsSubmission(address _peer, address _reference) public view returns (bool)
     {
         bool isAPeer = peerExists[_peer];
         bool referenceIsSubmission = submissionExists[_reference];
@@ -413,12 +413,12 @@ contract MatryxPlatform is Ownable {
         return isAPeer && referenceIsSubmission && peerOwnsSubmission;
     }
 
-    function peerAddress(address _sender) public constant returns (address)
+    function peerAddress(address _sender) public view returns (address)
     {
         return ownerToPeerAndPeerToOwner[_sender];
     }
 
-    function isSubmission(address _submissionAddress) public constant returns (bool)
+    function isSubmission(address _submissionAddress) public view returns (bool)
     {
         return submissionExists[_submissionAddress];
     }
@@ -426,7 +426,7 @@ contract MatryxPlatform is Ownable {
     /// @dev Returns whether or not the given tournament belongs to the sender.
     /// @param _tournamentAddress Address of the tournament to check.
     /// @return _isMine Whether or not the tournament belongs to the sender.
-    function getTournament_IsMine(address _tournamentAddress) public constant returns (bool _isMine)
+    function getTournament_IsMine(address _tournamentAddress) public view returns (bool _isMine)
     {
         require(tournamentExists[_tournamentAddress]);
         Ownable tournament = Ownable(_tournamentAddress);
@@ -459,7 +459,7 @@ contract MatryxPlatform is Ownable {
     * Getter Methods
     */
 
-    function getTokenAddress() public constant returns (address)
+    function getTokenAddress() public view returns (address)
     {
         return matryxTokenAddress;
     }
@@ -469,7 +469,7 @@ contract MatryxPlatform is Ownable {
         return matryxTournamentFactoryAddress;
     }
 
-    function getSubmissionTrustLibrary() public constant returns (address)
+    function getSubmissionTrustLibrary() public view returns (address)
     {
         return matryxSubmissionTrustLibAddress;
     }
@@ -477,32 +477,32 @@ contract MatryxPlatform is Ownable {
     /// @dev    Returns a weight from 0 to 1 (18 decimal uint) indicating
     ///         how much of a submission's reward goes to its references.
     /// @return Relative amount of MTX going to references of submissions under this tournament.
-    function getSubmissionGratitude() public constant returns (uint256)
+    function getSubmissionGratitude() public view returns (uint256)
     {
         require(submissionGratitude.exists);
         return submissionGratitude.value;
     }
 
-    /// @dev Returns addresses for submissions the sender has created.
+    /// @dev    Returns addresses for submissions the sender has created.
     /// @return Address array representing submissions.
-    function myTournaments() public constant returns (address[])
+    function myTournaments() public view returns (address[])
     {
         return ownerToTournamentArray[msg.sender];
     }
 
-    function mySubmissions() public constant returns (address[])
+    function mySubmissions() public view returns (address[])
     {
         return ownerToSubmissionArray[msg.sender];
     }
 
-    /// @dev Returns the total number of tournaments
+    /// @dev    Returns the total number of tournaments
     /// @return _tournamentCount Total number of tournaments.
-    function tournamentCount() public constant returns (uint256 _tournamentCount)
+    function tournamentCount() public view returns (uint256 _tournamentCount)
     {
         return allTournaments.length;
     }
     
-    function getTournamentAtIndex(uint256 _index) public constant returns (address _tournamentAddress)
+    function getTournamentAtIndex(uint256 _index) public view returns (address _tournamentAddress)
     {
         require(_index >= 0);
         require(_index < allTournaments.length);

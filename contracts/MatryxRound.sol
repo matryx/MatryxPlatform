@@ -236,7 +236,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @dev Returns whether or not the submission is accessible to the requester.
 	/// @param _index Index of the submission being requested.
     /// @return Whether or not the submission is accessible to the requester.
-	function submissionIsAccessible(uint256 _index) public constant returns (bool)
+	function submissionIsAccessible(uint256 _index) public view returns (bool)
 	{
 		require(_index < submissions.length);
 
@@ -258,7 +258,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @dev Returns true if the sender is an entrant in this round.
 	/// @param _requester Address being tested.
 	/// @return Whether or not the requester is a contributor in this round.
-	function requesterIsContributor(address _requester) public constant returns (bool)
+	function requesterIsContributor(address _requester) public view returns (bool)
 	{
 		return addressToParticipantType[_requester] != 0;
 	}
@@ -272,11 +272,11 @@ contract MatryxRound is Ownable, IMatryxRound {
      * Getter Methods
      */
 
-    function getPlatform() public constant returns (address) {
+    function getPlatform() public view returns (address) {
 		return platformAddress;
 	}
 
-    function getTournament() public constant returns (address) {
+    function getTournament() public view returns (address) {
 		return tournamentAddress;
 	}
 
@@ -290,29 +290,29 @@ contract MatryxRound is Ownable, IMatryxRound {
         return endTime;
     }
 
-    function getBounty() public constant returns (uint256) 
+    function getBounty() public view returns (uint256) 
     { 
     	return bounty;
     }
 
-    function remainingBounty() public constant returns (uint256)
+    function remainingBounty() public view returns (uint256)
     {
         return IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).balanceOf(this);
     }
 
-    function getTokenAddress() public constant returns (address)
+    function getTokenAddress() public view returns (address)
     {
     	return IMatryxPlatform(platformAddress).getTokenAddress();
     }
 
 	/// @dev Returns all submissions made to this round.
 	/// @return _submissions All submissions made to this round.
-	function getSubmissions() public constant returns (address[] _submissions)
+	function getSubmissions() public view returns (address[] _submissions)
 	{
 		return submissions;
 	}
 
-	function getSubmissionAddress(uint256 _index) public constant returns (address _submissionAddress)
+	function getSubmissionAddress(uint256 _index) public view returns (address _submissionAddress)
 	{
 		require(_index < submissions.length);
 
@@ -322,7 +322,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @dev Returns the author of a submission.
 	/// @param _index Index of the submission.
 	/// @return Address of this submission's author.
-	function getSubmissionAuthor(uint256 _index) public constant whenAccessible(msg.sender, _index) returns (address) 
+	function getSubmissionAuthor(uint256 _index) public view whenAccessible(msg.sender, _index) returns (address) 
 	{
 		IMatryxSubmission submission = IMatryxSubmission(submissions[_index]);
 		return submission.getAuthor();
@@ -331,7 +331,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 	/// @dev Returns the balance of a particular submission
 	/// @param _submissionAddress Address of the submission
 	/// @return Balance of the bounty 
-	function getBalance(address _submissionAddress) public constant returns (uint256)
+	function getBalance(address _submissionAddress) public view returns (uint256)
 	{
 		return IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).balanceOf(_submissionAddress);
 	}
@@ -343,21 +343,21 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 	/// @dev Returns whether or not a winning submission has been chosen.
 	/// @return Whether or not a submission has been chosen.
-	function submissionsChosen() public constant returns (bool)
+	function submissionsChosen() public view returns (bool)
 	{
 		return winningSubmissions[0] != 0x0;
 	}
 
 	/// @dev Returns the index of this round's winning submission.
 	/// @return Index of the winning submission.
-	function getWinningSubmissionAddresses() public constant returns (address[])
+	function getWinningSubmissionAddresses() public view returns (address[])
 	{
 		return winningSubmissions;
 	}
 
 	/// @dev Returns the number of submissions made to this round.
 	/// @return Number of submissions made to this round.
-	function numberOfSubmissions() public constant returns (uint256)
+	function numberOfSubmissions() public view returns (uint256)
 	{
 		return submissions.length - numberSubmissionsRemoved;
 	}

@@ -4,17 +4,17 @@ pragma experimental ABIEncoderV2;
 import '../libraries/LibConstruction.sol';
 
 interface IMatryxSubmission {
-	function getTournament() public constant returns (address);
-	function getRound() public constant returns (address);
-	function isAccessible(address _requester) public constant returns (bool);
-	function getTitle() public constant returns(string);
-	function getAuthor() public constant returns(address);
-	function getDescriptionHash() public constant returns (bytes);
-    function getFileHash() public constant returns (bytes);
-	function getReferences() public constant returns(address[]);
-	function getContributors() public constant returns(address[]);
-	function getTimeSubmitted() public constant returns(uint256);
-	function getTimeUpdated() public constant returns(uint256);
+	function getTournament() public view returns (address);
+	function getRound() public view returns (address);
+	function isAccessible(address _requester) public view returns (bool);
+	function getTitle() public view returns(string);
+	function getAuthor() public view returns(address);
+	function getDescriptionHash() public view returns (bytes);
+    function getFileHash() public view returns (bytes);
+	function getReferences() public view returns(address[]);
+	function getContributors() public view returns(address[]);
+	function getTimeSubmitted() public view returns(uint256);
+	function getTimeUpdated() public view returns(uint256);
 	function update(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove,LibConstruction.SubmissionModificationData _data);
 	function updateIsPublic(bool _public) public;
 	function updateTitle(string _title) public ;
@@ -34,6 +34,6 @@ interface IMatryxSubmission {
 	function removeContributors(address[] _contributorsToRemove) public;
 	function getBalance() public returns (uint256);
 	function withdrawReward(address _recipient) public;
-	function getTransferAmount() public constant returns (uint256);
+	function getTransferAmount() public view returns (uint256);
 	//function deleteSubmission() public;
 }

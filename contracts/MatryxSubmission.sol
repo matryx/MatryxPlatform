@@ -176,15 +176,15 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         * Getter Methods
         */
 
-    function getTournament() public constant returns (address) {
+    function getTournament() public view returns (address) {
         return tournamentAddress;
     }
 
-    function getRound() public constant returns (address) {
+    function getRound() public view returns (address) {
         return roundAddress;
     }
 
-    function isAccessible(address _requester) public constant returns (bool)
+    function isAccessible(address _requester) public view returns (bool)
     {
         IMatryxRound round = IMatryxRound(roundAddress);
         Ownable ownableTournament = Ownable(tournamentAddress);
@@ -203,37 +203,37 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester) || tournamentIsClosed;
     }
 
-    function getTitle() public constant whenAccessible(msg.sender) returns(string) {
+    function getTitle() public view whenAccessible(msg.sender) returns(string) {
         return title;
     }
 
-    function getAuthor() public constant whenAccessible(msg.sender) returns(address) {
+    function getAuthor() public view whenAccessible(msg.sender) returns(address) {
         return author;
     }
 
-    function getDescriptionHash() public constant whenAccessible(msg.sender) returns (bytes)
+    function getDescriptionHash() public view whenAccessible(msg.sender) returns (bytes)
     {
         return descriptionHash;
     }
 
-    function getFileHash() public constant whenAccessible(msg.sender) returns (bytes)
+    function getFileHash() public view whenAccessible(msg.sender) returns (bytes)
     {
         return fileHash;
     }
 
-    function getReferences() public constant whenAccessible(msg.sender) returns(address[]) {
+    function getReferences() public view whenAccessible(msg.sender) returns(address[]) {
         return references;
     }
 
-    function getContributors() public constant whenAccessible(msg.sender) returns(address[]) {
+    function getContributors() public view whenAccessible(msg.sender) returns(address[]) {
         return contributors;
     }
 
-    function getTimeSubmitted() public constant returns(uint256) {
+    function getTimeSubmitted() public view returns(uint256) {
         return timeSubmitted;
     }
 
-    function getTimeUpdated() public constant returns(uint256) {
+    function getTimeUpdated() public view returns(uint256) {
         return timeUpdated;
     }
 
@@ -325,7 +325,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     }
 
     // // Debug function. ?MAYBEDO:Delete
-    // function addressIsFlagged(address _reference) public constant returns (bool, bool)
+    // function addressIsFlagged(address _reference) public view returns (bool, bool)
     // {
     // 	return (addressToReferenceInfo[_reference].flagged, missingReferenceToIndex[_reference].exists);
     // }
@@ -471,7 +471,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         }
     }
 
-    function getTransferAmount() public constant returns (uint256)
+    function getTransferAmount() public view returns (uint256)
     {
         uint submissionReward = getBalance();
         if(totalPossibleTrust == 0)
