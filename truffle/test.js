@@ -102,8 +102,8 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
   timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
   await sleep(timeTilRoundInReview*1000)
 
-  const res = await tournament.selectWinners(winners, rewardDistribution, roundData, selectWinnerAction)
-  return res;
+  const res = await tournament.selectWinners(winners, rewardDistribution, roundData, selectWinnerAction, {gasLimit: 5000000})
+  return res
 }
 
 module.exports = async exit => {
@@ -126,7 +126,7 @@ module.exports = async exit => {
         bounty: web3.toWei(2)
       }
     const submissions = await logSubmissions(tournament);
-    await selectWinnersWhenInReview(tournament, 0, submissions, submissions.map(s => 1), roundTwoData, 2)
+    await selectWinnersWhenInReview(tournament, 0, submissions, submissions.map(s => 1), roundTwoData, 0)
     await logSubmissions(tournament)
   } catch (err) {
     console.log(err.message)
