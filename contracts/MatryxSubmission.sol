@@ -445,6 +445,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
         // Transfer reward to submission author and contributors
         uint256 transferAmount = getTransferAmount();
+        if(contributors.length == 0 && references.length == 0)
+        {
+            token.transfer(_recipient, submissionReward);
+            return;
+        }
+        
         uint256 authorAmount = transferAmount.div(2);
         token.transfer(_recipient, authorAmount);
         // Distribute transfer amounts to contributors
@@ -482,7 +488,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
                 return 0;
             }
 
-            return submissionReward;
+            return submissionReward.mul(10**18 - IMatryxPlatform(platformAddress).getSubmissionGratitude()).div(10**18);
         }
 
         // transfer amount calculated as:
