@@ -198,9 +198,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         bool requesterOwnsTournament = ownableTournament.getOwner() == _requester;
         bool requesterIsContributor = IMatryxRound(roundAddress).requesterIsContributor(_requester);
         bool duringReviewAndRequesterInTournament = roundAtLeastInReview && (requesterOwnsTournament || requesterIsEntrant || requesterIsContributor);
-        bool tournamentIsClosed = IMatryxTournament(tournamentAddress).getState() >= 4;
+        // TODO: Have a discussion about what this means (also think about next steps (encryption))
+        bool roundIsClosed = IMatryxRound(roundAddress).getState() >= 5;
 
-        return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester) || tournamentIsClosed;
+        return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester) || roundIsClosed;
     }
 
     function getTitle() public view whenAccessible(msg.sender) returns(string) {
