@@ -484,6 +484,7 @@ contract MatryxRound is Ownable, IMatryxRound {
             uint256 reward = rewardDistribution[i].mul(1*10**18).div(rewardDistributionTotal).mul(totalBalance).div(1*10**18);
             // Transfer the reward to the submission
             IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(winningSubmissions[i], reward);
+            IMatryxSubmission(winningSubmissions[i]).addToWinnings(reward);
         }
     }
 
