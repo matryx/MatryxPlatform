@@ -2,7 +2,6 @@ const ethers = require('ethers')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
 // key from ganache
-const key = '0x' + '2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea'
 const keys =
 [ '0x2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea',
 '0x67a8bc7c12985775e9ab2b1bc217a9c4eff822f93a6f388021e30431d26cb3d3',
@@ -76,7 +75,7 @@ module.exports = {
     
     const platform = Contract(MatryxPlatform.address, MatryxPlatform, accountNum)
     const token = Contract(MatryxToken.address, MatryxToken, 0)
-    
+
     const hasPeer = await platform.hasPeer(account)
 
     if (!hasPeer) {

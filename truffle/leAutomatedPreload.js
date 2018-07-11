@@ -109,25 +109,51 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
 module.exports = async exit => {
   try {
     await init()
-    let roundData = { 
-      start: Math.floor(Date.now()/1000), 
-      end: Math.floor(Date.now()/1000) + 10, 
-      reviewPeriodDuration: 600, 
+    let scOne_RoundData = { 
+      start: Math.floor(Date.now()/1000) + 1e9, 
+      end: Math.floor(Date.now()/1000) + 1e9 + 10, 
+      reviewPeriodDuration: 1, 
       bounty: web3.toWei(5)
     } 
-    const tournament = await createTournament(web3.toWei(10), roundData, 0)
-    await createSubmission(tournament, 1)
-    await createSubmission(tournament, 2)
-    await createSubmission(tournament, 3)
-    const roundTwoData = {
-        start: Math.floor(Date.now()/1000),
-        end: Math.floor(Date.now()/1000) + 10,
-        reviewPeriodDuration: 600, 
-        bounty: web3.toWei(2)
-      }
-    const submissions = await logSubmissions(tournament);
-    await selectWinnersWhenInReview(tournament, 0, submissions, submissions.map(s => 1), roundTwoData, 2)
-    await logSubmissions(tournament)
+    const tournamentOne = await createTournament(web3.toWei(10), scOne_RoundData, 0)
+    let scTwo_RoundData = { 
+        start: Math.floor(Date.now()/1000), 
+        end: Math.floor(Date.now()/1000) + 1e9, 
+        reviewPeriodDuration: 1, 
+        bounty: web3.toWei(5)
+      } 
+    const tournamentTwo = await createTournament(web3.toWei(10), scTwo_RoundData, 0)
+    let scThree_RoundData = { 
+        start: Math.floor(Date.now()/1000), 
+        end: Math.floor(Date.now()/1000) + 1, 
+        reviewPeriodDuration: 1e9, 
+        bounty: web3.toWei(5)
+      } 
+    const tournamentThree = await createTournament(web3.toWei(10), scThree_RoundData, 0)
+    let scFour_RoundData = { 
+        start: Math.floor(Date.now()/1000), 
+        end: Math.floor(Date.now()/1000) + 1e9, 
+        reviewPeriodDuration: 1, 
+        bounty: web3.toWei(5)
+      } 
+    const tournamentFour = await createTournament(web3.toWei(10), scFour_RoundData, 0)
+    await createSubmission(tournamentFour, 1)
+    await createSubmission(tournamentFour, 2)
+    await createSubmission(tournamentFour, 3)
+    let scFive_RoundData = { 
+        start: Math.floor(Date.now()/1000), 
+        end: Math.floor(Date.now()/1000) + 10, 
+        reviewPeriodDuration: 1e9, 
+        bounty: web3.toWei(5)
+      } 
+    const tournamentFive = await createTournament(web3.toWei(10), scFive_RoundData, 0)
+    await createSubmission(tournamentFive, 1)
+    await createSubmission(tournamentFive, 2)
+    await createSubmission(tournamentFive, 3)
+    
+    // const submissions = await logSubmissions(tournament);
+    // await selectWinnersWhenInReview(tournament, 0, submissions, submissions.map(s => 1), roundTwoData, 2)
+    // await logSubmissions(tournament)
   } catch (err) {
     console.log(err.message)
   } finally {
