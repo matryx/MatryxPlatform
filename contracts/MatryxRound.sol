@@ -417,8 +417,8 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
     function selectWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData _roundData, uint256 _selectWinnerAction) public onlyTournamentOrLib duringReviewPeriod
     {
-        // require(_submissionAddresses.length == _rewardDistribution.length);
-        // require(_submissionAddresses.length != 0 && winningSubmissions.length == 0);
+        require(_submissionAddresses.length == _rewardDistribution.length);
+        require(_submissionAddresses.length != 0 && winningSubmissions.length == 0);
 
         winningSubmissions = _submissionAddresses;
         rewardDistribution = _rewardDistribution;
@@ -437,7 +437,7 @@ contract MatryxRound is Ownable, IMatryxRound {
             for(uint256 j = 0; j < winningSubmissions.length; j++)
             {
                 // Calculate total reward denominator and store it somewhere when
-                uint256 reward = rewardDistribution[j].mul(1*10**18).div(rewardDistributionTotal).mul(bounty).div(1*10**18);
+                uint256 reward = rewardDistribution[j].mul(10**18).div(rewardDistributionTotal).mul(bounty).div(10**18);
                 // Transfer the reward to the submission
                 require(IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(winningSubmissions[j], reward));
             }
