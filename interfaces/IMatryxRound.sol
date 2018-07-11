@@ -6,6 +6,7 @@ import '../libraries/LibConstruction.sol';
 interface IMatryxRound
 {
 	//function removeSubmission(address _submissionAddress) public returns (bool);
+	function submissionExists(address _submissionAddress) public returns (bool);
 	function addBounty(uint256 _mtxAllocation) public;
 	function getState() public view returns (uint256);
 	function submissionIsAccessible(uint256 _index) public view returns (bool);

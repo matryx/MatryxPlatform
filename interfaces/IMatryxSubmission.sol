@@ -20,6 +20,7 @@ interface IMatryxSubmission {
 	function updateTitle(string _title) public ;
 	function updateDescription(bytes _externalAddress) public;
     function updateFile(bytes _fileHash) public;
+	function addToWinnings(uint256 _amount) public;
 	function addReference(address _reference) public ;
 	function removeReference(address _reference) public;
 	function receiveReferenceRequest() public;

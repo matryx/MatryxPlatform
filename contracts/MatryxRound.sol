@@ -131,7 +131,7 @@ contract MatryxRound is Ownable, IMatryxRound {
         _;
     }
 
-    function submissionExists(address _submissionAddress) internal returns (bool)
+    function submissionExists(address _submissionAddress) public returns (bool)
     {
         return addressToSubmissionIndex[_submissionAddress].exists;
     }
@@ -440,6 +440,7 @@ contract MatryxRound is Ownable, IMatryxRound {
                 uint256 reward = rewardDistribution[j].mul(10**18).div(rewardDistributionTotal).mul(bounty).div(10**18);
                 // Transfer the reward to the submission
                 require(IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(winningSubmissions[j], reward));
+                IMatryxSubmission(winningSubmissions[j]).addToWinnings(reward);
             }
 
             uint256 newBounty;

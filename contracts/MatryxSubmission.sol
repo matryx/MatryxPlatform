@@ -37,6 +37,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     bytes descriptionHash;
     bytes fileHash;
     address[] references;
+    uint256 winnings;
 
     // Tracks the normalized trust gained through peers approving this submission
     mapping(address=>uint128) authorToApprovalTrustGiven;
@@ -165,6 +166,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         _;
     }
 
+    modifier onlySubmissionOrRound()
+    {
+        require(msg.sender == roundAddress || IMatryxRound(roundAddress).submissionExists(msg.sender));
+        _;
+    }
+
     modifier duringOpenSubmission()
     {
         IMatryxRound round = IMatryxRound(roundAddress);
@@ -236,6 +243,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     function getTimeUpdated() public view returns(uint256) {
         return timeUpdated;
+    }
+
+    function getTotalWinnings() public view returns(uint256) {
+        return winnings;
     }
 
     /*
@@ -310,6 +321,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     {
         fileHash = _fileHash;
         timeUpdated = now;
+    }
+
+    function addToWinnings(uint256 _amount) public onlySubmissionOrRound
+    {
+        winnings = winnings.add(_amount);
     }
 
     function setTrustDelegate(address _newTrustDelegate) public onlyPlatform
@@ -474,6 +490,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
                 uint256 weight = (addressToReferenceInfo[references[j]].authorReputation).mul(1*10**18).div(totalPossibleTrust);
                 uint256 weightedReward = remainingReward.mul(weight).div(1*10**18);
                 token.transfer(references[j], weightedReward);
+                IMatryxSubmission(references[j]).addToWinnings(weightedReward);
             }
         }
     }
