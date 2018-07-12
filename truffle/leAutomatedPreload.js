@@ -1,5 +1,5 @@
 const ethers = require('ethers')
-const { setup, stringToBytes32, stringToBytes, Contract } = require('./helper')
+const { setup, stringToBytes32, stringToBytes, Contract } = require('./utils')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
 let MatryxTournament, MatryxRound, platform, token, wallet
@@ -61,7 +61,7 @@ const createSubmission = async (tournament, accountNumber) => {
   tournament.accountNumber = accountNumber
   platform.accountNumber = accountNumber
   const account = tournament.wallet.address
-  
+
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
 
@@ -112,66 +112,66 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
 module.exports = async exit => {
   try {
     await init()
-    let scOne_RoundData = { 
-        start: Math.floor(Date.now()/1000) + 1e9, 
-        end: Math.floor(Date.now()/1000) + 1e9 + 10, 
-        reviewPeriodDuration: 1, 
+    let scOne_RoundData = {
+        start: Math.floor(Date.now()/1000) + 1e9,
+        end: Math.floor(Date.now()/1000) + 1e9 + 10,
+        reviewPeriodDuration: 1,
         bounty: web3.toWei(5)
-    } 
+    }
     const tournamentOne = await createTournament(web3.toWei(10), scOne_RoundData, 0)
-    let scTwo_RoundData = { 
-        start: Math.floor(Date.now()/1000), 
-        end: Math.floor(Date.now()/1000) + 1e9, 
-        reviewPeriodDuration: 1, 
+    let scTwo_RoundData = {
+        start: Math.floor(Date.now()/1000),
+        end: Math.floor(Date.now()/1000) + 1e9,
+        reviewPeriodDuration: 1,
         bounty: web3.toWei(5)
-    } 
+    }
     const tournamentTwo = await createTournament(web3.toWei(10), scTwo_RoundData, 0)
-    let scThree_RoundData = { 
-        start: Math.floor(Date.now()/1000), 
-        end: Math.floor(Date.now()/1000) + 1, 
-        reviewPeriodDuration: 1e9, 
+    let scThree_RoundData = {
+        start: Math.floor(Date.now()/1000),
+        end: Math.floor(Date.now()/1000) + 1,
+        reviewPeriodDuration: 1e9,
         bounty: web3.toWei(5)
-      } 
+      }
     const tournamentThree = await createTournament(web3.toWei(10), scThree_RoundData, 0)
-    let scFour_RoundData = { 
-        start: Math.floor(Date.now()/1000), 
-        end: Math.floor(Date.now()/1000) + 1e9, 
-        reviewPeriodDuration: 1, 
+    let scFour_RoundData = {
+        start: Math.floor(Date.now()/1000),
+        end: Math.floor(Date.now()/1000) + 1e9,
+        reviewPeriodDuration: 1,
         bounty: web3.toWei(5)
-      } 
+      }
     const tournamentFour = await createTournament(web3.toWei(10), scFour_RoundData, 0)
     await createSubmission(tournamentFour, 1)
     await createSubmission(tournamentFour, 2)
     await createSubmission(tournamentFour, 3)
-    let scFive_RoundData = { 
-        start: Math.floor(Date.now()/1000), 
-        end: Math.floor(Date.now()/1000) + 10, 
-        reviewPeriodDuration: 1e9, 
+    let scFive_RoundData = {
+        start: Math.floor(Date.now()/1000),
+        end: Math.floor(Date.now()/1000) + 10,
+        reviewPeriodDuration: 1e9,
         bounty: web3.toWei(5)
-      } 
+      }
     const tournamentFive = await createTournament(web3.toWei(10), scFive_RoundData, 0)
     await createSubmission(tournamentFive, 1)
     await createSubmission(tournamentFive, 2)
     await createSubmission(tournamentFive, 3)
-    let scSix_RoundData = { 
-        start: Math.floor(Date.now()/1000), 
-        end: Math.floor(Date.now()/1000) + 10, 
-        reviewPeriodDuration: 1, 
+    let scSix_RoundData = {
+        start: Math.floor(Date.now()/1000),
+        end: Math.floor(Date.now()/1000) + 10,
+        reviewPeriodDuration: 1,
         bounty: web3.toWei(5)
       }
       const tournamentSix = await createTournament(web3.toWei(10), scSix_RoundData, 0)
       await createSubmission(tournamentSix, 1);
       await createSubmission(tournamentSix, 2);
       await createSubmission(tournamentSix, 3);
-      let scSeven_RoundData = { 
-        start: Math.floor(Date.now()/1000), 
-        end: Math.floor(Date.now()/1000) + 10, 
+      let scSeven_RoundData = {
+        start: Math.floor(Date.now()/1000),
+        end: Math.floor(Date.now()/1000) + 10,
         reviewPeriodDuration: 1e9,
         bounty: web3.toWei(5)
       }
-      let scSeven_RoundDataTwo = { 
-        start: Math.floor(Date.now()/1000) + 30, 
-        end: Math.floor(Date.now()/1000) + 1e9, 
+      let scSeven_RoundDataTwo = {
+        start: Math.floor(Date.now()/1000) + 30,
+        end: Math.floor(Date.now()/1000) + 1e9,
         reviewPeriodDuration: 1e9,
         bounty: web3.toWei(5)
       }

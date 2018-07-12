@@ -1,5 +1,5 @@
 const ethers = require('ethers')
-const { setup, stringToBytes32, stringToBytes, Contract } = require('./helper')
+const { setup, stringToBytes32, stringToBytes, Contract } = require('./utils')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
 let MatryxTournament, MatryxRound, platform, token, wallet
@@ -61,7 +61,7 @@ const createSubmission = async (tournament, accountNumber) => {
   tournament.accountNumber = accountNumber
   platform.accountNumber = accountNumber
   const account = tournament.wallet.address
-  
+
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
 
@@ -109,24 +109,24 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
 module.exports = async exit => {
   try {
     await init()
-    let roundData = { 
-      start: Math.floor(Date.now()/1000), 
-      end: Math.floor(Date.now()/1000) + 10, 
-      reviewPeriodDuration: 600, 
+    let roundData = {
+      start: Math.floor(Date.now()/1000),
+      end: Math.floor(Date.now()/1000) + 10,
+      reviewPeriodDuration: 600,
       bounty: web3.toWei(5)
-    } 
-    const tournament = await createTournament(web3.toWei(10), roundData, 0)
-    await createSubmission(tournament, 1)
+    }
+    const tournament = await createTournament(web3.toWei(10), roundData, 1)
+    await createSubmission(tournament, 0)
     await createSubmission(tournament, 2)
     await createSubmission(tournament, 3)
     const roundTwoData = {
         start: Math.floor(Date.now()/1000),
         end: Math.floor(Date.now()/1000) + 10,
-        reviewPeriodDuration: 600, 
+        reviewPeriodDuration: 600,
         bounty: web3.toWei(2)
       }
     const submissions = await logSubmissions(tournament);
-    await selectWinnersWhenInReview(tournament, 0, submissions, submissions.map(s => 1), roundTwoData, 0)
+    // await selectWinnersWhenInReview(tournament, 0, submissions, submissions.map(s => 1), roundTwoData, 0)
     await logSubmissions(tournament)
   } catch (err) {
     console.log(err.message)

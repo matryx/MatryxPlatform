@@ -9,7 +9,9 @@ var HDWalletProvider = require("truffle-hdwallet-provider");
 var mnemonic;
 
 // SETUP GLOBALS FOR CLI REPL
-stringToBytes32 = require('./truffle/helper').stringToBytes32
+const utils = require('./truffle/utils')
+stringToBytes = utils.stringToBytes
+stringToBytes32 = utils.stringToBytes32
 getFileContents = path => fs.readFileSync(path).toString()
 contract = (address, { abi }) => new ethers.Contract(address, abi, wallet)
 
