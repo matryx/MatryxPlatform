@@ -34,7 +34,8 @@ interface IMatryxSubmission {
 	function removeContributor(uint256 _contributorIndex) public;
 	function removeContributors(address[] _contributorsToRemove) public;
 	function getBalance() public returns (uint256);
-	function withdrawReward(address _recipient) public;
+	function withdrawReward() public;
 	function getTransferAmount() public view returns (uint256);
+	function myReward() public view returns (uint256);
 	//function deleteSubmission() public;
 }

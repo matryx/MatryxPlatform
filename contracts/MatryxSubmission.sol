@@ -39,6 +39,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     address[] references;
     uint256 winnings;
 
+    uint256 one = 10**18;
+
     // Tracks the normalized trust gained through peers approving this submission
     mapping(address=>uint128) authorToApprovalTrustGiven;
     uint128 public approvalTrust;
@@ -56,6 +58,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     address[] contributors;
     mapping(address=>uint128) public contributorToBountyDividend;
     uint128 public contributorBountyDivisor;
+    mapping(address=>uint256) public addressToAmountWithdrawn;
+    uint256 amountTransferredToReferences;
     uint256 timeSubmitted;
     uint256 timeUpdated;
     bool public isPublic;
@@ -405,7 +409,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         contributors.push(_contributor);
 
         contributorToBountyDividend[_contributor] = _bountyAllocation;
-        contributorBountyDivisor = contributorBountyDivisor + _bountyAllocation;
+        contributorBountyDivisor = contributorBountyDivisor.add(_bountyAllocation);
 
         IMatryxRound round = IMatryxRound(roundAddress);
         round.setParticipantType(_contributor, 2);
@@ -454,50 +458,56 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         return _balance;
     }
 
-    function withdrawReward(address _recipient) public ownerContributorOrRound
+    function withdrawReward() public ownerContributorOrRound
     {
         IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
-        uint256 submissionReward = IMatryxToken(token).balanceOf(address(this));
+        uint256 submissionReward = winnings;
 
         // Transfer reward to submission author and contributors
         uint256 transferAmount = getTransferAmount();
-        if(contributors.length == 0 && references.length == 0)
+
+        uint256 transferAmountLeft
+        if(msg.sender == owner && contributors.length == 0)
         {
-            token.transfer(_recipient, submissionReward);
-            return;
+            transferAmountLeft = transferAmount.sub(addressToAmountWithdrawn[msg.sender]);
         }
-        
-        uint256 authorAmount = transferAmount.div(2);
-        token.transfer(_recipient, authorAmount);
-        // Distribute transfer amounts to contributors
-        uint256 contributorsAmount = transferAmount.sub(authorAmount);
-        for(uint i = 0; i < contributors.length; i++)
+        else
         {
-            if(contributors[i] != 0x0)
-            {
-                uint256 contributionWeight = (contributorToBountyDividend[contributors[i]]).mul(1*10**18).div(contributorBountyDivisor);
-                uint256 contributorReward = contributorsAmount.mul(contributionWeight).div(1*10**18);
-                token.transfer(contributors[i], contributorReward);
-            }
+            transferAmountLeft = _myReward(msg.sender);
         }
 
-        // Distribute remaining reward to references
-        uint256 remainingReward = submissionReward.sub(transferAmount);
-        for(uint j = 0; j < references.length; j++)
+        token.transfer(msg.sender, transferAmountLeft);
+        addressToAmountWithdrawn[msg.sender] = addressToAmountWithdrawn[msg.sender].add(transferAmountLeft);
+        
+        if (msg.sender == owner)
         {
-            if(addressToReferenceInfo[references[j]].approved)
+            // Distribute remaining reward to references
+            uint256 remainingReward = submissionReward.sub(transferAmount).sub(amountTransferredToReferences);
+            if(remainingReward == 0) return;
+
+            uint256 weight = (one).div(approvedReferences);
+            uint256 weightedReward = weight.mul(remainingReward).div(one);
+            for(uint j = 0; j < references.length; j++)
             {
-                uint256 weight = (addressToReferenceInfo[references[j]].authorReputation).mul(1*10**18).div(totalPossibleTrust);
-                uint256 weightedReward = remainingReward.mul(weight).div(1*10**18);
-                token.transfer(references[j], weightedReward);
-                IMatryxSubmission(references[j]).addToWinnings(weightedReward);
+                if(addressToReferenceInfo[references[j]].approved)
+                {
+                    // TODO: Revisit with trust system
+                    // uint256 weight = (addressToReferenceInfo[references[j]].authorReputation).mul(10**18).div(totalPossibleTrust);
+                    // uint256 weightedReward = remainingReward.mul(weight).div(10**18);
+                    // token.transfer(references[j], weightedReward);
+                    // IMatryxSubmission(references[j]).addToWinnings(weightedReward);
+                    
+                    token.transfer(references[j], weightedReward);
+                    IMatryxSubmission(references[j]).addToWinnings(weightedReward);
+                }
             }
+            amountTransferredToReferences = amountTransferredToReferences.add(remainingReward);
         }
     }
 
     function getTransferAmount() public view returns (uint256)
     {
-        uint submissionReward = getBalance();
+        uint submissionReward = winnings;
         if(totalPossibleTrust == 0)
         {
             if(missingReferences.length > 0)
@@ -505,7 +515,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
                 return 0;
             }
 
-            return submissionReward.mul(10**18 - IMatryxPlatform(platformAddress).getSubmissionGratitude()).div(10**18);
+            return submissionReward;
         }
 
         // transfer amount calculated as:
@@ -513,12 +523,29 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         // (1 - submissionGratitude) * 
         // submissionReward
 
-        uint256 transferAmount = approvalTrust.mul(1*10**18 - IMatryxPlatform(platformAddress).getSubmissionGratitude());
+        uint256 transferAmount = approvalTrust.mul(one - IMatryxPlatform(platformAddress).getSubmissionGratitude());
         transferAmount = transferAmount.div(totalPossibleTrust);
         transferAmount = transferAmount.mul(submissionReward);
-        transferAmount = transferAmount.div(1*10**18);
+        transferAmount = transferAmount.div(one);
 
         return transferAmount;
+    }
+
+    function myReward() public view returns (uint256)
+    {
+        return _myReward(msg.sender);
+    }
+
+    function _myReward(address _sender) internal view returns(uint256)
+    {
+        uint256 authorReward = getTransferAmount().div(2);
+        if(_sender == owner)
+        {
+            return authorReward.sub(addressToAmountWithdrawn[_sender]);
+        }
+
+        uint256 contributorRewardWeight = contributorToBountyDividend[_sender].mul(one).div(contributorBountyDivisor);
+        return contributorRewardWeight.mul(authorReward).div(one).sub(addressToAmountWithdrawn[_sender]);
     }
 
     // function prepareToDelete() internal
