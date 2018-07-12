@@ -466,7 +466,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         // Transfer reward to submission author and contributors
         uint256 transferAmount = getTransferAmount();
 
-        uint256 transferAmountLeft
+        uint256 transferAmountLeft;
         if(msg.sender == owner && contributors.length == 0)
         {
             transferAmountLeft = transferAmount.sub(addressToAmountWithdrawn[msg.sender]);
