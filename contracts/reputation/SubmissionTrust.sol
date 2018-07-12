@@ -23,8 +23,12 @@ contract SubmissionTrust is Ownable
     // Submission
     string title;
     address author;
-    bytes externalAddress;
+    bytes descriptionHash;
+    bytes fileHash;
     address[] references;
+    uint256 winnings;
+
+    uint256 one = 10**18;
 
     // Tracks the normalized trust gained through peers approving this submission
     mapping(address=>uint128) authorToApprovalTrustGiven;
@@ -43,9 +47,11 @@ contract SubmissionTrust is Ownable
     address[] contributors;
     mapping(address=>uint128) public contributorToBountyDividend;
     uint128 public contributorBountyDivisor;
+    mapping(address=>uint256) public addressToAmountWithdrawn;
+    uint256 amountTransferredToReferences;
     uint256 timeSubmitted;
     uint256 timeUpdated;
-    bool public publicallyAccessibleDuringTournament;
+    bool public isPublic;
 
     struct ReferenceInfo
     {
