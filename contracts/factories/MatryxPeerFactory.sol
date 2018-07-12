@@ -21,13 +21,13 @@ contract MatryxPeerFactory is Ownable {
     }
 
     function createPeer(address _owner) public onlyPlatform returns (address _peerAddress) {
-        uint128 trust = getTrustForNewPeer();
+        uint128 trust = getReputationForNewPeer();
         MatryxPeer peerAddress = new MatryxPeer(platformAddress, _owner, trust);
         peerCount  = uint64(uint128(peerCount).add(1));
         return peerAddress;
     }
 
-    function getTrustForNewPeer() public view returns (uint128)
+    function getReputationForNewPeer() public view returns (uint128)
     {
         uint128 integralTopValue = fastSigmoid(peerCount+2);
         uint128 integralBottomValue = fastSigmoid(peerCount+1);
