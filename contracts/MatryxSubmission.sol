@@ -3,6 +3,7 @@ pragma experimental ABIEncoderV2;
 
 
 import '../libraries/math/SafeMath.sol';
+import '../libraries/math/SafeMath128.sol';
 import '../libraries/strings/strings.sol';
 import '../libraries/LibConstruction.sol';
 import './reputation/SubmissionTrust.sol';
@@ -16,7 +17,7 @@ import './Ownable.sol';
 
 contract MatryxSubmission is Ownable, IMatryxSubmission {
     using SafeMath for uint256;
-    using SafeMath for uint128;
+    using SafeMath128 for uint128;
     using SafeMath for uint32;
     using strings for *;
 
@@ -466,7 +467,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         // Transfer reward to submission author and contributors
         uint256 transferAmount = getTransferAmount();
 
-        uint256 transferAmountLeft
+        uint256 transferAmountLeft;
         if(msg.sender == owner && contributors.length == 0)
         {
             transferAmountLeft = transferAmount.sub(addressToAmountWithdrawn[msg.sender]);
@@ -507,7 +508,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     function getTransferAmount() public view returns (uint256)
     {
-        uint submissionReward = winnings;
+        uint256 submissionReward = winnings;
         if(totalPossibleTrust == 0)
         {
             if(missingReferences.length > 0)
@@ -518,13 +519,15 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
             return submissionReward;
         }
 
+        // TODO: Revisit with trust system
         // transfer amount calculated as:
         // normalizedAndReferenceCountWeightedTrustInSubmission * 
         // (1 - submissionGratitude) * 
         // submissionReward
 
-        uint256 transferAmount = approvalTrust.mul(one - IMatryxPlatform(platformAddress).getSubmissionGratitude());
-        transferAmount = transferAmount.div(totalPossibleTrust);
+        // uint256 transferAmount = uint256(approvalTrust).mul(one - IMatryxPlatform(platformAddress).getSubmissionGratitude());
+        uint256 transferAmount = one - IMatryxPlatform(platformAddress).getSubmissionGratitude();
+        // transferAmount = transferAmount.div(totalPossibleTrust);
         transferAmount = transferAmount.mul(submissionReward);
         transferAmount = transferAmount.div(one);
 
@@ -544,7 +547,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
             return authorReward.sub(addressToAmountWithdrawn[_sender]);
         }
 
-        uint256 contributorRewardWeight = contributorToBountyDividend[_sender].mul(one).div(contributorBountyDivisor);
+        uint256 contributorRewardWeight = uint256(contributorToBountyDividend[_sender]).mul(one).div(uint256(contributorBountyDivisor));
         return contributorRewardWeight.mul(authorReward).div(one).sub(addressToAmountWithdrawn[_sender]);
     }
 
