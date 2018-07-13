@@ -98,7 +98,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         }
 
         _addContributors(_contributors, _contributorRewardDistribution);
-        
+
         contributors = _contributors;
         timeSubmitted = now;
     }
@@ -131,7 +131,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     }
 
     /*
-        * Modifiers 
+        * Modifiers
         */
 
     // modifier onlyAuthor() {
@@ -300,21 +300,21 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     /// @dev Sets whether or not this submission can be accessed by anyone
     /// before the end of the tournament.
-    function updateIsPublic(bool _public) public onlyOwner 
+    function updateIsPublic(bool _public) public onlyOwner
     {
         isPublic = _public;
     }
 
     /// @dev Edit the title of a submission (callable only by submission's owner).
     /// @param _title New title for the submission.
-    function updateTitle(string _title) public onlyOwner duringOpenSubmission 
+    function updateTitle(string _title) public onlyOwner duringOpenSubmission
     {
         title = _title;
     }
 
     /// @dev Update the description hash of the submission (callable only by submission's owner).
     /// @param _descriptionHash New hash for the description of the submission.
-    function updateDescription(bytes _descriptionHash) public onlyOwner duringOpenSubmission 
+    function updateDescription(bytes _descriptionHash) public onlyOwner duringOpenSubmission
     {
         descriptionHash = _descriptionHash;
         timeUpdated = now;
@@ -341,7 +341,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @dev Add a missing reference to a submission (callable only by submission's owner).
     /// @param _reference Address of additional reference to include.
 
-    function addReference(address _reference) onlyOwner public 
+    function addReference(address _reference) onlyOwner public
     {
         require(trustDelegate.delegatecall(fnSelector_addReference, _reference));
     }
@@ -467,19 +467,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         // Transfer reward to submission author and contributors
         uint256 transferAmount = getTransferAmount();
 
-        uint256 transferAmountLeft;
-        if(msg.sender == owner && contributors.length == 0)
-        {
-            transferAmountLeft = transferAmount.sub(addressToAmountWithdrawn[msg.sender]);
-        }
-        else
-        {
-            transferAmountLeft = _myReward(msg.sender);
-        }
+        uint256 transferAmountLeft = _myReward(msg.sender);
 
         token.transfer(msg.sender, transferAmountLeft);
         addressToAmountWithdrawn[msg.sender] = addressToAmountWithdrawn[msg.sender].add(transferAmountLeft);
-        
+
         if (msg.sender == owner)
         {
             // Distribute remaining reward to references
@@ -497,7 +489,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
                     // uint256 weightedReward = remainingReward.mul(weight).div(10**18);
                     // token.transfer(references[j], weightedReward);
                     // IMatryxSubmission(references[j]).addToWinnings(weightedReward);
-                    
+
                     token.transfer(references[j], weightedReward);
                     IMatryxSubmission(references[j]).addToWinnings(weightedReward);
                 }
@@ -521,8 +513,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
         // TODO: Revisit with trust system
         // transfer amount calculated as:
-        // normalizedAndReferenceCountWeightedTrustInSubmission * 
-        // (1 - submissionGratitude) * 
+        // normalizedAndReferenceCountWeightedTrustInSubmission *
+        // (1 - submissionGratitude) *
         // submissionReward
 
         // uint256 transferAmount = uint256(approvalTrust).mul(one - IMatryxPlatform(platformAddress).getSubmissionGratitude());
@@ -541,7 +533,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     function _myReward(address _sender) internal view returns(uint256)
     {
-        uint256 authorReward = getTransferAmount().div(2);
+        uint256 authorReward = getTransferAmount();
+
+        if (contributors.length != 0) {
+            authorReward = authorReward.div(2);
+        }
+
         if(_sender == owner)
         {
             return authorReward.sub(addressToAmountWithdrawn[_sender]);
