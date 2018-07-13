@@ -129,6 +129,7 @@ contract('MatryxPlatform', function(accounts) {
     let tournament;
     let token;
     let submissionAddress;
+    let wallet;
     //for code coverage
     let gasEstimate = 30000000;
 
@@ -138,7 +139,9 @@ contract('MatryxPlatform', function(accounts) {
         MatryxTournament = data.MatryxTournament
         MatryxRound = data.MatryxRound
         wallet = data.wallet
+        console.log("Wallet: " + wallet)
         platform = data.platform
+        console.log("Platform: " + platform)
         assert.ok(data);
         assert.ok(MatryxTournament);
         console.log("Matryx Tournament Works");
