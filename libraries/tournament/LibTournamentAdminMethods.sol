@@ -53,9 +53,9 @@ library LibTournamentAdminMethods
 
     /// @dev Chooses the winner(s) of the current round. If this is the last round,
     //       this method will also close the tournament.
-    /// @param _submissionAddresses The winning submission addresses
-    /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
-    function selectWinners(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData _roundData, uint256 _selectWinnerAction) public
+    /// @param stateData State data for the tournament
+    /// @param _selectWinnersData Struct containing winning submission information
+    function selectWinners(LibTournamentStateManagement.StateData storage stateData, LibRound.SelectWinnersData _selectWinnersData, address platformAddress, address matryxTokenAddress, LibConstruction.RoundData _roundData) public
     {
         // Round must be in review or have winners to close
         (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
@@ -63,19 +63,21 @@ library LibTournamentAdminMethods
         require(roundState == uint256(RoundState.InReview) || roundState == uint256(RoundState.HasWinners), "Round is not in review or winners have not been chosen.");
         uint256 remainingBalance = IMatryxTournament(this).getBalance();
         // Event to notify web3 of the winning submission address
-        emit RoundWinnersChosen(_submissionAddresses);
-        IMatryxRound(currentRoundAddress).selectWinningSubmissions(_submissionAddresses, _rewardDistribution, _roundData, _selectWinnerAction);
-        if(_selectWinnerAction == uint256(SelectWinnerAction.CloseTournament))
+        emit RoundWinnersChosen(_selectWinnersData.winningSubmissions);
+        IMatryxRound(currentRoundAddress).selectWinningSubmissions( _selectWinnersData, _roundData);
+        if(_selectWinnersData.selectWinnerAction == uint256(SelectWinnerAction.CloseTournament))
         {
             closeTournament(stateData, platformAddress, matryxTokenAddress, remainingBalance, currentRoundAddress);
         }
     }
 
+    /// @dev Edits the next round that is created during the previous rounds ChooseWinningSubmissions
+    /// @param stateData State data for the tournament (see above)
+    /// @param _roundData Incoming new round data
     function editGhostRound(LibTournamentStateManagement.StateData storage stateData, LibConstruction.RoundData _roundData, address matryxTokenAddress) public
     {
 
         (uint256 ghostRoundIndex, address ghostRoundAddress) = LibTournamentStateManagement.getGhostRound(stateData);
-        (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         if(ghostRoundAddress != 0x0)
         {
             uint256 ghostRoundBounty = IMatryxRound(ghostRoundAddress).getBounty();
@@ -132,7 +134,7 @@ library LibTournamentAdminMethods
     }
 
     // @dev Chooses the winner of the tournament.
-    function closeTournament(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, uint256 remainingBalance, address currentRoundAddress) public
+    function closeTournament(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, uint256 remainingBalance, address currentRoundAddress) internal
     {
         require(IMatryxRound(currentRoundAddress).getState() == uint256(RoundState.Closed));
         // Transfer the remaining MTX in the tournament to the current round
@@ -157,7 +159,7 @@ library LibTournamentAdminMethods
         {
             uint256 duration = roundData.end.sub(roundData.start);
             roundData.start = now;
-            roundData.end = now + duration;
+            roundData.end = now.add(duration);
         }
 
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);

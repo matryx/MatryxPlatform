@@ -55,7 +55,7 @@ contract MatryxPlatform is Ownable {
     // Hyperparams
     uint256_optional submissionGratitude = uint256_optional({exists: true, value: 2*10**17});
 
-    function MatryxPlatform(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress, address _matryxSubmissionTrustLibAddress) public
+    constructor(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress, address _matryxSubmissionTrustLibAddress) public
     {
         matryxTokenAddress = _matryxTokenAddress;
         matryxPeerFactoryAddress = _matryxPeerFactoryAddress;
@@ -186,19 +186,19 @@ contract MatryxPlatform is Ownable {
     {
         for(uint256 i = 0; i < _references.length; i++)
         {
-        address _referenceAddress = _references[i];
+            address _referenceAddress = _references[i];
 
-        if(!isSubmission(_referenceAddress))
-        {
-            // TODO: Introduce uint error codes
-            // for returning things like "Reference _ is not submission"
-            continue;
-        }
+            if(!isSubmission(_referenceAddress))
+            {
+                // TODO: Introduce uint error codes
+                // for returning things like "Reference _ is not submission"
+                continue;
+            }
 
-        IMatryxSubmission submission = IMatryxSubmission(_referenceAddress);
-        address author = submission.getAuthor();
-        IMatryxPeer(author).receiveReferenceRequest(_submissionAddress, _referenceAddress);
-        submission.receiveReferenceRequest();
+            IMatryxSubmission submission = IMatryxSubmission(_referenceAddress);
+            address author = submission.getAuthor();
+            IMatryxPeer(author).receiveReferenceRequest(_submissionAddress, _referenceAddress);
+            submission.receiveReferenceRequest();
         }
     }
 
@@ -265,10 +265,10 @@ contract MatryxPlatform is Ownable {
 
         if(tournamentExistsInCategory[categoryHash][_tournamentAddress] == false)
         {
-        tournamentExistsInCategory[categoryHash][_tournamentAddress] = true;
-        tournamentAddressToCategoryInfo[_tournamentAddress].category = _category;
-        tournamentAddressToCategoryInfo[_tournamentAddress].index = (categoryHashToTournamentList[categoryHash]).length;
-        categoryHashToTournamentList[categoryHash].push(_tournamentAddress);
+            tournamentExistsInCategory[categoryHash][_tournamentAddress] = true;
+            tournamentAddressToCategoryInfo[_tournamentAddress].category = _category;
+            tournamentAddressToCategoryInfo[_tournamentAddress].index = (categoryHashToTournamentList[categoryHash]).length;
+            categoryHashToTournamentList[categoryHash].push(_tournamentAddress);
         }
     }
 
@@ -277,12 +277,12 @@ contract MatryxPlatform is Ownable {
         bytes32 categoryHash = keccak256(_category);
         if(tournamentExistsInCategory[categoryHash][_tournamentAddress])
         {
-        // It's there! Let's remove it
-        uint256 indexInCategoryList = tournamentAddressToCategoryInfo[_tournamentAddress].index;
-        tournamentExistsInCategory[categoryHash][_tournamentAddress] = false;
-        categoryHashToTournamentList[categoryHash][indexInCategoryList] = 0x0;
-        tournamentAddressToCategoryInfo[_tournamentAddress].index = 0;
-        emptyCountByCategory[categoryHash] = emptyCountByCategory[categoryHash].add(1);
+            // It's there! Let's remove it
+            uint256 indexInCategoryList = tournamentAddressToCategoryInfo[_tournamentAddress].index;
+            tournamentExistsInCategory[categoryHash][_tournamentAddress] = false;
+            categoryHashToTournamentList[categoryHash][indexInCategoryList] = 0x0;
+            tournamentAddressToCategoryInfo[_tournamentAddress].index = 0;
+            emptyCountByCategory[categoryHash] = emptyCountByCategory[categoryHash].add(1);
         }
     }
 
@@ -365,7 +365,7 @@ contract MatryxPlatform is Ownable {
     function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress)
     {
         IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-        address newTournament = tournamentFactory.createTournament(tournamentData.category, tournamentData, roundData, msg.sender);
+        address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
         TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.descriptionHash_1, tournamentData.descriptionHash_2, tournamentData.initialBounty, tournamentData.entryFee);
 
         require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.initialBounty));

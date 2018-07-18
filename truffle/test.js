@@ -47,7 +47,7 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   // }
 
   let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
-  console.log(JSON.stringify(tx, 0, " "))
+  console.log('Tournament hash:', tx.hash)
 
   const address = await platform.allTournaments(count)
   const tournament = Contract(address, MatryxTournament, accountNumber)
@@ -74,9 +74,15 @@ const createSubmission = async (tournament, accountNumber) => {
     owner: account,
     descriptionHash,
     fileHash,
-    isPublic: false
+    isPublic: false,
+    contributors: [],
+    contributorRewardDistribution: [],
+    references: [],
+    timeSubmitted: 0,
+    timeUpdated: 0
   }
-  await tournament.createSubmission([], [], [], submissionData, { gasLimit: 6.5e6 })
+  let tx = await tournament.createSubmission(submissionData, { gasLimit: 6.5e6 })
+  console.log('Submission hash:', tx.hash)
 
   console.log('Submission created')
 }
@@ -114,10 +120,11 @@ module.exports = async exit => {
       start: Math.floor(Date.now() / 1000),
       end: Math.floor(Date.now() / 1000) + 10,
       reviewPeriodDuration: 600,
-      bounty: web3.toWei(5)
+      bounty: web3.toWei(5),
+      closed: false
     }
     const tournament = await createTournament(web3.toWei(10), roundData, 1)
-    // await createSubmission(tournament, 0)
+    await createSubmission(tournament, 0)
     // await createSubmission(tournament, 2)
     // await createSubmission(tournament, 3)
     // const roundTwoData = {

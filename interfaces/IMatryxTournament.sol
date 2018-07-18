@@ -1,7 +1,8 @@
 pragma solidity ^0.4.18;
 pragma experimental ABIEncoderV2;
 
-import '../libraries/LibConstruction.sol';
+import "../libraries/LibConstruction.sol";
+import "../libraries/round/LibRound.sol";
 
 interface IMatryxTournament
 {
@@ -22,7 +23,7 @@ interface IMatryxTournament
     function submissionCount() public view returns (uint256 _submissionCount);
     function entrantCount() public view returns (uint256 _entrantCount);
     function update(LibConstruction.TournamentModificationData tournamentData, string _category) public;
-    function selectWinners(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData _roundData, uint256 _selectWinnerAction) public;
+    function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public;
     function editGhostRound(LibConstruction.RoundData _roundData) public;
     function allocateMoreToRound(uint256 _mtxAllocation) public;
     function jumpToNextRound() public;
@@ -32,6 +33,6 @@ interface IMatryxTournament
     function enterUserInTournament(address _entrantAddress) public returns (bool _success);
     function getEntryFee() public view returns (uint256);
     function collectMyEntryFee() public;
-    function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
+    function createSubmission(LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
     function withdrawFromAbandoned() public;
 }

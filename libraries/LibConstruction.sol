@@ -65,9 +65,11 @@ library LibConstruction
         bytes descriptionHash;
         bytes fileHash;
         bool isPublic;
-    	//address[] contributors;
-    	//uint128[] contributorRewardDistribution;
-    	//address[] references;
+        address[] contributors;
+        uint128[] contributorRewardDistribution;
+        address[] references;
+        uint256 timeSubmitted;
+        uint256 timeUpdated;
     }
 
     struct SubmissionModificationData
@@ -77,8 +79,8 @@ library LibConstruction
         bytes descriptionHash;
         bytes fileHash;
         bool isPublic;
-    	//address[] contributorsToAdd;
-    	//uint128[] contributorRewardDistribution;
-    	//address[] contributorsToRemove;
+        address[] contributorsToAdd;
+        uint128[] contributorRewardDistribution;
+        address[] contributorsToRemove;
     }
 }

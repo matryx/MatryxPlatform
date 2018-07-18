@@ -4,16 +4,26 @@ pragma experimental ABIEncoderV2;
 import "../../interfaces/IMatryxRound.sol";
 
 library LibTournamentStateManagement
-{    
+{
     enum TournamentState { NotYetOpen, OnHold, Open, Closed, Abandoned}
     enum RoundState { NotYetOpen, Unfunded, Open, InReview, HasWinners, Closed, Abandoned }
 
+    /// @dev uint256 that has a flag associated - allows for uint256 to be a null value
+    ///      exists: Whether or not the value is null/exists
+    ///      value: Optional value for the uint256
     struct uint256_optional
     {
         bool exists;
         uint256 value;
     }
 
+    /// @dev State data for modifying and getting the state of a tournament
+    ///      rounds: Array of round addresses associated with a tournament
+    ///      isRound: Mapping of address to a boolean for round address checking
+    ///      entryFeesTotal: uint256 of total entryfees collected by the tournament
+    ///      roundBountyAllocation: uint256 of MTX allocated to a round
+    ///      closed: Boolean value flagging whether the tournament is closed or not
+    ///      hasBeenWithdrawnFrom: Boolean value flagging whether or not the tournament has been withdrawn from
     struct StateData
     {
         address[] rounds;
@@ -24,6 +34,14 @@ library LibTournamentStateManagement
         bool hasBeenWithdrawnFrom;
     }
 
+    /// @dev Entrant and submission data
+    ///      hasWithdrawn: Whether or not a particular address has withdrawn from the tournament (while tournament is Abandoned)
+    ///      numberOfSubmissions: Total number of submissions in the tournament
+    ///      entrantToSubmissions: Mapping from an address of an entrant to their submissions
+    ///      entrantToSubmissionToSubmissionIndex: Mapping from an entrant to a submission to its index
+    ///      addressToEntryFeePaid: Whether or not this address hs paid the tournament entry fee
+    ///      numberOfEntrants: Total number of entrants in the tournament
+    ///      winnersChosen: Whether or not winners have already been chosen for this round
     struct EntryData
     {
         mapping(address=>bool) hasWithdrawn;
@@ -34,7 +52,7 @@ library LibTournamentStateManagement
         uint256 numberOfEntrants;
         bool winnersChosen;
     }
-    
+
     /// @dev Returns the state of the tournament.
     /// @return _state Current round's state : NotYetOpen, Open, Closed or Abandoned
     function getState(StateData storage stateData) public view returns (uint256 _state)
@@ -88,7 +106,7 @@ library LibTournamentStateManagement
                 return uint256(TournamentState.Abandoned);
             }
         }
-        
+
         return 0;
     }
 
@@ -96,7 +114,7 @@ library LibTournamentStateManagement
     /// @return _currentRound Number of the current round.
     function currentRound(StateData storage stateData) public view returns (uint256 _currentRound, address _currentRoundAddress)
     {
-        if(stateData.rounds.length > 1 && 
+        if(stateData.rounds.length > 1 &&
            IMatryxRound(stateData.rounds[stateData.rounds.length-2]).getState() == uint256(RoundState.HasWinners) &&
            IMatryxRound(stateData.rounds[stateData.rounds.length-1]).getState() == uint256(RoundState.NotYetOpen))
         {
@@ -108,10 +126,9 @@ library LibTournamentStateManagement
         }
     }
 
-    ///@dev Returns the round that was created implicitly for the user after they chose the "DoNothing" option
-    ///     when choosing their round winners.
+    ///@dev Returns the round that was created implicitly after selectWinners "DoNothing" option
     ///@return _ghostAddress Address of the upcoming round created during winner selection
-    function getGhostRound(StateData storage stateData) internal returns (uint256 _index, address _ghostAddress)
+    function getGhostRound(StateData storage stateData) internal view returns (uint256 _index, address _ghostAddress)
     {
         if(IMatryxRound(stateData.rounds[stateData.rounds.length-2]).getState() == uint256(RoundState.HasWinners) &&
            IMatryxRound(stateData.rounds[stateData.rounds.length-1]).getState() == uint256(RoundState.NotYetOpen))

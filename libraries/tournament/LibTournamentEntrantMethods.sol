@@ -70,13 +70,13 @@ library LibTournamentEntrantMethods
         IMatryxRound(currentRoundAddress).removeEntrant(_entrant);
     }
 
-    function createSubmission(LibTournamentStateManagement.StateData storage stateData, LibTournamentStateManagement.EntryData storage entryData, address platformAddress, address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
+    function createSubmission(LibTournamentStateManagement.StateData storage stateData, LibTournamentStateManagement.EntryData storage entryData, address platformAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
     {
         address currentRoundAddress;
         (, currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
-        address submissionAddress = IMatryxRound(currentRoundAddress).createSubmission(_contributors, _contributorRewardDistribution, _references, IMatryxPlatform(platformAddress).peerAddress(submissionData.owner), submissionData);
+        address submissionAddress = IMatryxRound(currentRoundAddress).createSubmission(IMatryxPlatform(platformAddress).peerAddress(submissionData.owner), submissionData);
         // Send out reference requests to the authors of other submissions
-        IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(submissionAddress, _references);
+        IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(submissionAddress, submissionData.references);
 
         entryData.numberOfSubmissions = entryData.numberOfSubmissions.add(1);
         entryData.entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress].exists = true;

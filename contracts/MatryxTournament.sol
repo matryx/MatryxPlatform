@@ -44,13 +44,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     // bytes4 fnSelector_createRound = bytes4(keccak256("createRound(uint256)"));
     // bytes4 fnSelector_startRound = bytes4(keccak256("startRound(uint256)"));
 
-    constructor(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _platformAddress, address _matryxRoundFactoryAddress, address _owner)
+    constructor(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _platformAddress, address _matryxRoundFactoryAddress, address _owner)
     {
         //Clean inputs
-        //require(_owner != 0x0);
-        //require(tournamentData.title[0] != 0x0);
-        //require(tournamentData.Bounty > 0);
-        //require(_matryxRoundFactoryAddress != 0x0);
+        require(_owner != 0x0);
+        require(tournamentData.title_1 != 0x0);
+        require(tournamentData.initialBounty > 0);
+        require(_matryxRoundFactoryAddress != 0x0);
 
         platformAddress = _platformAddress;
         matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
@@ -59,7 +59,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         // Identification
         owner = _owner;
         data = tournamentData;
-        data.category = _category;
 
         _createRound(roundData, false);
         // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
@@ -367,12 +366,21 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     /// @dev Chooses the winner(s) of the current round. If this is the last round,
     //       this method will also close the tournament.
-    /// @param _submissionAddresses The winning submission addresses
-    /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions
-    function selectWinners(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData _roundData, uint256 _selectWinnerAction) public onlyOwner
+    /// @param _selectWinnersData Struct containing winning submission information including:
+    ///        winningSubmissions: Winning submission addresses
+    ///        rewardDistribution: Distribution indicating how to split the reward among the submissions
+    ///        selectWinnerAction: SelectWinnerAction (DoNothing, StartNextRound, CloseTournament) indicating what to do after winner selection
+    ///        rewardDistributionTotal: (Unused)
+    /// @param _roundData Struct containing data for the next round including:
+    ///   start: Start time (seconds since unix-epoch) for next round
+    ///   end: End time (seconds since unix-epoch) for next round
+    ///   reviewPeriodDuration: Number of seconds to allow for winning submissions to be selected in next round
+    ///   bounty: Bounty in MTX for next round
+    ///   closed: (Unused)
+    function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public onlyOwner
     {
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
-        LibTournamentAdminMethods.selectWinners(stateData, platformAddress, matryxTokenAddress, _submissionAddresses, _rewardDistribution, _roundData, _selectWinnerAction);
+        LibTournamentAdminMethods.selectWinners(stateData, _selectWinnersData, platformAddress, matryxTokenAddress, _roundData);
     }
 
     function editGhostRound(LibConstruction.RoundData _roundData) public onlyOwner
@@ -447,14 +455,14 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         LibTournamentEntrantMethods.collectMyEntryFee(stateData, entryData, matryxTokenAddress);
     }
 
-    function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.SubmissionData submissionData) public onlyEntrant onlyPeerLinked(msg.sender) ifRoundHasFunds whileTournamentOpen returns (address _submissionAddress)
+    function createSubmission(LibConstruction.SubmissionData submissionData) public onlyEntrant onlyPeerLinked(msg.sender) ifRoundHasFunds whileTournamentOpen returns (address _submissionAddress)
     {
         if(entryData.numberOfSubmissions == 0)
         {
             IMatryxPlatform(platformAddress).invokeTournamentOpenedEvent(data.title_1, data.title_2, data.title_3, data.descriptionHash_1, data.descriptionHash_2, data.initialBounty, data.entryFee);
         }
 
-        return LibTournamentEntrantMethods.createSubmission(stateData, entryData, platformAddress, _contributors, _contributorRewardDistribution, _references, submissionData);
+        return LibTournamentEntrantMethods.createSubmission(stateData, entryData, platformAddress, submissionData);
     }
 
     function withdrawFromAbandoned() public onlyEntrant
