@@ -3,25 +3,24 @@ pragma experimental ABIEncoderV2;
 
 import "../../libraries/LibConstruction.sol";
 import "../../interfaces/IMatryxPlatform.sol";
-import '../MatryxTournament.sol';
-import '../Ownable.sol';
+import "../MatryxTournament.sol";
+import "../Ownable.sol";
 
 contract MatryxTournamentFactory is Ownable {
-	address public platformAddress;
-	address public matryxRoundFactoryAddress;
+    address public platformAddress;
+    address public matryxRoundFactoryAddress;
 
-	function MatryxTournamentFactory(address _matryxTokenAddress, address _matryxRoundFactoryAddress) public {
-		matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
-	}
+    constructor(address _matryxRoundFactoryAddress) public {
+        matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
+    }
 
-	function createTournament(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _owner) returns (address _tournamentAddress) {
-		address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
-		MatryxTournament newTournament = new MatryxTournament(_category, tournamentData, roundData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, _owner);
-		return newTournament;
-	}
+    function createTournament(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _owner) public returns (address _tournamentAddress) {
+        MatryxTournament newTournament = new MatryxTournament(_category, tournamentData, roundData, platformAddress, matryxRoundFactoryAddress, _owner);
+        return newTournament;
+    }
 
-	function setPlatform(address _platformAddress) public onlyOwner
-	{
-		platformAddress = _platformAddress;
-	}
+    function setPlatform(address _platformAddress) public onlyOwner
+    {
+        platformAddress = _platformAddress;
+    }
 }

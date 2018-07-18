@@ -3,6 +3,8 @@ pragma experimental ABIEncoderV2;
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/LibConstruction.sol";
+import "../libraries/round/LibRound.sol";
+import "../libraries/LibIterable.sol";
 import "../interfaces/IMatryxToken.sol";
 import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
@@ -17,59 +19,33 @@ import "./Ownable.sol";
 contract MatryxRound is Ownable, IMatryxRound {
     using SafeMath for uint256;
 
-    //TODO: allow for refunds
+    // TODO: allow for refunds
     // TODO: condense and put in structs
+
     address public platformAddress;
     address public tournamentAddress;
     address public matryxSubmissionFactoryAddress;
 
+    //This will be the contract address for all the contracts we need to interact with
     mapping(bytes32=>address) private contracts;
 
-    uint256 public roundIndex;
-    address public previousRound;
-    address public nextRound;
-    uint256 startTime;
-    uint256 endTime;
-    uint256 public reviewPeriodDuration;
-    uint256 public bounty;
-    address[] public winningSubmissions;
-    uint256[] public rewardDistribution;
-    uint256 public rewardDistributionTotal;
-    mapping(address=>bool) submissionToHasBeenPayed;
-    bool public closed;
-    address newRound;
+    LibConstruction.RoundData data;
+    LibRound.WinningSubmissionData winningSubmissionData;
+    LibRound.SubmissionsData submissionsData;
+    LibRound.SubmissionAndEntrantTracking submissionEntrantTrackingData;
 
-    mapping(address=>uint) addressToParticipantType;
-    mapping(address=>address[]) authorToSubmissionAddress;
-    mapping(address=>uint256_optional) addressToSubmissionIndex;
-    address[] submissions;
-    address[] submissionOwners;
-    uint256 numberSubmissionsRemoved;
-
-    constructor(address _platformAddress, address _matryxTokenAddress, address _tournamentAddress, address _submissionFactoryAddress, address _owner, uint256 _roundIndex, LibConstruction.RoundData roundData) public
+    constructor(address _platformAddress, address _tournamentAddress, address _submissionFactoryAddress, address _owner, LibConstruction.RoundData _roundData) public
     {
-        //matryxTokenAddress = _matryxTokenAddress;
         platformAddress = _platformAddress;
         tournamentAddress = _tournamentAddress;
-        owner = _owner;
-        roundIndex = _roundIndex;
         matryxSubmissionFactoryAddress = _submissionFactoryAddress;
-        bounty = roundData.bounty;
 
-        bytes32 tournamentAdminLibHash = sha3("LibTournamentAdminMethods");
+        owner = _owner;
+        data.bounty = _roundData.bounty;
+
+        bytes32 tournamentAdminLibHash = keccak256("LibTournamentAdminMethods");
         contracts[tournamentAdminLibHash] = IMatryxRoundFactory(msg.sender).getContractAddress(tournamentAdminLibHash);
-        
-        scheduleStart(roundData.start, roundData.end, roundData.reviewPeriodDuration);
-    }
-
-    /*
-     * Structs
-     */
-
-    struct uint256_optional
-    {
-        bool exists;
-        uint256 value;
+        scheduleStart(_roundData);
     }
 
     /*
@@ -93,7 +69,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @dev Requires that this round is in the winner selection state.
     modifier duringReviewPeriod()
     {
-        require(endTime != 0);
+        require(data.end != 0);
         require(getState() == uint256(RoundState.InReview));
         _;
     }
@@ -107,7 +83,7 @@ contract MatryxRound is Ownable, IMatryxRound {
 
     modifier onlySubmission()
     {
-        require(addressToSubmissionIndex[msg.sender].exists);
+        require(submissionEntrantTrackingData.submissionExists[msg.sender]);
         _;
     }
 
@@ -120,20 +96,21 @@ contract MatryxRound is Ownable, IMatryxRound {
     modifier onlyTournamentOrLib()
     {
         bool isTournament = msg.sender == tournamentAddress;
-        bool isLib = getContractAddress(sha3("LibTournamentAdminMethods")) == msg.sender;
+        bool isLib = getContractAddress(keccak256("LibTournamentAdminMethods")) == msg.sender;
+        require(isTournament || isLib);
         _;
     }
 
     /// @dev Requires that the desired submission is accessible to the requester.
     modifier whenAccessible(address _requester, uint256 _index)
     {
-        require(IMatryxSubmission(submissions[_index]).isAccessible(_requester));
+        require(IMatryxSubmission(submissionsData.submissions[_index]).isAccessible(_requester));
         _;
     }
 
     function submissionExists(address _submissionAddress) public returns (bool)
     {
-        return addressToSubmissionIndex[_submissionAddress].exists;
+        return submissionEntrantTrackingData.submissionExists[_submissionAddress];
     }
 
     /// @dev Requires the function caller to be the platform or the owner of this tournament
@@ -146,7 +123,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     // @dev Requires that the sender be the submission's author.
     modifier onlySubmissionAuthor()
     {
-        require(authorToSubmissionAddress[msg.sender].length != 0);
+        require(submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].length != 0);
         _;
     }
 
@@ -156,25 +133,13 @@ contract MatryxRound is Ownable, IMatryxRound {
 
     // function removeSubmission(address _submissionAddress) public onlyTournament returns (bool)
     // {
-    // 	if(addressToSubmissionIndex[msg.sender].exists)
-    // 	{
-    // 		IMatryxSubmission submission = IMatryxSubmission(submissions[addressToSubmissionIndex[_submissionAddress].value]);
-    // 		address author = submission.getAuthor();
-    // 		submission.deleteSubmission();
-
-    // 		delete authorToSubmissionAddress[author];
-    // 		delete submissions[addressToSubmissionIndex[_submissionAddress].value];
-
-    // 		numberSubmissionsRemoved = numberSubmissionsRemoved.add(1);
-    // 		return true;
+            // TODO: Implement with LLLLL (optimized linked list)
     // 	}
-
-    // 	return false;
     // }
 
     function addBounty(uint256 _mtxAllocation) public onlyTournamentOrLib
     {
-        bounty = bounty.add(_mtxAllocation);
+        data.bounty = data.bounty.add(_mtxAllocation);
     }
 
     /*
@@ -197,16 +162,17 @@ contract MatryxRound is Ownable, IMatryxRound {
         return contracts[_nameHash];
     }
 
-    // @dev Returns the state of the round. 
+    //TODO - LLL THIS Function
+    // @dev Returns the state of the round.
     // The round can be in one of 6 states:
     // NotYetOpen, Open, InReview, HasWinners, Closed, Abandoned
     function getState() public view returns (uint256)
     {
-        if(now < startTime)
+        if(now < data.start)
         {
             return uint256(RoundState.NotYetOpen);
         }
-        else if(now >= startTime && now < endTime)
+        else if(now >= data.start && now < data.end)
         {
             if (getRoundBalance() == 0)
             {
@@ -215,24 +181,24 @@ contract MatryxRound is Ownable, IMatryxRound {
 
             return uint256(RoundState.Open);
         }
-        else if(now >= endTime && now < endTime.add(reviewPeriodDuration))
+        else if(now >= data.end && now < data.end.add(data.reviewPeriodDuration))
         {
-            if(closed)
+            if(data.closed)
             {
                 return uint256(RoundState.Closed);
             }
-            else if(submissions.length == 0)
+            else if(submissionsData.submissions.length == 0)
             {
                 return uint256(RoundState.Abandoned);
             }
-            else if(winningSubmissions.length > 0)
+            else if(winningSubmissionData.winningSubmissions.length > 0)
             {
                 return uint256(RoundState.HasWinners);
             }
 
             return uint256(RoundState.InReview);
         }
-        else if(winningSubmissions.length > 0)
+        else if(winningSubmissionData.winningSubmissions.length > 0)
         {
             return uint256(RoundState.Closed);
         }
@@ -242,39 +208,9 @@ contract MatryxRound is Ownable, IMatryxRound {
         }
     }
 
-    /// @dev Returns whether or not the submission is accessible to the requester.
-    /// @param _index Index of the submission being requested.
-    /// @return Whether or not the submission is accessible to the requester.
-    function submissionIsAccessible(uint256 _index) public view returns (bool)
-    {
-        require(_index < submissions.length);
-
-        IMatryxSubmission submission = IMatryxSubmission(submissions[_index]);
-        return submission.isAccessible(msg.sender);
-    }
-
-    /// @dev Returns whether or not the submission is accessible to the requester.
-    /// @param _submissionAddress Address of the submission being requested.
-    /// @return Whether or not the submission is accessible to the requester.
-    function submissionIsAccessible(address _submissionAddress) public view returns (bool)
-    {
-        require(addressToSubmissionIndex[_submissionAddress].exists);
-
-        IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
-        return submission.isAccessible(msg.sender);
-    }
-
-    /// @dev Returns true if the sender is an entrant in this round.
-    /// @param _requester Address being tested.
-    /// @return Whether or not the requester is a contributor in this round.
-    function requesterIsContributor(address _requester) public view returns (bool)
-    {
-        return addressToParticipantType[_requester] != 0;
-    }
-
     function setParticipantType(address _participantAddress, uint256 _type) public onlySubmission
     {
-        addressToParticipantType[_participantAddress] = _type;
+        submissionEntrantTrackingData.addressToParticipantType[_participantAddress] = _type;
     }
 
     /*
@@ -291,17 +227,17 @@ contract MatryxRound is Ownable, IMatryxRound {
 
     function getStartTime() public view returns (uint256)
     {
-        return startTime;
+        return data.start;
     }
 
     function getEndTime() public view returns (uint256)
     {
-        return endTime;
+        return data.end;
     }
 
-    function getBounty() public view returns (uint256) 
-    { 
-        return bounty;
+    function getBounty() public view returns (uint256)
+    {
+        return data.bounty;
     }
 
     function remainingBounty() public view returns (uint256)
@@ -318,28 +254,12 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @return _submissions All submissions made to this round.
     function getSubmissions() public view returns (address[] _submissions)
     {
-        return submissions;
-    }
-
-    function getSubmissionAddress(uint256 _index) public view returns (address _submissionAddress)
-    {
-        require(_index < submissions.length);
-
-        return submissions[_index];
-    }
-
-    /// @dev Returns the author of a submission.
-    /// @param _index Index of the submission.
-    /// @return Address of this submission's author.
-    function getSubmissionAuthor(uint256 _index) public view whenAccessible(msg.sender, _index) returns (address) 
-    {
-        IMatryxSubmission submission = IMatryxSubmission(submissions[_index]);
-        return submission.getAuthor();
+        return submissionsData.submissions;
     }
 
     /// @dev Returns the balance of a particular submission
     /// @param _submissionAddress Address of the submission
-    /// @return Balance of the bounty 
+    /// @return Balance of the bounty
     function getBalance(address _submissionAddress) public view returns (uint256)
     {
         return IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).balanceOf(_submissionAddress);
@@ -354,26 +274,26 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// @return Whether or not a submission has been chosen.
     function submissionsChosen() public view returns (bool)
     {
-        return winningSubmissions[0] != 0x0;
+        return winningSubmissionData.winningSubmissions.length != 0;
     }
 
     /// @dev Returns the index of this round's winning submission.
     /// @return Index of the winning submission.
     function getWinningSubmissionAddresses() public view returns (address[])
     {
-        return winningSubmissions;
+        return winningSubmissionData.winningSubmissions;
     }
 
     /// @dev Returns the number of submissions made to this round.
     /// @return Number of submissions made to this round.
     function numberOfSubmissions() public view returns (uint256)
     {
-        return submissions.length - numberSubmissionsRemoved;
+        return submissionsData.submissions.length;
     }
 
     function getParticipantType(address _participant) public view returns (uint256)
     {
-        return addressToParticipantType[_participant];
+        return submissionEntrantTrackingData.addressToParticipantType[_participant];
     }
 
     /*
@@ -382,30 +302,20 @@ contract MatryxRound is Ownable, IMatryxRound {
 
 
     /// @dev Starts the round (callable only by the owner of the round).
-    /// @param _start Start time.
-    /// @param _end End time.
-    /// @param _reviewPeriodDuration Time to review the round submissions
-    function scheduleStart(uint256 _start, uint256 _end, uint256 _reviewPeriodDuration) internal
+    function scheduleStart(LibConstruction.RoundData _roundData) internal
     {
-        startTime = _start;
-        endTime = _end;
-        reviewPeriodDuration = _reviewPeriodDuration;
+        data.start = _roundData.start;
+        data.end = _roundData.end;
+        data.reviewPeriodDuration = _roundData.reviewPeriodDuration;
     }
 
-    /// @dev Allows the tournament to edit the 
+    /// @dev Allows the tournament to edit the
     function editRound(uint256 _currentRoundEndTime, LibConstruction.RoundData _roundData) public onlyTournament
     {
-        require(_roundData.start > _currentRoundEndTime);
-        require(_roundData.end > _roundData.start);
-        require(_roundData.reviewPeriodDuration > 0);
-        require(_roundData.end.sub(_roundData.start) > 0);
-
-        startTime = _roundData.start;
-        endTime = _roundData.end;
-        reviewPeriodDuration = _roundData.reviewPeriodDuration;
+        LibRound.editRound(data, _currentRoundEndTime, _roundData);
     }
 
-    function transferToTournament(uint256 _amount) public onlyTournament 
+    function transferToTournament(uint256 _amount) public onlyTournament
     {
         require(getState() == uint256(RoundState.NotYetOpen));
         require(IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(msg.sender, _amount));
@@ -418,101 +328,112 @@ contract MatryxRound is Ownable, IMatryxRound {
     function selectWinningSubmissions(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData _roundData, uint256 _selectWinnerAction) public onlyTournamentOrLib duringReviewPeriod
     {
         require(_submissionAddresses.length == _rewardDistribution.length);
-        require(_submissionAddresses.length != 0 && winningSubmissions.length == 0);
+        require(_submissionAddresses.length != 0 && winningSubmissionData.winningSubmissions.length == 0);
 
-        winningSubmissions = _submissionAddresses;
-        rewardDistribution = _rewardDistribution;
+        winningSubmissionData.winningSubmissions = _submissionAddresses;
+        winningSubmissionData.rewardDistribution = _rewardDistribution;
 
         uint256 _rewardDistributionTotal;
-        for(uint256 i = 0; i < rewardDistribution.length; i++)
+        for(uint256 i = 0; i < winningSubmissionData.rewardDistribution.length; i++)
         {
-            _rewardDistributionTotal = _rewardDistributionTotal.add(rewardDistribution[i]);
+            _rewardDistributionTotal = _rewardDistributionTotal.add(winningSubmissionData.rewardDistribution[i]);
         }
 
-        rewardDistributionTotal = _rewardDistributionTotal;
+        winningSubmissionData.rewardDistributionTotal = _rewardDistributionTotal;
 
         // DoNothing and StartNextRound cases
         if(_selectWinnerAction == uint256(SelectWinnerAction.DoNothing) || _selectWinnerAction == uint256(SelectWinnerAction.StartNextRound))
         {
-            for(uint256 j = 0; j < winningSubmissions.length; j++)
+            for(uint256 j = 0; j < winningSubmissionData.winningSubmissions.length; j++)
             {
                 // Calculate total reward denominator and store it somewhere when
-                uint256 reward = rewardDistribution[j].mul(10**18).div(rewardDistributionTotal).mul(bounty).div(10**18);
+                uint256 reward = winningSubmissionData.rewardDistribution[j].mul(10**18).div(winningSubmissionData.rewardDistributionTotal).mul(data.bounty).div(10**18);
                 // Transfer the reward to the submission
-                require(IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(winningSubmissions[j], reward));
-                IMatryxSubmission(winningSubmissions[j]).addToWinnings(reward);
+                require(IMatryxToken(IMatryxPlatform(IMatryxTournament(IMatryxRound(this).getTournament()).getPlatform()).getTokenAddress()).transfer(winningSubmissionData.winningSubmissions[j], reward));
+                IMatryxSubmission(winningSubmissionData.winningSubmissions[j]).addToWinnings(reward);
             }
 
             uint256 newBounty;
-            uint256 tournamentBalance = IMatryxTournament(tournamentAddress).getBalance();
 
-            if(tournamentBalance < bounty)
+            if(IMatryxTournament(IMatryxRound(this).getTournament()).getBalance() < data.bounty)
             {
-                newBounty = tournamentBalance;
+                newBounty = IMatryxTournament(IMatryxRound(this).getTournament()).getBalance();
             }
             else
             {
-                newBounty = bounty;
+                newBounty = data.bounty;
             }
 
             LibConstruction.RoundData memory roundData;
             if(_selectWinnerAction == uint256(SelectWinnerAction.DoNothing))
             {
-                roundData = LibConstruction.RoundData({start: endTime.add(reviewPeriodDuration), end: endTime.add(reviewPeriodDuration).add(endTime.sub(startTime)), reviewPeriodDuration: reviewPeriodDuration, bounty: newBounty});
-                newRound = IMatryxTournament(tournamentAddress).createRound(roundData, true);
+                roundData = LibConstruction.RoundData({
+                    start: data.end.add(data.reviewPeriodDuration),
+                    end: data.end.add(data.reviewPeriodDuration).add(data.end.sub(data.start)),
+                    reviewPeriodDuration: data.reviewPeriodDuration,
+                    bounty: data.bounty,
+                    closed: false
+                });
+                IMatryxTournament(IMatryxRound(this).getTournament()).createRound(roundData, true);
             }
             else if(_selectWinnerAction == uint256(SelectWinnerAction.StartNextRound))
             {
-                closed = true;
-                roundData = LibConstruction.RoundData({start: now, end: _roundData.end, reviewPeriodDuration: _roundData.reviewPeriodDuration, bounty: _roundData.bounty});
-                newRound = IMatryxTournament(tournamentAddress).createRound(roundData, false);
+                data.closed = true;
+                roundData = LibConstruction.RoundData({
+                    start: now,
+                    end: _roundData.end,
+                    reviewPeriodDuration: _roundData.reviewPeriodDuration,
+                    bounty: _roundData.bounty,
+                    closed: false
+                });
+                IMatryxTournament(IMatryxRound(this).getTournament()).createRound(roundData, false);
             }
         }
         else
         {
             // CloseTournament case
-            closed = true;
+            data.closed = true;
         }
     }
 
     function transferAllToWinners(uint256 _tournamentBalance) public onlyTournament
     {
-        for(uint256 i = 0; i < winningSubmissions.length; i++)
+        for(uint256 i = 0; i < winningSubmissionData.winningSubmissions.length; i++)
         {
             // Calculate total reward denominator and store it somewhere when
-            uint totalBalance = bounty.add(_tournamentBalance);
-            uint256 reward = rewardDistribution[i].mul(1*10**18).div(rewardDistributionTotal).mul(totalBalance).div(1*10**18);
+            uint totalBalance = data.bounty.add(_tournamentBalance);
+            uint256 reward = winningSubmissionData.rewardDistribution[i].mul(1*10**18).div(winningSubmissionData.rewardDistributionTotal).mul(totalBalance).div(1*10**18);
             // Transfer the reward to the submission
-            IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(winningSubmissions[i], reward);
-            IMatryxSubmission(winningSubmissions[i]).addToWinnings(reward);
+            IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(winningSubmissionData.winningSubmissions[i], reward);
+            IMatryxSubmission(winningSubmissionData.winningSubmissions[i]).addToWinnings(reward);
         }
     }
 
     function startNow() public onlyTournament
     {
-        uint256 duration = endTime.sub(startTime);
-        startTime = now;
-        endTime = startTime.add(duration);
+        uint256 duration = data.end.sub(data.start);
+        data.start = now;
+        data.end = data.start.add(duration);
     }
 
     function closeRound() public onlyTournament
     {
         require(getState() == uint256(RoundState.HasWinners));
-        closed = true;
+        data.closed = true;
     }
 
     /*
      * Entrant Methods
      */
 
-    function becomeEntrant(address _entrant) public onlyTournament
+    function makeEntrant(address _entrant) public onlyTournament
     {
-        addressToParticipantType[_entrant] = uint256(ParticipantType.Entrant);
+        submissionEntrantTrackingData.addressToParticipantType[_entrant] = uint256(ParticipantType.Entrant);
     }
 
-    function becomeNonentrant(address _entrant) public onlyTournament
+    function removeEntrant(address _entrant) public onlyTournament
     {
-        addressToParticipantType[_entrant] = uint256(ParticipantType.Nonentrant);
+        submissionEntrantTrackingData.addressToParticipantType[_entrant] = uint256(ParticipantType.Nonentrant);
     }
 
     /// @dev Create a new submission.
@@ -529,36 +450,36 @@ contract MatryxRound is Ownable, IMatryxRound {
     function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, address _author, LibConstruction.SubmissionData submissionData) public onlyTournament duringOpenSubmission returns (address _submissionAddress)
     {
         require(_author != 0x0);
-        
+
         LibConstruction.RequiredSubmissionAddresses memory requiredSubmissionAddresses = LibConstruction.RequiredSubmissionAddresses({platformAddress: platformAddress, tournamentAddress: tournamentAddress, roundAddress: this});
         address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(_contributors, _contributorRewardDistribution, _references, requiredSubmissionAddresses, submissionData);
         // submission bookkeeping
-        addressToSubmissionIndex[submissionAddress] = uint256_optional({exists:true, value: submissions.length});
-        submissions.push(submissionAddress);
+        submissionEntrantTrackingData.submissionExists[submissionAddress] = true;
+        submissionsData.submissions.push(submissionAddress);
 
         // TODO: Change to 'authors.push' once MatryxPeer is part of MatryxPlatform
-        if(authorToSubmissionAddress[msg.sender].length == 0)
+        if(submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].length == 0)
         {
-            submissionOwners.push(submissionData.owner);
+            submissionsData.submissionOwners.push(submissionData.owner);
         }
 
-        authorToSubmissionAddress[msg.sender].push(submissionAddress);
+        submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].push(submissionAddress);
 
         // round participant bookkeeping
-        addressToParticipantType[_author] = uint(ParticipantType.Author);
+        submissionEntrantTrackingData.addressToParticipantType[_author] = uint(ParticipantType.Author);
         for(uint256 i = 0; i < _contributors.length; i++)
         {
-            addressToParticipantType[_contributors[i]] = uint(ParticipantType.Contributor);
+            submissionEntrantTrackingData.addressToParticipantType[_contributors[i]] = uint(ParticipantType.Contributor);
         }
 
         IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);
         //emit TimeStamp(now);
         return submissionAddress;
     }
-
+//
     /// @dev Allows contributors to withdraw a portion of the round bounty if the round has been abandoned.
     function transferBountyToTournament() public onlyTournament returns (uint256)
-    {  
+    {
         uint256 remaining = remainingBounty();
         IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(tournamentAddress, remaining);
         return remaining;
@@ -576,7 +497,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     //     }
 
     //     // Transfer the reward to its recipient if it deserves a reward (and mark that its been given out)
-        
+
     //     for(uint256 i = 0; i < winningSubmissions.length; i++)
     //     {
     //         if(msg.sender == winningSubmissions[i])

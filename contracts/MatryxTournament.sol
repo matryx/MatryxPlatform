@@ -1,5 +1,5 @@
- pragma solidity ^0.4.18;
- pragma experimental ABIEncoderV2;
+pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
 
 import "../libraries/strings/strings.sol";
 import "../libraries/math/SafeMath.sol";
@@ -44,14 +44,14 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     // bytes4 fnSelector_createRound = bytes4(keccak256("createRound(uint256)"));
     // bytes4 fnSelector_startRound = bytes4(keccak256("startRound(uint256)"));
 
-    constructor(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _platformAddress, address _matryxTokenAddress, address _matryxRoundFactoryAddress, address _owner) 
+    constructor(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _platformAddress, address _matryxRoundFactoryAddress, address _owner)
     {
         //Clean inputs
         //require(_owner != 0x0);
         //require(tournamentData.title[0] != 0x0);
         //require(tournamentData.Bounty > 0);
         //require(_matryxRoundFactoryAddress != 0x0);
-        
+
         platformAddress = _platformAddress;
         matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
 
@@ -119,7 +119,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     // {
     //     // If the submission does not exist,
     //     // the address of the submission we return will not be msg.sender
-    //     // It will either be 
+    //     // It will either be
     //     // 1) The first submission, or
     //     // 2) all 0s from having deleted it previously.
     //     uint256 indexOfSubmission = entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].value;
@@ -300,7 +300,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     ///@dev Returns this tournament's bounty.
     function getBounty() public view returns (uint256 _tournamentBounty)
-    {  
+    {
         IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
         return token.balanceOf(address(this)).sub(stateData.entryFeesTotal).add(stateData.roundBountyAllocation);
     }
@@ -352,9 +352,10 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function addFunds(uint256 _fundsToAdd) public
     {
         uint256 tournamentState = this.getState();
-        require(tournamentState == uint256(TournamentState.NotYetOpen) || 
-                tournamentState == uint256(TournamentState.Open) || 
-                tournamentState == uint256(TournamentState.OnHold));
+        require(
+            tournamentState == uint256(TournamentState.NotYetOpen) ||
+            tournamentState == uint256(TournamentState.Open) ||
+            tournamentState == uint256(TournamentState.OnHold));
 
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, address(this), _fundsToAdd));
@@ -364,7 +365,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Tournament Admin Methods
      */
 
-    /// @dev Chooses the winner(s) of the current round. If this is the last round, 
+    /// @dev Chooses the winner(s) of the current round. If this is the last round,
     //       this method will also close the tournament.
     /// @param _submissionAddresses The winning submission addresses
     /// @param _rewardDistribution Distribution indicating how to split the reward among the submissions

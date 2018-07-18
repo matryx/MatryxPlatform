@@ -2,18 +2,18 @@ pragma solidity ^0.4.18;
 pragma experimental ABIEncoderV2;
 
 
-import '../libraries/math/SafeMath.sol';
-import '../libraries/math/SafeMath128.sol';
-import '../libraries/strings/strings.sol';
-import '../libraries/LibConstruction.sol';
-import './reputation/SubmissionTrust.sol';
-import '../interfaces/IMatryxToken.sol';
-import '../interfaces/IMatryxPeer.sol';
-import '../interfaces/IMatryxPlatform.sol';
-import '../interfaces/IMatryxTournament.sol';
-import '../interfaces/IMatryxRound.sol';
-import '../interfaces/IMatryxSubmission.sol';
-import './Ownable.sol';
+import "../libraries/math/SafeMath.sol";
+import "../libraries/math/SafeMath128.sol";
+import "../libraries/strings/strings.sol";
+import "../libraries/LibConstruction.sol";
+import "./reputation/SubmissionTrust.sol";
+import "../interfaces/IMatryxToken.sol";
+import "../interfaces/IMatryxPeer.sol";
+import "../interfaces/IMatryxPlatform.sol";
+import "../interfaces/IMatryxTournament.sol";
+import "../interfaces/IMatryxRound.sol";
+import "../interfaces/IMatryxSubmission.sol";
+import "./Ownable.sol";
 
 contract MatryxSubmission is Ownable, IMatryxSubmission {
     using SafeMath for uint256;
@@ -158,8 +158,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     modifier onlyPeer()
     {
-        IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-        require(platform.isPeer(msg.sender));
+        require(IMatryxPlatform(platformAddress).isPeer(msg.sender));
         _;
     }
 
@@ -179,8 +178,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     modifier duringOpenSubmission()
     {
-        IMatryxRound round = IMatryxRound(roundAddress);
-        require(round.getState() == 1);
+        require(IMatryxRound(roundAddress).getState() == 1);
         _;
     }
 
@@ -204,16 +202,14 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         bool isPlatform = _requester == IMatryxTournament(tournamentAddress).getPlatform();
         bool isRound = _requester == roundAddress;
         bool ownsThisSubmission = _requester == owner;
-        bool submissionExternallyAccessible = isPublic;
         bool roundAtLeastInReview = IMatryxRound(roundAddress).getState() >= 2;
         bool requesterIsEntrant = IMatryxTournament(tournamentAddress).isEntrant(_requester);
         bool requesterOwnsTournament = ownableTournament.getOwner() == _requester;
-        bool requesterIsContributor = IMatryxRound(roundAddress).requesterIsContributor(_requester);
-        bool duringReviewAndRequesterInTournament = roundAtLeastInReview && (requesterOwnsTournament || requesterIsEntrant || requesterIsContributor);
-        // TODO: Have a discussion about what this means (also think about next steps (encryption))
+        bool duringReviewAndRequesterInTournament = roundAtLeastInReview && (requesterOwnsTournament || requesterIsEntrant);
+        // TODO: think about next steps (encryption)
         bool roundIsClosed = IMatryxRound(roundAddress).getState() >= 5;
 
-        return isPlatform || isRound || ownsThisSubmission || submissionExternallyAccessible || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester) || roundIsClosed;
+        return isPlatform || isRound || ownsThisSubmission || isPublic || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester) || roundIsClosed;
     }
 
     function getTitle() public view whenAccessible(msg.sender) returns(string) {
@@ -258,44 +254,38 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         * Setter Methods
         */
 
-    function update(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove, LibConstruction.SubmissionModificationData _data)
+    function update(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove, LibConstruction.SubmissionModificationData _data) public
     {
         if(!_data.title.toSlice().empty())
         {
             title = _data.title;
-            timeUpdated = now;
         }
         if(_data.owner != 0x0)
         {
             owner = _data.owner;
-            timeUpdated = now;
         }
         if(_data.descriptionHash.length != 0)
         {
             descriptionHash = _data.descriptionHash;
-            timeUpdated = now;
         }
         if(_data.descriptionHash.length != 0)
         {
             fileHash = _data.fileHash;
-            timeUpdated = now;
         }
         if(_data.isPublic)
         {
             isPublic = _data.isPublic;
-            timeUpdated = now;
         }
         if(_contributorsToAdd.length != 0)
         {
             require(_contributorsToAdd.length == _contributorRewardDistribution.length);
             addContributors(_contributorsToAdd, _contributorRewardDistribution);
-            timeUpdated = now;
         }
         if(_contributorsToRemove.length != 0)
         {
             removeContributors(_contributorsToRemove);
-            timeUpdated = now;
         }
+        timeUpdated = now;
     }
 
     /// @dev Sets whether or not this submission can be accessed by anyone
@@ -303,6 +293,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     function updateIsPublic(bool _public) public onlyOwner
     {
         isPublic = _public;
+        timeUpdated = now;
     }
 
     /// @dev Edit the title of a submission (callable only by submission's owner).
@@ -310,6 +301,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     function updateTitle(string _title) public onlyOwner duringOpenSubmission
     {
         title = _title;
+        timeUpdated = now;
     }
 
     /// @dev Update the description hash of the submission (callable only by submission's owner).

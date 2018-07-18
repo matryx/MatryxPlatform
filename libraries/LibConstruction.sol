@@ -55,6 +55,7 @@ library LibConstruction
         uint256 end;
         uint256 reviewPeriodDuration;
         uint256 bounty;
+        bool closed;
     }
 
     struct SubmissionData

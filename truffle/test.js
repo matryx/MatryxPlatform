@@ -37,8 +37,8 @@ const createTournament = async (bounty, roundData, accountNumber) => {
     initialBounty: bounty,
     entryFee: web3.toWei(2)
   }
-//   const startTime = Math.floor(new Date() / 1000)
-//   const endTime = startTime + 60
+  //   const startTime = Math.floor(new Date() / 1000)
+  //   const endTime = startTime + 60
   // const roundData = {
   //   start: startTime,
   //   end: endTime,
@@ -46,7 +46,8 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   //   bounty
   // }
 
-  await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
+  let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
+  console.log(JSON.stringify(tx, 0, " "))
 
   const address = await platform.allTournaments(count)
   const tournament = Contract(address, MatryxTournament, accountNumber)
@@ -98,11 +99,11 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
   const round = Contract(roundAddress, MatryxRound, accountNumber)
   const roundEndTime = await round.getEndTime()
 
-  var timeTilRoundInReview = roundEndTime - Date.now()/1000
+  var timeTilRoundInReview = roundEndTime - Date.now() / 1000
   timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
-  await sleep(timeTilRoundInReview*1000)
+  await sleep(timeTilRoundInReview * 1000)
 
-  const res = await tournament.selectWinners(winners, rewardDistribution, roundData, selectWinnerAction, {gasLimit: 5000000})
+  const res = await tournament.selectWinners(winners, rewardDistribution, roundData, selectWinnerAction, { gasLimit: 5000000 })
   return res
 }
 
@@ -110,22 +111,22 @@ module.exports = async exit => {
   try {
     await init()
     let roundData = {
-      start: Math.floor(Date.now()/1000),
-      end: Math.floor(Date.now()/1000) + 10,
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 10,
       reviewPeriodDuration: 600,
       bounty: web3.toWei(5)
     }
     const tournament = await createTournament(web3.toWei(10), roundData, 1)
-    await createSubmission(tournament, 0)
-    await createSubmission(tournament, 2)
-    await createSubmission(tournament, 3)
-    const roundTwoData = {
-        start: Math.floor(Date.now()/1000),
-        end: Math.floor(Date.now()/1000) + 10,
-        reviewPeriodDuration: 600,
-        bounty: web3.toWei(2)
-      }
-    const submissions = await logSubmissions(tournament);
+    // await createSubmission(tournament, 0)
+    // await createSubmission(tournament, 2)
+    // await createSubmission(tournament, 3)
+    // const roundTwoData = {
+    //     start: Math.floor(Date.now()/1000),
+    //     end: Math.floor(Date.now()/1000) + 10,
+    //     reviewPeriodDuration: 600,
+    //     bounty: web3.toWei(2)
+    //   }
+    // const submissions = await logSubmissions(tournament);
     // await selectWinnersWhenInReview(tournament, 0, submissions, submissions.map(s => 1), roundTwoData, 0)
     await logSubmissions(tournament)
   } catch (err) {

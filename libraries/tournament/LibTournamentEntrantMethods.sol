@@ -37,7 +37,7 @@ library LibTournamentEntrantMethods
         entryData.numberOfEntrants = entryData.numberOfEntrants.add(1);
 
         (, address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
-        IMatryxRound(currentRoundAddress).becomeEntrant(_entrantAddress);
+        IMatryxRound(currentRoundAddress).makeEntrant(_entrantAddress);
 
         return true;
     }
@@ -67,7 +67,7 @@ library LibTournamentEntrantMethods
         entryData.addressToEntryFeePaid[_entrant].exists = false;
         entryData.addressToEntryFeePaid[_entrant].value = 0;
         entryData.numberOfEntrants = entryData.numberOfEntrants.sub(1);
-        IMatryxRound(currentRoundAddress).becomeNonentrant(_entrant);
+        IMatryxRound(currentRoundAddress).removeEntrant(_entrant);
     }
 
     function createSubmission(LibTournamentStateManagement.StateData storage stateData, LibTournamentStateManagement.EntryData storage entryData, address platformAddress, address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
@@ -83,7 +83,7 @@ library LibTournamentEntrantMethods
         entryData.entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress].value = entryData.entrantToSubmissions[msg.sender].length;
         entryData.entrantToSubmissions[msg.sender].push(submissionAddress);
         IMatryxPlatform(platformAddress).updateSubmissions(msg.sender, submissionAddress);
-        
+
         return submissionAddress;
     }
 
@@ -105,7 +105,7 @@ library LibTournamentEntrantMethods
                 stateData.roundBountyAllocation = stateData.roundBountyAllocation.sub(roundBounty);
                 returnEntryFeeToEntrant(stateData, entryData, msg.sender, matryxTokenAddress);
                 require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.div(entryData.numberOfEntrants).mul(2)));
-                
+
                 stateData.hasBeenWithdrawnFrom = true;
             }
             else
