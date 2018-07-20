@@ -455,14 +455,14 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         LibTournamentEntrantMethods.collectMyEntryFee(stateData, entryData, matryxTokenAddress);
     }
 
-    function createSubmission(LibConstruction.SubmissionData submissionData) public onlyEntrant onlyPeerLinked(msg.sender) ifRoundHasFunds whileTournamentOpen returns (address _submissionAddress)
+    // function createSubmission(LibConstruction.SubmissionData submissionData) public onlyEntrant onlyPeerLinked(msg.sender) ifRoundHasFunds whileTournamentOpen returns (address _submissionAddress)
+    function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public returns (address _submissionAddress)
     {
-        if(entryData.numberOfSubmissions == 0)
-        {
-            IMatryxPlatform(platformAddress).invokeTournamentOpenedEvent(data.title_1, data.title_2, data.title_3, data.descriptionHash_1, data.descriptionHash_2, data.initialBounty, data.entryFee);
-        }
-
-        return LibTournamentEntrantMethods.createSubmission(stateData, entryData, platformAddress, submissionData);
+        address currentRoundAddress;
+        (, currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
+        address newSubmission = LibTournamentEntrantMethods.createSubmission(currentRoundAddress, entryData, platformAddress, submissionData);
+        IMatryxSubmission(newSubmission).setContributorsAndReferences(contribsAndRefs);
+        return newSubmission;
     }
 
     function withdrawFromAbandoned() public onlyEntrant

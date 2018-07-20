@@ -24,7 +24,6 @@ contract MatryxPlatform is Ownable {
     address public matryxPeerFactoryAddress;
     address public matryxTournamentFactoryAddress;
     address public matryxSubmissionFactoryAddress;
-    address public matryxSubmissionTrustLibAddress;
     address public matryxRoundLibAddress;
 
     mapping(bytes32=>address) private contracts;
@@ -55,13 +54,12 @@ contract MatryxPlatform is Ownable {
     // Hyperparams
     uint256_optional submissionGratitude = uint256_optional({exists: true, value: 2*10**17});
 
-    constructor(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress, address _matryxSubmissionTrustLibAddress) public
+    constructor(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress) public
     {
         matryxTokenAddress = _matryxTokenAddress;
         matryxPeerFactoryAddress = _matryxPeerFactoryAddress;
         matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
         matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
-        matryxSubmissionTrustLibAddress = _matryxSubmissionTrustLibAddress;
     }
 
     /*
@@ -99,14 +97,14 @@ contract MatryxPlatform is Ownable {
     /// @param _entryFee Fee for entering into the tournament.
     function invokeTournamentOpenedEvent(bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
     {
-        TournamentOpened(msg.sender, _tournamentName_1, _tournamentName_2, _tournamentName_3, _externalAddress_1, _externalAddress_2, _MTXReward, _entryFee);
+        emit TournamentOpened(msg.sender, _tournamentName_1, _tournamentName_2, _tournamentName_3, _externalAddress_1, _externalAddress_2, _MTXReward, _entryFee);
     }
 
     /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
     /// @param _finalRoundNumber Index of the round containing the winning submission.
     function invokeTournamentClosedEvent(uint256 _finalRoundNumber, uint256 _MTXReward) public onlyTournament
     {
-        TournamentClosed(msg.sender, _finalRoundNumber, _MTXReward);
+        emit TournamentClosed(msg.sender, _finalRoundNumber, _MTXReward);
     }
 
     /*
@@ -182,7 +180,7 @@ contract MatryxPlatform is Ownable {
     // @dev Sends out reference requests for a particular submission.
     // @param _references Reference whose authors will be sent requests.
     // @returns Whether or not all references were successfully sent a request.
-    function handleReferenceRequestsForSubmission(address _submissionAddress, address[] _references) public onlyTournament returns (bool)
+    function handleReferenceRequestsForSubmission(address _submissionAddress, address[] _references) public onlyTournamentOrTournamentLib returns (bool)
     {
         for(uint256 i = 0; i < _references.length; i++)
         {
@@ -338,7 +336,7 @@ contract MatryxPlatform is Ownable {
             success = tournament.enterUserInTournament(msg.sender);
             if(success)
             {
-            emit UserEnteredTournament(msg.sender, _tournamentAddress);
+                emit UserEnteredTournament(msg.sender, _tournamentAddress);
             }
         }
 
@@ -366,7 +364,7 @@ contract MatryxPlatform is Ownable {
     {
         IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
         address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
-        TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.descriptionHash_1, tournamentData.descriptionHash_2, tournamentData.initialBounty, tournamentData.entryFee);
+        emit TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.descriptionHash_1, tournamentData.descriptionHash_2, tournamentData.initialBounty, tournamentData.entryFee);
 
         require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.initialBounty));
         IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
@@ -467,11 +465,6 @@ contract MatryxPlatform is Ownable {
     function getTournamentFactoryAddress() public view returns (address)
     {
         return matryxTournamentFactoryAddress;
-    }
-
-    function getSubmissionTrustLibrary() public view returns (address)
-    {
-        return matryxSubmissionTrustLibAddress;
     }
 
     /// @dev    Returns a weight from 0 to 1 (18 decimal uint) indicating

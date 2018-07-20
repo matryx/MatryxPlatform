@@ -1,4 +1,5 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
 
 library LibConstruction
 {
@@ -61,26 +62,36 @@ library LibConstruction
     struct SubmissionData
     {
         string title;
-        address owner;
-        bytes descriptionHash;
-        bytes fileHash;
-        bool isPublic;
+        bytes32[2] descriptionHash;
+        bytes32[2] fileHash;
+        uint256 timeSubmitted;
+        uint256 timeUpdated;
+    }
+
+    struct ContributorsAndReferences
+    {
         address[] contributors;
         uint128[] contributorRewardDistribution;
         address[] references;
-        uint256 timeSubmitted;
-        uint256 timeUpdated;
     }
 
     struct SubmissionModificationData
     {
         string title;
-        address owner;
-        bytes descriptionHash;
-        bytes fileHash;
-        bool isPublic;
+        bytes32[2] descriptionHash;
+        bytes32[2] fileHash;
+    }
+
+    struct ContributorsModificationData
+    {
         address[] contributorsToAdd;
         uint128[] contributorRewardDistribution;
         address[] contributorsToRemove;
+    }
+
+    struct ReferencesModificationData
+    {
+        address[] referencesToAdd;
+        address[] referencesToRemove;
     }
 }

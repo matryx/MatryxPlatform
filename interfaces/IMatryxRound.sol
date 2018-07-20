@@ -31,6 +31,6 @@ interface IMatryxRound
     function makeEntrant(address _entrant) public;
     function removeEntrant(address _entrant) public;
     //function awardBounty(address _submissionAddress, uint256 _remainingBounty) public;
-    function createSubmission(address _author, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
+    function createSubmission(address _owner, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
     function transferBountyToTournament() public returns (uint256);
 }

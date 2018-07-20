@@ -5,7 +5,10 @@ import "../../libraries/LibConstruction.sol";
 import "../MatryxSubmission.sol";
 
 contract MatryxSubmissionFactory {
-    function createSubmission(LibConstruction.RequiredSubmissionAddresses requiredAddresses, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress) {
-        return new MatryxSubmission(requiredAddresses, submissionData);
+    // function createSubmission(address[3] requiredAddresses, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress) {
+    function createSubmission(address _owner, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress) {
+        // return new MatryxSubmission(requiredAddresses, submissionData);
+        return new MatryxSubmission(_owner, submissionData);
+        // return new MatryxSubmission(_owner);
     }
 }

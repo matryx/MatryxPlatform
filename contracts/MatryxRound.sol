@@ -60,7 +60,7 @@ contract MatryxRound is Ownable, IMatryxRound {
      */
 
     /// @dev Requires that this round is in the open submission state.
-    modifier duringOpenSubmission()
+    modifier duringOpenRound()
     {
         require(getState() == uint256(RoundState.Open));
         _;
@@ -349,8 +349,8 @@ contract MatryxRound is Ownable, IMatryxRound {
         submissionEntrantTrackingData.addressToParticipantType[_entrant] = uint256(ParticipantType.Nonentrant);
     }
 
-    /// @dev Create a new submission.
-    /// @param _author of this submission.
+    /// @dev Create a new submission. Called by MatryxTournament
+    /// @param _owner Owner of this submission.
     /// @param submissionData The data of the submission. Includes:
     ///		title: Title of the submission.
     ///		owner: The owner of the submission.
@@ -360,32 +360,34 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// 	should this submission win.
     ///		references: Addresses of submissions referenced in creating this submission.
     /// @return _submissionAddress Location of this submission within this round.
-    function createSubmission(address _author, LibConstruction.SubmissionData submissionData) public onlyTournament duringOpenSubmission returns (address _submissionAddress)
+    // function createSubmission(address _author, LibConstruction.SubmissionData submissionData) public onlyTournamentOrLib duringOpenRound returns (address _submissionAddress)
+    function createSubmission(address _owner, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
     {
-        require(_author != 0x0);
+        // require(_owner != 0x0);
 
-        LibConstruction.RequiredSubmissionAddresses memory requiredSubmissionAddresses = LibConstruction.RequiredSubmissionAddresses({platformAddress: platformAddress, tournamentAddress: tournamentAddress, roundAddress: this});
-        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(requiredSubmissionAddresses, submissionData);
+        // LibConstruction.RequiredSubmissionAddresses memory requiredSubmissionAddresses = LibConstruction.RequiredSubmissionAddresses({platformAddress: platformAddress, tournamentAddress: tournamentAddress, roundAddress: this});
+        // address[3] memory requiredSubmissionAddresses = [platformAddress, tournamentAddress, this];
+        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(_owner, /*requiredSubmissionAddresses, */submissionData);
         // submission bookkeeping
-        submissionEntrantTrackingData.submissionExists[submissionAddress] = true;
-        submissionsData.submissions.push(submissionAddress);
+        // submissionEntrantTrackingData.submissionExists[submissionAddress] = true;
+        // submissionsData.submissions.push(submissionAddress);
 
-        // TODO: Change to 'authors.push' once MatryxPeer is part of MatryxPlatform
-        if(submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].length == 0)
-        {
-            submissionsData.submissionOwners.push(submissionData.owner);
-        }
+        // // TODO: Change to 'authors.push' once MatryxPeer is part of MatryxPlatform
+        // if(submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].length == 0)
+        // {
+        //     submissionsData.submissionOwners.push(submissionData.owner);
+        // }
 
-        submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].push(submissionAddress);
+        // submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].push(submissionAddress);
 
-        // round participant bookkeeping
-        submissionEntrantTrackingData.addressToParticipantType[_author] = uint(ParticipantType.Author);
-        for(uint256 i = 0; i < submissionData.contributors.length; i++)
-        {
-            submissionEntrantTrackingData.addressToParticipantType[submissionData.contributors[i]] = uint(ParticipantType.Contributor);
-        }
+        // // round participant bookkeeping
+        // submissionEntrantTrackingData.addressToParticipantType[_owner] = uint(ParticipantType.Author);
+        // for(uint256 i = 0; i < submissionData.contributors.length; i++)
+        // {
+        //     submissionEntrantTrackingData.addressToParticipantType[submissionData.contributors[i]] = uint(ParticipantType.Contributor);
+        // }
 
-        IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);
+        // IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);
         //emit TimeStamp(now);
         return submissionAddress;
     }

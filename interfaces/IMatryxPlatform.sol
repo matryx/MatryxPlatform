@@ -32,7 +32,6 @@ interface IMatryxPlatform
     function setSubmissionGratitude(uint256 _gratitude) public;
     function getTokenAddress() public view returns (address);
     function getTournamentFactoryAddress() public view returns (address);
-    function getSubmissionTrustLibrary() public view returns (address);
     function getSubmissionGratitude() public view returns (uint256);
     function myTournaments() public view returns (address[]);
     function mySubmissions() public view returns (address[]);

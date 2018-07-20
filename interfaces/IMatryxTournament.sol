@@ -33,6 +33,6 @@ interface IMatryxTournament
     function enterUserInTournament(address _entrantAddress) public returns (bool _success);
     function getEntryFee() public view returns (uint256);
     function collectMyEntryFee() public;
-    function createSubmission(LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
+    function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public returns (address _submissionAddress);
     function withdrawFromAbandoned() public;
 }

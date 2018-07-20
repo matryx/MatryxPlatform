@@ -8,6 +8,7 @@ import "../strings/strings.sol";
 import "../../interfaces/IMatryxToken.sol";
 import "../../interfaces/IMatryxPlatform.sol";
 import "../../interfaces/IMatryxSubmission.sol";
+import "../../interfaces/IOwnable.sol";
 
 library LibSubmission
 {
@@ -63,15 +64,11 @@ library LibSubmission
 
     uint256 constant one = 10**18;
 
-    function update(LibConstruction.SubmissionData storage data, LibSubmission.RewardData storage rewardData, LibConstruction.SubmissionModificationData _modificationData) public
+    function update(LibConstruction.SubmissionData storage data, LibSubmission.RewardData storage rewardData, LibConstruction.SubmissionModificationData _modificationData, LibConstruction.ContributorsModificationData _contributorsModificationData, LibConstruction.ReferencesModificationData _referencesModificationData) public
     {
         if(!_modificationData.title.toSlice().empty())
         {
             data.title = _modificationData.title;
-        }
-        if(_modificationData.owner != 0x0)
-        {
-            data.owner = _modificationData.owner;
         }
         if(_modificationData.descriptionHash.length != 0)
         {
@@ -81,22 +78,42 @@ library LibSubmission
         {
             data.fileHash = _modificationData.fileHash;
         }
-        if(_modificationData.isPublic)
-        {
-            data.isPublic = _modificationData.isPublic;
-        }
-        if(_modificationData.contributorsToAdd.length != 0)
-        {
-            require(_modificationData.contributorsToAdd.length == _modificationData.contributorRewardDistribution.length);
-            addContributors(rewardData, _modificationData.contributorsToAdd, _modificationData.contributorRewardDistribution);
-        }
-        if(_modificationData.contributorsToRemove.length != 0)
-        {
-            removeContributors(rewardData, _modificationData.contributorsToRemove);
-        }
+        // TODO: Put back and fix
+        // if(_contributorsModificationData.contributorsToAdd.length != 0)
+        // {
+        //     require(_contributorsModificationData.contributorsToAdd.length == _contributorsModificationData.contributorRewardDistribution.length);
+        //     addContributors(rewardData, _contributorsModificationData.contributorsToAdd, _contributorsModificationData.contributorRewardDistribution);
+        // }
+        // if(_contributorsModificationData.contributorsToRemove.length != 0)
+        // {
+        //     removeContributors(rewardData, _contributorsModificationData.contributorsToRemove);
+        // }
         data.timeUpdated = now;
     }
 
+    function setContributorsAndReferences(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, LibSubmission.TrustData storage trustData, LibConstruction.ContributorsAndReferences _contribsAndRefs) public
+    {
+        require(_contribsAndRefs.contributors.length == _contribsAndRefs.contributorRewardDistribution.length);
+        for(uint32 i = 0; i < _contribsAndRefs.contributors.length; i++)
+        {
+            // if one of the contributors is already there, revert
+            // otherwise, add it to the list
+            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(_contribsAndRefs.contributorRewardDistribution[j]);
+            rewardData.contributorToBountyDividend[_contribsAndRefs.contributors[j]] = _contribsAndRefs.contributorRewardDistribution[j];
+        }
+
+        for(uint32 j = 0; j < _contribsAndRefs.references.length; j++)
+        {
+            trustData.addressToReferenceInfo[_contribsAndRefs.references[j]].exists = true;
+            trustData.addressToReferenceInfo[_contribsAndRefs.references[j]].index = j;
+        }
+
+        contributorsAndReferences.contributors = _contribsAndRefs.contributors;
+        contributorsAndReferences.contributorRewardDistribution = _contribsAndRefs.contributorRewardDistribution;
+        contributorsAndReferences.references = _contribsAndRefs.references;
+    }
+
+    // function addContributors(LibConstruction.ContributorsModificationData storage _contributorsModificationData) internal
     function addContributors(LibSubmission.RewardData storage rewardData, address[] _contributorsToAdd, uint128[] _distribution) internal
     {
         require(_contributorsToAdd.length == _distribution.length);
@@ -118,19 +135,19 @@ library LibSubmission
         }
     }
 
-    function withdrawReward(address platformAddress, LibConstruction.SubmissionData storage data, LibSubmission.RewardData storage rewardData, LibSubmission.TrustData storage trustData) public
+    function withdrawReward(address platformAddress, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, LibSubmission.TrustData storage trustData) public
     {
         IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
         uint256 submissionReward = rewardData.winnings;
 
         // Transfer reward to submission author and contributors
         uint256 transferAmount = getTransferAmount(platformAddress, rewardData, trustData);
-        uint256 transferAmountLeft = _myReward(data, rewardData, msg.sender, transferAmount);
+        uint256 transferAmountLeft = _myReward(contributorsAndReferences, rewardData, msg.sender, transferAmount);
 
         token.transfer(msg.sender, transferAmountLeft);
         rewardData.addressToAmountWithdrawn[msg.sender] = rewardData.addressToAmountWithdrawn[msg.sender].add(transferAmountLeft);
 
-        if (msg.sender == data.owner)
+        if (IOwnable(this).isOwner(msg.sender))
         {
             // Distribute remaining reward to references
             uint256 remainingReward = submissionReward.sub(transferAmount).sub(rewardData.amountTransferredToReferences);
@@ -138,18 +155,17 @@ library LibSubmission
 
             uint256 weight = (one).div(trustData.approvedReferenceCount);
             uint256 weightedReward = weight.mul(remainingReward).div(one);
-            for(uint j = 0; j < data.references.length; j++)
+            for(uint j = 0; j < contributorsAndReferences.references.length; j++)
             {
-                if(trustData.addressToReferenceInfo[data.references[j]].approved)
+                if(trustData.addressToReferenceInfo[contributorsAndReferences.references[j]].approved)
                 {
                     // TODO: Revisit with trust system
-                    // uint256 weight = (addressToReferenceInfo[data.references[j]].authorReputation).mul(10**18).div(totalPossibleTrust);
+                    // uint256 weight = (addressToReferenceInfo[contributorsAndReferences.references[j]].authorReputation).mul(10**18).div(totalPossibleTrust);
                     // uint256 weightedReward = remainingReward.mul(weight).div(10**18);
-                    // token.transfer(data.references[j], weightedReward);
-                    // IMatryxSubmission(data.references[j]).addToWinnings(weightedReward);
-
-                    token.transfer(data.references[j], weightedReward);
-                    IMatryxSubmission(data.references[j]).addToWinnings(weightedReward);
+                    // token.transfer(contributorsAndReferences.references[j], weightedReward);
+                    // IMatryxSubmission(contributorsAndReferences.references[j]).addToWinnings(weightedReward);
+                    token.transfer(contributorsAndReferences.references[j], weightedReward);
+                    IMatryxSubmission(contributorsAndReferences.references[j]).addToWinnings(weightedReward);
                 }
             }
             rewardData.amountTransferredToReferences = rewardData.amountTransferredToReferences.add(remainingReward);
@@ -184,14 +200,14 @@ library LibSubmission
         return transferAmount;
     }
 
-    function _myReward(LibConstruction.SubmissionData storage data, RewardData storage rewardData, address _sender, uint256 transferAmount) internal view returns(uint256)
+    function _myReward(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, RewardData storage rewardData, address _sender, uint256 transferAmount) internal view returns(uint256)
     {
         uint256 authorReward = transferAmount;
-        if (data.contributors.length != 0) {
+        if (contributorsAndReferences.contributors.length != 0) {
             authorReward = authorReward.div(2);
         }
 
-        if(_sender == data.owner)
+        if(IOwnable(this).isOwner(_sender))
         {
             return authorReward.sub(rewardData.addressToAmountWithdrawn[_sender]);
         }

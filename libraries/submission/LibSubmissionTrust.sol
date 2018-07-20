@@ -27,12 +27,12 @@ library LibSubmissionTrust
 
     /// @dev Add a missing reference to a submission (callable only by submission's owner).
     /// @param _reference Address of additional reference to include.
-    function addReference(LibConstruction.SubmissionData storage data, LibSubmission.TrustData storage trustData, address _reference, address platformAddress) public
+    function addReference(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address _reference, address platformAddress) public
     {
         require(trustData.addressToReferenceInfo[_reference].exists == false);
         IMatryxPlatform(platformAddress).handleReferenceRequestForSubmission(_reference);
-        data.references.push(_reference);
-        trustData.addressToReferenceInfo[_reference].index = uint32(data.references.length-1);
+        contributorsAndReferences.references.push(_reference);
+        trustData.addressToReferenceInfo[_reference].index = uint32(contributorsAndReferences.references.length-1);
         trustData.addressToReferenceInfo[_reference].exists = true;
 
         // We know that the parameter is a valid submission
@@ -48,9 +48,35 @@ library LibSubmissionTrust
         }
     }
 
+    // TODO: Finish and test
+    // function addReferences(LibConstruction.SubmissionData storage data, LibSubmission.TrustData storage trustData, address[] _references, address platformAddress) public
+    // {
+    //     for(uint32 i = 0; i < _references.length; i++)
+    //     {
+
+    //     }
+    //     require(trustData.addressToReferenceInfo[_reference].exists == false);
+    //     IMatryxPlatform(platformAddress).handleReferenceRequestForSubmission(_reference);
+    //     data.references.push(_reference);
+    //     trustData.addressToReferenceInfo[_reference].index = uint32(data.references.length-1);
+    //     trustData.addressToReferenceInfo[_reference].exists = true;
+
+    //     // We know that the parameter is a valid submission
+    //     // as deemed by the platform. Therefore we're able to
+    //     // get its author without worrying that we don't
+    //     // know what code we're calling.
+    //     if(trustData.addressToReferenceInfo[_reference].flagged)
+    //     {
+    //         address referenceAuthor = IMatryxSubmission(_reference).getAuthor();
+    //         // If this testing session fails, the below line is the culprit.
+    //         IMatryxPeer(referenceAuthor).removeMissingReferenceFlag(this, _reference);
+    //         cleanAuthorTrust(trustData, referenceAuthor, _reference);
+    //     }
+    // }
+
     /// @dev Remove an erroneous reference to a submission (callable only by submission's owner).
     /// @param _reference Address of reference to remove.
-    function removeReference(LibConstruction.SubmissionData storage data, LibSubmission.TrustData storage trustData, address _reference, address platformAddress) public
+    function removeReference(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address _reference, address platformAddress) public
     {
         require(trustData.addressToReferenceInfo[_reference].exists == true);
         IMatryxPlatform(platformAddress).handleCancelledReferenceRequestForSubmission(_reference);
@@ -66,7 +92,7 @@ library LibSubmissionTrust
         }
 
         uint256 referenceIndex = trustData.addressToReferenceInfo[_reference].index;
-        delete data.references[referenceIndex];
+        delete contributorsAndReferences.references[referenceIndex];
         delete trustData.addressToReferenceInfo[_reference];
     }
 

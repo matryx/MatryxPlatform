@@ -66,22 +66,24 @@ const createSubmission = async (tournament, accountNumber) => {
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
 
-  const descriptionHash = stringToBytes('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK')
-  const fileHash = stringToBytes('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g')
+  const descriptionHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
+  const fileHash = stringToBytes32('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g', 2)
 
   const submissionData = {
     title: 'A submission ' + genId(6),
-    owner: account,
     descriptionHash,
     fileHash,
-    isPublic: false,
-    contributors: [],
-    contributorRewardDistribution: [],
-    references: [],
     timeSubmitted: 0,
     timeUpdated: 0
   }
-  let tx = await tournament.createSubmission(submissionData, { gasLimit: 6.5e6 })
+
+  const contribsAndRefs = {
+    contributors: ['0x0123456789012345678901234567890123456789'],
+    contributorRewardDistribution: [1],
+    references: ['0x0123456789012345678901234567890123456789']
+  }
+
+  let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
   console.log('Submission hash:', tx.hash)
 
   console.log('Submission created')
@@ -123,8 +125,8 @@ module.exports = async exit => {
       bounty: web3.toWei(5),
       closed: false
     }
-    const tournament = await createTournament(web3.toWei(10), roundData, 1)
-    await createSubmission(tournament, 0)
+    const tournament = await createTournament(web3.toWei(10), roundData, 0)
+    await createSubmission(tournament, 1)
     // await createSubmission(tournament, 2)
     // await createSubmission(tournament, 3)
     // const roundTwoData = {
