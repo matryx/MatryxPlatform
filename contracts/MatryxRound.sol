@@ -5,6 +5,7 @@ import "../libraries/math/SafeMath.sol";
 import "../libraries/LibConstruction.sol";
 import "../libraries/round/LibRound.sol";
 import "../libraries/LibIterable.sol";
+import "../libraries/LibEnums.sol";
 import "../interfaces/IMatryxToken.sol";
 import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
@@ -49,20 +50,13 @@ contract MatryxRound is Ownable, IMatryxRound {
     }
 
     /*
-     * Enums
-     */
-    enum RoundState { NotYetOpen, Unfunded, Open, InReview, HasWinners, Closed, Abandoned }
-    enum TournamentState { NotYetOpen, OnHold, Open, Closed, Abandoned}
-    enum ParticipantType { Nonentrant, Entrant, Contributor, Author }
-
-    /*
      * Modifiers
      */
 
     /// @dev Requires that this round is in the open submission state.
     modifier duringOpenRound()
     {
-        require(getState() == uint256(RoundState.Open));
+        require(getState() == uint256(LibEnums.RoundState.Open));
         _;
     }
 
@@ -70,7 +64,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     modifier duringReviewPeriod()
     {
         require(data.end != 0);
-        require(getState() == uint256(RoundState.InReview));
+        require(getState() == uint256(LibEnums.RoundState.InReview));
         _;
     }
 
@@ -171,11 +165,6 @@ contract MatryxRound is Ownable, IMatryxRound {
         return LibRound.getState(platformAddress, data, winningSubmissionsData, submissionsData);
     }
 
-    function setParticipantType(address _participantAddress, uint256 _type) public onlySubmission
-    {
-        submissionEntrantTrackingData.addressToParticipantType[_participantAddress] = _type;
-    }
-
     /*
      * Getter Methods
      */
@@ -254,11 +243,6 @@ contract MatryxRound is Ownable, IMatryxRound {
         return submissionsData.submissions.length;
     }
 
-    function getParticipantType(address _participant) public view returns (uint256)
-    {
-        return submissionEntrantTrackingData.addressToParticipantType[_participant];
-    }
-
     /*
      * Round Admin Methods
      */
@@ -280,11 +264,10 @@ contract MatryxRound is Ownable, IMatryxRound {
 
     function transferToTournament(uint256 _amount) public onlyTournament
     {
-        require(getState() == uint256(RoundState.NotYetOpen));
+        require(getState() == uint256(LibEnums.RoundState.NotYetOpen));
         require(IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(msg.sender, _amount));
     }
 
-    enum SelectWinnerAction { DoNothing, StartNextRound, CloseTournament }
     /// @dev Choose a winning submission for the round (callable only by the owner of the round).
     /// @param _selectWinnersData Data containing:
     ///   winningSubmissions: Addresses of the winning submissions
@@ -331,23 +314,13 @@ contract MatryxRound is Ownable, IMatryxRound {
 
     function closeRound() public onlyTournament
     {
-        require(getState() == uint256(RoundState.HasWinners));
+        require(getState() == uint256(LibEnums.RoundState.HasWinners));
         data.closed = true;
     }
 
     /*
      * Entrant Methods
      */
-
-    function makeEntrant(address _entrant) public onlyTournament
-    {
-        submissionEntrantTrackingData.addressToParticipantType[_entrant] = uint256(ParticipantType.Entrant);
-    }
-
-    function removeEntrant(address _entrant) public onlyTournament
-    {
-        submissionEntrantTrackingData.addressToParticipantType[_entrant] = uint256(ParticipantType.Nonentrant);
-    }
 
     /// @dev Create a new submission. Called by MatryxTournament
     /// @param _owner Owner of this submission.
@@ -361,44 +334,35 @@ contract MatryxRound is Ownable, IMatryxRound {
     ///		references: Addresses of submissions referenced in creating this submission.
     /// @return _submissionAddress Location of this submission within this round.
     // function createSubmission(address _author, LibConstruction.SubmissionData submissionData) public onlyTournamentOrLib duringOpenRound returns (address _submissionAddress)
-    function createSubmission(address _owner, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
+    // function createSubmission(address _owner, address[3] _requiredAddresses, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
+    function createSubmission(address _owner, address platformAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
     {
-        // require(_owner != 0x0);
+        require(_owner != 0x0);
 
-        // LibConstruction.RequiredSubmissionAddresses memory requiredSubmissionAddresses = LibConstruction.RequiredSubmissionAddresses({platformAddress: platformAddress, tournamentAddress: tournamentAddress, roundAddress: this});
-        // address[3] memory requiredSubmissionAddresses = [platformAddress, tournamentAddress, this];
-        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(_owner, /*requiredSubmissionAddresses, */submissionData);
+        address submissionAddress = IMatryxSubmissionFactory(matryxSubmissionFactoryAddress).createSubmission(_owner, platformAddress, tournamentAddress, this, submissionData);
         // submission bookkeeping
-        // submissionEntrantTrackingData.submissionExists[submissionAddress] = true;
-        // submissionsData.submissions.push(submissionAddress);
-
+        submissionEntrantTrackingData.submissionExists[submissionAddress] = true;
+        submissionsData.submissions.push(submissionAddress);
         // // TODO: Change to 'authors.push' once MatryxPeer is part of MatryxPlatform
-        // if(submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].length == 0)
-        // {
-        //     submissionsData.submissionOwners.push(submissionData.owner);
-        // }
+        address submissionAuthor = IMatryxPlatform(platformAddress).peerAddress(_owner);
+        if(submissionEntrantTrackingData.authorToSubmissionAddress[submissionAuthor].length == 0)
+        {
+            submissionsData.submissionOwners.push(_owner);
+        }
 
-        // submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].push(submissionAddress);
+        submissionEntrantTrackingData.authorToSubmissionAddress[submissionAuthor].push(submissionAddress);
 
-        // // round participant bookkeeping
-        // submissionEntrantTrackingData.addressToParticipantType[_owner] = uint(ParticipantType.Author);
-        // for(uint256 i = 0; i < submissionData.contributors.length; i++)
-        // {
-        //     submissionEntrantTrackingData.addressToParticipantType[submissionData.contributors[i]] = uint(ParticipantType.Contributor);
-        // }
-
-        // IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);
-        //emit TimeStamp(now);
+        IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);
         return submissionAddress;
     }
 
     // function pullPayoutIntoSubmission() public onlySubmission returns (uint256)
     // {
-    //     require(getState() == uint256(RoundState.Closed));
+    //     require(getState() == uint256(LibEnums.RoundState.Closed));
     //     // If the submission's already been paid, revert
     //     require(submissionToHasBeenPayed[msg.sender] == false);
     //     // If the tournament closed, we need to pull the tournament funds into this round.
-    //     if(IMatryxTournament(tournamentAddress).getState() == uint256(TournamentState.Closed) && remainingBounty() > 0)
+    //     if(IMatryxTournament(tournamentAddress).getState() == uint256(LibEnums.TournamentState.Closed) && remainingBounty() > 0)
     //     {
     //         IMatryxTournament(tournamentAddress).pullRemainingBountyIntoRound();
     //     }

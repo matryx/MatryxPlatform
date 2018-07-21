@@ -2,12 +2,10 @@ pragma solidity ^0.4.18;
 pragma experimental ABIEncoderV2;
 
 import "../../interfaces/IMatryxRound.sol";
+import "../LibEnums.sol";
 
 library LibTournamentStateManagement
 {
-    enum TournamentState { NotYetOpen, OnHold, Open, Closed, Abandoned}
-    enum RoundState { NotYetOpen, Unfunded, Open, InReview, HasWinners, Closed, Abandoned }
-
     /// @dev uint256 that has a flag associated - allows for uint256 to be a null value
     ///      exists: Whether or not the value is null/exists
     ///      value: Optional value for the uint256
@@ -63,47 +61,47 @@ library LibTournamentStateManagement
 
         if(stateData.closed)
         {
-            return uint256(TournamentState.Closed);
+            return uint256(LibEnums.TournamentState.Closed);
         }
         else if(numberOfRounds > 0)
         {
             uint256 roundState = IMatryxRound(roundAddress).getState();
             if(numberOfRounds != 1)
             {
-                if(roundState == uint256(RoundState.Unfunded) || roundState == uint256(RoundState.Open) || roundState == uint256(RoundState.InReview)
-                    || roundState == uint256(RoundState.HasWinners))
+                if(roundState == uint256(LibEnums.RoundState.Unfunded) || roundState == uint256(LibEnums.RoundState.Open) || roundState == uint256(LibEnums.RoundState.InReview)
+                    || roundState == uint256(LibEnums.RoundState.HasWinners))
                 {
-                    return uint256(TournamentState.Open);
+                    return uint256(LibEnums.TournamentState.Open);
                 }
-                else if(roundState == uint256(RoundState.NotYetOpen))
+                else if(roundState == uint256(LibEnums.RoundState.NotYetOpen))
                 {
-                    return uint256(TournamentState.OnHold);
+                    return uint256(LibEnums.TournamentState.OnHold);
                 }
-                else if(roundState == uint256(RoundState.Closed))
+                else if(roundState == uint256(LibEnums.RoundState.Closed))
                 {
-                    return uint256(TournamentState.Closed);
+                    return uint256(LibEnums.TournamentState.Closed);
                 }
                 else
                 {
-                    return uint256(TournamentState.Abandoned);
+                    return uint256(LibEnums.TournamentState.Abandoned);
                 }
             }
-            else if(roundState == uint256(RoundState.NotYetOpen))
+            else if(roundState == uint256(LibEnums.RoundState.NotYetOpen))
             {
-                return uint256(TournamentState.NotYetOpen);
+                return uint256(LibEnums.TournamentState.NotYetOpen);
             }
-            else if(roundState == uint256(RoundState.Unfunded) || roundState == uint256(RoundState.Open) || roundState == uint256(RoundState.InReview)
-                    || roundState == uint256(RoundState.HasWinners))
+            else if(roundState == uint256(LibEnums.RoundState.Unfunded) || roundState == uint256(LibEnums.RoundState.Open) || roundState == uint256(LibEnums.RoundState.InReview)
+                    || roundState == uint256(LibEnums.RoundState.HasWinners))
             {
-                return uint256(TournamentState.Open);
+                return uint256(LibEnums.TournamentState.Open);
             }
-            else if(roundState == uint256(RoundState.Closed))
+            else if(roundState == uint256(LibEnums.RoundState.Closed))
             {
-                return uint256(TournamentState.Closed);
+                return uint256(LibEnums.TournamentState.Closed);
             }
             else
             {
-                return uint256(TournamentState.Abandoned);
+                return uint256(LibEnums.TournamentState.Abandoned);
             }
         }
 
@@ -115,8 +113,8 @@ library LibTournamentStateManagement
     function currentRound(StateData storage stateData) public view returns (uint256 _currentRound, address _currentRoundAddress)
     {
         if(stateData.rounds.length > 1 &&
-           IMatryxRound(stateData.rounds[stateData.rounds.length-2]).getState() == uint256(RoundState.HasWinners) &&
-           IMatryxRound(stateData.rounds[stateData.rounds.length-1]).getState() == uint256(RoundState.NotYetOpen))
+           IMatryxRound(stateData.rounds[stateData.rounds.length-2]).getState() == uint256(LibEnums.RoundState.HasWinners) &&
+           IMatryxRound(stateData.rounds[stateData.rounds.length-1]).getState() == uint256(LibEnums.RoundState.NotYetOpen))
         {
             return (stateData.rounds.length-1, stateData.rounds[stateData.rounds.length-2]);
         }
@@ -130,8 +128,8 @@ library LibTournamentStateManagement
     ///@return _ghostAddress Address of the upcoming round created during winner selection
     function getGhostRound(StateData storage stateData) internal view returns (uint256 _index, address _ghostAddress)
     {
-        if(IMatryxRound(stateData.rounds[stateData.rounds.length-2]).getState() == uint256(RoundState.HasWinners) &&
-           IMatryxRound(stateData.rounds[stateData.rounds.length-1]).getState() == uint256(RoundState.NotYetOpen))
+        if(IMatryxRound(stateData.rounds[stateData.rounds.length-2]).getState() == uint256(LibEnums.RoundState.HasWinners) &&
+           IMatryxRound(stateData.rounds[stateData.rounds.length-1]).getState() == uint256(LibEnums.RoundState.NotYetOpen))
         {
             return (stateData.rounds.length-1, stateData.rounds[stateData.rounds.length-1]);
         }

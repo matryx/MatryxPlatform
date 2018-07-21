@@ -5,6 +5,7 @@ import "../../libraries/math/SafeMath128.sol";
 import "../../libraries/math/SafeMath.sol";
 import "../../libraries/submission/LibSubmission.sol";
 import "../../interfaces/IMatryxPeer.sol";
+import "../../interfaces/IMatryxSubmission.sol";
 import "../../interfaces/IMatryxPlatform.sol";
 
 library LibSubmissionTrust
@@ -48,31 +49,26 @@ library LibSubmissionTrust
         }
     }
 
-    // TODO: Finish and test
-    // function addReferences(LibConstruction.SubmissionData storage data, LibSubmission.TrustData storage trustData, address[] _references, address platformAddress) public
-    // {
-    //     for(uint32 i = 0; i < _references.length; i++)
-    //     {
+    function addReferences(LibConstruction.SubmissionData storage data, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address[] _references, address platformAddress) public
+    {
+        for(uint32 i = 0; i < _references.length; i++)
+        {
+            require(trustData.addressToReferenceInfo[_references[i]].exists == false);
+            contributorsAndReferences.references.push(_references[i]);
+            trustData.addressToReferenceInfo[_references[i]].index = uint32(contributorsAndReferences.references.length-1);
+            trustData.addressToReferenceInfo[_references[i]].exists = true;
 
-    //     }
-    //     require(trustData.addressToReferenceInfo[_reference].exists == false);
-    //     IMatryxPlatform(platformAddress).handleReferenceRequestForSubmission(_reference);
-    //     data.references.push(_reference);
-    //     trustData.addressToReferenceInfo[_reference].index = uint32(data.references.length-1);
-    //     trustData.addressToReferenceInfo[_reference].exists = true;
+            if(trustData.addressToReferenceInfo[_references[i]].flagged)
+            {
+                address referenceAuthor = IMatryxSubmission(_references[i]).getAuthor();
+                // If this testing session fails, the below line is the culprit.
+                IMatryxPeer(referenceAuthor).removeMissingReferenceFlag(this, _references[i]);
+                cleanAuthorTrust(trustData, referenceAuthor, _references[i]);
+            }
+        }
 
-    //     // We know that the parameter is a valid submission
-    //     // as deemed by the platform. Therefore we're able to
-    //     // get its author without worrying that we don't
-    //     // know what code we're calling.
-    //     if(trustData.addressToReferenceInfo[_reference].flagged)
-    //     {
-    //         address referenceAuthor = IMatryxSubmission(_reference).getAuthor();
-    //         // If this testing session fails, the below line is the culprit.
-    //         IMatryxPeer(referenceAuthor).removeMissingReferenceFlag(this, _reference);
-    //         cleanAuthorTrust(trustData, referenceAuthor, _reference);
-    //     }
-    // }
+        // IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(this, _references);
+    }
 
     /// @dev Remove an erroneous reference to a submission (callable only by submission's owner).
     /// @param _reference Address of reference to remove.

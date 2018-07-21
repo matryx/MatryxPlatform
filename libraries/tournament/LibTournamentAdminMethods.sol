@@ -5,6 +5,7 @@ import "../math/SafeMath.sol";
 import "../strings/strings.sol";
 import "../../interfaces/factories/IMatryxRoundFactory.sol";
 import "./LibTournamentStateManagement.sol";
+import "../LibEnums.sol";
 import "../../interfaces/IMatryxPlatform.sol";
 import "../../interfaces/IMatryxToken.sol";
 import "../../interfaces/IMatryxTournament.sol";
@@ -14,9 +15,6 @@ library LibTournamentAdminMethods
 {
     using SafeMath for uint256;
     using strings for *;
-
-    enum RoundState { NotYetOpen, Unfunded, Open, InReview, HasWinners, Closed, Abandoned }
-    enum SelectWinnerAction { DoNothing, StartNextRound, CloseTournament }
 
     event NewRound(uint256 _startTime, uint256 _endTime, uint256 _reviewPeriodDuration, address _roundAddress, uint256 _roundNumber);
     event RoundWinnersChosen(address[] _submissionAddresses);
@@ -60,12 +58,12 @@ library LibTournamentAdminMethods
         // Round must be in review or have winners to close
         (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 roundState = uint256(IMatryxRound(currentRoundAddress).getState());
-        require(roundState == uint256(RoundState.InReview) || roundState == uint256(RoundState.HasWinners), "Round is not in review or winners have not been chosen.");
+        require(roundState == uint256(LibEnums.RoundState.InReview) || roundState == uint256(LibEnums.RoundState.HasWinners), "Round is not in review or winners have not been chosen.");
         uint256 remainingBalance = IMatryxTournament(this).getBalance();
         // Event to notify web3 of the winning submission address
         emit RoundWinnersChosen(_selectWinnersData.winningSubmissions);
         IMatryxRound(currentRoundAddress).selectWinningSubmissions( _selectWinnersData, _roundData);
-        if(_selectWinnersData.selectWinnerAction == uint256(SelectWinnerAction.CloseTournament))
+        if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.CloseTournament))
         {
             closeTournament(stateData, platformAddress, matryxTokenAddress, remainingBalance, currentRoundAddress);
         }
@@ -107,9 +105,9 @@ library LibTournamentAdminMethods
         (, address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 currentRoundState = IMatryxRound(currentRoundAddress).getState();
         require(
-            currentRoundState == uint256(RoundState.NotYetOpen) ||
-            currentRoundState == uint256(RoundState.Unfunded) ||
-            currentRoundState == uint256(RoundState.Open));
+            currentRoundState == uint256(LibEnums.RoundState.NotYetOpen) ||
+            currentRoundState == uint256(LibEnums.RoundState.Unfunded) ||
+            currentRoundState == uint256(LibEnums.RoundState.Open));
 
         stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(_mtxAllocation);
         require(IMatryxToken(matryxTokenAddress).transfer(currentRoundAddress, _mtxAllocation));
@@ -136,7 +134,7 @@ library LibTournamentAdminMethods
     // @dev Chooses the winner of the tournament.
     function closeTournament(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, uint256 remainingBalance, address currentRoundAddress) internal
     {
-        require(IMatryxRound(currentRoundAddress).getState() == uint256(RoundState.Closed));
+        require(IMatryxRound(currentRoundAddress).getState() == uint256(LibEnums.RoundState.Closed));
         // Transfer the remaining MTX in the tournament to the current round
         stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(remainingBalance);
         IMatryxToken(matryxTokenAddress).transfer(currentRoundAddress, remainingBalance);

@@ -5,6 +5,6 @@ import "../../libraries/LibConstruction.sol";
 
 interface IMatryxSubmissionFactory
 {
-	// function createSubmission(address[3] requiredAddresses, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
-	function createSubmission(address _owner, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
+	// function createSubmission(address _owner, address[3] _requiredAddresses, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
+	function createSubmission(address _owner, address platformAddress, address tournamentAddress, address roundAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
 }

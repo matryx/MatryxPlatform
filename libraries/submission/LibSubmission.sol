@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 import "../math/SafeMath.sol";
 import "../math/SafeMath128.sol";
 import "../LibConstruction.sol";
+import "../submission/LibSubmissionTrust.sol";
 import "../strings/strings.sol";
 import "../../interfaces/IMatryxToken.sol";
 import "../../interfaces/IMatryxPlatform.sol";
@@ -64,9 +65,9 @@ library LibSubmission
 
     uint256 constant one = 10**18;
 
-    function update(LibConstruction.SubmissionData storage data, LibSubmission.RewardData storage rewardData, LibConstruction.SubmissionModificationData _modificationData, LibConstruction.ContributorsModificationData _contributorsModificationData, LibConstruction.ReferencesModificationData _referencesModificationData) public
+    function updateData(LibConstruction.SubmissionData storage data, LibConstruction.SubmissionModificationData _modificationData) public
     {
-        if(!_modificationData.title.toSlice().empty())
+        if(!(_modificationData.title[0] == 0x0))
         {
             data.title = _modificationData.title;
         }
@@ -78,16 +79,32 @@ library LibSubmission
         {
             data.fileHash = _modificationData.fileHash;
         }
-        // TODO: Put back and fix
-        // if(_contributorsModificationData.contributorsToAdd.length != 0)
-        // {
-        //     require(_contributorsModificationData.contributorsToAdd.length == _contributorsModificationData.contributorRewardDistribution.length);
-        //     addContributors(rewardData, _contributorsModificationData.contributorsToAdd, _contributorsModificationData.contributorRewardDistribution);
-        // }
-        // if(_contributorsModificationData.contributorsToRemove.length != 0)
-        // {
-        //     removeContributors(rewardData, _contributorsModificationData.contributorsToRemove);
-        // }
+        data.timeUpdated = now;
+    }
+
+    function updateContributors(LibConstruction.SubmissionData storage data, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, LibConstruction.ContributorsModificationData _contributorsModificationData) public
+    {
+        if(_contributorsModificationData.contributorsToAdd.length != 0)
+        {
+            require(_contributorsModificationData.contributorsToAdd.length == _contributorsModificationData.contributorRewardDistribution.length);
+            addContributors(contributorsAndReferences, rewardData, _contributorsModificationData.contributorsToAdd, _contributorsModificationData.contributorRewardDistribution);
+        }
+        if(_contributorsModificationData.contributorsToRemove.length != 0)
+        {
+            // TODO: Finish and test
+            // removeContributors(contributorsAndReferences, rewardData, _contributorsModificationData.contributorsToRemove);
+        }
+        data.timeUpdated = now;
+
+    }
+
+    function updateReferences(LibConstruction.SubmissionData storage data, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, LibConstruction.ReferencesModificationData _referencesModificationData, address platformAddress) public
+    {
+        if(_referencesModificationData.referencesToAdd.length != 0)
+        {
+            LibSubmissionTrust.addReferences(data, contributorsAndReferences, trustData, _referencesModificationData.referencesToAdd, platformAddress);
+        }
+        // TODO: Add remove functionality
         data.timeUpdated = now;
     }
 
@@ -98,14 +115,14 @@ library LibSubmission
         {
             // if one of the contributors is already there, revert
             // otherwise, add it to the list
-            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(_contribsAndRefs.contributorRewardDistribution[j]);
-            rewardData.contributorToBountyDividend[_contribsAndRefs.contributors[j]] = _contribsAndRefs.contributorRewardDistribution[j];
+            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(_contribsAndRefs.contributorRewardDistribution[i]);
+            rewardData.contributorToBountyDividend[_contribsAndRefs.contributors[i]] = _contribsAndRefs.contributorRewardDistribution[i];
         }
 
-        for(uint32 j = 0; j < _contribsAndRefs.references.length; j++)
+        for(i = 0; i < _contribsAndRefs.references.length; i++)
         {
-            trustData.addressToReferenceInfo[_contribsAndRefs.references[j]].exists = true;
-            trustData.addressToReferenceInfo[_contribsAndRefs.references[j]].index = j;
+            trustData.addressToReferenceInfo[_contribsAndRefs.references[i]].exists = true;
+            trustData.addressToReferenceInfo[_contribsAndRefs.references[i]].index = i;
         }
 
         contributorsAndReferences.contributors = _contribsAndRefs.contributors;
@@ -114,24 +131,25 @@ library LibSubmission
     }
 
     // function addContributors(LibConstruction.ContributorsModificationData storage _contributorsModificationData) internal
-    function addContributors(LibSubmission.RewardData storage rewardData, address[] _contributorsToAdd, uint128[] _distribution) internal
+    function addContributors(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, address[] _contributorsToAdd, uint128[] _distribution) internal
     {
         require(_contributorsToAdd.length == _distribution.length);
-        for(uint32 j = 0; j < _contributorsToAdd.length; j++)
+        for(uint32 i = 0; i < _contributorsToAdd.length; i++)
         {
             // if one of the contributors is already there, revert
             // otherwise, add it to the list
-            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(_distribution[j]);
-            rewardData.contributorToBountyDividend[_contributorsToAdd[j]] = _distribution[j];
+            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(_distribution[i]);
+            rewardData.contributorToBountyDividend[_contributorsToAdd[i]] = _distribution[i];
+            contributorsAndReferences.contributors.push(_contributorsToAdd[i]);
         }
     }
 
-    function removeContributors(LibSubmission.RewardData storage rewardData, address[] _contributorsToRemove) public
+    function removeContributors(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, address[] _contributorsToRemove) public
     {
-        for(uint32 j = 0; j < _contributorsToRemove.length; j++)
+        for(uint32 i = 0; i < _contributorsToRemove.length; i++)
         {
-            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.sub(rewardData.contributorToBountyDividend[_contributorsToRemove[j]]);
-            rewardData.contributorToBountyDividend[_contributorsToRemove[j]] = 0;
+            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.sub(rewardData.contributorToBountyDividend[_contributorsToRemove[i]]);
+            rewardData.contributorToBountyDividend[_contributorsToRemove[i]] = 0;
         }
     }
 

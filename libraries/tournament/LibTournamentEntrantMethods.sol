@@ -3,6 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "../math/SafeMath.sol";
 import "./LibTournamentStateManagement.sol";
+import "../LibEnums.sol";
 import "../../interfaces/IMatryxToken.sol";
 import "../../interfaces/IMatryxPlatform.sol";
 import "../../interfaces/IMatryxTournament.sol";
@@ -10,9 +11,6 @@ import "../../interfaces/IMatryxTournament.sol";
 library LibTournamentEntrantMethods
 {
     using SafeMath for uint256;
-
-    enum TournamentState { NotYetOpen, OnHold, Open, Closed, Abandoned}
-    enum ParticipantType { Nonentrant, Entrant, Contributor, Author }
 
     struct uint256_optional
     {
@@ -37,7 +35,6 @@ library LibTournamentEntrantMethods
         entryData.numberOfEntrants = entryData.numberOfEntrants.add(1);
 
         (, address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
-        IMatryxRound(currentRoundAddress).makeEntrant(_entrantAddress);
 
         return true;
     }
@@ -59,34 +56,31 @@ library LibTournamentEntrantMethods
         // Make sure entrants don't withdraw their entry fee early
         uint256 currentState = LibTournamentStateManagement.getState(stateData);
         (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
-        require(IMatryxRound(currentRoundAddress).getParticipantType(_entrant) == uint256(ParticipantType.Entrant));
-
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
         require(matryxToken.transfer(_entrant, entryData.addressToEntryFeePaid[_entrant].value));
         stateData.entryFeesTotal = stateData.entryFeesTotal.sub(entryData.addressToEntryFeePaid[_entrant].value);
         entryData.addressToEntryFeePaid[_entrant].exists = false;
         entryData.addressToEntryFeePaid[_entrant].value = 0;
         entryData.numberOfEntrants = entryData.numberOfEntrants.sub(1);
-        IMatryxRound(currentRoundAddress).removeEntrant(_entrant);
     }
 
-    function createSubmission(address currentRoundAddress, LibTournamentStateManagement.EntryData storage entryData, address platformAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
+    // function createSubmission(address currentRoundAddress, LibTournamentStateManagement.EntryData storage entryData, address platformAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
+    // function createSubmission(address[3] _requiredAddresses, LibTournamentStateManagement.EntryData storage entryData, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
+    function createSubmission(address _platformAddress, address _roundAddress, LibTournamentStateManagement.EntryData storage entryData, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
     {
-        address submissionAddress = IMatryxRound(currentRoundAddress).createSubmission(msg.sender, submissionData);
-        // Send out reference requests to the authors of other submissions
-        // IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(submissionAddress, submissionData.references);
+        address submissionAddress = IMatryxRound(_roundAddress).createSubmission(msg.sender, _platformAddress, submissionData);
 
-        // entryData.numberOfSubmissions = entryData.numberOfSubmissions.add(1);
-        // entryData.entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress].exists = true;
-        // entryData.entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress].value = entryData.entrantToSubmissions[msg.sender].length;
-        // entryData.entrantToSubmissions[msg.sender].push(submissionAddress);
-        // IMatryxPlatform(platformAddress).updateSubmissions(msg.sender, submissionAddress);
+        entryData.numberOfSubmissions = entryData.numberOfSubmissions.add(1);
+        entryData.entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress].exists = true;
+        entryData.entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress].value = entryData.entrantToSubmissions[msg.sender].length;
+        entryData.entrantToSubmissions[msg.sender].push(submissionAddress);
+        IMatryxPlatform(_platformAddress).updateSubmissions(msg.sender, submissionAddress);
         return submissionAddress;
     }
 
     function withdrawFromAbandoned(LibTournamentStateManagement.StateData storage stateData, LibTournamentStateManagement.EntryData storage entryData, address matryxTokenAddress) public
     {
-        require(LibTournamentStateManagement.getState(stateData) == uint256(TournamentState.Abandoned), "This tournament is still valid.");
+        require(LibTournamentStateManagement.getState(stateData) == uint256(LibEnums.TournamentState.Abandoned), "This tournament is still valid.");
         require(!entryData.hasWithdrawn[msg.sender]);
 
         address currentRoundAddress;

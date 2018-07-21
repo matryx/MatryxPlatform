@@ -11,6 +11,7 @@ module.exports = function (deployer) {
     deployer.link(SafeMath, LibSubmissionTrust)
     deployer.link(SafeMath128, LibSubmissionTrust)
     return deployer.deploy(LibSubmissionTrust).then(async () => {
+        deployer.link(LibSubmissionTrust, LibSubmission)
         await deployer.deploy(LibSubmission)
         await deployer.deploy(LibTournamentStateManagement)
         deployer.link(LibTournamentStateManagement, LibTournamentAdminMethods)

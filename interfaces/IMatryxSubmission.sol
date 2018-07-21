@@ -7,7 +7,8 @@ interface IMatryxSubmission {
   function getTournament() public view returns (address);
   function getRound() public view returns (address);
   function isAccessible(address _requester) public view returns (bool);
-  function getTitle() public view returns(string);
+  function getData() public view returns(LibConstruction.SubmissionData _data);
+  function getTitle() public view returns(bytes32[3]);
   function getAuthor() public view returns(address);
   function getDescriptionHash() public view returns (bytes32[2]);
   function getFileHash() public view returns (bytes32[2]);
@@ -15,10 +16,9 @@ interface IMatryxSubmission {
   function getContributors() public view returns(address[]);
   function getTimeSubmitted() public view returns(uint256);
   function getTimeUpdated() public view returns(uint256);
-  function update(LibConstruction.SubmissionModificationData _modificationData, LibConstruction.ContributorsModificationData _contributorsModificationData, LibConstruction.ReferencesModificationData _referencesModificationData) public;
-  function updateTitle(string _title) public;
-  function updateDescription(bytes32[2] _externalAddress) public;
-  function updateFile(bytes32[2] _fileHash) public;
+  function updateData(LibConstruction.SubmissionModificationData _modificationData) public;
+  function updateContributors(LibConstruction.ContributorsModificationData _contributorsModificationData) public;
+  function updateReferences(LibConstruction.ReferencesModificationData _referencesModificationData) public;
   function addToWinnings(uint256 _amount) public;
   function addReference(address _reference) public;
   function removeReference(address _reference) public;

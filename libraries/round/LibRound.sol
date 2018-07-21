@@ -2,6 +2,7 @@ pragma solidity ^0.4.21;
 pragma experimental ABIEncoderV2;
 
 import "../LibConstruction.sol";
+import "../LibEnums.sol";
 import "../math/SafeMath.sol";
 import "../../interfaces/IMatryxToken.sol";
 import "../../interfaces/IMatryxPlatform.sol";
@@ -14,12 +15,10 @@ library LibRound
     using SafeMath for uint256;
 
     /// @dev Struct containting information about the submissions and entrants to a tournament
-    ///        addressToParticipantType: Mapping of an address to its participant type {Nonentrant, Entrant, Contributor, Author}
     ///        authorToSubmissionAddress: Mapping from the address of an author to their submissions
     ///        submissionExists: Bool indicating whether this address corresponds to an existing submission or not
     struct SubmissionAndEntrantTracking
     {
-        mapping(address=>uint) addressToParticipantType;
         mapping(address=>address[]) authorToSubmissionAddress;
         mapping(address=>bool) submissionExists;
     }
@@ -55,46 +54,45 @@ library LibRound
         uint256 value;
     }
 
-    enum RoundState { NotYetOpen, Unfunded, Open, InReview, HasWinners, Closed, Abandoned }
     function getState(address platformAddress, LibConstruction.RoundData storage data, LibRound.SelectWinnersData storage winningSubmissionsData, LibRound.SubmissionsData storage submissionsData) public returns (uint256)
     {
         if(now < data.start)
         {
-            return uint256(RoundState.NotYetOpen);
+            return uint256(LibEnums.RoundState.NotYetOpen);
         }
         else if(now >= data.start && now < data.end)
         {
             if (IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).balanceOf(this) == 0)
             {
-                return uint256(RoundState.Unfunded);
+                return uint256(LibEnums.RoundState.Unfunded);
             }
 
-            return uint256(RoundState.Open);
+            return uint256(LibEnums.RoundState.Open);
         }
         else if(now >= data.end && now < data.end.add(data.reviewPeriodDuration))
         {
             if(data.closed)
             {
-                return uint256(RoundState.Closed);
+                return uint256(LibEnums.RoundState.Closed);
             }
             else if(submissionsData.submissions.length == 0)
             {
-                return uint256(RoundState.Abandoned);
+                return uint256(LibEnums.RoundState.Abandoned);
             }
             else if(winningSubmissionsData.winningSubmissions.length > 0)
             {
-                return uint256(RoundState.HasWinners);
+                return uint256(LibEnums.RoundState.HasWinners);
             }
 
-            return uint256(RoundState.InReview);
+            return uint256(LibEnums.RoundState.InReview);
         }
         else if(winningSubmissionsData.winningSubmissions.length > 0)
         {
-            return uint256(RoundState.Closed);
+            return uint256(LibEnums.RoundState.Closed);
         }
         else
         {
-            return uint256(RoundState.Abandoned);
+            return uint256(LibEnums.RoundState.Abandoned);
         }
     }
 
@@ -110,7 +108,6 @@ library LibRound
         data.reviewPeriodDuration = _roundData.reviewPeriodDuration;
     }
 
-    enum SelectWinnerAction { DoNothing, StartNextRound, CloseTournament }
     function selectWinningSubmissions(LibConstruction.RoundData storage data, LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public
     {
         require(_selectWinnersData.winningSubmissions.length == _selectWinnersData.rewardDistribution.length);
@@ -126,7 +123,7 @@ library LibRound
         // _selectWinnersData.rewardDistributionTotal = _rewardDistributionTotal;
 
         // DoNothing and StartNextRound cases
-        if(_selectWinnersData.selectWinnerAction == uint256(SelectWinnerAction.DoNothing) || _selectWinnersData.selectWinnerAction == uint256(SelectWinnerAction.StartNextRound))
+        if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.DoNothing) || _selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.StartNextRound))
         {
             for(uint256 j = 0; j < _selectWinnersData.winningSubmissions.length; j++)
             {
@@ -149,7 +146,7 @@ library LibRound
             }
 
             LibConstruction.RoundData memory roundData;
-            if(_selectWinnersData.selectWinnerAction == uint256(SelectWinnerAction.DoNothing))
+            if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.DoNothing))
             {
                 roundData = LibConstruction.RoundData({
                     start: data.end.add(data.reviewPeriodDuration),
@@ -160,7 +157,7 @@ library LibRound
                 });
                 IMatryxTournament(IMatryxRound(this).getTournament()).createRound(roundData, true);
             }
-            else if(_selectWinnersData.selectWinnerAction == uint256(SelectWinnerAction.StartNextRound))
+            else if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.StartNextRound))
             {
                 data.closed = true;
                 roundData = LibConstruction.RoundData({

@@ -8,8 +8,10 @@ import "../libraries/LibConstruction.sol";
 import "../libraries/tournament/LibTournamentStateManagement.sol";
 import "../libraries/tournament/LibTournamentAdminMethods.sol";
 import "../libraries/tournament/LibTournamentEntrantMethods.sol";
+import "../libraries/LibEnums.sol";
 import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
+import "../interfaces/IMatryxSubmission.sol";
 import "../interfaces/factories/IMatryxRoundFactory.sol";
 import "../interfaces/IMatryxRound.sol";
 import "../interfaces/IMatryxToken.sol";
@@ -151,17 +153,17 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     modifier whileTournamentOpen()
     {
-        require(getState() == uint256(TournamentState.Open));
+        require(getState() == uint256(LibEnums.TournamentState.Open));
         _;
     }
 
     modifier ifRoundHasFunds()
     {
-        // require((IMatryxRound(currentRound()[1]).getState()) != uint256(RoundState.Unfunded));
+        // require((IMatryxRound(currentRound()[1]).getState()) != uint256(LibEnums.RoundState.Unfunded));
         address currentRoundAddress;
 
         (,currentRoundAddress) = currentRound();
-        require(IMatryxRound(currentRoundAddress).getState() != uint256(RoundState.Unfunded));
+        require(IMatryxRound(currentRoundAddress).getState() != uint256(LibEnums.RoundState.Unfunded));
         _;
     }
 
@@ -211,10 +213,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return entryData.addressToEntryFeePaid[_sender].exists;
     }
 
-    enum TournamentState { NotYetOpen, OnHold, Open, Closed, Abandoned}
-    enum RoundState { NotYetOpen, Unfunded, Open, InReview, HasWinners, Closed, Abandoned }
-    enum ParticipantType { Nonentrant, Entrant, Contributor, Author }
-    enum SelectWinnerAction { DoNothing, StartNextRound, CloseTournament }
     /// @dev Returns the state of the tournament. One of:
     /// NotYetOpen, Open, Closed, Abandoned
     function getState() public view returns (uint256)
@@ -352,9 +350,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     {
         uint256 tournamentState = this.getState();
         require(
-            tournamentState == uint256(TournamentState.NotYetOpen) ||
-            tournamentState == uint256(TournamentState.Open) ||
-            tournamentState == uint256(TournamentState.OnHold));
+            tournamentState == uint256(LibEnums.TournamentState.NotYetOpen) ||
+            tournamentState == uint256(LibEnums.TournamentState.Open) ||
+            tournamentState == uint256(LibEnums.TournamentState.OnHold));
 
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, address(this), _fundsToAdd));
@@ -455,13 +453,19 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         LibTournamentEntrantMethods.collectMyEntryFee(stateData, entryData, matryxTokenAddress);
     }
 
-    // function createSubmission(LibConstruction.SubmissionData submissionData) public onlyEntrant onlyPeerLinked(msg.sender) ifRoundHasFunds whileTournamentOpen returns (address _submissionAddress)
-    function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public returns (address _submissionAddress)
+    function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public onlyEntrant onlyPeerLinked(msg.sender) ifRoundHasFunds whileTournamentOpen returns (address _submissionAddress)
     {
         address currentRoundAddress;
         (, currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
-        address newSubmission = LibTournamentEntrantMethods.createSubmission(currentRoundAddress, entryData, platformAddress, submissionData);
-        IMatryxSubmission(newSubmission).setContributorsAndReferences(contribsAndRefs);
+        address newSubmission = LibTournamentEntrantMethods.createSubmission(platformAddress, currentRoundAddress, entryData, submissionData);
+
+        if (contribsAndRefs.contributors.length != 0 || contribsAndRefs.references.length != 0)
+        {
+            IMatryxSubmission(newSubmission).setContributorsAndReferences(contribsAndRefs);
+        }
+        // Send out reference requests to the authors of other submissions
+        // IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(newSubmission, contribsAndRefs.references);
+
         return newSubmission;
     }
 

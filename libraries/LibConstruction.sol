@@ -61,7 +61,7 @@ library LibConstruction
 
     struct SubmissionData
     {
-        string title;
+        bytes32[3] title;
         bytes32[2] descriptionHash;
         bytes32[2] fileHash;
         uint256 timeSubmitted;
@@ -77,7 +77,7 @@ library LibConstruction
 
     struct SubmissionModificationData
     {
-        string title;
+        bytes32[3] title;
         bytes32[2] descriptionHash;
         bytes32[2] fileHash;
     }

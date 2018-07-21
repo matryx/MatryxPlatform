@@ -2,14 +2,16 @@ const ethers = require('ethers')
 const { setup, stringToBytes32, stringToBytes, Contract } = require('./utils')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
-let MatryxTournament, MatryxRound, platform, token, wallet
+let MatryxTournament, MatryxRound, MatryxSubmission, platform, token, wallet
 
 const genId = length => new Array(length).fill(0).map(() => Math.floor(36 * Math.random()).toString(36)).join('')
+const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * Math.random()).toString(16)).join('')
 
 const init = async () => {
   const data = await setup(artifacts, web3, 0)
   MatryxTournament = data.MatryxTournament
   MatryxRound = data.MatryxRound
+  MatryxSubmission = data.MatryxSubmission
   wallet = data.wallet
   platform = data.platform
   token = data.token
@@ -51,7 +53,7 @@ const createTournament = async (bounty, roundData, accountNumber) => {
 
   const address = await platform.allTournaments(count)
   const tournament = Contract(address, MatryxTournament, accountNumber)
-  console.log('Tournament: ' + address)
+  console.log('Tournament created: ' + address)
 
   return tournament
 }
@@ -66,11 +68,12 @@ const createSubmission = async (tournament, accountNumber) => {
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
 
+  const title = stringToBytes32('A submission ' + genId(6), 3)
   const descriptionHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
   const fileHash = stringToBytes32('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g', 2)
 
   const submissionData = {
-    title: 'A submission ' + genId(6),
+    title,
     descriptionHash,
     fileHash,
     timeSubmitted: 0,
@@ -78,15 +81,50 @@ const createSubmission = async (tournament, accountNumber) => {
   }
 
   const contribsAndRefs = {
-    contributors: ['0x0123456789012345678901234567890123456789'],
-    contributorRewardDistribution: [1],
-    references: ['0x0123456789012345678901234567890123456789']
+    contributors: new Array(0).fill(0).map(r => genAddress()),
+    contributorRewardDistribution: new Array(0).fill(1),
+    references: new Array(0).fill(0).map(r => genAddress())
   }
 
   let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
   console.log('Submission hash:', tx.hash)
 
-  console.log('Submission created')
+  const [_, roundAddress] = await tournament.currentRound()
+  const round = Contract(roundAddress, MatryxRound)
+  const submissions = await round.getSubmissions()
+  const submissionAddress = submissions.pop()
+  const submission = Contract(submissionAddress, MatryxSubmission)
+
+  console.log('Submission created:', submission.address)
+  return submission
+}
+
+const updateSubmission = async submission => {
+  const modData = {
+    title: stringToBytes32('AAAAAA', 3),
+    descriptionHash: stringToBytes32('BBBBBB', 2),
+    fileHash: stringToBytes32('CCCCCC', 2)
+  }
+
+  await submission.updateData(modData)
+  console.log('Submission updated data:', submission.address)
+
+  const conModData = {
+    contributorsToAdd: new Array(3).fill(0).map(() => genAddress()),
+    contributorRewardDistribution: new Array(3).fill(1),
+    contributorsToRemove: []
+  }
+
+  await submission.updateContributors(conModData)
+  console.log('Submission updated cons:', submission.address)
+
+  const refModData = {
+    referencesToAdd: new Array(3).fill(0).map(() => genAddress()),
+    referencesToRemove: []
+  }
+
+  await submission.updateReferences(refModData)
+  console.log('Submission updated refs:', submission.address)
 }
 
 const logSubmissions = async tournament => {
@@ -120,13 +158,14 @@ module.exports = async exit => {
     await init()
     let roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      end: Math.floor(Date.now() / 1000) + 60,
       reviewPeriodDuration: 600,
       bounty: web3.toWei(5),
       closed: false
     }
-    const tournament = await createTournament(web3.toWei(10), roundData, 0)
-    await createSubmission(tournament, 1)
+    const tournament = await createTournament(web3.toWei(10), roundData, 1)
+    const submission = await createSubmission(tournament, 0)
+    // await updateSubmission(submission)
     // await createSubmission(tournament, 2)
     // await createSubmission(tournament, 3)
     // const roundTwoData = {
