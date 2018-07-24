@@ -1,10 +1,15 @@
 const ethers = require('ethers')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
+const bip39 = require('bip39') // npm i -S bip39
+const ethUtil = require('ethereumjs-util')
+const hdkey = require('ethereumjs-wallet/hdkey')
+var path = require("path");
+
 // key from ganache
 const keys = [
-  '0x2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea',
-  '0x67a8bc7c12985775e9ab2b1bc217a9c4eff822f93a6f388021e30431d26cb3d3',
+  '0xCF244583D47C45F8C8C14D8C7111271C94147B4A513861CD81887B037496AC10',
+  '0xCF244583D47C45F8C8C14D8C7111271C94147B4A513861CD81887B037496AC10',
   '0x42811f2725f3c7a7608535fba191ea9a167909883f1e76e038c3168446fbc1bc',
   '0xb1744eb5862a044da11d677a590e236cddb2eda68a9aa4afaeddab797c75ef58',
   '0xcf256f53446df317d94876f8b02b279133ea8c18659635b109cc049f8a59371f',
@@ -14,6 +19,66 @@ const keys = [
   '0x2c60947d758af4a091f51ae10ef2e101b2aaa80a194a1219c0eb584ce4720064',
   '0xa9a763679fdbe3e245a92dbaaebbb4f1184165de58a13869f8a64e8526c112ef'
 ]
+
+var content;
+//Change to the correct parent folder that holds mnemonic
+fs.readFile('../../keys/mnemonic.txt', 'utf8', (err, data) => {
+  if (err) throw err;
+  //console.log(data)
+  content = data;
+});
+  
+const getAccount = (mnemonic, accountNumber) =>
+{
+    //Converting to Seed
+    var seed = bip39.mnemonicToSeed(mnemonic)
+    //Creates wallet instance based on the seed
+    const root = hdkey.fromMasterSeed(seed)
+    //Gets the private key string of the root wallet instance
+    const masterPrivateKey = root._hdkey._privateKey.toString('hex')
+    //Derives address of the accounts
+    const addrNode = root.derivePath("m/44'/60'/0'/0/" + accountNumber.toString())
+    //Private key of the account
+    const privKey = "0x" + addrNode._hdkey._privateKey.toString('hex')
+    //Generates public key from private key
+    const pubKey = ethUtil.privateToPublic(addrNode._hdkey._privateKey)
+    //public key to address
+    const addr = "0x" + ethUtil.publicToAddress(pubKey).toString('hex')
+    return {address: addr, privateKey: privKey.toString('hex')}
+}
+
+//getAccounts(content,0,9)
+const getAccounts = (mnemonic, startIndex, endIndex) =>
+{
+    var seed = bip39.mnemonicToSeed(mnemonic)
+    const root = hdkey.fromMasterSeed(seed)
+    const masterPrivateKey = root._hdkey._privateKey.toString('hex')
+
+    var addressPrivateKeyPairs = []
+    for(var i = startIndex; i <= endIndex; i++)
+    {
+        const addrNode = root.derivePath("m/44'/60'/0'/0/" + i.toString())
+        const privKey = "0x" + addrNode._hdkey._privateKey.toString('hex')
+        const pubKey = ethUtil.privateToPublic(addrNode._hdkey._privateKey)
+        const addr = "0x" + ethUtil.publicToAddress(pubKey).toString('hex')
+
+        addressPrivateKeyPairs.push([addr, privKey.toString('hex')])
+    }
+    console.log("\n")
+    console.log("Available Accounts\n==================")
+    for(var i = startIndex; i <= endIndex; i++) 
+    {
+        console.log("("+i+") "+addressPrivateKeyPairs[i][0])
+    }
+
+    console.log("Private Keys\n==================")
+    for(var i = startIndex; i <= endIndex; i++) 
+    {
+        console.log("("+i+") "+addressPrivateKeyPairs[i][1].substring(2))
+    }
+    console.log("\n")
+    return addressPrivateKeyPairs;
+}
 
 function Contract(address, { abi }, accountNum = 0) {
   let data = {
@@ -81,6 +146,7 @@ module.exports = {
 
     if (!hasPeer) {
       console.log('\nSetting up account:', account)
+      
       await platform.createPeer({ gasLimit: 4.5e6 })
 
       const balance = await token.balanceOf(account) / 1e18 | 0
