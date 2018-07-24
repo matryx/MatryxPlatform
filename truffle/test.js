@@ -24,18 +24,15 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   console.log("Platform using account", platform.wallet.address)
 
   const suffix = ('0' + (count + 1)).substr(-2)
+  const category = stringToBytes('math')
   const title = stringToBytes32('Test Tournament ' + suffix, 3)
   const descriptionHash = stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2)
   const fileHash = stringToBytes32('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2)
   const tournamentData = {
-    category: 'math',
-    title_1: title[0],
-    title_2: title[1],
-    title_3: title[2],
-    descriptionHash_1: descriptionHash[0],
-    descriptionHash_2: descriptionHash[1],
-    fileHash_1: fileHash[0],
-    fileHash_2: fileHash[1],
+    category,
+    title,
+    descriptionHash,
+    fileHash,
     initialBounty: bounty,
     entryFee: web3.toWei(2)
   }
@@ -48,7 +45,7 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   //   bounty
   // }
 
-  let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
+  let tx = await platform.createJTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
   console.log('Tournament hash:', tx.hash)
 
   const address = await platform.allTournaments(count)
@@ -164,7 +161,7 @@ module.exports = async exit => {
       closed: false
     }
     const tournament = await createTournament(web3.toWei(10), roundData, 1)
-    const submission = await createSubmission(tournament, 0)
+    // const submission = await createSubmission(tournament, 0)
     // await updateSubmission(submission)
     // await createSubmission(tournament, 2)
     // await createSubmission(tournament, 3)
@@ -176,7 +173,7 @@ module.exports = async exit => {
     //   }
     // const submissions = await logSubmissions(tournament);
     // await selectWinnersWhenInReview(tournament, 0, submissions, submissions.map(s => 1), roundTwoData, 0)
-    await logSubmissions(tournament)
+    // await logSubmissions(tournament)
   } catch (err) {
     console.log(err.message)
   } finally {

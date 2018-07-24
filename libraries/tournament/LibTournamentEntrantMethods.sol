@@ -54,7 +54,6 @@ library LibTournamentEntrantMethods
     function returnEntryFeeToEntrant(LibTournamentStateManagement.StateData storage stateData, LibTournamentStateManagement.EntryData storage entryData, address _entrant, address matryxTokenAddress) internal
     {
         // Make sure entrants don't withdraw their entry fee early
-        uint256 currentState = LibTournamentStateManagement.getState(stateData);
         (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
         require(matryxToken.transfer(_entrant, entryData.addressToEntryFeePaid[_entrant].value));

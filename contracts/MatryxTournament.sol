@@ -34,9 +34,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     //Tournament identification
     LibConstruction.TournamentData data;
-    // Timing and State
-    uint256 public timeCreated;
-    uint256 public tournamentOpenedTime;
     LibTournamentStateManagement.StateData stateData;
     // Submission tracking
     LibTournamentStateManagement.EntryData entryData;
@@ -46,18 +43,17 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     // bytes4 fnSelector_createRound = bytes4(keccak256("createRound(uint256)"));
     // bytes4 fnSelector_startRound = bytes4(keccak256("startRound(uint256)"));
 
-    constructor(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _platformAddress, address _matryxRoundFactoryAddress, address _owner)
+    constructor(address _owner, address _platformAddress, address _matryxRoundFactoryAddress, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData)
     {
         //Clean inputs
         require(_owner != 0x0);
-        require(tournamentData.title_1 != 0x0);
+        require(tournamentData.title[0] != 0x0);
         require(tournamentData.initialBounty > 0);
         require(_matryxRoundFactoryAddress != 0x0);
 
         platformAddress = _platformAddress;
         matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
 
-        timeCreated = now;
         // Identification
         owner = _owner;
         data = tournamentData;
@@ -249,43 +245,28 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return stateData.rounds;
     }
 
-    function getTitle() public view returns (bytes32[3] _title)
-    {
-        bytes32[3] memory title;
-        title[0] = data.title_1;
-        title[1] = data.title_2;
-        title[2] = data.title_3;
-        return title;
-    }
-
-    function getCategory() public view returns (string _category)
+    function getCategory() public view returns (bytes32 _category)
     {
         // return IMatryxPlatform(platformAddress).hashForCategory(categoryHash);
         // TODO: Fix me
         return data.category;
     }
 
-    function getOwner() public view returns (address _owner)
+    function getTitle() public view returns (bytes32[3] _title)
     {
-        return owner;
+        return data.title;
     }
 
     // @dev Returns the external address of the tournament.
     // @return _descriptionHash Off-chain content hash of tournament details (ipfs hash)
     function getDescriptionHash() public view returns (bytes32[2] _descriptionHash)
     {
-        bytes32[2] memory descriptionHash;
-        descriptionHash[0] = data.descriptionHash_1;
-        descriptionHash[1] = data.descriptionHash_2;
-        return descriptionHash;
+        return data.descriptionHash;
     }
 
     function getFileHash() public view returns (bytes32[2] _fileHash)
     {
-        bytes32[2] memory fileHash;
-        fileHash[0] = data.fileHash_1;
-        fileHash[1] = data.fileHash_2;
-        return fileHash;
+        return data.fileHash;
     }
 
     /// @dev Returns the current round number.
@@ -307,6 +288,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     {
         IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
         return token.balanceOf(address(this)).sub(stateData.entryFeesTotal);
+    }
+
+    /// @dev Returns the fee in MTX to be payed by a prospective entrant.
+    /// @return Entry fee for this tournament.
+    function getEntryFee() public view returns (uint256)
+    {
+        return data.entryFee;
     }
 
     ///@dev Returns the round that was created implicitly for the user after they chose the "DoNothing" option
@@ -341,9 +329,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Setter Methods
      */
 
-    function update(LibConstruction.TournamentModificationData tournamentData, string _category) public onlyOwner
+    function update(LibConstruction.TournamentModificationData tournamentData) public onlyOwner
     {
-        data.update(tournamentData, _category, platformAddress);
+        data.update(tournamentData, platformAddress);
     }
 
     function addFunds(uint256 _fundsToAdd) public
@@ -438,13 +426,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function enterUserInTournament(address _entrantAddress) public onlyPlatform whileTournamentOpen returns (bool _success)
     {
         return LibTournamentEntrantMethods.enterUserInTournament(data, stateData, entryData, _entrantAddress);
-    }
-
-    /// @dev Returns the fee in MTX to be payed by a prospective entrant.
-    /// @return Entry fee for this tournament.
-    function getEntryFee() public view returns (uint256)
-    {
-        return data.entryFee;
     }
 
     function collectMyEntryFee() public

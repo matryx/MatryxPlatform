@@ -12,7 +12,7 @@ interface IMatryxTournament
     function getState() public view returns (uint256);
     function getPlatform() public view returns (address _platformAddress);
     function getTitle() public view returns (bytes32[3] _title);
-    function getCategory() public view returns (string _category);
+    function getCategory() public view returns (bytes32 _category);
     function getDescriptionHash() public view returns (bytes32[2] _descriptionHash);
     function getFileHash() public view returns (bytes32[2] _fileHash);
     function getData() public view returns (LibConstruction.TournamentData _data);
@@ -22,7 +22,7 @@ interface IMatryxTournament
     function mySubmissions() public view returns (address[]);
     function submissionCount() public view returns (uint256 _submissionCount);
     function entrantCount() public view returns (uint256 _entrantCount);
-    function update(LibConstruction.TournamentModificationData tournamentData, string _category) public;
+    function update(LibConstruction.TournamentModificationData tournamentData) public;
     function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public;
     function editGhostRound(LibConstruction.RoundData _roundData) public;
     function allocateMoreToRound(uint256 _mtxAllocation) public;

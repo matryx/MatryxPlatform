@@ -33,9 +33,9 @@ contract MatryxPlatform is Ownable {
     // bytes32 public hashOfLastCategory;
     // mapping(uint256=>bytes32) public  topCategoryByCount;
     // mapping(bytes32=>category) public categoryIterator;
-    string[] public categoryList;
+    bytes32[] public categoryList;
     mapping(bytes32=>bool) categoryExists;
-    mapping(bytes32=>address[]) categoryHashToTournamentList;
+    mapping(bytes32=>address[]) categoryToTournamentList;
     mapping(bytes32=>mapping(address=>bool)) tournamentExistsInCategory;
     mapping(bytes32=>uint256) emptyCountByCategory;
     mapping(address=>CategoryInfo) tournamentAddressToCategoryInfo;
@@ -75,30 +75,17 @@ contract MatryxPlatform is Ownable {
     struct CategoryInfo
     {
         uint256 index;
-        string category;
+        bytes32 category;
     }
 
     /*
     * Events
     */
-    event TournamentCreated(string _discipline, address _owner, address _tournamentAddress, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee);
+    event TournamentCreated(bytes32 _discipline, address _owner, address _tournamentAddress, bytes32[3] _tournamentName, bytes32[2] _descriptionHash, uint256 _MTXReward, uint256 _entryFee);
     event TournamentOpened(address _tournamentAddress, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee);
     event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _MTXReward);
     event UserEnteredTournament(address _entrant, address _tournamentAddress);
     event QueryID(string queryID);
-
-    /// @dev Allows tournaments to invoke tournamentOpened events on the platform.
-    /// @param _tournamentName_1 First part of the tournament name.
-    /// @param _tournamentName_2 Second part of the tournament name.
-    /// @param _tournamentName_3 Third part of the tournament name.
-    /// @param _externalAddress_1 First part of the external address of the tournament.
-    /// @param _externalAddress_2 Second part of the external address of the tournament.
-    /// @param _MTXReward Reward for winning the tournament.
-    /// @param _entryFee Fee for entering into the tournament.
-    function invokeTournamentOpenedEvent(bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee) public onlyTournament
-    {
-        emit TournamentOpened(msg.sender, _tournamentName_1, _tournamentName_2, _tournamentName_3, _externalAddress_1, _externalAddress_2, _MTXReward, _entryFee);
-    }
 
     /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
     /// @param _finalRoundNumber Index of the round containing the winning submission.
@@ -249,64 +236,61 @@ contract MatryxPlatform is Ownable {
         delete ownerToSubmissionArray[owner][submissionIndex];
         delete ownerToSubmissionToSubmissionIndex[owner][_submissionAddress];
 
-        IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, owner);
+        //IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, owner);
         return true;
     }
 
-    function addTournamentToCategory(address _tournamentAddress, string _category) public onlyTournamentOwnerOrPlatform(_tournamentAddress)
+    function addTournamentToCategory(address _tournamentAddress, bytes32 _category) public onlyTournamentOwnerOrPlatform(_tournamentAddress)
     {
-        bytes32 categoryHash = keccak256(_category);
-        if(categoryExists[categoryHash] == false)
+        if(categoryExists[_category] == false)
         {
             categoryList.push(_category);
         }
 
-        if(tournamentExistsInCategory[categoryHash][_tournamentAddress] == false)
+        if(tournamentExistsInCategory[_category][_tournamentAddress] == false)
         {
-            tournamentExistsInCategory[categoryHash][_tournamentAddress] = true;
+            tournamentExistsInCategory[_category][_tournamentAddress] = true;
             tournamentAddressToCategoryInfo[_tournamentAddress].category = _category;
-            tournamentAddressToCategoryInfo[_tournamentAddress].index = (categoryHashToTournamentList[categoryHash]).length;
-            categoryHashToTournamentList[categoryHash].push(_tournamentAddress);
+            tournamentAddressToCategoryInfo[_tournamentAddress].index = (categoryToTournamentList[_category]).length;
+            categoryToTournamentList[_category].push(_tournamentAddress);
         }
     }
 
-    function removeTournamentFromCategory(address _tournamentAddress, string _category) public onlyTournamentOwnerOrPlatform(_tournamentAddress)
+    function removeTournamentFromCategory(address _tournamentAddress, bytes32 _category) public onlyTournamentOwnerOrPlatform(_tournamentAddress)
     {
-        bytes32 categoryHash = keccak256(_category);
-        if(tournamentExistsInCategory[categoryHash][_tournamentAddress])
+        if(tournamentExistsInCategory[_category][_tournamentAddress])
         {
             // It's there! Let's remove it
             uint256 indexInCategoryList = tournamentAddressToCategoryInfo[_tournamentAddress].index;
-            tournamentExistsInCategory[categoryHash][_tournamentAddress] = false;
-            categoryHashToTournamentList[categoryHash][indexInCategoryList] = 0x0;
+            tournamentExistsInCategory[_category][_tournamentAddress] = false;
+            categoryToTournamentList[_category][indexInCategoryList] = 0x0;
             tournamentAddressToCategoryInfo[_tournamentAddress].index = 0;
-            emptyCountByCategory[categoryHash] = emptyCountByCategory[categoryHash].add(1);
+            emptyCountByCategory[_category] = emptyCountByCategory[_category].add(1);
         }
     }
 
-    function switchTournamentCategory(address _tournamentAddress, string _oldCategory, string _newCategory) public onlyTournamentOwnerOrPlatform(_tournamentAddress)
+    function switchTournamentCategory(address _tournamentAddress, bytes32 _oldCategory, bytes32 _newCategory) public onlyTournamentOwnerOrPlatform(_tournamentAddress)
     {
         removeTournamentFromCategory(_tournamentAddress, _oldCategory);
         addTournamentToCategory(_tournamentAddress, _newCategory);
     }
 
-    function getTournamentsByCategory(string _category) external view returns (address[])
+    function getTournamentsByCategory(bytes32 _category) external view returns (address[])
     {
-        return categoryHashToTournamentList[keccak256(_category)];
+        return categoryToTournamentList[keccak256(_category)];
     }
 
-    function getCategoryCount(string _category) external view returns (uint256)
+    function getCategoryCount(bytes32 _category) external view returns (uint256)
     {
-        bytes32 categoryHash = keccak256(_category);
-        return categoryHashToTournamentList[categoryHash].length - emptyCountByCategory[categoryHash];
+        return categoryToTournamentList[_category].length - emptyCountByCategory[_category];
     }
 
-    function getCategoryByIndex(uint256 _index) public view returns (string)
+    function getCategoryByIndex(uint256 _index) public view returns (bytes32)
     {
         return categoryList[_index];
     }
 
-    function getAllCategories() public view returns (uint256, string[])
+    function getAllCategories() public view returns (uint256, bytes32[])
     {
         return (categoryList.length, categoryList);
     }
@@ -364,10 +348,29 @@ contract MatryxPlatform is Ownable {
     {
         IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
         address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
-        emit TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title_1, tournamentData.title_2, tournamentData.title_3, tournamentData.descriptionHash_1, tournamentData.descriptionHash_2, tournamentData.initialBounty, tournamentData.entryFee);
+        emit TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title, tournamentData.descriptionHash, tournamentData.initialBounty, tournamentData.entryFee);
 
         require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.initialBounty));
         IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
+        // update data structures
+        allTournaments.push(newTournament);
+        tournamentExists[newTournament] = true;
+        updateUsersTournaments(msg.sender, newTournament);
+
+        addTournamentToCategory(newTournament, tournamentData.category);
+
+        return newTournament;
+    }
+
+    function createJTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress)
+    {
+        IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
+        address newTournament = tournamentFactory.createJTournament(tournamentData, roundData, msg.sender);
+
+        emit TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title, tournamentData.descriptionHash, tournamentData.initialBounty, tournamentData.entryFee);
+
+        require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.initialBounty));
+        // IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
         // update data structures
         allTournaments.push(newTournament);
         tournamentExists[newTournament] = true;

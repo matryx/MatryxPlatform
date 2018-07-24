@@ -19,29 +19,25 @@ library LibTournamentAdminMethods
     event NewRound(uint256 _startTime, uint256 _endTime, uint256 _reviewPeriodDuration, address _roundAddress, uint256 _roundNumber);
     event RoundWinnersChosen(address[] _submissionAddresses);
 
-    function update(LibConstruction.TournamentData storage self, LibConstruction.TournamentModificationData tournamentData, string _category, address platformAddress) public
+    function update(LibConstruction.TournamentData storage self, LibConstruction.TournamentModificationData tournamentData, address platformAddress) public
     {
         // TODO: Update the category on the platform
-        if(_category.toSlice().empty() == false)
+        if(tournamentData.category != 0x0)
         {
-            IMatryxPlatform(platformAddress).switchTournamentCategory(address(this), self.category, _category);
-            self.category = _category;
+            IMatryxPlatform(platformAddress).switchTournamentCategory(address(this), self.category, tournamentData.category);
+            self.category = tournamentData.category;
         }
-        if(tournamentData.title_1 != 0x0)
+        if(tournamentData.title[0] != 0x0)
         {
-            self.title_1 = tournamentData.title_1;
-            self.title_2 = tournamentData.title_2;
-            self.title_2 = tournamentData.title_3;
+            self.title = tournamentData.title;
         }
-        if(tournamentData.descriptionHash_1 != 0x0)
+        if(tournamentData.descriptionHash[0] != 0x0)
         {
-            self.descriptionHash_1 = tournamentData.descriptionHash_1;
-            self.descriptionHash_2 = tournamentData.descriptionHash_2;
+            self.descriptionHash = tournamentData.descriptionHash;
         }
-        if(tournamentData.fileHash_1 != 0x0)
+        if(tournamentData.fileHash[0] != 0x0)
         {
-            self.fileHash_1 = tournamentData.fileHash_1;
-            self.fileHash_2 = tournamentData.fileHash_2;
+            self.fileHash = tournamentData.fileHash;
         }
         if(tournamentData.entryFeeChanged)
         {

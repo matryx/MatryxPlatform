@@ -37,7 +37,7 @@ library LibTournamentStateManagement
     ///      numberOfSubmissions: Total number of submissions in the tournament
     ///      entrantToSubmissions: Mapping from an address of an entrant to their submissions
     ///      entrantToSubmissionToSubmissionIndex: Mapping from an entrant to a submission to its index
-    ///      addressToEntryFeePaid: Whether or not this address hs paid the tournament entry fee
+    ///      addressToEntryFeePaid: Whether or not this address has paid the tournament entry fee
     ///      numberOfEntrants: Total number of entrants in the tournament
     ///      winnersChosen: Whether or not winners have already been chosen for this round
     struct EntryData

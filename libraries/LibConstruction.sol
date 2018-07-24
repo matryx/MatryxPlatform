@@ -25,27 +25,20 @@ library LibConstruction
 
     struct TournamentData
     {
-        string category;
-        bytes32 title_1;
-        bytes32 title_2;
-        bytes32 title_3;
-        bytes32 descriptionHash_1;
-        bytes32 descriptionHash_2;
-        bytes32 fileHash_1;
-        bytes32 fileHash_2;
+        bytes32 category;
+        bytes32[3] title;
+        bytes32[2] descriptionHash;
+        bytes32[2] fileHash;
         uint256 initialBounty;
         uint256 entryFee;
     }
 
     struct TournamentModificationData
     {
-        bytes32 title_1;
-        bytes32 title_2;
-        bytes32 title_3;
-        bytes32 descriptionHash_1;
-        bytes32 descriptionHash_2;
-        bytes32 fileHash_1;
-        bytes32 fileHash_2;
+        bytes32 category;
+        bytes32[3] title;
+        bytes32[2] descriptionHash;
+        bytes32[2] fileHash;
         uint256 entryFee;
         bool entryFeeChanged;
     }
