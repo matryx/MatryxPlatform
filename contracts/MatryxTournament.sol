@@ -297,14 +297,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return data.entryFee;
     }
 
-    ///@dev Returns the round that was created implicitly for the user after they chose the "DoNothing" option
-    ///     when choosing their round winners.
-    ///@return _ghostAddress Address of the upcoming round created during winner selection
-    function getGhostRound() internal returns (uint256 _index, address _ghostAddress)
-    {
-        return LibTournamentStateManagement.getGhostRound(stateData);
-    }
-
     /// @dev Returns all of the sender's submissions to this tournament.
     /// @return (_roundIndices[], _submissionIndices[]) Locations of the sender's submissions.
     function mySubmissions() public view returns (address[])

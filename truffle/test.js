@@ -84,13 +84,14 @@ const createSubmission = async (tournament, accountNumber) => {
   }
 
   let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
-  console.log('Submission hash:', tx.hash)
+  console.log(tx)
+  // console.log('Submission hash:', tx.hash)
 
-  const [_, roundAddress] = await tournament.currentRound()
-  const round = Contract(roundAddress, MatryxRound)
-  const submissions = await round.getSubmissions()
-  const submissionAddress = submissions.pop()
-  const submission = Contract(submissionAddress, MatryxSubmission)
+  // const [_, roundAddress] = await tournament.currentRound()
+  // const round = Contract(roundAddress, MatryxRound)
+  // const submissions = await round.getSubmissions()
+  // const submissionAddress = submissions.pop()
+  // const submission = Contract(submissionAddress, MatryxSubmission)
 
   console.log('Submission created:', submission.address)
   return submission
@@ -161,7 +162,7 @@ module.exports = async exit => {
       closed: false
     }
     const tournament = await createTournament(web3.toWei(10), roundData, 1)
-    // const submission = await createSubmission(tournament, 0)
+    const submission = await createSubmission(tournament, 0)
     // await updateSubmission(submission)
     // await createSubmission(tournament, 2)
     // await createSubmission(tournament, 3)
