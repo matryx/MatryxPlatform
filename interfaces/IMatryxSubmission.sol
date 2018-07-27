@@ -28,7 +28,7 @@ interface IMatryxSubmission {
   function removeReferenceApproval(address _reference) public;
   function flagMissingReference(address _reference) public;
   function removeMissingReferenceFlag(address _reference) public;
-  function setContributorsAndReferences(LibConstruction.ContributorsAndReferences _contribsAndRefs) public;
+  // function setContributorsAndReferences(LibConstruction.ContributorsAndReferences _contribsAndRefs) public;
   function addContributor(address _contributor, uint128 _bountyAllocation) public;
   function addContributors(address[] _contributorsToAdd, uint128[] _distribution) public;
   function removeContributor(uint256 _contributorIndex) public;

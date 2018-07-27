@@ -109,6 +109,8 @@ contract JMatryxTournament {
             case 0x2fc1f190 { getPlatform() }                         // getPlatform()
             case 0x10fe9ae8 { return32(getTokenAddress(sigOffset)) }  // getTokenAddress()
 
+            case 0x4644c51b {} // TODO invokeSubmissionCreatedEvent
+
             // Tournament data
             case 0x52c01fab { return32(isEntrant()) }                 // isEntrant(address)
             case 0x8c1fc0bb { return32(isRound()) }                   // getData()
@@ -144,6 +146,9 @@ contract JMatryxTournament {
                 let sig := or(mul(div(calldataload(0), sigOffset), sigOffset), 0xdead)
                 mstore(ptr, sig)
                 log0(ptr, 0x20)
+                // let size := calldatasize()
+                // calldatacopy(ptr, 0, size)
+                // log0(ptr, size)
                 return(ptr, 0x20)
             }
 
@@ -233,7 +238,9 @@ contract JMatryxTournament {
 
             function getState(offset) -> state {
                 let ptr := 0x0
-                mstore(ptr, mul(0x5726b16f, offset)) // getState(LibTournamentStateManagement.StateData storage)
+
+                // getState(LibTournamentStateManagement.StateData storage)
+                mstore(ptr, mul(0x5726b16f, offset))
                 mstore(add(ptr, 0x04), stateData_slot)
 
                 // call LibTournamentStateManagement.getState
@@ -314,7 +321,9 @@ contract JMatryxTournament {
 
             function currentRound(offset) -> m_currentRound {
                 let ptr := 0x0
-                mstore(ptr, mul(0x0386922b, offset)) // currentRound(LibTournamentStateManagement.StateData storage)
+
+                // currentRound(LibTournamentStateManagement.StateData storage)
+                mstore(ptr, mul(0x0386922b, offset))
                 mstore(add(ptr, 0x04), stateData_slot)
 
                 require(delegatecall(gas(), LibTournamentStateManagement, ptr, 0x24, ptr, 0x40))
@@ -336,7 +345,8 @@ contract JMatryxTournament {
                 let ptr := mload(0x40)
                 let mem := ptr
 
-                mstore(ptr, mul(0xb43475ff, offset)) // update(LibConstruction.TournamentData storage,LibConstruction.TournamentModificationData,address)
+                // update(LibConstruction.TournamentData storage,LibConstruction.TournamentModificationData,address)
+                mstore(ptr, mul(0xb43475ff, offset))
                 mstore(add(ptr, 0x04), data_slot)
                 ptr := add(ptr, 0x24)
 
@@ -372,7 +382,9 @@ contract JMatryxTournament {
 
             function jumpToNextRound(offset) {
                 let ptr := mload(0x40)
-                mstore(ptr, mul(0xaf410949, offset)) // jumpToNextRound(LibTournamentStateManagement.StateData storage
+
+                // jumpToNextRound(LibTournamentStateManagement.StateData storage
+                mstore(ptr, mul(0xaf410949, offset))
                 mstore(add(ptr, 0x04), stateData_slot)
                 require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0x24, 0, 0x20))
             }
@@ -382,7 +394,8 @@ contract JMatryxTournament {
                 let ptr := mload(0x40)
                 let token := getTokenAddress(offset)
 
-                mstore(ptr, mul(0xa91d59d6, offset)) // stopTournament(LibTournamentStateManagement.StateData storage,address,address)
+                // stopTournament(LibTournamentStateManagement.StateData storage,address,address)
+                mstore(ptr, mul(0xa91d59d6, offset))
                 mstore(add(ptr, 0x04), data_slot)
                 mstore(add(ptr, 0x24), sload(platform_slot))
                 mstore(add(ptr, 0x44), token)
@@ -394,7 +407,8 @@ contract JMatryxTournament {
                 let token := getTokenAddress(offset)
                 let ptr := mload(0x40)
 
-                mstore(ptr, mul(0xcfa037dc, offset)) // createRound(LibTournamentStateManagement.StateData storage,address,address,address,LibConstruction.RoundData,bool)
+                // createRound(LibTournamentStateManagement.StateData storage,address,address,address,LibConstruction.RoundData,bool)
+                mstore(ptr, mul(0xcfa037dc, offset))
                 mstore(add(ptr, 0x04), stateData_slot)
                 mstore(add(ptr, 0x24), sload(platform_slot))
                 mstore(add(ptr, 0x44), token)
@@ -417,31 +431,69 @@ contract JMatryxTournament {
                 let round := mload(add(currentRound(offset), 0x20))
 
                 let ptr := mload(0x40)
-                mstore(ptr, mul(0x09d1ebd0, offset)) // createSubmission(address,address,LibTournamentStateManagement.EntryData storage,LibConstruction.SubmissionData)
+                let ret := ptr
+
+                // createSubmission(address,address,LibTournamentStateManagement.EntryData storage,LibConstruction.SubmissionData)
+                mstore(ptr, mul(0x09d1ebd0, offset))
                 mstore(add(ptr, 0x04), sload(platform_slot))
                 mstore(add(ptr, 0x24), round)
                 mstore(add(ptr, 0x44), entryData_slot)
 
                 // load in submissionData struct
-                mstore(add(ptr, 0x64), arg(0))  // submissionData.title[0]
-                mstore(add(ptr, 0x84), arg(1))  // submissionData.title[1]
-                mstore(add(ptr, 0xa4), arg(2))  // submissionData.title[2]
-                mstore(add(ptr, 0xc4), arg(3))  // submissionData.descriptionHash[0]
-                mstore(add(ptr, 0xe4), arg(4))  // submissionData.descriptionHash[1]
-                mstore(add(ptr, 0x104), arg(5)) // submissionData.fileHash[0]
-                mstore(add(ptr, 0x124), arg(6)) // submissionData.fileHash[1]
-                mstore(add(ptr, 0x144), arg(7)) // submissionData.timeSubmitted
-                mstore(add(ptr, 0x164), arg(8)) // submissionData.timeUpdated
+                calldatacopy(add(ptr, 0x064), 0x04, 0x120)
 
                 // call LibTournamentEntrantMethods.createSubmission and get new submission address
-                require(delegatecall(gas(), LibTournamentEntrantMethods, ptr, 0x184, ptr, 0x20))
+                require(delegatecall(gas(), LibTournamentEntrantMethods, ptr, 0x184, ret, 0x20))
 
                 // add contributors and references
-                let clen := arg(9)  // contribsAndRefs.contributors
-                let rlen := arg(11) // contribsAndRefs.references
-                if or(gt(clen, 0), gt(rlen, 0))
+                let car_ptr := add(0x04, arg(9))                    // contribsAndRefs position in calldata
+                let clen_offset := calldataload(car_ptr)            // offset of contributors.length
+                let dlen_offset := calldataload(add(car_ptr, 0x20)) // offset of contributorRewardDist.length
+                let rlen_offset := calldataload(add(car_ptr, 0x40)) // offset of references.length
 
-                return(ptr, 0x20)
+                let clen := calldataload(add(car_ptr, clen_offset)) // contribsAndRefs.contributors
+                let dlen := calldataload(add(car_ptr, dlen_offset)) // contribsAndRefs.contributorRewardDistribution
+                let rlen := calldataload(add(car_ptr, rlen_offset)) // contribsAndRefs.references
+
+                // mstore(0, clen)
+                // log0(0, 0x20)
+                // mstore(0x20, dlen)
+                log0(ret, 0x20)
+
+                // if contribs or refs, call setContributorsAndReferences(contribsAndRefs)
+                // if or(gt(clen, 0), gt(rlen, 0)) {
+                //     require(eq(clen, dlen))
+
+                //     ptr := add(ptr, 0x20)                                     // free mem for arguments
+
+                //     // setContributorsAndReferences((address[],uint128[],address[]))
+                //     mstore(ptr, mul(0xb288e0c1, offset))
+                //     // ptr := add(ptr, 0x04)
+
+                //     // mstore(ptr,            add(ptr, clen_offset))
+                //     // mstore(add(ptr, 0x20), add(ptr, dlen_offset))
+                //     // mstore(add(ptr, 0x40), add(ptr, rlen_offset))
+
+                //     // let size := mul(add(add(add(clen, dlen), rlen), 3), 0x20) // size of struct
+                //     // calldatacopy(add(ptr, 0x60), car_ptr, size)               // copy car struct from calldata to mem
+
+                //     // log0(ret, 0x20)
+                //     // mstore(0, address())
+                //     // log0(0, 0x20)
+
+                //     // call MatryxSubmission(subAddress).setContributorsAndReferences(contribsAndRefs)
+                //     // let r := call(gas(), mload(ret), 0, sub(ptr, 0x04), add(0x64, size), 0, 0)
+                //     let r := call(gas(), mload(ret), 0, ptr, 0x04, 0, 0x20)
+                //     // (╯°□°）╯︵ ┻━┻
+                // }
+
+                ptr := add(ptr, 0x20)
+                mstore(ptr, mul(0xb288e0c1, offset))
+
+                let r := call(gas(), mload(ret), 0, ptr, 0x04, 0x0, 0x20)
+                log0(0, 0x20)
+
+                return(ret, 0x20)
             }
 
             // function withdrawFromAbandoned() {}
@@ -502,3 +554,140 @@ interface IJMatryxTournament {
     function isOwner(address sender) public view returns (bool _isOwner);
     function transferOwnership(address newOwner) public view;
 }
+
+/**
+struct Thing {
+    uint256 t;
+    uint256[] a;
+    uint256[] b;
+}
+
+library function (Thing t)
+
+[1,[7],[7]]
+
+calldata
+8f9992a1
+0000000000000000000000000000000000000000000000000000000000000020
+0000000000000000000000000000000000000000000000000000000000000001
+0000000000000000000000000000000000000000000000000000000000000060
+00000000000000000000000000000000000000000000000000000000000000a0
+0000000000000000000000000000000000000000000000000000000000000001
+0000000000000000000000000000000000000000000000000000000000000007
+0000000000000000000000000000000000000000000000000000000000000001
+0000000000000000000000000000000000000000000000000000000000000007
+
+memory
+  "0x0": "0000000000000000000000000000000000000000000000000000000000000000",
+ "0x20": "0000000000000000000000000000000000000000000000000000000000000000",
+ "0x40": "0000000000000000000000000000000000000000000000000000000000000120",
+ "0x60": "0000000000000000000000000000000000000000000000000000000000000000",
+ "0x80": "0000000000000000000000000000000000000000000000000000000000000001",
+ "0xa0": "00000000000000000000000000000000000000000000000000000000000000e0",
+ "0xc0": "0000000000000000000000000000000000000000000000000000000000000000",
+ "0xe0": "0000000000000000000000000000000000000000000000000000000000000001",
+"0x100": "0000000000000000000000000000000000000000000000000000000000000007"
+
+function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public constant returns (bool) -->
+[["0xa","0xb","0xc"] , ["0xd","0xe"] , ["0xf","0xaa"] , 5, 5], [["0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db","0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db","0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db"],[0,1,2],["0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db","0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db","0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db","0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db"]]
+function doSomethingWithSomeStructs(LibConstruction.SubmissionData _submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public constant returns (bool)
+memory:
+0x400: 05527cf90a000000000000000000000000000000000000000000000000000000
+0x420: 000000000b000000000000000000000000000000000000000000000000000000
+0x440: 000000000c000000000000000000000000000000000000000000000000000000
+0x460: 000000000d000000000000000000000000000000000000000000000000000000
+0x480: 000000000e000000000000000000000000000000000000000000000000000000
+0x4a0: 000000000f000000000000000000000000000000000000000000000000000000
+0x4c0: 00000000aa000000000000000000000000000000000000000000000000000000
+0x4e0: 0000000000000000000000000000000000000000000000000000000000000000
+0x500: 0000000500000000000000000000000000000000000000000000000000000000
+0x520: 0000000500000000000000000000000000000000000000000000000000000000
+0x540: 0000014000000000000000000000000000000000000000000000000000000000
+0x560: 0000006000000000000000000000000000000000000000000000000000000000
+0x580: 000000e000000000000000000000000000000000000000000000000000000000
+0x5a0: 0000016000000000000000000000000000000000000000000000000000000000
+0x5c0: 000000030000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
+0x5e0: 5364d2db0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
+0x600: 5364d2db0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
+0x620: 5364d2db00000000000000000000000000000000000000000000000000000000
+0x640: 0000000300000000000000000000000000000000000000000000000000000000
+0x660: 0000000000000000000000000000000000000000000000000000000000000000
+0x680: 0000000100000000000000000000000000000000000000000000000000000000
+0x6a0: 0000000200000000000000000000000000000000000000000000000000000000
+0x6c0: 000000040000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
+0x6e0: 5364d2db0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
+0x700: 5364d2db0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
+0x720: 5364d2db0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
+0x740: 5364d2db
+
+05527cf9
+0x000 0a00000000000000000000000000000000000000000000000000000000000000 // title[0]
+0x020 0b00000000000000000000000000000000000000000000000000000000000000 // title[1]
+0x040 0c00000000000000000000000000000000000000000000000000000000000000 // title[2]
+0x060 0d00000000000000000000000000000000000000000000000000000000000000 // descriptionHash[0]
+0x080 0e00000000000000000000000000000000000000000000000000000000000000 // descriptionHash[1]
+0x0a0 0f00000000000000000000000000000000000000000000000000000000000000 // fileHash[0]
+0x0c0 aa00000000000000000000000000000000000000000000000000000000000000 // fileHash[1]
+0x0e0 0000000000000000000000000000000000000000000000000000000000000005 // timeSubmitted
+0x100 0000000000000000000000000000000000000000000000000000000000000005 // timeUpdated
+
+0x120 0000000000000000000000000000000000000000000000000000000000000140 // pos of car
+0x140 0000000000000000000000000000000000000000000000000000000000000060 // con offset
+0x160 00000000000000000000000000000000000000000000000000000000000000e0 // conRew offset
+0x180 0000000000000000000000000000000000000000000000000000000000000160 // ref offset
+0x1a0 0000000000000000000000000000000000000000000000000000000000000003 // con len
+      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
+      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
+      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
+      0000000000000000000000000000000000000000000000000000000000000003 // conRew len
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000001
+      0000000000000000000000000000000000000000000000000000000000000002
+      0000000000000000000000000000000000000000000000000000000000000004 // ref len
+      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
+      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
+      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
+      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
+
+
+contract function (Thing t)
+
+[1,[2],[2]]
+
+inside call mem
+
+  "0x0": "0000000000000000000000000000000000000000000000000000000000000000
+ "0x20": "0000000000000000000000000000000000000000000000000000000000000000
+ "0x40": "0000000000000000000000000000000000000000000000000000000000000160
+ "0x60": "0000000000000000000000000000000000000000000000000000000000000000
+ "0x80": "0000000000000000000000000000000000000000000000000000000000000001 // t
+ "0xa0": "00000000000000000000000000000000000000000000000000000000000000e0 // a pos
+ "0xc0": "0000000000000000000000000000000000000000000000000000000000000120 // b pos
+ "0xe0": "0000000000000000000000000000000000000000000000000000000000000001 // a len
+"0x100": "0000000000000000000000000000000000000000000000000000000000000002
+"0x120": "0000000000000000000000000000000000000000000000000000000000000001 // b len
+"0x140": "0000000000000000000000000000000000000000000000000000000000000003
+
+[1,[7],[7]]
+inside calldata
+
+dc6ef131
+     0000000000000000000000000000000000000000000000000000000000000020 // Thing pos
+0x00 0000000000000000000000000000000000000000000000000000000000000001 // t
+0x20 0000000000000000000000000000000000000000000000000000000000000060 // a offset
+0x40 00000000000000000000000000000000000000000000000000000000000000a0 // b offset
+0x60 0000000000000000000000000000000000000000000000000000000000000001 // a len
+0x80 0000000000000000000000000000000000000000000000000000000000000007
+0xa0 0000000000000000000000000000000000000000000000000000000000000001 // b len
+0xc0 0000000000000000000000000000000000000000000000000000000000000007
+
+{
+	"0x80": "0000000000000000000000000000000000000000000000000000000000000001",
+	"0xa0": "00000000000000000000000000000000000000000000000000000000000000e0",
+	"0xc0": "0000000000000000000000000000000000000000000000000000000000000120",
+	"0xe0": "0000000000000000000000000000000000000000000000000000000000000001",
+	"0x100": "0000000000000000000000000000000000000000000000000000000000000007",
+	"0x120": "0000000000000000000000000000000000000000000000000000000000000001",
+	"0x140": "0000000000000000000000000000000000000000000000000000000000000007",
+}
+ */

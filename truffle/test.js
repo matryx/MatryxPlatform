@@ -78,20 +78,19 @@ const createSubmission = async (tournament, accountNumber) => {
   }
 
   const contribsAndRefs = {
-    contributors: new Array(0).fill(0).map(r => genAddress()),
-    contributorRewardDistribution: new Array(0).fill(1),
-    references: new Array(0).fill(0).map(r => genAddress())
+    contributors: new Array(5).fill(0).map(r => genAddress()),
+    contributorRewardDistribution: new Array(5).fill(1),
+    references: new Array(7).fill(0).map(r => genAddress())
   }
 
   let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
-  console.log(tx)
-  // console.log('Submission hash:', tx.hash)
+  console.log('Submission hash:', tx.hash)
 
-  // const [_, roundAddress] = await tournament.currentRound()
-  // const round = Contract(roundAddress, MatryxRound)
-  // const submissions = await round.getSubmissions()
-  // const submissionAddress = submissions.pop()
-  // const submission = Contract(submissionAddress, MatryxSubmission)
+  const [_, roundAddress] = await tournament.currentRound()
+  const round = Contract(roundAddress, MatryxRound)
+  const submissions = await round.getSubmissions()
+  const submissionAddress = submissions.pop()
+  const submission = Contract(submissionAddress, MatryxSubmission)
 
   console.log('Submission created:', submission.address)
   return submission

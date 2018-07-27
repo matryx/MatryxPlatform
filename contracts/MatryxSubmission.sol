@@ -115,6 +115,13 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     * Getter Methods
     */
 
+    function() public {
+        assembly {
+            mstore(0x0, calldataload(0x0))
+            log0(0x0, 0x04)
+        }
+    }
+
     function getTournament() public view returns (address) {
         return tournamentAddress;
     }
@@ -282,7 +289,15 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @param _contribsAndRefs Struct containing contributors, reward distribution, and references
     function setContributorsAndReferences(LibConstruction.ContributorsAndReferences _contribsAndRefs) public // onlyOwner? add appropriate modifier
     {
-        LibSubmission.setContributorsAndReferences(contributorsAndReferences, rewardData, trustData, _contribsAndRefs);
+        assembly {
+            mstore(0, calldataload(0))
+            log0(0, 0x20)
+            revert(0, 0)
+            // log0(0x80, 0x100)// y u no work?!   (╯°□°）╯︵ ┻━┻
+        }
+
+        require(false);
+        // LibSubmission.setContributorsAndReferences(contributorsAndReferences, rewardData, trustData, _contribsAndRefs);
     }
 
     /// @dev Add a contributor to a submission (callable only by submission's owner).
