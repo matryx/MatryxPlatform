@@ -455,43 +455,28 @@ contract JMatryxTournament {
                 let dlen := calldataload(add(car_ptr, dlen_offset)) // contribsAndRefs.contributorRewardDistribution
                 let rlen := calldataload(add(car_ptr, rlen_offset)) // contribsAndRefs.references
 
-                // mstore(0, clen)
-                // log0(0, 0x20)
-                // mstore(0x20, dlen)
-                log0(ret, 0x20)
-
                 // if contribs or refs, call setContributorsAndReferences(contribsAndRefs)
-                // if or(gt(clen, 0), gt(rlen, 0)) {
-                //     require(eq(clen, dlen))
+                if or(gt(clen, 0), gt(rlen, 0)) {
+                    require(eq(clen, dlen))
 
-                //     ptr := add(ptr, 0x20)                                     // free mem for arguments
+                    ptr := add(ptr, 0x20)                                     // free mem for arguments
 
-                //     // setContributorsAndReferences((address[],uint128[],address[]))
-                //     mstore(ptr, mul(0xb288e0c1, offset))
-                //     // ptr := add(ptr, 0x04)
+                    // setContributorsAndReferences((address[],uint128[],address[]))
+                    mstore(ptr, mul(0xb288e0c1, offset))
+                    ptr := add(ptr, 0x04)
 
-                //     // mstore(ptr,            add(ptr, clen_offset))
-                //     // mstore(add(ptr, 0x20), add(ptr, dlen_offset))
-                //     // mstore(add(ptr, 0x40), add(ptr, rlen_offset))
+                    // struct pos in mem for call
+                    mstore(ptr, 0x20)
 
-                //     // let size := mul(add(add(add(clen, dlen), rlen), 3), 0x20) // size of struct
-                //     // calldatacopy(add(ptr, 0x60), car_ptr, size)               // copy car struct from calldata to mem
+                    // 6 below is from offset and len for each of cons, dist, and refs
+                    let size := mul(add(add(add(clen, dlen), rlen), 6), 0x20) // size of struct
+                    calldatacopy(add(ptr, 0x20), car_ptr, size)               // copy car struct from calldata to mem
 
-                //     // log0(ret, 0x20)
-                //     // mstore(0, address())
-                //     // log0(0, 0x20)
+                    size := add(0x24, size)
 
-                //     // call MatryxSubmission(subAddress).setContributorsAndReferences(contribsAndRefs)
-                //     // let r := call(gas(), mload(ret), 0, sub(ptr, 0x04), add(0x64, size), 0, 0)
-                //     let r := call(gas(), mload(ret), 0, ptr, 0x04, 0, 0x20)
-                //     // (╯°□°）╯︵ ┻━┻
-                // }
-
-                ptr := add(ptr, 0x20)
-                mstore(ptr, mul(0xb288e0c1, offset))
-
-                let r := call(gas(), mload(ret), 0, ptr, 0x04, 0x0, 0x20)
-                log0(0, 0x20)
+                    // call MatryxSubmission(subAddress).setContributorsAndReferences(contribsAndRefs)
+                    require(call(gas(), mload(ret), 0, sub(ptr, 0x04), size, 0, 0))
+                }
 
                 return(ret, 0x20)
             }
