@@ -20,6 +20,8 @@ stringToBytes32 = utils.stringToBytes32
 getFileContents = path => fs.readFileSync(path).toString()
 contract = (address, { abi }) => new ethers.Contract(address, abi, wallet)
 selector = signature => sha3(signature).substr(0, 10)
+getTx = hash => wallet.provider.getTransaction(hash)
+getTxR = hash => wallet.provider.getTransactionReceipt(hash)
 
 
 // wallet key from ganache
