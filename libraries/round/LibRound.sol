@@ -110,17 +110,15 @@ library LibRound
 
     function selectWinningSubmissions(LibConstruction.RoundData storage data, LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public
     {
+        require(_selectWinnersData.winningSubmissions.length != 0);
         require(_selectWinnersData.winningSubmissions.length == _selectWinnersData.rewardDistribution.length);
-        require(_selectWinnersData.winningSubmissions.length != 0 && _selectWinnersData.winningSubmissions.length == 0);
 
-        // uint256 _rewardDistributionTotal;
+        uint256 _rewardDistributionTotal;
         for(uint256 i = 0; i < _selectWinnersData.rewardDistribution.length; i++)
         {
-            // _rewardDistributionTotal = _rewardDistributionTotal.add(_selectWinnersData.rewardDistribution[i]);
-            _selectWinnersData.rewardDistributionTotal = _selectWinnersData.rewardDistributionTotal.add(_selectWinnersData.rewardDistribution[i]);
+            _rewardDistributionTotal = _rewardDistributionTotal.add(_selectWinnersData.rewardDistribution[i]);
         }
-
-        // _selectWinnersData.rewardDistributionTotal = _rewardDistributionTotal;
+        _selectWinnersData.rewardDistributionTotal = _rewardDistributionTotal;
 
         // DoNothing and StartNextRound cases
         if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.DoNothing) || _selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.StartNextRound))

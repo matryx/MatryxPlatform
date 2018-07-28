@@ -49,8 +49,13 @@ library LibTournamentAdminMethods
     //       this method will also close the tournament.
     /// @param stateData State data for the tournament
     /// @param _selectWinnersData Struct containing winning submission information
-    function selectWinners(LibTournamentStateManagement.StateData storage stateData, LibRound.SelectWinnersData _selectWinnersData, address platformAddress, address matryxTokenAddress, LibConstruction.RoundData _roundData) public
+    function selectWinners(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public
     {
+        // assembly {
+        //     let ptr := mload(0x40)
+        //     calldatacopy(ptr, 0, calldatasize())
+        //     log0(ptr, calldatasize())
+        // }
         // Round must be in review or have winners to close
         (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 roundState = uint256(IMatryxRound(currentRoundAddress).getState());
@@ -58,7 +63,7 @@ library LibTournamentAdminMethods
         uint256 remainingBalance = IMatryxTournament(this).getBalance();
         // Event to notify web3 of the winning submission address
         emit RoundWinnersChosen(_selectWinnersData.winningSubmissions);
-        IMatryxRound(currentRoundAddress).selectWinningSubmissions( _selectWinnersData, _roundData);
+        IMatryxRound(currentRoundAddress).selectWinningSubmissions(_selectWinnersData, _roundData);
         if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.CloseTournament))
         {
             closeTournament(stateData, platformAddress, matryxTokenAddress, remainingBalance, currentRoundAddress);

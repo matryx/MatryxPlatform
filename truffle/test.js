@@ -45,7 +45,7 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   //   bounty
   // }
 
-  let tx = await platform.createJTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
+  let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
   console.log('Tournament hash:', tx.hash)
 
   const address = await platform.allTournaments(count)
@@ -146,7 +146,7 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
   timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
   await sleep(timeTilRoundInReview * 1000)
 
-  const res = await tournament.selectWinners(winners, rewardDistribution, roundData, selectWinnerAction, { gasLimit: 5000000 })
+  const res = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
   return res
 }
 
@@ -155,7 +155,7 @@ module.exports = async exit => {
     await init()
     let roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 60,
+      end: Math.floor(Date.now() / 1000) + 5,
       reviewPeriodDuration: 600,
       bounty: web3.toWei(5),
       closed: false
@@ -166,14 +166,14 @@ module.exports = async exit => {
     // await updateSubmission(submission)
     // await createSubmission(tournament, 2)
     // await createSubmission(tournament, 3)
-    // const roundTwoData = {
-    //     start: Math.floor(Date.now()/1000),
-    //     end: Math.floor(Date.now()/1000) + 10,
-    //     reviewPeriodDuration: 600,
-    //     bounty: web3.toWei(2)
-    //   }
-    // const submissions = await logSubmissions(tournament);
-    // await selectWinnersWhenInReview(tournament, 0, submissions, submissions.map(s => 1), roundTwoData, 0)
+    const roundTwoData = {
+        start: Math.floor(Date.now()/1000),
+        end: Math.floor(Date.now()/1000) + 10,
+        reviewPeriodDuration: 600,
+        bounty: web3.toWei(2)
+      }
+    const submissions = await logSubmissions(tournament);
+    await selectWinnersWhenInReview(tournament, 1, submissions, submissions.map(s => 1), roundTwoData, 0)
     // await logSubmissions(tournament)
   } catch (err) {
     console.log(err.message)

@@ -358,7 +358,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public onlyOwner
     {
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
-        LibTournamentAdminMethods.selectWinners(stateData, _selectWinnersData, platformAddress, matryxTokenAddress, _roundData);
+        LibTournamentAdminMethods.selectWinners(stateData, platformAddress, matryxTokenAddress, _selectWinnersData, _roundData);
     }
 
     function editGhostRound(LibConstruction.RoundData _roundData) public onlyOwner

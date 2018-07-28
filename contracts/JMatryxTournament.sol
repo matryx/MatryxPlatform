@@ -133,6 +133,9 @@ contract JMatryxTournament {
             case 0x1865c57d { return32(getState(sigOffset)) }         // getState()
             case 0x3bc5de30 { getData() }                             // update((bytes32,bytes32[3],bytes32[2],bytes32[2],uint256,bool)))
             case 0xbe999705 { addFunds(sigOffset) }                   // addFunds(uint256)
+
+            case 0x583c3a92 { selectWinners(sigOffset) }              // selectWinners((address[],uint256[],uint256,uint256),(uint256,uint256,uint256,uint256,bool))
+
             case 0xc2f897bf { jumpToNextRound(sigOffset) }            // jumpToNextRound()
             case 0x9baec207 { stopTournament(sigOffset) }             // stopTournament()
             case 0xe42b8c0a { createSubmission(sigOffset) }           // createSubmission((bytes32[3],bytes32[2],bytes32[2],uint256,uint256),(address[],uint128[],address[])
@@ -404,7 +407,36 @@ contract JMatryxTournament {
                 require(call(gas(), token, 0, ptr, 0x64, 0, 0x20))
             }
 
-            // function selectWinners
+            function selectWinners (offset) {
+                mstore(0, calldatasize())
+                log0(0, 0x20)
+
+                let ptr := mload(0x40)
+                let mem := ptr
+
+                // selectWinners(LibTournamentStateManagement.StateData storage,address,address,LibRound.SelectWinnersData,LibConstruction.RoundData)
+                mstore(ptr, mul(0xd06b5924, offset))
+
+                mstore(add(ptr, 0x04), stateData_slot)
+                mstore(add(ptr, 0x24), sload(platform_slot))
+                mstore(add(ptr, 0x44), getTokenAddress(offset))
+
+                // copy selectWinnersData and roundData
+                let size := sub(calldatasize(), 0x04)
+                calldatacopy(add(ptr, 0x64), 0x04, size)
+
+                // update selectWinnersData location
+                let swd_mem := add(ptr, 0x64)
+                mstore(swd_mem, add(mload(swd_mem), 0x60))
+
+                size := add(size, 0x64)
+
+                // log0(ptr, size)
+
+                // y u no work?  (╯°□°）╯︵ ┻━┻
+                // calldata matches exactly from MTour call
+                require(delegatecall(gas(), LibTournamentAdminMethods, ptr, size, 0, 0x20))
+            }
             // function editGhostRound
             // function allocateMoreToRound
 
@@ -560,6 +592,9 @@ interface IJMatryxTournament {
     function entrantCount() public view returns (uint256);
     function update(LibConstruction.TournamentModificationData tournamentData) public;
     function addFunds(uint256 _fundsToAdd) public;
+
+    function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public;
+
     function jumpToNextRound() public;
     function stopTournament() public;
     function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public returns(bytes32 _v);
