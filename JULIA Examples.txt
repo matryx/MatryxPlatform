@@ -1,0 +1,190 @@
+calldata of struct (fixed size)
+
+  struct Thing {
+    uint256 u;
+    uint256[2] u_arr0;
+    uint256[2] u_arr1;
+  }
+
+  function test(uint256 u0, Thing thing, uint256 u1)
+  test(1, [13, [1,2], [3,4]], 2)
+
+  0e982672
+  0x000 0000000000000000000000000000000000000000000000000000000000000001 // u0
+  0x020 000000000000000000000000000000000000000000000000000000000000000d // thing.u
+  0x040 0000000000000000000000000000000000000000000000000000000000000001 // thing.u_arr0[0]
+  0x060 0000000000000000000000000000000000000000000000000000000000000002 // thing.u_arr0[1]
+  0x080 0000000000000000000000000000000000000000000000000000000000000003 // thing.u_arr1[0]
+  0x0a0 0000000000000000000000000000000000000000000000000000000000000004 // thing.u_arr1[1]
+  0x0c0 0000000000000000000000000000000000000000000000000000000000000002 // u1
+
+
+
+calldata of struct (dynamic)
+
+  struct Thing {
+    uint256 u;
+    uint256[] u_arr0;
+    uint256[] u_arr1;
+  }
+
+  function test(uint256 u0, Thing thing, uint256 u1)
+  test(1, [13, [1,2], [3,4]], 2)
+
+  116523a7
+  0x000 0000000000000000000000000000000000000000000000000000000000000001 // u0
+  0x020 0000000000000000000000000000000000000000000000000000000000000060 // thing pos
+  0x040 0000000000000000000000000000000000000000000000000000000000000002 // u1
+  0x060 000000000000000000000000000000000000000000000000000000000000000d // thing.u
+  0x080 0000000000000000000000000000000000000000000000000000000000000060 // thing.u_arr0 offset from pos
+  0x0a0 00000000000000000000000000000000000000000000000000000000000000c0 // thing.u_arr1 offset from pos
+  0x0c0 0000000000000000000000000000000000000000000000000000000000000002 // thing.u_arr0 len
+  0x0e0 0000000000000000000000000000000000000000000000000000000000000001 // thing.u_arr0[0]
+  0x100 0000000000000000000000000000000000000000000000000000000000000002 // thing.u_arr0[1]
+  0x120 0000000000000000000000000000000000000000000000000000000000000002 // thing.u_arr1 len
+  0x140 0000000000000000000000000000000000000000000000000000000000000003 // thing.u_arr1[0]
+  0x160 0000000000000000000000000000000000000000000000000000000000000004 // thing.u_arr1[1]
+
+
+
+dynamic array
+
+  contract Test {
+    uint256[] arr;
+
+    constructor () {
+      arr.push(1);
+      arr.push(2);
+      arr.push(3);
+    }
+
+    function getArr() public view returns (uint256[]) {
+      assembly {
+        mstore(0, arr_slot)                     // arr elem storage slot
+        let arr_pos := keccak256(0, 0x20)       // at keccak256(arr_slot)
+        let arr_len := sload(arr_slot)          // len at arr_slot
+
+        let ptr := mload(0x40)                  // get free mem ptr for copying arr to return
+        let ret := ptr                          // copy ptr so we can move ptr
+
+        mstore(ptr, 0x20)                       // first store sizeof arr elem
+        ptr := add(ptr, 0x20)                   // move ptr a word
+        mstore(ptr, arr_len)                    // then store arr len
+
+        for { let i := 0 } lt(i, arr_len) { i := add(i, 1) } {
+          ptr := add(ptr, 0x20)                 // move ptr a word
+          mstore(ptr, sload(add(arr_pos, i)))   // then store each of the elem
+        }
+
+        let size := mul(add(2, arr_len), 0x20)  // size = 2 + len words
+        return(ret, size)                       // return arr
+      }
+    }
+  }
+
+  Test.getArr() => [1,2,3]
+
+
+
+mapping value
+
+  contract Test {
+    mapping(uint256=>uint256) map;
+
+    constructor () {
+      map[13] = 42;
+    }
+
+    function getMap(uint256 _key) public view returns (uint256 _val) {
+      assembly {
+        mstore(0x00, _key)                 // key for map
+        mstore(0x20, map_slot)             // concat with map slot
+        let val_pos := keccak256(0, 0x40)  // keccak256'd
+        _val := sload(val_pos)             // return value from storage
+      }
+    }
+  }
+
+  Test.getMap(13) => 42
+
+
+
+mapping to dynamic array
+
+  contract Test {
+    mapping(uint256=>uint256[]) map;
+
+    constructor () {
+      map[13].push(1);
+      map[13].push(2);
+      map[13].push(3);
+    }
+
+    function getArr(uint256 _key) public view returns (uint256[]) {
+      assembly {
+        mstore(0x00, _key)                      // key for map
+        mstore(0x20, map_slot)                  // concat with map slot
+        let arr_len_pos := keccak256(0, 0x40)   // keccak256'd
+        let arr_len := sload(arr_len_pos)       // len at arr_len_pos
+
+        mstore(0, arr_len_pos)                  // arr elems storage slot
+        let arr_pos := keccak256(0, 0x20)       // at keccak256(arr_len_pos)
+
+        let ptr := mload(0x40)                  // get free mem ptr for copying arr to return
+        let ret := ptr                          // copy ptr so we can move ptr
+
+        mstore(ptr, 0x20)                       // first store sizeof arr elem
+        ptr := add(ptr, 0x20)                   // move ptr a word
+        mstore(ptr, arr_len)                    // then store arr len
+
+        for { let i := 0 } lt(i, arr_len) { i := add(i, 1) } {
+          ptr := add(ptr, 0x20)                 // move ptr a word
+          mstore(ptr, sload(add(arr_pos, i)))   // then store each of the elem
+        }
+
+        let size := mul(add(2, arr_len), 0x20)  // size = 2 + len words
+        return(ret, size)                       // return arr
+      }
+    }
+  }
+
+  Test.getArr(13) => [1,2,3]
+
+
+
+useful debugging snippets
+
+  // log calldata
+  assembly {
+    let ptr := mload(0x40)
+    let size := calldatasize()
+    calldatacopy(ptr, 0, size)
+    log0(ptr, size)
+  }
+
+  // log call signature
+  assembly {
+    mstore(0, calldataload(0))
+    log0(0x1c, 0x04)
+  }
+
+  // log msg.sender
+  assembly {
+    mstore(0, caller())
+    log0(0x14, 0x0c)
+  }
+
+
+
+tips
+
+  if function is being called (not hitting fallback)
+  but no code executes, double check in data size
+
+  when copying dynamic struct from calldata to mem
+  for new call, struct position needs to be updated
+
+  function sig for fallback use tuples
+  function sig for calls inside use structs
+
+  struct storage items are passed as storage slot
