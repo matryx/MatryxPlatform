@@ -123,6 +123,8 @@ contract JMatryxTournament {
             case 0x12065fe0 { return32(getBalance(sigOffset)) }       // getBalance()
             case 0xe586a4f0 { getEntryFee() }                         // getEntryFee()
 
+            case 0xe139a20c { mySubmissions() }                       // mySubmissions()
+
             // Tournament stateData
             case 0x6ec02be9 { submissionCount() }                     // submissionCount()
             case 0x89f3beb6 { entrantCount() }                        // entrantCount()
@@ -142,14 +144,11 @@ contract JMatryxTournament {
 
             // Bro why you tryna call a function that doesn't exist?  // ¯\_(ツ)_/¯
             default {                                                 // (╯°□°）╯︵ ┻━┻
-                let ptr := mload(0x40)
-                let sig := or(mul(div(calldataload(0), sigOffset), sigOffset), 0xdead)
-                mstore(ptr, sig)
-                log0(ptr, 0x20)
-                // let size := calldatasize()
-                // calldatacopy(ptr, 0, size)
-                // log0(ptr, size)
-                return(ptr, 0x20)
+                mstore(0, 0xdead)
+                log0(0x1e, 0x02)
+                mstore(0, calldataload(0))
+                log0(0, 0x04)
+                return(0, 0x20)
             }
 
             // helper methods
@@ -331,7 +330,36 @@ contract JMatryxTournament {
                 m_currentRound := ptr
             }
 
-            // function mySubmissions() {}
+            function mySubmissions() {
+                // entryData.entrantToSubmissions[msg.sender]
+                mstore(0, caller())
+                mstore(0x20, add(entryData_slot, 2))
+                let subs_len_pos := keccak256(0, 0x40)
+
+                // get subs storage pos
+                mstore(0, subs_len_pos)
+                let subs_pos := keccak256(0, 0x20)
+
+                // get num subs
+                let subs_len := sload(subs_len_pos)
+                let size := mul(add(2, subs_len), 0x20)
+
+                let ptr := mload(0x40)
+                let ret := ptr
+
+                // store array element size and array length
+                mstore(ptr, 0x20)
+                ptr := add(ptr, 0x20)
+                mstore(ptr, subs_len)
+
+                // store array items
+                for { let i := 0 } lt(i, subs_len) { i := add(i, 1) } {
+                    ptr := add(ptr, 0x20)
+                    mstore(ptr, sload(add(subs_pos, i)))
+                }
+
+                return(ret, size)
+            }
 
             function submissionCount() {
                 return32(sload(add(entryData_slot, 1))) //entryData.numberOfSubmissions
@@ -525,6 +553,8 @@ interface IJMatryxTournament {
     function getBounty() public view returns (uint256);
     function getBalance() public view returns (uint256);
     function getEntryFee() public view returns (uint256);
+
+    function mySubmissions() public view returns (address[]);
 
     function submissionCount() public view returns (uint256);
     function entrantCount() public view returns (uint256);

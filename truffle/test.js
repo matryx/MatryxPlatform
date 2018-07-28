@@ -161,7 +161,8 @@ module.exports = async exit => {
       closed: false
     }
     const tournament = await createTournament(web3.toWei(10), roundData, 1)
-    const submission = await createSubmission(tournament, 0)
+    await createSubmission(tournament, 0)
+    await createSubmission(tournament, 0)
     // await updateSubmission(submission)
     // await createSubmission(tournament, 2)
     // await createSubmission(tournament, 3)
