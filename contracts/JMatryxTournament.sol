@@ -68,52 +68,20 @@ contract JMatryxTournament {
         }
     }
 
-// Modifiers
-// -------------
-    // modifier onlyOwner() {
-    //     assembly {
-    //         require(eq(sload(owner_slot), caller()))
-    //     }
-    //     _;
-    // }
-
-    // modifier onlyPlatform() {
-    //     assembly {
-    //         require(eq(sload(platform_slot), caller()))
-    //     }
-    //     _;
-    // }
-
-    // modifier platformOrOwner() {
-    //     assembly {
-    //         require(or(eq(sload(platform_slot), caller()), eq(sload(owner_slot), caller())))
-    //     }
-    //     _;
-    // }
-
-    // onlyRound()
-    // onlyPeerLinked(address _sender)
-    // onlyEntrant()
-    // whileTournamentOpen()
-    // ifRoundHasFunds()
-
-// -------------
-
     function() public {
         assembly {
             let sigOffset := 0x100000000000000000000000000000000000000000000000000000000
             switch div(calldataload(0), sigOffset)
 
-            // Tournament stuffs
-            case 0x7eba7ba6 { getSlot() }                             // getSlot(uint256)
+            // Tournament stuff
             case 0x2fc1f190 { getPlatform() }                         // getPlatform()
             case 0x10fe9ae8 { return32(getTokenAddress(sigOffset)) }  // getTokenAddress()
 
             case 0x4644c51b {} // TODO invokeSubmissionCreatedEvent
 
             // Tournament data
-            case 0x52c01fab { return32(isEntrant()) }                 // isEntrant(address)
-            case 0x8c1fc0bb { return32(isRound()) }                   // getData()
+            case 0x52c01fab { return32(isEntrant(arg(0))) }           // isEntrant(address)
+            case 0x8c1fc0bb { return32(isRound(arg(0))) }             // getData()
             case 0x8a19c8bc { return(currentRound(sigOffset), 0x40) } // currentRound()
             case 0x80258e47 { getCategory() }                         // getCategory()
             case 0xff3c1a8f { getTitle() }                            // getTitle()
@@ -122,6 +90,7 @@ contract JMatryxTournament {
             case 0xf49bff7b { return32(getBounty(sigOffset)) }        // getBounty()
             case 0x12065fe0 { return32(getBalance(sigOffset)) }       // getBalance()
             case 0xe586a4f0 { getEntryFee() }                         // getEntryFee()
+            case 0x45df1945 { collectMyEntryFee(sigOffset) }
 
             case 0xe139a20c { mySubmissions() }                       // mySubmissions()
 
@@ -135,17 +104,22 @@ contract JMatryxTournament {
             case 0xbe999705 { addFunds(sigOffset) }                   // addFunds(uint256)
 
             case 0x583c3a92 { selectWinners(sigOffset) }              // selectWinners((address[],uint256[],uint256,uint256),(uint256,uint256,uint256,uint256,bool))
-
+            case 0xd6830846 { editGhostRound(sigOffset) }             // editGhostRound(uint256,uint256,uint256,uint256,bool)
+            case 0x072a4560 { allocateMoreToRound(sigOffset) }        // allocateMoreToRound(uint256 )
             case 0xc2f897bf { jumpToNextRound(sigOffset) }            // jumpToNextRound()
             case 0x9baec207 { stopTournament(sigOffset) }             // stopTournament()
+            case 0x67f69ab1 { createRound(sigOffset) }                // createRound((uint256,uint256,uint256,uint256,bool),bool)
+            case 0x23721e24 { sendBountyToRound(sigOffset) }          // sendBountyToRound(uint256,uint256)
+            case 0x28d576d7 { enterUserInTournament(sigOffset) }      // enterUserInTournament(address)
             case 0xe42b8c0a { createSubmission(sigOffset) }           // createSubmission((bytes32[3],bytes32[2],bytes32[2],uint256,uint256),(address[],uint128[],address[])
+            case 0x542fe6c2 { withdrawFromAbandoned(sigOffset) }
 
-            // Ownable stuffs
+            // Ownable stuff
             case 0x893d20e8 { getOwner() }                            // getOwner()
             case 0x2f54bf6e { isOwner() }                             // isOwner(address)
             case 0xf2fde38b { transferOwnership() }                   // transferOwnership(address)
 
-            // Bro why you tryna call a function that doesn't exist?  // ¯\_(ツ)_/¯
+            // Bro why you tryna call a function that doesn't exist?
             default {                                                 // (╯°□°）╯︵ ┻━┻
                 mstore(0, 0xdead)
                 log0(0x1e, 0x02)
@@ -154,33 +128,84 @@ contract JMatryxTournament {
                 return(0, 0x20)
             }
 
-            // helper methods
-            // --------------------------------
+            // Helper Methods
+            // -------------------------------
+            /// @dev Gets nth argument from calldata
             function arg(n) -> a {
                 a := calldataload(add(0x04, mul(n, 0x20)))
             }
 
+            /// @dev Stores the word v in memory and returns
             function return32(v) {
                 mstore(0, v)
                 return(0, 0x20)
             }
 
+            /// @dev Reverts when v == 0
             function require(v) {
                 if iszero(v) { revert(0, 0) }
             }
 
-            /// @dev getSlot
-            /// @param uint256 slot
-            function getSlot() {
-                let slot := arg(0)
-                return32(sload(slot))
+            /// @dev SafeMath subtraction
+            function safesub(a, b) -> c {
+                require(or(lt(b, a), eq(b, a)))
+                c := sub(a, b)
+            }
+
+            /// @dev SafeMath addition
+            function safeadd(a, b) -> c {
+                c := add(a, b)
+                require(or(eq(a, c), lt(a, c)))
             }
 
             // --------------------------------
+
+            // modifiers
+            // --------------------------------
+            function onlyOwner() {
+                require(eq(sload(owner_slot), caller()))
+            }
+
+            function onlyPlatform() {
+                require(eq(sload(platform_slot), caller()))
+            }
+
+            function onlyRound() {
+                require(isRound(caller()))
+            }
+
+            function onlyPeerLinked(_sender, offset) {
+                let platform := sload(platform_slot)
+                mstore(0, mul(0x532311c4, offset)) // hasPeer(address)
+                mstore(0x04, caller())
+
+                // call platform.hasPeer(msg.sender), revert if result false
+                require(call(gas(), platform, 0, 0, 0x44, 0, 0x20))
+                require(mload(0))
+            }
+
+            function onlyEntrant() {
+                require(isEntrant(caller()))
+            }
+
+            function whileTournamentOpen(offset) {
+                let s := getState(offset)
+                require(eq(s, 2)) // LibEnum.TournamentState.Open
+            }
+
+            function ifRoundHasFunds(offset) {
+                let round := mload(add(currentRound(offset), 0x20))
+                mstore(0, mul(0x1865c57d, offset)) // getState()
+                require(call(gas(), round, 0, 0, 0x04, 0, 0x20))
+                require(iszero(eq(mload(0), 1)))   // LibEnums.RoundState.Unfunded
+            }
+            // --------------------------------
+            // getPlatform() public view returns (address _platformAddress)
             function getPlatform() {
                 return32(sload(platform_slot))
             }
 
+            // getTokenAddress() public view returns (address _matryxTokenAddress)
             function getTokenAddress(offset) -> token {
                 let ptr := 0x0
                 mstore(ptr, mul(0x10fe9ae8, offset)) // getTokenAddress()
@@ -192,31 +217,29 @@ contract JMatryxTournament {
             }
 
             // Tournament data
-            /// @dev Returns bool of if address is entrant of tournament
-            function isEntrant() -> isEnt {
-                let _address := arg(0)
+            // isEntrant(address _sender) public view returns (bool)
+            function isEntrant(_address) -> isEnt {
                 mstore(0, _address)
                 // entryData.addressToEntryFeePaid
                 mstore(0x20, add(entryData_slot, 4))
                 isEnt := sload(keccak256(0, 0x40))
             }
 
-            /// @dev Returns bool indicating whether _address corresponds to an existing round or not
-            function isRound() -> isRnd {
-                let _address := arg(0)
+            // isRound(address _roundAddress) public view returns (bool _isRound)
+            function isRound(_address) -> isRnd {
                 mstore(0, _address)
                 // stateData.isRound
                 mstore(0x20, add(stateData_slot, 1))
                 isRnd := sload(keccak256(0, 0x40))
             }
 
-            /// @dev Returns list of round addresses in the tournament
+            // getRounds() public view returns (address[] _rounds)
             function getRounds() {
                 // first stateData item is rounds
                 mstore(0, stateData_slot)
                 let rounds := keccak256(0, 0x20)
 
-                // len of dyn arrays stored in slot
+                // length of dyn arrays stored in slot
                 let len := sload(stateData_slot)
                 let ptr := mload(0x40)
                 let ret := ptr
@@ -238,6 +261,7 @@ contract JMatryxTournament {
                 return(ret, add(0x40, mul(len, 0x20)))
             }
 
+            // getState() public view returns (uint256)
             function getState(offset) -> state {
                 let ptr := 0x0
 
@@ -251,6 +275,7 @@ contract JMatryxTournament {
                 state := mload(ptr)
             }
 
+            // getData() public view returns (LibConstruction.TournamentData _data)
             function getData() {
                 let data := mload(0x40)
                 mstore(data, data_slot)                            // tournamentData.category
@@ -266,12 +291,12 @@ contract JMatryxTournament {
                 return(data, 0x140)
             }
 
+            // getCategory() public view returns (bytes32 _category)
             function getCategory() {
-                // first data item is category
-                return32(sload(data_slot))
+                return32(sload(data_slot)) // data.category
             }
 
-            /// @dev getTitle: returns title in a byte array of size 3
+            // getTitle() public view returns (bytes32[3] _title)
             function getTitle() {
                 let title := mload(0x40)
                 mstore(title, sload(add(data_slot, 1)))            // data.title[0]
@@ -280,7 +305,7 @@ contract JMatryxTournament {
                 return(title, 0x60)
             }
 
-            /// @dev getTitle: returns description in a byte array of size 2
+            // getDescriptionHash() public view returns (bytes32[2] _descriptionHash)
             function getDescriptionHash() {
                 let desc := mload(0x40)
                 mstore(desc, sload(7))              // data.descriptionHash[0]
@@ -288,7 +313,7 @@ contract JMatryxTournament {
                 return(desc, 0x40)
             }
 
-            /// @dev getTitle: returns files in a byte array of size 2
+            // getFileHash() public view returns (bytes32[2] _fileHash)
             function getFileHash() {
                 let file := mload(0x40)
                 mstore(file, sload(9))              // data.fileHash[0]
@@ -296,13 +321,13 @@ contract JMatryxTournament {
                 return(file, 0x40)
             }
 
-            /// @dev getBounty: returns the current tournament bounty
+            // getBounty() public view returns (uint256 _tournamentBounty)
             function getBounty(offset) -> bounty {
                 // .add(stateData.roundBountyAllocation)
-                bounty := add(getBalance(offset), sload(add(stateData_slot, 3)))
+                bounty := safeadd(getBalance(offset), sload(add(stateData_slot, 3)))
             }
 
-            /// @dev getBalance: returns the current tournament balance
+            // getBalance() public view returns (uint256 _tournamentBalance)
             function getBalance(offset) -> bal {
                 let tokenAddress := getTokenAddress(offset)
                 let ptr := 0x0
@@ -314,13 +339,16 @@ contract JMatryxTournament {
                 require(call(gas(), tokenAddress, 0, ptr, 0x24, ptr, 0x20))
 
                 // .sub(stateData.entryFeesTotal)
-                bal := sub(mload(ptr), sload(add(stateData_slot, 2)))
+                bal := safesub(mload(ptr), sload(add(stateData_slot, 2)))
             }
 
+
+            // getEntryFee() public view returns (uint256)
             function getEntryFee() {
                 return32(sload(12))
             }
 
+            // currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress)
             function currentRound(offset) -> m_currentRound {
                 let ptr := 0x0
 
@@ -333,6 +361,7 @@ contract JMatryxTournament {
                 m_currentRound := ptr
             }
 
+            // mySubmissions() public view returns (address[])
             function mySubmissions() {
                 // entryData.entrantToSubmissions[msg.sender]
                 mstore(0, caller())
@@ -343,7 +372,7 @@ contract JMatryxTournament {
                 mstore(0, subs_len_pos)
                 let subs_pos := keccak256(0, 0x20)
 
-                // get num subs
+                // get number of subs
                 let subs_len := sload(subs_len_pos)
                 let size := mul(add(2, subs_len), 0x20)
 
@@ -364,15 +393,20 @@ contract JMatryxTournament {
                 return(ret, size)
             }
 
+            // submissionCount() public view returns (uint256 _submissionCount)
             function submissionCount() {
-                return32(sload(add(entryData_slot, 1))) //entryData.numberOfSubmissions
+                return32(sload(add(entryData_slot, 1))) // entryData.numberOfSubmissions
             }
 
+            // entrantCount() public view returns (uint256 _entrantCount)
             function entrantCount() {
-                return32(sload(add(entryData_slot, 5))) //entryData.numberOfEntrants
+                return32(sload(add(entryData_slot, 5))) // entryData.numberOfEntrants
             }
 
+            // update(LibConstruction.TournamentModificationData tournamentData) public onlyOwner
             function update(offset) {
+                onlyOwner()
+
                 let ptr := mload(0x40)
                 let mem := ptr
 
@@ -381,17 +415,15 @@ contract JMatryxTournament {
                 mstore(add(ptr, 0x04), data_slot)
                 ptr := add(ptr, 0x24)
 
-                for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
-                    mstore(ptr, arg(i))
-                    ptr := add(ptr, 0x20)
-                }
-
+                // copy tournamentData to mem
+                calldatacopy(ptr, 0x04, 0x140)
                 ptr := add(ptr, 0x140)
 
                 mstore(ptr, sload(platform_slot))
                 require(delegatecall(gas(), LibTournamentAdminMethods, mem, 0x184, 0x0, 0x20))
             }
 
+            // addFunds(uint256 _fundsToAdd)
             function addFunds(offset) {
                 let fundsToAdd := arg(0)
                 let state := getState(offset)
@@ -407,12 +439,11 @@ contract JMatryxTournament {
                 require(call(gas(), token, 0, ptr, 0x64, 0, 0x20))
             }
 
+            // selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData)
             function selectWinners (offset) {
-                mstore(0, calldatasize())
-                log0(0, 0x20)
+                onlyOwner()
 
                 let ptr := mload(0x40)
-                let mem := ptr
 
                 // selectWinners(LibTournamentStateManagement.StateData storage,address,address,LibRound.SelectWinnersData,LibConstruction.RoundData)
                 mstore(ptr, mul(0xd06b5924, offset))
@@ -431,16 +462,47 @@ contract JMatryxTournament {
 
                 size := add(size, 0x64)
 
-                // log0(ptr, size)
-
-                // y u no work?  (╯°□°）╯︵ ┻━┻
-                // calldata matches exactly from MTour call
                 require(delegatecall(gas(), LibTournamentAdminMethods, ptr, size, 0, 0x20))
             }
-            // function editGhostRound
-            // function allocateMoreToRound
 
+            // editGhostRound(LibConstruction.RoundData _roundData)
+            function editGhostRound(offset) {
+                onlyOwner()
+
+                let token := getTokenAddress(offset)
+                let ptr := mload(0x40)
+
+                // editGhostRound(LibTournamentStateManagement.StateData storage,LibConstruction.RoundData,address)
+                mstore(ptr, mul(0x672ec623, offset))
+
+                // copy roundData
+                calldatacopy(add(ptr, 0x04), 0, calldatasize())
+
+                // sizeof RoundData 5 words (0xa0) + sizeof stateData_slot (0x20) = 0xc0
+                mstore(add(ptr, 0xc4), token)
+                require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0xe4, 0, 0))
+            }
+
+            // allocateMoreToRound(uint256 _mtxAllocation)
+            function allocateMoreToRound(offset) {
+                onlyOwner()
+
+                let token := getTokenAddress(offset)        // token address
+
+                let ptr := mload(0x40)
+
+                mstore(ptr, mul(0x072a4560, offset))    // allocateMoreToRound(uint256)
+                mstore(add(ptr, 0x04), stateData_slot)  // stateData (slot)
+                mstore(add(ptr, 0x24), arg(0))          // _mtxAllocation
+                mstore(add(ptr, 0x44), token)           // token address
+
+                require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0x64, 0x0, 0))
+            }
+
+            // jumpToNextRound()
             function jumpToNextRound(offset) {
+                onlyOwner()
+
                 let ptr := mload(0x40)
 
                 // jumpToNextRound(LibTournamentStateManagement.StateData storage
@@ -449,8 +511,10 @@ contract JMatryxTournament {
                 require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0x24, 0, 0x20))
             }
 
-            function stopTournament(offset)
-            {
+            // stopTournament()
+            function stopTournament(offset) {
+                onlyOwner()
+
                 let ptr := mload(0x40)
                 let token := getTokenAddress(offset)
 
@@ -463,30 +527,95 @@ contract JMatryxTournament {
                 require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0x64, 0, 0))
             }
 
-            function createRound(_roundData, _automaticCreation, offset) -> round {
-                let token := getTokenAddress(offset)
+            // createRound(roundData, automaticCreation)
+            function createRound(offset) {
+                onlyRound()
+
                 let ptr := mload(0x40)
+                let token := getTokenAddress(offset)
 
                 // createRound(LibTournamentStateManagement.StateData storage,address,address,address,LibConstruction.RoundData,bool)
                 mstore(ptr, mul(0xcfa037dc, offset))
+
                 mstore(add(ptr, 0x04), stateData_slot)
                 mstore(add(ptr, 0x24), sload(platform_slot))
                 mstore(add(ptr, 0x44), token)
                 mstore(add(ptr, 0x64), sload(roundFactory_slot))
-                mstore(add(ptr, 0x84), _roundData)
-                mstore(add(ptr, 0xa4), _automaticCreation)
 
-                require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0xc4, ptr, 0x20))
+                // copy roundData and automaticCreation
+                calldatacopy(add(ptr, 0x84), 0x04, sub(calldatasize(), 0x04))
 
-                round := mload(ptr)
+                // call createRound
+                require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0x144, ptr, 0x20))
+                return(ptr, 0x20)
             }
 
-            // function sendBountyToRound(_roundIndex, _bountyMTX)
-            // function enterUserInTournament(_entrantAddress)
-            // function collectMyEntryFee()
+            // sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX)
+            function sendBountyToRound(offset) {
+                onlyPlatform()
 
-            // function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs)
+                let round_i := arg(0)
+                let mtx := arg(1)
+
+                // stateData.roundBountyAllocation += mtx
+                let rba_pos := add(stateData_slot, 3)
+                sstore(rba_pos, safeadd(sload(rba_pos), mtx))
+
+                mstore(0, stateData_slot)                         // stateData.rounds
+                let rounds_pos := keccak256(0, 0x20)              // rounds storage slot
+                let round := sload(safeadd(rounds_pos, round_i))  // get rounds[i]
+
+                let token := getTokenAddress(offset)
+                let ptr := mload(0x40)
+
+                mstore(ptr, mul(0xa9059cbb, offset))              // transfer(address,uint256)
+                mstore(add(ptr, 0x04), round)                     // round address
+                mstore(add(ptr, 0x24), mtx)                       // mtx amount
+
+                // call Token.transfer(_roundIndex, _bountyMtx)
+                require(call(gas(), token, 0, ptr, 0x44, 0, 0))
+            }
+
+            // enterUserInTournament(address _entrantAddress)
+            function enterUserInTournament(offset) {
+                onlyPlatform()
+                whileTournamentOpen(offset)
+
+                let ent_address := arg(0)
+                let ptr := mload(0x40)
+
+                // enterUserInTournament(LibConstruction.TournamentData storage,LibTournamentStateManagement.StateData storage,LibTournamentStateManagement.EntryData storage,address)
+                mstore(ptr, mul(0xa09c5c99, offset))
+                mstore(add(ptr, 0x04), data_slot)
+                mstore(add(ptr, 0x24), stateData_slot)
+                mstore(add(ptr, 0x44), entryData_slot)
+                mstore(add(ptr, 0x64), ent_address)
+
+                require(delegatecall(gas(), LibTournamentEntrantMethods, ptr, 0x84, 0, 0x20))
+                return(0, 0x20)
+            }
+
+            function collectMyEntryFee(offset) {
+                let token := getTokenAddress(offset)    // token address
+
+                let ptr := mload(0x40)
+
+                // collectMyEntryFee(LibTournamentStateData.StateData storage,LibTournamentStateData.EntryData storage,address)
+                mstore(ptr, mul(0xff4fef08, offset))
+                mstore(add(ptr, 0x04), stateData_slot)
+                mstore(add(ptr, 0x24), entryData_slot)
+                mstore(add(ptr, 0x44), token)
+
+                require(delegatecall(gas(), LibTournamentEntrantMethods, ptr, 0x64, 0, 0))
+            }
+
+            // createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs)
             function createSubmission(offset) {
+                onlyEntrant()
+                onlyPeerLinked(caller(), offset)
+                ifRoundHasFunds(offset)
+                whileTournamentOpen(offset)
+
                 // get currentRound address
                 let round := mload(add(currentRound(offset), 0x20))
 
@@ -500,7 +629,7 @@ contract JMatryxTournament {
                 mstore(add(ptr, 0x44), entryData_slot)
 
                 // load in submissionData struct
-                calldatacopy(add(ptr, 0x064), 0x04, 0x120)
+                calldatacopy(add(ptr, 0x64), 0x04, 0x120)
 
                 // call LibTournamentEntrantMethods.createSubmission and get new submission address
                 require(delegatecall(gas(), LibTournamentEntrantMethods, ptr, 0x184, ret, 0x20))
@@ -532,7 +661,7 @@ contract JMatryxTournament {
                     let size := mul(add(add(add(clen, dlen), rlen), 6), 0x20) // size of struct
                     calldatacopy(add(ptr, 0x20), car_ptr, size)               // copy car struct from calldata to mem
 
-                    size := add(0x24, size)
+                    size := add(size, 0x24)
 
                     // call MatryxSubmission(subAddress).setContributorsAndReferences(contribsAndRefs)
                     require(call(gas(), mload(ret), 0, sub(ptr, 0x04), size, 0, 0))
@@ -541,8 +670,20 @@ contract JMatryxTournament {
                 return(ret, 0x20)
             }
 
-            // function withdrawFromAbandoned() {}
+            function withdrawFromAbandoned(offset) {
+                onlyEntrant()
 
+                let token := getTokenAddress(offset)
+                let ptr := mload(0x40)
+
+                // withdrawFromAbandoned(LibTournamentStateManagement.StateData storage,LibTournamentStateManagement.EntryData storage,address)
+                mstore(ptr, mul(0xddc23bd0, offset))
+                mstore(add(ptr, 0x04), stateData_slot)
+                mstore(add(ptr, 0x24), entryData_slot)
+                mstore(add(ptr, 0x44), token)
+
+                require(delegatecall(gas(), LibTournamentEntrantMethods, ptr, 0x64, 0x0, 0))
+            }
 
             // Ownable stuffs
             function getOwner() {
@@ -567,7 +708,6 @@ contract JMatryxTournament {
 }
 
 interface IJMatryxTournament {
-    function getSlot(uint256 slot) public view returns (bytes32 _val);
     function getPlatform() public view returns (address _platformAddress);
     function getTokenAddress() public view returns (address _matryxTokenAddress);
 
@@ -585,6 +725,7 @@ interface IJMatryxTournament {
     function getBounty() public view returns (uint256);
     function getBalance() public view returns (uint256);
     function getEntryFee() public view returns (uint256);
+    function collectMyEntryFee() public;
 
     function mySubmissions() public view returns (address[]);
 
@@ -594,150 +735,19 @@ interface IJMatryxTournament {
     function addFunds(uint256 _fundsToAdd) public;
 
     function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public;
+    function editGhostRound(LibConstruction.RoundData _roundData) public;
+    function allocateMoreToRound(uint256 _mtxAllocation) public;
 
     function jumpToNextRound() public;
     function stopTournament() public;
+    function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress);
+    function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public;
+    function enterUserInTournament(address _entrantAddress) public returns (bool _success);
     function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public returns(bytes32 _v);
+    function withdrawFromAbandoned() public;
 
     // Ownable stuffs
     function getOwner() public view returns (address _owner);
     function isOwner(address sender) public view returns (bool _isOwner);
     function transferOwnership(address newOwner) public view;
 }
-
-/**
-struct Thing {
-    uint256 t;
-    uint256[] a;
-    uint256[] b;
-}
-
-library function (Thing t)
-
-[1,[7],[7]]
-
-calldata
-8f9992a1
-0000000000000000000000000000000000000000000000000000000000000020
-0000000000000000000000000000000000000000000000000000000000000001
-0000000000000000000000000000000000000000000000000000000000000060
-00000000000000000000000000000000000000000000000000000000000000a0
-0000000000000000000000000000000000000000000000000000000000000001
-0000000000000000000000000000000000000000000000000000000000000007
-0000000000000000000000000000000000000000000000000000000000000001
-0000000000000000000000000000000000000000000000000000000000000007
-
-memory
-  "0x0": "0000000000000000000000000000000000000000000000000000000000000000",
- "0x20": "0000000000000000000000000000000000000000000000000000000000000000",
- "0x40": "0000000000000000000000000000000000000000000000000000000000000120",
- "0x60": "0000000000000000000000000000000000000000000000000000000000000000",
- "0x80": "0000000000000000000000000000000000000000000000000000000000000001",
- "0xa0": "00000000000000000000000000000000000000000000000000000000000000e0",
- "0xc0": "0000000000000000000000000000000000000000000000000000000000000000",
- "0xe0": "0000000000000000000000000000000000000000000000000000000000000001",
-"0x100": "0000000000000000000000000000000000000000000000000000000000000007"
-
-function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public constant returns (bool) -->
-[["0xa","0xb","0xc"] , ["0xd","0xe"] , ["0xf","0xaa"] , 5, 5], [["0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db","0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db","0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db"],[0,1,2],["0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db","0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db","0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db","0x4b0897b0513fdc7c541b6d9d7e929c4e5364d2db"]]
-function doSomethingWithSomeStructs(LibConstruction.SubmissionData _submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public constant returns (bool)
-memory:
-0x400: 05527cf90a000000000000000000000000000000000000000000000000000000
-0x420: 000000000b000000000000000000000000000000000000000000000000000000
-0x440: 000000000c000000000000000000000000000000000000000000000000000000
-0x460: 000000000d000000000000000000000000000000000000000000000000000000
-0x480: 000000000e000000000000000000000000000000000000000000000000000000
-0x4a0: 000000000f000000000000000000000000000000000000000000000000000000
-0x4c0: 00000000aa000000000000000000000000000000000000000000000000000000
-0x4e0: 0000000000000000000000000000000000000000000000000000000000000000
-0x500: 0000000500000000000000000000000000000000000000000000000000000000
-0x520: 0000000500000000000000000000000000000000000000000000000000000000
-0x540: 0000014000000000000000000000000000000000000000000000000000000000
-0x560: 0000006000000000000000000000000000000000000000000000000000000000
-0x580: 000000e000000000000000000000000000000000000000000000000000000000
-0x5a0: 0000016000000000000000000000000000000000000000000000000000000000
-0x5c0: 000000030000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
-0x5e0: 5364d2db0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
-0x600: 5364d2db0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
-0x620: 5364d2db00000000000000000000000000000000000000000000000000000000
-0x640: 0000000300000000000000000000000000000000000000000000000000000000
-0x660: 0000000000000000000000000000000000000000000000000000000000000000
-0x680: 0000000100000000000000000000000000000000000000000000000000000000
-0x6a0: 0000000200000000000000000000000000000000000000000000000000000000
-0x6c0: 000000040000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
-0x6e0: 5364d2db0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
-0x700: 5364d2db0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
-0x720: 5364d2db0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e
-0x740: 5364d2db
-
-05527cf9
-0x000 0a00000000000000000000000000000000000000000000000000000000000000 // title[0]
-0x020 0b00000000000000000000000000000000000000000000000000000000000000 // title[1]
-0x040 0c00000000000000000000000000000000000000000000000000000000000000 // title[2]
-0x060 0d00000000000000000000000000000000000000000000000000000000000000 // descriptionHash[0]
-0x080 0e00000000000000000000000000000000000000000000000000000000000000 // descriptionHash[1]
-0x0a0 0f00000000000000000000000000000000000000000000000000000000000000 // fileHash[0]
-0x0c0 aa00000000000000000000000000000000000000000000000000000000000000 // fileHash[1]
-0x0e0 0000000000000000000000000000000000000000000000000000000000000005 // timeSubmitted
-0x100 0000000000000000000000000000000000000000000000000000000000000005 // timeUpdated
-
-0x120 0000000000000000000000000000000000000000000000000000000000000140 // pos of car
-0x140 0000000000000000000000000000000000000000000000000000000000000060 // con offset
-0x160 00000000000000000000000000000000000000000000000000000000000000e0 // conRew offset
-0x180 0000000000000000000000000000000000000000000000000000000000000160 // ref offset
-0x1a0 0000000000000000000000000000000000000000000000000000000000000003 // con len
-      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
-      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
-      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
-      0000000000000000000000000000000000000000000000000000000000000003 // conRew len
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000001
-      0000000000000000000000000000000000000000000000000000000000000002
-      0000000000000000000000000000000000000000000000000000000000000004 // ref len
-      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
-      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
-      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
-      0000000000000000000000004b0897b0513fdc7c541b6d9d7e929c4e5364d2db
-
-
-contract function (Thing t)
-
-[1,[2],[2]]
-
-inside call mem
-
-  "0x0": "0000000000000000000000000000000000000000000000000000000000000000
- "0x20": "0000000000000000000000000000000000000000000000000000000000000000
- "0x40": "0000000000000000000000000000000000000000000000000000000000000160
- "0x60": "0000000000000000000000000000000000000000000000000000000000000000
- "0x80": "0000000000000000000000000000000000000000000000000000000000000001 // t
- "0xa0": "00000000000000000000000000000000000000000000000000000000000000e0 // a pos
- "0xc0": "0000000000000000000000000000000000000000000000000000000000000120 // b pos
- "0xe0": "0000000000000000000000000000000000000000000000000000000000000001 // a len
-"0x100": "0000000000000000000000000000000000000000000000000000000000000002
-"0x120": "0000000000000000000000000000000000000000000000000000000000000001 // b len
-"0x140": "0000000000000000000000000000000000000000000000000000000000000003
-
-[1,[7],[7]]
-inside calldata
-
-dc6ef131
-     0000000000000000000000000000000000000000000000000000000000000020 // Thing pos
-0x00 0000000000000000000000000000000000000000000000000000000000000001 // t
-0x20 0000000000000000000000000000000000000000000000000000000000000060 // a offset
-0x40 00000000000000000000000000000000000000000000000000000000000000a0 // b offset
-0x60 0000000000000000000000000000000000000000000000000000000000000001 // a len
-0x80 0000000000000000000000000000000000000000000000000000000000000007
-0xa0 0000000000000000000000000000000000000000000000000000000000000001 // b len
-0xc0 0000000000000000000000000000000000000000000000000000000000000007
-
-{
-	"0x80": "0000000000000000000000000000000000000000000000000000000000000001",
-	"0xa0": "00000000000000000000000000000000000000000000000000000000000000e0",
-	"0xc0": "0000000000000000000000000000000000000000000000000000000000000120",
-	"0xe0": "0000000000000000000000000000000000000000000000000000000000000001",
-	"0x100": "0000000000000000000000000000000000000000000000000000000000000007",
-	"0x120": "0000000000000000000000000000000000000000000000000000000000000001",
-	"0x140": "0000000000000000000000000000000000000000000000000000000000000007",
-}
- */

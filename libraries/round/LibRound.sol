@@ -120,7 +120,7 @@ library LibRound
         }
         _selectWinnersData.rewardDistributionTotal = _rewardDistributionTotal;
 
-        // DoNothing and StartNextRound cases
+        // // DoNothing and StartNextRound cases
         if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.DoNothing) || _selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.StartNextRound))
         {
             for(uint256 j = 0; j < _selectWinnersData.winningSubmissions.length; j++)
@@ -128,7 +128,7 @@ library LibRound
                 // Calculate total reward denominator and store it somewhere when
                 uint256 reward = _selectWinnersData.rewardDistribution[j].mul(10**18).div(_selectWinnersData.rewardDistributionTotal).mul(data.bounty).div(10**18);
                 // Transfer the reward to the submission
-                require(IMatryxToken(IMatryxPlatform(IMatryxTournament(IMatryxRound(this).getTournament()).getPlatform()).getTokenAddress()).transfer(_selectWinnersData.winningSubmissions[j], reward));
+                require(IMatryxToken(IMatryxPlatform(IMatryxRound(this).getPlatform()).getTokenAddress()).transfer(_selectWinnersData.winningSubmissions[j], reward));
                 IMatryxSubmission(_selectWinnersData.winningSubmissions[j]).addToWinnings(reward);
             }
 
@@ -175,3 +175,7 @@ library LibRound
         }
     }
 }
+
+// 0xc4c718469c03cc4e0bd4c7de60a7776c4ce6532f
+// 0x44a2d9a03b271d4c4cdc4d43cf2dda3878defac3
+// 0x0c484097e2f000aadaef0450ab35aa00652481a1

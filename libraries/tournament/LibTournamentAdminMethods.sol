@@ -51,11 +51,6 @@ library LibTournamentAdminMethods
     /// @param _selectWinnersData Struct containing winning submission information
     function selectWinners(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public
     {
-        // assembly {
-        //     let ptr := mload(0x40)
-        //     calldatacopy(ptr, 0, calldatasize())
-        //     log0(ptr, calldatasize())
-        // }
         // Round must be in review or have winners to close
         (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 roundState = uint256(IMatryxRound(currentRoundAddress).getState());

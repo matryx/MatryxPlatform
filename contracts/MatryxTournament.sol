@@ -100,14 +100,12 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      */
 
     /// @dev Requires the function caller to be the platform.
-    modifier onlyPlatform()
-    {
+    modifier onlyPlatform() {
         require(msg.sender == platformAddress);
         _;
     }
 
-    modifier onlyRound()
-    {
+    modifier onlyRound() {
         require(stateData.isRound[msg.sender]);
         _;
     }
@@ -125,8 +123,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     //     _;
     // }
 
-    modifier onlyPeerLinked(address _sender)
-    {
+    modifier onlyPeerLinked(address _sender) {
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
         require(platform.hasPeer(_sender));
         _;
@@ -140,13 +137,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         _;
     }
 
-    /// @dev Requires the function caller to be the platform or the owner of this tournament
-    modifier platformOrOwner()
-    {
-        require((msg.sender == platformAddress)||(msg.sender == owner));
-        _;
-    }
-
     modifier whileTournamentOpen()
     {
         require(getState() == uint256(LibEnums.TournamentState.Open));
@@ -155,7 +145,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     modifier ifRoundHasFunds()
     {
-        // require((IMatryxRound(currentRound()[1]).getState()) != uint256(LibEnums.RoundState.Unfunded));
         address currentRoundAddress;
 
         (,currentRoundAddress) = currentRound();
@@ -247,8 +236,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     function getCategory() public view returns (bytes32 _category)
     {
-        // return IMatryxPlatform(platformAddress).hashForCategory(categoryHash);
-        // TODO: Fix me
         return data.category;
     }
 
@@ -326,6 +313,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         data.update(tournamentData, platformAddress);
     }
 
+    /// @dev Add additional funds to the tournament
     function addFunds(uint256 _fundsToAdd) public
     {
         uint256 tournamentState = this.getState();
@@ -361,6 +349,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         LibTournamentAdminMethods.selectWinners(stateData, platformAddress, matryxTokenAddress, _selectWinnersData, _roundData);
     }
 
+    /// @dev modifies the future "Ghost" Round Information
     function editGhostRound(LibConstruction.RoundData _roundData) public onlyOwner
     {
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();

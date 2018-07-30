@@ -165,18 +165,18 @@ useful debugging snippets
   // log call signature
   assembly {
     mstore(0, calldataload(0))
-    log0(0x1c, 0x04)
+    log0(0, 0x04)
   }
 
   // log msg.sender
   assembly {
     mstore(0, caller())
-    log0(0x14, 0x0c)
+    log0(0x0c, 0x14)
   }
 
 
 
-tips
+tips & reminders
 
   if function is being called (not hitting fallback)
   but no code executes, double check in data size

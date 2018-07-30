@@ -86,25 +86,19 @@ library LibTournamentEntrantMethods
         (, currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 numberOfEntrants = entryData.numberOfEntrants;
         uint256 bounty = IMatryxTournament(this).getBounty();
-        if(entryData.hasWithdrawn[msg.sender] == false)
+
+        // If this is the first withdrawal being made...
+        if(!stateData.hasBeenWithdrawnFrom)
         {
-            // If this is the first withdrawal being made...
-            if(stateData.hasBeenWithdrawnFrom == false)
-            {
-                uint256 roundBounty = IMatryxRound(currentRoundAddress).transferBountyToTournament();
-                stateData.roundBountyAllocation = stateData.roundBountyAllocation.sub(roundBounty);
-                returnEntryFeeToEntrant(stateData, entryData, msg.sender, matryxTokenAddress);
-                require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.div(entryData.numberOfEntrants).mul(2)));
+            uint256 roundBounty = IMatryxRound(currentRoundAddress).transferBountyToTournament();
+            stateData.roundBountyAllocation = stateData.roundBountyAllocation.sub(roundBounty);
 
-                stateData.hasBeenWithdrawnFrom = true;
-            }
-            else
-            {
-                returnEntryFeeToEntrant(stateData, entryData, msg.sender, matryxTokenAddress);
-                require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.mul(numberOfEntrants.sub(2)).div(numberOfEntrants).div(numberOfEntrants.sub(1))));
-            }
-
-            entryData.hasWithdrawn[msg.sender] = true;
+            stateData.hasBeenWithdrawnFrom = true;
         }
+
+        require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.mul(10**18).div(entryData.numberOfEntrants).div(10**18)));
+        returnEntryFeeToEntrant(stateData, entryData, msg.sender, matryxTokenAddress);
+
+        entryData.hasWithdrawn[msg.sender] = true;
     }
 }

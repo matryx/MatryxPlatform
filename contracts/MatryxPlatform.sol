@@ -370,7 +370,7 @@ contract MatryxPlatform is Ownable {
         emit TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title, tournamentData.descriptionHash, tournamentData.initialBounty, tournamentData.entryFee);
 
         require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.initialBounty));
-        // IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
+        IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
         // update data structures
         allTournaments.push(newTournament);
         tournamentExists[newTournament] = true;

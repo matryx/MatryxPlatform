@@ -6,6 +6,7 @@ import "../libraries/round/LibRound.sol";
 
 interface IMatryxRound
 {
+    function getPlatform() public view returns (address);
     //function removeSubmission(address _submissionAddress) public returns (bool);
     function submissionExists(address _submissionAddress) public returns (bool);
     function addBounty(uint256 _mtxAllocation) public;
