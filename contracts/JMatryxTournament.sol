@@ -119,7 +119,7 @@ contract JMatryxTournament {
             case 0x2f54bf6e { isOwner() }                             // isOwner(address)
             case 0xf2fde38b { transferOwnership() }                   // transferOwnership(address)
 
-            // Bro why you tryna call a function that doesn't exist?
+            // Bro why you tryna call a function that doesn't exist?  // ¯\_(ツ)_/¯
             default {                                                 // (╯°□°）╯︵ ┻━┻
                 mstore(0, 0xdead)
                 log0(0x1e, 0x02)
@@ -308,16 +308,16 @@ contract JMatryxTournament {
             // getDescriptionHash() public view returns (bytes32[2] _descriptionHash)
             function getDescriptionHash() {
                 let desc := mload(0x40)
-                mstore(desc, sload(7))              // data.descriptionHash[0]
-                mstore(add(desc, 0x20), sload(8))   // data.descriptionHash[1]
+                mstore(desc, sload(add(data_slot, 4)))             // data.descriptionHash[0]
+                mstore(add(desc, 0x20), sload(add(data_slot, 5)))  // data.descriptionHash[1]
                 return(desc, 0x40)
             }
 
             // getFileHash() public view returns (bytes32[2] _fileHash)
             function getFileHash() {
                 let file := mload(0x40)
-                mstore(file, sload(9))              // data.fileHash[0]
-                mstore(add(file, 0x20), sload(10))  // data.fileHash[1]
+                mstore(file, sload(add(data_slot, 6)))             // data.fileHash[0]
+                mstore(add(file, 0x20), sload(add(data_slot, 7)))  // data.fileHash[1]
                 return(file, 0x40)
             }
 
@@ -345,7 +345,7 @@ contract JMatryxTournament {
 
             // getEntryFee() public view returns (uint256)
             function getEntryFee() {
-                return32(sload(12))
+                return32(sload(add(data_slot, 9)))  // data.entryFee
             }
 
             // currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress)
@@ -687,21 +687,21 @@ contract JMatryxTournament {
 
             // Ownable stuffs
             function getOwner() {
-                return32(sload(0))
+                return32(sload(owner_slot))
             }
 
             function isOwner() {
                 let _sender := arg(0)
-                return32(eq(sload(0), _sender))
+                return32(eq(sload(owner_slot), _sender))
             }
 
             /// @dev transferOwnership: transfers ownership to newOwner
             /// @param address newOwner
             function transferOwnership() {
                 let _newOwner := arg(0)
-                require(eq(sload(0), caller()))
+                require(eq(sload(owner_slot), caller()))
                 require(_newOwner)
-                sstore(0, _newOwner)
+                sstore(owner_slot, _newOwner)
             }
         }
     }
