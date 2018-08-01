@@ -75,11 +75,12 @@ contract MatryxRound is Ownable, IMatryxRound {
     // 	_;
     // }
 
-    modifier onlySubmission()
-    {
-        require(submissionEntrantTrackingData.submissionExists[msg.sender]);
-        _;
-    }
+    // Unused
+    // modifier onlySubmission()
+    // {
+    //     require(submissionEntrantTrackingData.submissionExists[msg.sender]);
+    //     _;
+    // }
 
     modifier onlyTournament()
     {
@@ -95,12 +96,13 @@ contract MatryxRound is Ownable, IMatryxRound {
         _;
     }
 
+    // Unused
     /// @dev Requires that the desired submission is accessible to the requester.
-    modifier whenAccessible(address _requester, uint256 _index)
-    {
-        require(IMatryxSubmission(submissionsData.submissions[_index]).isAccessible(_requester));
-        _;
-    }
+    // modifier whenAccessible(address _requester, uint256 _index)
+    // {
+    //     require(IMatryxSubmission(submissionsData.submissions[_index]).isAccessible(_requester));
+    //     _;
+    // }
 
     function submissionExists(address _submissionAddress) public returns (bool)
     {
@@ -114,12 +116,13 @@ contract MatryxRound is Ownable, IMatryxRound {
     //     _;
     // }
 
+    // Unused
     // @dev Requires that the sender be the submission's author.
-    modifier onlySubmissionAuthor()
-    {
-        require(submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].length != 0);
-        _;
-    }
+    // modifier onlySubmissionAuthor()
+    // {
+    //     require(submissionEntrantTrackingData.authorToSubmissionAddress[msg.sender].length != 0);
+    //     _;
+    // }
 
     /*
      * State Maintenance Methods
@@ -333,9 +336,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     /// 	should this submission win.
     ///		references: Addresses of submissions referenced in creating this submission.
     /// @return _submissionAddress Location of this submission within this round.
-    // function createSubmission(address _author, LibConstruction.SubmissionData submissionData) public onlyTournamentOrLib duringOpenRound returns (address _submissionAddress)
-    // function createSubmission(address _owner, address[3] _requiredAddresses, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
-    function createSubmission(address _owner, address platformAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
+    function createSubmission(address _owner, address platformAddress, LibConstruction.SubmissionData submissionData) public onlyTournamentOrLib duringOpenRound returns (address _submissionAddress)
     {
         require(_owner != 0x0);
 
