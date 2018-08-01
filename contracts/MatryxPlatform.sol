@@ -331,6 +331,24 @@ contract MatryxPlatform is Ownable {
     * Tournament Admin Methods
     */
 
+    // function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress)
+    // {
+    //     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
+    //     address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
+    //     emit TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title, tournamentData.descriptionHash, tournamentData.initialBounty, tournamentData.entryFee);
+
+    //     require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.initialBounty));
+    //     IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
+    //     // update data structures
+    //     allTournaments.push(newTournament);
+    //     tournamentExists[newTournament] = true;
+    //     updateUsersTournaments(msg.sender, newTournament);
+
+    //     addTournamentToCategory(newTournament, tournamentData.category);
+
+    //     return newTournament;
+    // }
+
     /// @dev Create a new tournament.
     /// @param tournamentData Data to populate the new tournament with. Includes:
     ///    category: Discipline the tournament falls under.
@@ -348,24 +366,6 @@ contract MatryxPlatform is Ownable {
     {
         IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
         address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
-        emit TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title, tournamentData.descriptionHash, tournamentData.initialBounty, tournamentData.entryFee);
-
-        require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.initialBounty));
-        IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
-        // update data structures
-        allTournaments.push(newTournament);
-        tournamentExists[newTournament] = true;
-        updateUsersTournaments(msg.sender, newTournament);
-
-        addTournamentToCategory(newTournament, tournamentData.category);
-
-        return newTournament;
-    }
-
-    function createJTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress)
-    {
-        IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-        address newTournament = tournamentFactory.createJTournament(tournamentData, roundData, msg.sender);
 
         emit TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title, tournamentData.descriptionHash, tournamentData.initialBounty, tournamentData.entryFee);
 

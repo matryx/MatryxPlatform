@@ -3,7 +3,6 @@ pragma experimental ABIEncoderV2;
 
 import "../../libraries/LibConstruction.sol";
 import "../../interfaces/IMatryxPlatform.sol";
-import "../MatryxTournament.sol";
 import "../JMatryxTournament.sol";
 import "../Ownable.sol";
 
@@ -16,11 +15,6 @@ contract MatryxTournamentFactory is Ownable {
     }
 
     function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _owner) public returns (address _tournamentAddress) {
-        MatryxTournament newTournament = new MatryxTournament(_owner, platformAddress, matryxRoundFactoryAddress, tournamentData, roundData);
-        return newTournament;
-    }
-
-    function createJTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _owner) public returns (address _tournamentAddress) {
         JMatryxTournament newTournament = new JMatryxTournament(_owner, platformAddress, matryxRoundFactoryAddress, tournamentData, roundData);
         return newTournament;
     }

@@ -1,80 +1,6 @@
 const ethers = require('ethers')
-const fs = require('fs')
+const network = require('./network')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
-
-const bip39 = require('bip39') // npm i -S bip39
-const ethUtil = require('ethereumjs-util')
-const hdkey = require('ethereumjs-wallet/hdkey')
-var path = require("path");
-
-// key from ganache
-const keys = [
-  '0x2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea',
-  '0x67a8bc7c12985775e9ab2b1bc217a9c4eff822f93a6f388021e30431d26cb3d3',
-  '0x42811f2725f3c7a7608535fba191ea9a167909883f1e76e038c3168446fbc1bc',
-  '0xb1744eb5862a044da11d677a590e236cddb2eda68a9aa4afaeddab797c75ef58',
-  '0xcf256f53446df317d94876f8b02b279133ea8c18659635b109cc049f8a59371f',
-  '0x30b1dcefe0b8fcd094738c80c0b822eff6a6445ed2cacdcf8a7feebc308aa25a',
-  '0x402e268ea63ec03a6a2ee6f3000e78a1a9f82064863b1b2f5f0d289c9f3b3df8',
-  '0xa6ff24aba3b39e3e8fbf9eb51e1e449cd43568aa07602b7b1bb3a3f9033b9b8c',
-  '0x2c60947d758af4a091f51ae10ef2e101b2aaa80a194a1219c0eb584ce4720064',
-  '0xa9a763679fdbe3e245a92dbaaebbb4f1184165de58a13869f8a64e8526c112ef'
-]
-
-var content;
-//Change to the correct parent folder that holds mnemonic
-fs.readFile('../keys/mnemonic.txt', 'utf8', (err, data) => {
-  if (err) throw err;
-  //console.log(data)
-  content = data;
-});
-
-const getAccount = (mnemonic, accountNumber) => {
-  //Converting to Seed
-  var seed = bip39.mnemonicToSeed(mnemonic)
-  //Creates wallet instance based on the seed
-  const root = hdkey.fromMasterSeed(seed)
-  //Gets the private key string of the root wallet instance
-  const masterPrivateKey = root._hdkey._privateKey.toString('hex')
-  //Derives address of the accounts
-  const addrNode = root.derivePath("m/44'/60'/0'/0/" + accountNumber.toString())
-  //Private key of the account
-  const privKey = "0x" + addrNode._hdkey._privateKey.toString('hex')
-  //Generates public key from private key
-  const pubKey = ethUtil.privateToPublic(addrNode._hdkey._privateKey)
-  //public key to address
-  const addr = "0x" + ethUtil.publicToAddress(pubKey).toString('hex')
-  return { address: addr, privateKey: privKey.toString('hex') }
-}
-
-//getAccounts(content,0,9)
-const getAccounts = (mnemonic, startIndex, endIndex) => {
-  var seed = bip39.mnemonicToSeed(mnemonic)
-  const root = hdkey.fromMasterSeed(seed)
-  const masterPrivateKey = root._hdkey._privateKey.toString('hex')
-
-  var addressPrivateKeyPairs = []
-  for (var i = startIndex; i <= endIndex; i++) {
-    const addrNode = root.derivePath("m/44'/60'/0'/0/" + i.toString())
-    const privKey = "0x" + addrNode._hdkey._privateKey.toString('hex')
-    const pubKey = ethUtil.privateToPublic(addrNode._hdkey._privateKey)
-    const addr = "0x" + ethUtil.publicToAddress(pubKey).toString('hex')
-
-    addressPrivateKeyPairs.push([addr, privKey.toString('hex')])
-  }
-  console.log("\n")
-  console.log("Available Accounts\n==================")
-  for (var i = startIndex; i <= endIndex; i++) {
-    console.log("(" + i + ") " + addressPrivateKeyPairs[i][0])
-  }
-
-  console.log("Private Keys\n==================")
-  for (var i = startIndex; i <= endIndex; i++) {
-    console.log("(" + i + ") " + addressPrivateKeyPairs[i][1].substring(2))
-  }
-  console.log("\n")
-  return addressPrivateKeyPairs;
-}
 
 function Contract(address, { abi }, accountNum = 0) {
   let data = {
@@ -87,7 +13,7 @@ function Contract(address, { abi }, accountNum = 0) {
     set(obj, prop, val) {
       if (prop === 'accountNumber') {
         obj.accountNumber = val
-        obj.wallet = new ethers.Wallet(keys[obj.accountNumber], new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545'))
+        obj.wallet = new ethers.Wallet(network.accounts[obj.accountNumber][1], network.provider)
         obj.contract = new ethers.Contract(address, abi, obj.wallet)
       }
     },
@@ -105,6 +31,17 @@ function Contract(address, { abi }, accountNum = 0) {
 
 module.exports = {
   Contract,
+
+  getMinedTx(hash) {
+    console.log(`Waiting for ${hash}...`)
+    return new Promise((resolve, reject) => {
+      (async function checkTx() {
+        let res = await network.provider.getTransaction(hash)
+        if (res.blockNumber) resolve(res)
+        else setTimeout(checkTx, 1000)
+      })()
+    })
+  },
 
   bytesToString(bytes) {
     let arr = bytes.map(b => Array.from(ethers.utils.arrayify(b)))
@@ -139,41 +76,46 @@ module.exports = {
     const MatryxRound = artifacts.require('MatryxRound')
     const MatryxSubmission = artifacts.require('MatryxSubmission')
 
-    const account = web3.eth.accounts[accountNum]
+    const account = network.accounts[accountNum][0]
 
     const platform = Contract(MatryxPlatform.address, MatryxPlatform, accountNum)
-    const token = Contract(MatryxToken.address, MatryxToken, 0)
+    // const token = Contract(MatryxToken.address, MatryxToken, 0)
+    const token = Contract(network.tokenAddress, MatryxToken, 0)
 
     const hasPeer = await platform.hasPeer(account)
-
     if (!hasPeer) {
-      console.log('\nSetting up account:', account)
-
-      await platform.createPeer({ gasLimit: 4.5e6 })
-
-      const balance = await token.balanceOf(account) / 1e18 | 0
-      console.log('Balance: ' + balance + ' MTX')
-
-      const tokenReleaseAgent = await token.releaseAgent()
-      if (tokenReleaseAgent === '0x0000000000000000000000000000000000000000') {
-        await token.setReleaseAgent(account)
-        await token.releaseTokenTransfer({ gasLimit: 1e6 })
-        console.log('Token release agent set to accounts[' + accountNum + '] (' + account + ')')
-      }
-
-      if (balance == 0) {
-        let tokens = web3.toWei(1e5)
-        await token.mint(account, tokens)
-
-        token.accountNumber = accountNum
-        await token.approve(MatryxPlatform.address, tokens, { gasPrice: 25 })
-
-        const balance = await token.balanceOf(account) / 1e18 | 0
-        console.log('Minted: ' + balance + ' MTX')
-      }
-
-      console.log('Account', accountNum, 'setup complete!')
+      console.log('\nAdding peer: ' + account + '...')
+      let { hash } = await platform.createPeer({ gasLimit: 4.5e6 })
+      await this.getMinedTx(hash)
     }
+
+    const tokenReleaseAgent = await token.releaseAgent()
+    if (tokenReleaseAgent === '0x0000000000000000000000000000000000000000') {
+      let { hash } = await token.setReleaseAgent(account)
+      await this.getMinedTx(hash)
+      await token.releaseTokenTransfer({ gasLimit: 1e6 })
+      console.log('Token release agent set to: ' + account)
+    }
+
+    const balance = await token.balanceOf(account) / 1e18 | 0
+    console.log('Balance: ' + balance + ' MTX')
+    let tokens = web3.toWei(1e5)
+    if (balance == 0) {
+      console.log('Minting 10000 MTX...')
+      let { hash } = await token.mint(account, tokens)
+      await this.getMinedTx(hash)
+    }
+
+    const allowance = await token.allowance(account, platform.address) / 1e18 | 0
+    console.log('Allowance: ' + allowance + ' MTX')
+    if (allowance == 0) {
+      token.accountNumber = accountNum
+      console.log('Setting allowance...')
+      let { hash } = await token.approve(MatryxPlatform.address, tokens, { gasPrice: 25 })
+      await this.getMinedTx(hash)
+    }
+
+    console.log('Account', accountNum, 'setup complete!\n')
 
     return {
       MatryxPlatform,

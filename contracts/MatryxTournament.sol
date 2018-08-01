@@ -224,11 +224,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return data;
     }
 
+    /// @dev Returns bool indicating whether _address corresponds to an existing round or not
     function isRound(address _roundAddress) public view returns (bool _isRound)
     {
         return stateData.isRound[_roundAddress];
     }
 
+    /// @dev Returns list of round addresses in the tournament
     function getRounds() public view returns (address[] _rounds)
     {
         return stateData.rounds;

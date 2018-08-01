@@ -1,19 +1,14 @@
-require('babel-register');
-require('babel-polyfill');
-require('babel-preset-env');
-var fs = require('fs')
-var path = require('path')
-var mnemonic_path = path.join(__dirname, '..', 'keys', 'dev_wallet_mnemonic.txt')
-var HDWalletProvider = require("truffle-hdwallet-provider");
+const fs = require('fs')
+const HDWalletProvider = require("truffle-hdwallet-provider")
 
-var mnemonic;
-
+const { mnemonicPath } = require('./truffle/network')
 
 ethers = require('ethers')
-sha3 = require('solidity-sha3').default // only in context of this file
+const sha3 = require('solidity-sha3').default // only in context of this file
 
 // SETUP GLOBALS FOR CLI REPL
 const utils = require('./truffle/utils')
+getMinedTx = utils.getMinedTx
 bytesToString = utils.bytesToString
 stringToBytes = utils.stringToBytes
 stringToBytes32 = utils.stringToBytes32
@@ -22,7 +17,6 @@ contract = (address, { abi }) => new ethers.Contract(address, abi, wallet)
 selector = signature => sha3(signature).substr(0, 10)
 getTx = hash => wallet.provider.getTransaction(hash)
 getTxR = hash => wallet.provider.getTransactionReceipt(hash)
-
 
 // wallet key from ganache
 wallet = new ethers.Wallet('0x' + '2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea')
@@ -35,10 +29,8 @@ console.log('token = contract(MatryxToken.address, MatryxToken)\n')
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
   // to customize your Truffle configuration!
-  networks:
-  {
-    development:
-    {
+  networks: {
+    development: {
       host: "localhost",
       port: 8545,
       network_id: "*", // match any network
@@ -47,21 +39,19 @@ module.exports = {
     },
     ropsten: {
       provider: function () {
-        return new HDWalletProvider(getFileContents(mnemonic_path), "https://ropsten.infura.io/metamask")
+        return new HDWalletProvider(getFileContents(mnemonicPath), "https://ropsten.infura.io/metamask")
       },
       network_id: 3,
-      gas: 6741593
+      gas: 5800000
     },
-    testing:
-    {
+    testing: {
       host: "localhost",
       port: 8545,
       network_id: "*", // match any network
       gas: 6741593,
       gasPrice: 30000000
     },
-    coverage:
-    {
+    coverage: {
       host: "localhost",
       network_id: "*",
       port: 8545,     // <-- If you change this, also set the port option in .solcover.js.
@@ -69,17 +59,13 @@ module.exports = {
       gasPrice: 100000     // <-- Use this low gas price
     }
   },
-  mocha:
-  {
+  mocha: {
     enableTimeouts: false
   },
-
-  solc:
-  {
-    optimizer:
-    {
+  solc: {
+    optimizer: {
       enabled: true,
       runs: 4000
     }
   }
-};
+}

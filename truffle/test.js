@@ -1,5 +1,5 @@
 const ethers = require('ethers')
-const { setup, stringToBytes32, stringToBytes, Contract } = require('./utils')
+const { setup, getMinedTx, stringToBytes32, stringToBytes, Contract } = require('./utils')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
 let MatryxTournament, MatryxRound, MatryxSubmission, platform, token, wallet
@@ -19,9 +19,12 @@ const init = async () => {
 
 const createTournament = async (bounty, roundData, accountNumber) => {
   const { platform } = await setup(artifacts, web3, accountNumber)
+
+  let account = platform.wallet.address
   let count = +await platform.tournamentCount()
 
-  console.log("Platform using account", platform.wallet.address)
+  console.log('Platform using account', platform.wallet.address)
+  console.log(`Currently ${count} Tournaments on Platform`)
 
   const suffix = ('0' + (count + 1)).substr(-2)
   const category = stringToBytes('math')
@@ -45,8 +48,9 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   //   bounty
   // }
 
-  let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
+  let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 6e6, gasPrice: 25 })
   console.log('Tournament hash:', tx.hash)
+  await getMinedTx(tx.hash)
 
   const address = await platform.allTournaments(count)
   const tournament = Contract(address, MatryxTournament, accountNumber)
@@ -63,7 +67,11 @@ const createSubmission = async (tournament, accountNumber) => {
   const account = tournament.wallet.address
 
   const isEntrant = await tournament.isEntrant(account)
-  if (!isEntrant) await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
+  if (!isEntrant) {
+    let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
+    console.log("Enter tournament hash:", hash)
+    await getMinedTx(hash)
+  }
 
   const title = stringToBytes32('A submission ' + genId(6), 3)
   const descriptionHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
@@ -78,13 +86,14 @@ const createSubmission = async (tournament, accountNumber) => {
   }
 
   const contribsAndRefs = {
-    contributors: new Array(5).fill(0).map(r => genAddress()),
-    contributorRewardDistribution: new Array(5).fill(1),
-    references: new Array(7).fill(0).map(r => genAddress())
+    contributors: new Array(0).fill(0).map(r => genAddress()),
+    contributorRewardDistribution: new Array(0).fill(1),
+    references: new Array(0).fill(0).map(r => genAddress())
   }
 
   let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
   console.log('Submission hash:', tx.hash)
+  await getMinedTx(tx.hash)
 
   const [_, roundAddress] = await tournament.currentRound()
   const round = Contract(roundAddress, MatryxRound)
@@ -146,34 +155,34 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
   timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
   await sleep(timeTilRoundInReview * 1000)
 
-  const res = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
-  return res
+  const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
+  console.log('Select Winners hash:', tx.hash)
 }
 
 module.exports = async exit => {
   try {
     await init()
     let roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 5,
-      reviewPeriodDuration: 600,
+      start: Math.floor(Date.now() / 1000) + 600,
+      end: Math.floor(Date.now() / 1000) + 1200,
+      reviewPeriodDuration: 60,
       bounty: web3.toWei(5),
       closed: false
     }
-    const tournament = await createTournament(web3.toWei(10), roundData, 1)
-    await createSubmission(tournament, 0)
-    await createSubmission(tournament, 0)
+    const tournament = await createTournament(web3.toWei(10), roundData, 0)
+    // await createSubmission(tournament, 0)
+    // let submission = await createSubmission(tournament, 0)
     // await updateSubmission(submission)
     // await createSubmission(tournament, 2)
     // await createSubmission(tournament, 3)
     const roundTwoData = {
-        start: Math.floor(Date.now()/1000),
-        end: Math.floor(Date.now()/1000) + 10,
-        reviewPeriodDuration: 600,
-        bounty: web3.toWei(2)
-      }
-    const submissions = await logSubmissions(tournament);
-    await selectWinnersWhenInReview(tournament, 1, submissions, submissions.map(s => 1), roundTwoData, 0)
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 10,
+      reviewPeriodDuration: 600,
+      bounty: web3.toWei(2)
+    }
+    const submissions = await logSubmissions(tournament)
+    // await selectWinnersWhenInReview(tournament, 1, submissions, submissions.map(s => 1), roundTwoData, 0)
     // await logSubmissions(tournament)
   } catch (err) {
     console.log(err.message)

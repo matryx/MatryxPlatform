@@ -5,11 +5,11 @@ var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxPeerFactory = artifacts.require("MatryxPeerFactory");
 var MatryxTournamentFactory = artifacts.require("MatryxTournamentFactory");
 var MatryxSubmissionFactory = artifacts.require("MatryxSubmissionFactory");
-var matryxTokenAddress = require('./tokenAddress');
+var { tokenAddress } = require('../truffle/network');
 
 
 module.exports = function (deployer) {
-	return deployer.deploy(MatryxPlatform, matryxTokenAddress, MatryxPeerFactory.address, MatryxTournamentFactory.address, MatryxSubmissionFactory.address).then((platform) => {
+	return deployer.deploy(MatryxPlatform, tokenAddress, MatryxPeerFactory.address, MatryxTournamentFactory.address, MatryxSubmissionFactory.address).then((platform) => {
 		// Supply the platform address to the contracts that need it.
 		MatryxTournamentFactory.deployed().then((tournamentFactory) => {
 			tournamentFactory.setPlatform(MatryxPlatform.address);
