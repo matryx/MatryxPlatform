@@ -5,52 +5,42 @@
       "constant": false,
       "inputs": [
         {
-          "name": "_contributors",
-          "type": "address[]"
+          "name": "_owner",
+          "type": "address"
         },
         {
-          "name": "_contributorRewardDistribution",
-          "type": "uint128[]"
+          "name": "platformAddress",
+          "type": "address"
         },
         {
-          "name": "_references",
-          "type": "address[]"
+          "name": "tournamentAddress",
+          "type": "address"
         },
         {
-          "components": [
-            {
-              "name": "platformAddress",
-              "type": "address"
-            },
-            {
-              "name": "tournamentAddress",
-              "type": "address"
-            },
-            {
-              "name": "roundAddress",
-              "type": "address"
-            }
-          ],
-          "name": "requiredAddresses",
-          "type": "tuple"
+          "name": "roundAddress",
+          "type": "address"
         },
         {
           "components": [
             {
               "name": "title",
-              "type": "string"
+              "type": "bytes32[3]"
             },
             {
-              "name": "owner",
-              "type": "address"
+              "name": "descriptionHash",
+              "type": "bytes32[2]"
             },
             {
-              "name": "contentHash",
-              "type": "bytes"
+              "name": "fileHash",
+              "type": "bytes32[2]"
             },
             {
-              "name": "isPublic",
-              "type": "bool"
+              "name": "timeSubmitted",
+              "type": "uint256"
+            },
+            {
+              "name": "timeUpdated",
+              "type": "uint256"
             }
           ],
           "name": "submissionData",
@@ -73,20 +63,20 @@
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "pragma solidity ^0.4.18;\npragma experimental ABIEncoderV2;\n\nimport \"../../libraries/LibConstruction.sol\";\n\ninterface IMatryxSubmissionFactory\n{\n\tfunction createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.RequiredSubmissionAddresses requiredAddresses, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);\n}",
-  "sourcePath": "/Users/samhessenauer/Documents/Software/git.nosync/MatryxPlatform/interfaces/factories/IMatryxSubmissionFactory.sol",
+  "source": "pragma solidity ^0.4.18;\npragma experimental ABIEncoderV2;\n\nimport \"../../libraries/LibConstruction.sol\";\n\ninterface IMatryxSubmissionFactory\n{\n\t// function createSubmission(address _owner, address[3] _requiredAddresses, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);\n\tfunction createSubmission(address _owner, address platformAddress, address tournamentAddress, address roundAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);\n}\n",
+  "sourcePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/factories/IMatryxSubmissionFactory.sol",
   "ast": {
-    "absolutePath": "/Users/samhessenauer/Documents/Software/git.nosync/MatryxPlatform/interfaces/factories/IMatryxSubmissionFactory.sol",
+    "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/factories/IMatryxSubmissionFactory.sol",
     "exportedSymbols": {
       "IMatryxSubmissionFactory": [
-        8451
+        7889
       ]
     },
-    "id": 8452,
+    "id": 7890,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 8430,
+        "id": 7871,
         "literals": [
           "solidity",
           "^",
@@ -94,25 +84,25 @@
           ".18"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:20"
+        "src": "0:24:36"
       },
       {
-        "id": 8431,
+        "id": 7872,
         "literals": [
           "experimental",
           "ABIEncoderV2"
         ],
         "nodeType": "PragmaDirective",
-        "src": "25:33:20"
+        "src": "25:33:36"
       },
       {
-        "absolutePath": "/Users/samhessenauer/Documents/Software/git.nosync/MatryxPlatform/libraries/LibConstruction.sol",
+        "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/libraries/LibConstruction.sol",
         "file": "../../libraries/LibConstruction.sol",
-        "id": 8432,
+        "id": 7873,
         "nodeType": "ImportDirective",
-        "scope": 8452,
-        "sourceUnit": 8568,
-        "src": "60:45:20",
+        "scope": 7890,
+        "sourceUnit": 8040,
+        "src": "60:45:36",
         "symbolAliases": [],
         "unitAlias": ""
       },
@@ -122,9 +112,9 @@
         "contractKind": "interface",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 8451,
+        "id": 7889,
         "linearizedBaseContracts": [
-          8451
+          7889
         ],
         "name": "IMatryxSubmissionFactory",
         "nodeType": "ContractDefinition",
@@ -132,7 +122,7 @@
           {
             "body": null,
             "documentation": null,
-            "id": 8450,
+            "id": 7888,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": false,
@@ -140,188 +130,16 @@
             "name": "createSubmission",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8446,
+              "id": 7884,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8435,
-                  "name": "_contributors",
+                  "id": 7875,
+                  "name": "_owner",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "171:23:20",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_array$_t_address_$dyn_memory_ptr",
-                    "typeString": "address[]"
-                  },
-                  "typeName": {
-                    "baseType": {
-                      "id": 8433,
-                      "name": "address",
-                      "nodeType": "ElementaryTypeName",
-                      "src": "171:7:20",
-                      "typeDescriptions": {
-                        "typeIdentifier": "t_address",
-                        "typeString": "address"
-                      }
-                    },
-                    "id": 8434,
-                    "length": null,
-                    "nodeType": "ArrayTypeName",
-                    "src": "171:9:20",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
-                      "typeString": "address[]"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8438,
-                  "name": "_contributorRewardDistribution",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "196:40:20",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_array$_t_uint128_$dyn_memory_ptr",
-                    "typeString": "uint128[]"
-                  },
-                  "typeName": {
-                    "baseType": {
-                      "id": 8436,
-                      "name": "uint128",
-                      "nodeType": "ElementaryTypeName",
-                      "src": "196:7:20",
-                      "typeDescriptions": {
-                        "typeIdentifier": "t_uint128",
-                        "typeString": "uint128"
-                      }
-                    },
-                    "id": 8437,
-                    "length": null,
-                    "nodeType": "ArrayTypeName",
-                    "src": "196:9:20",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_array$_t_uint128_$dyn_storage_ptr",
-                      "typeString": "uint128[]"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8441,
-                  "name": "_references",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "238:21:20",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_array$_t_address_$dyn_memory_ptr",
-                    "typeString": "address[]"
-                  },
-                  "typeName": {
-                    "baseType": {
-                      "id": 8439,
-                      "name": "address",
-                      "nodeType": "ElementaryTypeName",
-                      "src": "238:7:20",
-                      "typeDescriptions": {
-                        "typeIdentifier": "t_address",
-                        "typeString": "address"
-                      }
-                    },
-                    "id": 8440,
-                    "length": null,
-                    "nodeType": "ArrayTypeName",
-                    "src": "238:9:20",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
-                      "typeString": "address[]"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8443,
-                  "name": "requiredAddresses",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "261:61:20",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_RequiredSubmissionAddresses_$8499_memory_ptr",
-                    "typeString": "struct LibConstruction.RequiredSubmissionAddresses"
-                  },
-                  "typeName": {
-                    "contractScope": null,
-                    "id": 8442,
-                    "name": "LibConstruction.RequiredSubmissionAddresses",
-                    "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 8499,
-                    "src": "261:43:20",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_RequiredSubmissionAddresses_$8499_storage_ptr",
-                      "typeString": "struct LibConstruction.RequiredSubmissionAddresses"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8445,
-                  "name": "submissionData",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "324:45:20",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_SubmissionData_$8557_memory_ptr",
-                    "typeString": "struct LibConstruction.SubmissionData"
-                  },
-                  "typeName": {
-                    "contractScope": null,
-                    "id": 8444,
-                    "name": "LibConstruction.SubmissionData",
-                    "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 8557,
-                    "src": "324:30:20",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_SubmissionData_$8557_storage_ptr",
-                      "typeString": "struct LibConstruction.SubmissionData"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                }
-              ],
-              "src": "170:200:20"
-            },
-            "payable": false,
-            "returnParameters": {
-              "id": 8449,
-              "nodeType": "ParameterList",
-              "parameters": [
-                {
-                  "constant": false,
-                  "id": 8448,
-                  "name": "_submissionAddress",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "387:26:20",
+                  "scope": 7888,
+                  "src": "340:14:36",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -329,10 +147,150 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 8447,
+                    "id": 7874,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "387:7:20",
+                    "src": "340:7:36",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7877,
+                  "name": "platformAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7888,
+                  "src": "356:23:36",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7876,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "356:7:36",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7879,
+                  "name": "tournamentAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7888,
+                  "src": "381:25:36",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7878,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "381:7:36",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7881,
+                  "name": "roundAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7888,
+                  "src": "408:20:36",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7880,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "408:7:36",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7883,
+                  "name": "submissionData",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7888,
+                  "src": "430:45:36",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_SubmissionData_$7998_memory_ptr",
+                    "typeString": "struct LibConstruction.SubmissionData"
+                  },
+                  "typeName": {
+                    "contractScope": null,
+                    "id": 7882,
+                    "name": "LibConstruction.SubmissionData",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 7998,
+                    "src": "430:30:36",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_SubmissionData_$7998_storage_ptr",
+                      "typeString": "struct LibConstruction.SubmissionData"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "339:137:36"
+            },
+            "payable": false,
+            "returnParameters": {
+              "id": 7887,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7886,
+                  "name": "_submissionAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7888,
+                  "src": "493:26:36",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7885,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "493:7:36",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -342,33 +300,33 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "386:28:20"
+              "src": "492:28:36"
             },
-            "scope": 8451,
-            "src": "145:270:20",
+            "scope": 7889,
+            "src": "314:207:36",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 8452,
-        "src": "107:310:20"
+        "scope": 7890,
+        "src": "107:416:36"
       }
     ],
-    "src": "0:417:20"
+    "src": "0:524:36"
   },
   "legacyAST": {
-    "absolutePath": "/Users/samhessenauer/Documents/Software/git.nosync/MatryxPlatform/interfaces/factories/IMatryxSubmissionFactory.sol",
+    "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/factories/IMatryxSubmissionFactory.sol",
     "exportedSymbols": {
       "IMatryxSubmissionFactory": [
-        8451
+        7889
       ]
     },
-    "id": 8452,
+    "id": 7890,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 8430,
+        "id": 7871,
         "literals": [
           "solidity",
           "^",
@@ -376,25 +334,25 @@
           ".18"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:20"
+        "src": "0:24:36"
       },
       {
-        "id": 8431,
+        "id": 7872,
         "literals": [
           "experimental",
           "ABIEncoderV2"
         ],
         "nodeType": "PragmaDirective",
-        "src": "25:33:20"
+        "src": "25:33:36"
       },
       {
-        "absolutePath": "/Users/samhessenauer/Documents/Software/git.nosync/MatryxPlatform/libraries/LibConstruction.sol",
+        "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/libraries/LibConstruction.sol",
         "file": "../../libraries/LibConstruction.sol",
-        "id": 8432,
+        "id": 7873,
         "nodeType": "ImportDirective",
-        "scope": 8452,
-        "sourceUnit": 8568,
-        "src": "60:45:20",
+        "scope": 7890,
+        "sourceUnit": 8040,
+        "src": "60:45:36",
         "symbolAliases": [],
         "unitAlias": ""
       },
@@ -404,9 +362,9 @@
         "contractKind": "interface",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 8451,
+        "id": 7889,
         "linearizedBaseContracts": [
-          8451
+          7889
         ],
         "name": "IMatryxSubmissionFactory",
         "nodeType": "ContractDefinition",
@@ -414,7 +372,7 @@
           {
             "body": null,
             "documentation": null,
-            "id": 8450,
+            "id": 7888,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": false,
@@ -422,188 +380,16 @@
             "name": "createSubmission",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8446,
+              "id": 7884,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8435,
-                  "name": "_contributors",
+                  "id": 7875,
+                  "name": "_owner",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "171:23:20",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_array$_t_address_$dyn_memory_ptr",
-                    "typeString": "address[]"
-                  },
-                  "typeName": {
-                    "baseType": {
-                      "id": 8433,
-                      "name": "address",
-                      "nodeType": "ElementaryTypeName",
-                      "src": "171:7:20",
-                      "typeDescriptions": {
-                        "typeIdentifier": "t_address",
-                        "typeString": "address"
-                      }
-                    },
-                    "id": 8434,
-                    "length": null,
-                    "nodeType": "ArrayTypeName",
-                    "src": "171:9:20",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
-                      "typeString": "address[]"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8438,
-                  "name": "_contributorRewardDistribution",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "196:40:20",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_array$_t_uint128_$dyn_memory_ptr",
-                    "typeString": "uint128[]"
-                  },
-                  "typeName": {
-                    "baseType": {
-                      "id": 8436,
-                      "name": "uint128",
-                      "nodeType": "ElementaryTypeName",
-                      "src": "196:7:20",
-                      "typeDescriptions": {
-                        "typeIdentifier": "t_uint128",
-                        "typeString": "uint128"
-                      }
-                    },
-                    "id": 8437,
-                    "length": null,
-                    "nodeType": "ArrayTypeName",
-                    "src": "196:9:20",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_array$_t_uint128_$dyn_storage_ptr",
-                      "typeString": "uint128[]"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8441,
-                  "name": "_references",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "238:21:20",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_array$_t_address_$dyn_memory_ptr",
-                    "typeString": "address[]"
-                  },
-                  "typeName": {
-                    "baseType": {
-                      "id": 8439,
-                      "name": "address",
-                      "nodeType": "ElementaryTypeName",
-                      "src": "238:7:20",
-                      "typeDescriptions": {
-                        "typeIdentifier": "t_address",
-                        "typeString": "address"
-                      }
-                    },
-                    "id": 8440,
-                    "length": null,
-                    "nodeType": "ArrayTypeName",
-                    "src": "238:9:20",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
-                      "typeString": "address[]"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8443,
-                  "name": "requiredAddresses",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "261:61:20",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_RequiredSubmissionAddresses_$8499_memory_ptr",
-                    "typeString": "struct LibConstruction.RequiredSubmissionAddresses"
-                  },
-                  "typeName": {
-                    "contractScope": null,
-                    "id": 8442,
-                    "name": "LibConstruction.RequiredSubmissionAddresses",
-                    "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 8499,
-                    "src": "261:43:20",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_RequiredSubmissionAddresses_$8499_storage_ptr",
-                      "typeString": "struct LibConstruction.RequiredSubmissionAddresses"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8445,
-                  "name": "submissionData",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "324:45:20",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_struct$_SubmissionData_$8557_memory_ptr",
-                    "typeString": "struct LibConstruction.SubmissionData"
-                  },
-                  "typeName": {
-                    "contractScope": null,
-                    "id": 8444,
-                    "name": "LibConstruction.SubmissionData",
-                    "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 8557,
-                    "src": "324:30:20",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_struct$_SubmissionData_$8557_storage_ptr",
-                      "typeString": "struct LibConstruction.SubmissionData"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                }
-              ],
-              "src": "170:200:20"
-            },
-            "payable": false,
-            "returnParameters": {
-              "id": 8449,
-              "nodeType": "ParameterList",
-              "parameters": [
-                {
-                  "constant": false,
-                  "id": 8448,
-                  "name": "_submissionAddress",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8450,
-                  "src": "387:26:20",
+                  "scope": 7888,
+                  "src": "340:14:36",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -611,10 +397,150 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 8447,
+                    "id": 7874,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "387:7:20",
+                    "src": "340:7:36",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7877,
+                  "name": "platformAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7888,
+                  "src": "356:23:36",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7876,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "356:7:36",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7879,
+                  "name": "tournamentAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7888,
+                  "src": "381:25:36",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7878,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "381:7:36",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7881,
+                  "name": "roundAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7888,
+                  "src": "408:20:36",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7880,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "408:7:36",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7883,
+                  "name": "submissionData",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7888,
+                  "src": "430:45:36",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_SubmissionData_$7998_memory_ptr",
+                    "typeString": "struct LibConstruction.SubmissionData"
+                  },
+                  "typeName": {
+                    "contractScope": null,
+                    "id": 7882,
+                    "name": "LibConstruction.SubmissionData",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 7998,
+                    "src": "430:30:36",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_SubmissionData_$7998_storage_ptr",
+                      "typeString": "struct LibConstruction.SubmissionData"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "339:137:36"
+            },
+            "payable": false,
+            "returnParameters": {
+              "id": 7887,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7886,
+                  "name": "_submissionAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7888,
+                  "src": "493:26:36",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7885,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "493:7:36",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -624,26 +550,26 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "386:28:20"
+              "src": "492:28:36"
             },
-            "scope": 8451,
-            "src": "145:270:20",
+            "scope": 7889,
+            "src": "314:207:36",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 8452,
-        "src": "107:310:20"
+        "scope": 7890,
+        "src": "107:416:36"
       }
     ],
-    "src": "0:417:20"
+    "src": "0:524:36"
   },
   "compiler": {
     "name": "solc",
     "version": "0.4.24+commit.e67f0147.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "2.0.0",
-  "updatedAt": "2018-07-06T17:39:12.768Z"
+  "schemaVersion": "2.0.1",
+  "updatedAt": "2018-08-01T22:01:21.933Z"
 }

@@ -108,7 +108,7 @@ library LibRound
         data.reviewPeriodDuration = _roundData.reviewPeriodDuration;
     }
 
-    function selectWinningSubmissions(LibConstruction.RoundData storage data, LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public
+    function selectWinningSubmissions(LibConstruction.RoundData storage data, LibRound.SelectWinnersData storage winningSubmissionsData, LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public
     {
         require(_selectWinnersData.winningSubmissions.length != 0);
         require(_selectWinnersData.winningSubmissions.length == _selectWinnersData.rewardDistribution.length);
@@ -118,7 +118,11 @@ library LibRound
         {
             _rewardDistributionTotal = _rewardDistributionTotal.add(_selectWinnersData.rewardDistribution[i]);
         }
-        _selectWinnersData.rewardDistributionTotal = _rewardDistributionTotal;
+
+        // copy to storage
+        winningSubmissionsData.winningSubmissions = _selectWinnersData.winningSubmissions;
+        winningSubmissionsData.rewardDistribution = _selectWinnersData.rewardDistribution;
+        winningSubmissionsData.rewardDistributionTotal = _rewardDistributionTotal;
 
         // // DoNothing and StartNextRound cases
         if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.DoNothing) || _selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.StartNextRound))
@@ -126,7 +130,7 @@ library LibRound
             for(uint256 j = 0; j < _selectWinnersData.winningSubmissions.length; j++)
             {
                 // Calculate total reward denominator and store it somewhere when
-                uint256 reward = _selectWinnersData.rewardDistribution[j].mul(10**18).div(_selectWinnersData.rewardDistributionTotal).mul(data.bounty).div(10**18);
+                uint256 reward = _selectWinnersData.rewardDistribution[j].mul(10**18).div(_rewardDistributionTotal).mul(data.bounty).div(10**18);
                 // Transfer the reward to the submission
                 require(IMatryxToken(IMatryxPlatform(IMatryxRound(this).getPlatform()).getTokenAddress()).transfer(_selectWinnersData.winningSubmissions[j], reward));
                 IMatryxSubmission(_selectWinnersData.winningSubmissions[j]).addToWinnings(reward);

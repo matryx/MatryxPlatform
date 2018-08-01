@@ -284,7 +284,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     ///   closed: (Unused)
     function selectWinningSubmissions(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public onlyTournamentOrLib duringReviewPeriod
     {
-        LibRound.selectWinningSubmissions(data, _selectWinnersData, _roundData);
+        LibRound.selectWinningSubmissions(data, winningSubmissionsData, _selectWinnersData, _roundData);
     }
 
     /// @dev Allows contributors to withdraw a portion of the round bounty if the round has been abandoned.

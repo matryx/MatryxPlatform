@@ -380,7 +380,6 @@ contract MatryxPlatform is Ownable {
 
         return newTournament;
     }
-
     /*
     * Access Control Methods
     */

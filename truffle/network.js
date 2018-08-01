@@ -21,10 +21,13 @@ else if (network === 'ropsten') {
 }
 else console.log('bro check yo network')
 
-
+let accs = mnemonicHelper.getAccounts(mnemonic, 0, 10)
+let accounts = accs.map(acc => acc[0])
+let privateKeys = accs.map(acc => acc[1])
 
 module.exports = {
-    accounts: mnemonicHelper.getAccounts(mnemonic, 0, 10),
+    accounts,
+    privateKeys,
     provider,
     tokenAddress,
     mnemonicPath

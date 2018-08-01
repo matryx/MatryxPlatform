@@ -22,5 +22,6 @@ module.exports = function (deployer) {
 		// TODO: Make this particular call in the platform constructor by passing iterable mapping struct
 		// leave the set and get methods though :) Could be useful for manual things later (think: modifiers for registers of allowed addresses)
 		platform.setContractAddress(web3.sha3("LibTournamentEntrantMethods"), LibTournamentEntrantMethods.address);
+		platform.setTokenAddress(tokenAddress);
 	});
 }

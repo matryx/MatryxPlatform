@@ -13,8 +13,15 @@ function Contract(address, { abi }, accountNum = 0) {
     set(obj, prop, val) {
       if (prop === 'accountNumber') {
         obj.accountNumber = val
-        obj.wallet = new ethers.Wallet(network.accounts[obj.accountNumber][1], network.provider)
+        obj.wallet = new ethers.Wallet(network.privateKeys[obj.accountNumber], network.provider)
         obj.contract = new ethers.Contract(address, abi, obj.wallet)
+        obj.c = obj.contract
+      }
+      else if (prop === 'wallet') {
+        obj.accountNumber = -1
+        obj.wallet = val
+        obj.contract = new ethers.Contract(address, abi, obj.wallet)
+        obj.c = obj.contract
       }
     },
     get(obj, prop) {
@@ -32,12 +39,21 @@ function Contract(address, { abi }, accountNum = 0) {
 module.exports = {
   Contract,
 
-  getMinedTx(hash) {
-    console.log(`Waiting for ${hash}...`)
+  getMinedTx(msg, hash) {
+    if (arguments.length == 1) {
+      hash = msg
+      msg = 'transaction'
+    }
+
+    console.log(`Waiting for ${msg} (${hash})...`)
     return new Promise((resolve, reject) => {
       (async function checkTx() {
-        let res = await network.provider.getTransaction(hash)
-        if (res.blockNumber) resolve(res)
+        let res = await network.provider.getTransactionReceipt(hash)
+        if (res) {
+          if (!res.status) return reject({ message: 'revert' })
+          console.log(`  used ${+res.gasUsed} gas`)
+          resolve(res)
+        }
         else setTimeout(checkTx, 1000)
       })()
     })
@@ -76,23 +92,23 @@ module.exports = {
     const MatryxRound = artifacts.require('MatryxRound')
     const MatryxSubmission = artifacts.require('MatryxSubmission')
 
-    const account = network.accounts[accountNum][0]
+    const account = network.accounts[accountNum]
 
     const platform = Contract(MatryxPlatform.address, MatryxPlatform, accountNum)
-    // const token = Contract(MatryxToken.address, MatryxToken, 0)
     const token = Contract(network.tokenAddress, MatryxToken, 0)
 
+    console.log('\nSetup called for account ' + accountNum)
     const hasPeer = await platform.hasPeer(account)
     if (!hasPeer) {
-      console.log('\nAdding peer: ' + account + '...')
+      console.log('Adding peer: ' + account + '...')
       let { hash } = await platform.createPeer({ gasLimit: 4.5e6 })
-      await this.getMinedTx(hash)
+      await this.getMinedTx('Platform.createPeer', hash)
     }
 
     const tokenReleaseAgent = await token.releaseAgent()
     if (tokenReleaseAgent === '0x0000000000000000000000000000000000000000') {
       let { hash } = await token.setReleaseAgent(account)
-      await this.getMinedTx(hash)
+      await this.getMinedTx('Token.setReleaseAgent', hash)
       await token.releaseTokenTransfer({ gasLimit: 1e6 })
       console.log('Token release agent set to: ' + account)
     }
@@ -103,7 +119,7 @@ module.exports = {
     if (balance == 0) {
       console.log('Minting 10000 MTX...')
       let { hash } = await token.mint(account, tokens)
-      await this.getMinedTx(hash)
+      await this.getMinedTx('Token.mint', hash)
     }
 
     const allowance = await token.allowance(account, platform.address) / 1e18 | 0
@@ -112,7 +128,7 @@ module.exports = {
       token.accountNumber = accountNum
       console.log('Setting allowance...')
       let { hash } = await token.approve(MatryxPlatform.address, tokens, { gasPrice: 25 })
-      await this.getMinedTx(hash)
+      await this.getMinedTx('Token.approve', hash)
     }
 
     console.log('Account', accountNum, 'setup complete!\n')

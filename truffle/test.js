@@ -49,12 +49,27 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   // }
 
   let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 6e6, gasPrice: 25 })
-  console.log('Tournament hash:', tx.hash)
-  await getMinedTx(tx.hash)
+  await getMinedTx('Platform.createTournament', tx.hash)
 
   const address = await platform.allTournaments(count)
   const tournament = Contract(address, MatryxTournament, accountNumber)
-  console.log('Tournament created: ' + address)
+  console.log(`Tournament created: ${address}\n`)
+
+  let [_, roundAddress] = await tournament.currentRound()
+  let round = Contract(roundAddress, MatryxRound, accountNumber)
+
+  let startTime = +await round.getStartTime()
+  let endTime = +await round.getEndTime()
+  let reviewEnd = endTime + roundData.reviewPeriodDuration
+
+  let now = Date.now()
+  let timeTilStart = startTime * 1000 - now
+  let timeTilEnd = endTime * 1000 - now
+  let timeTilReviewEnd = reviewEnd * 1000 - now
+
+  setTimeout(() => console.log('**Tournament round started**'), timeTilStart)
+  setTimeout(() => console.log('**Tournament round ended**'), timeTilEnd)
+  setTimeout(() => console.log('**Tournament round review ended**'), timeTilReviewEnd)
 
   return tournament
 }
@@ -69,8 +84,7 @@ const createSubmission = async (tournament, accountNumber) => {
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) {
     let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
-    console.log("Enter tournament hash:", hash)
-    await getMinedTx(hash)
+    await getMinedTx('Platform.enterTournament', hash)
   }
 
   const title = stringToBytes32('A submission ' + genId(6), 3)
@@ -86,22 +100,21 @@ const createSubmission = async (tournament, accountNumber) => {
   }
 
   const contribsAndRefs = {
-    contributors: new Array(0).fill(0).map(r => genAddress()),
-    contributorRewardDistribution: new Array(0).fill(1),
-    references: new Array(0).fill(0).map(r => genAddress())
+    contributors: new Array(1).fill(0).map(r => genAddress()),
+    contributorRewardDistribution: new Array(1).fill(1),
+    references: new Array(1).fill(0).map(r => genAddress())
   }
 
   let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
-  console.log('Submission hash:', tx.hash)
-  await getMinedTx(tx.hash)
+  await getMinedTx('Tournament.createSubmission', tx.hash)
 
   const [_, roundAddress] = await tournament.currentRound()
   const round = Contract(roundAddress, MatryxRound)
   const submissions = await round.getSubmissions()
   const submissionAddress = submissions.pop()
-  const submission = Contract(submissionAddress, MatryxSubmission)
+  const submission = Contract(submissionAddress, MatryxSubmission, accountNumber)
 
-  console.log('Submission created:', submission.address)
+  console.log(`Submission created: ${submission.address}\n`)
   return submission
 }
 
@@ -111,9 +124,10 @@ const updateSubmission = async submission => {
     descriptionHash: stringToBytes32('BBBBBB', 2),
     fileHash: stringToBytes32('CCCCCC', 2)
   }
+  let tx
 
-  await submission.updateData(modData)
-  console.log('Submission updated data:', submission.address)
+  tx = await submission.updateData(modData)
+  await getMinedTx('Submission.updateData', tx.hash)
 
   const conModData = {
     contributorsToAdd: new Array(3).fill(0).map(() => genAddress()),
@@ -121,16 +135,16 @@ const updateSubmission = async submission => {
     contributorsToRemove: []
   }
 
-  await submission.updateContributors(conModData)
-  console.log('Submission updated cons:', submission.address)
+  tx = await submission.updateContributors(conModData)
+  await getMinedTx('Submission.updateContributors', tx.hash)
 
   const refModData = {
     referencesToAdd: new Array(3).fill(0).map(() => genAddress()),
     referencesToRemove: []
   }
 
-  await submission.updateReferences(refModData)
-  console.log('Submission updated refs:', submission.address)
+  tx = await submission.updateReferences(refModData)
+  await getMinedTx('Submission.updateReferences', tx.hash)
 }
 
 const logSubmissions = async tournament => {
@@ -153,36 +167,38 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
 
   var timeTilRoundInReview = roundEndTime - Date.now() / 1000
   timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
+
+  console.log(`Waiting ${timeTilRoundInReview}s until review period`)
   await sleep(timeTilRoundInReview * 1000)
 
   const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
-  console.log('Select Winners hash:', tx.hash)
+  await getMinedTx('Tournament.selectWinners', tx.hash)
 }
 
 module.exports = async exit => {
   try {
     await init()
     let roundData = {
-      start: Math.floor(Date.now() / 1000) + 600,
-      end: Math.floor(Date.now() / 1000) + 1200,
-      reviewPeriodDuration: 60,
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 240,
+      reviewPeriodDuration: 600,
       bounty: web3.toWei(5),
       closed: false
     }
-    const tournament = await createTournament(web3.toWei(10), roundData, 0)
-    // await createSubmission(tournament, 0)
-    // let submission = await createSubmission(tournament, 0)
+    const tournamentCreator = 0
+    const tournament = await createTournament(web3.toWei(10), roundData, tournamentCreator)
+    const submission = await createSubmission(tournament, 1)
     // await updateSubmission(submission)
-    // await createSubmission(tournament, 2)
-    // await createSubmission(tournament, 3)
+    await createSubmission(tournament, 2)
+    await createSubmission(tournament, 3)
     const roundTwoData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      end: Math.floor(Date.now() / 1000) + 45,
       reviewPeriodDuration: 600,
       bounty: web3.toWei(2)
     }
     const submissions = await logSubmissions(tournament)
-    // await selectWinnersWhenInReview(tournament, 1, submissions, submissions.map(s => 1), roundTwoData, 0)
+    await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), roundTwoData, 0)
     // await logSubmissions(tournament)
   } catch (err) {
     console.log(err.message)

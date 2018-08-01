@@ -13,18 +13,22 @@ bytesToString = utils.bytesToString
 stringToBytes = utils.stringToBytes
 stringToBytes32 = utils.stringToBytes32
 getFileContents = path => fs.readFileSync(path).toString()
-contract = (address, { abi }) => new ethers.Contract(address, abi, wallet)
+contract = utils.Contract
+// contract = (address, { abi }) => new ethers.Contract(address, abi, wallet)
 selector = signature => sha3(signature).substr(0, 10)
 getTx = hash => wallet.provider.getTransaction(hash)
 getTxR = hash => wallet.provider.getTransactionReceipt(hash)
 
 // wallet key from ganache
-wallet = new ethers.Wallet('0x' + '2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea')
-wallet.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
+// wallet = new ethers.Wallet('0x' + '2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea')
+// wallet.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
+
+network = require('./truffle/network')
+wallet = new ethers.Wallet(network.privateKeys[0], network.provider)
 
 console.log('Setup to copy paste:\n')
-console.log('platform = contract(MatryxPlatform.address, MatryxPlatform)')
-console.log('token = contract(MatryxToken.address, MatryxToken)\n')
+console.log('platform = contract(MatryxPlatform.address, MatryxPlatform);0')
+console.log('token = contract(network.tokenAddress, MatryxToken);0\n')
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
