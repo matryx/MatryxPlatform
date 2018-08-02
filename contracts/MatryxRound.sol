@@ -35,7 +35,7 @@ contract MatryxRound is Ownable, IMatryxRound {
     LibRound.SubmissionsData submissionsData;
     LibRound.SubmissionAndEntrantTracking submissionEntrantTrackingData;
 
-    constructor(address _platformAddress, address _tournamentAddress, address _submissionFactoryAddress, address _owner, LibConstruction.RoundData _roundData) public
+    constructor(address _owner, address _platformAddress, address _tournamentAddress, address _submissionFactoryAddress, LibConstruction.RoundData _roundData) public
     {
         platformAddress = _platformAddress;
         tournamentAddress = _tournamentAddress;
@@ -172,11 +172,13 @@ contract MatryxRound is Ownable, IMatryxRound {
      * Getter Methods
      */
 
-    function getPlatform() public view returns (address) {
+    function getPlatform() public view returns (address)
+    {
         return platformAddress;
     }
 
-    function getTournament() public view returns (address) {
+    function getTournament() public view returns (address)
+    {
         return tournamentAddress;
     }
 

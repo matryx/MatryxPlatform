@@ -15,8 +15,8 @@ contract MatryxRoundFactory is Ownable {
         matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
     }
 
-    function createRound(address _platformAddress, address _tournamentAddress, address _owner, LibConstruction.RoundData roundData) public returns (address _roundAddress) {
-        MatryxRound newRound = new MatryxRound(_platformAddress, _tournamentAddress, matryxSubmissionFactoryAddress, _owner, roundData);
+    function createRound(address _owner, address _platformAddress, address _tournamentAddress, LibConstruction.RoundData roundData) public returns (address _roundAddress) {
+        MatryxRound newRound = new MatryxRound(_owner, _platformAddress, _tournamentAddress, matryxSubmissionFactoryAddress, roundData);
         return newRound;
     }
 

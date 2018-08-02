@@ -164,7 +164,7 @@ library LibTournamentAdminMethods
             require(roundData.bounty > 0);
         }
 
-        newRoundAddress = roundFactory.createRound(platformAddress, this, msg.sender, roundData);
+        newRoundAddress = roundFactory.createRound(msg.sender, platformAddress, this, roundData);
 
         // Transfer the round bounty to the round.
         // If this is the first round, the bounty is transfered to the round *by the platform in createTournament* (by tournament.sendBountyToRound)
