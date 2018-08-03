@@ -1,8 +1,11 @@
 const ethers = require('ethers')
+const chalk = require('chalk')
+
 const { setup, getMinedTx, stringToBytes32, stringToBytes, Contract } = require('./utils')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
 let MatryxTournament, MatryxRound, MatryxSubmission, platform, token, wallet
+let timeouts = []
 
 const genId = length => new Array(length).fill(0).map(() => Math.floor(36 * Math.random()).toString(36)).join('')
 const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * Math.random()).toString(16)).join('')
@@ -53,10 +56,12 @@ const createTournament = async (bounty, roundData, accountNumber) => {
 
   const address = await platform.allTournaments(count)
   const tournament = Contract(address, MatryxTournament, accountNumber)
-  console.log(`Tournament created: ${address}\n`)
+  console.log(chalk`Tournament created: {green ${address}}`)
 
   let [_, roundAddress] = await tournament.currentRound()
   let round = Contract(roundAddress, MatryxRound, accountNumber)
+
+  console.log(chalk`Current round: {green ${roundAddress}}\n`)
 
   let startTime = +await round.getStartTime()
   let endTime = +await round.getEndTime()
@@ -67,9 +72,9 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   let timeTilEnd = endTime * 1000 - now
   let timeTilReviewEnd = reviewEnd * 1000 - now
 
-  setTimeout(() => console.log('**Tournament round started**'), timeTilStart)
-  setTimeout(() => console.log('**Tournament round ended**'), timeTilEnd)
-  setTimeout(() => console.log('**Tournament round review ended**'), timeTilReviewEnd)
+  timeouts.push(setTimeout(() => console.log(chalk`{grey [Tournament round started]}`), timeTilStart))
+  timeouts.push(setTimeout(() => console.log(chalk`{grey [Tournament round ended]}`), timeTilEnd))
+  timeouts.push(setTimeout(() => console.log(chalk`{grey [Tournament round review ended]}`), timeTilReviewEnd))
 
   return tournament
 }
@@ -100,9 +105,9 @@ const createSubmission = async (tournament, accountNumber) => {
   }
 
   const contribsAndRefs = {
-    contributors: new Array(1).fill(0).map(r => genAddress()),
-    contributorRewardDistribution: new Array(1).fill(1),
-    references: new Array(1).fill(0).map(r => genAddress())
+    contributors: new Array(0).fill(0).map(r => genAddress()),
+    contributorRewardDistribution: new Array(0).fill(1),
+    references: new Array(0).fill(0).map(r => genAddress())
   }
 
   let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
@@ -114,7 +119,7 @@ const createSubmission = async (tournament, accountNumber) => {
   const submissionAddress = submissions.pop()
   const submission = Contract(submissionAddress, MatryxSubmission, accountNumber)
 
-  console.log(`Submission created: ${submission.address}\n`)
+  console.log(chalk`Submission created: {green ${submission.address}}\n`)
   return submission
 }
 
@@ -148,27 +153,36 @@ const updateSubmission = async submission => {
 }
 
 const logSubmissions = async tournament => {
-  const currentRoundResults = await tournament.currentRound();
-  const currentRoundAddress = currentRoundResults[1];
-  console.log('Current round: ' + currentRoundAddress)
-  const round = Contract(currentRoundAddress, MatryxRound)
+  const [_, roundAddress] = await tournament.currentRound();
+  console.log(chalk`Current round: {green ${roundAddress}}`)
+  const round = Contract(roundAddress, MatryxRound)
   const submissions = await round.getSubmissions()
   console.log(submissions)
   return submissions;
 }
 
+const waitUntilClose = async (tournament) => {
+  const [_, roundAddress] = await tournament.currentRound();
+  const round = Contract(roundAddress, MatryxRound)
+  const roundEndTime = +await round.getEndTime()
+  const reviewPeriodDuration = +await round.getReviewPeriodDuration()
+  const timeTilClose = Math.max(0, roundEndTime + reviewPeriodDuration - Date.now() / 1000)
+
+  console.log(chalk`{grey [Waiting ${~~timeTilClose}s until current round over]}`)
+  await sleep(timeTilClose * 1000)
+}
+
 const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rewardDistribution, roundData, selectWinnerAction) => {
   tournament.accountNumber = accountNumber
 
-  const currentRoundResults = await tournament.currentRound();
-  const roundAddress = currentRoundResults[1];
+  const [_, roundAddress] = await tournament.currentRound()
   const round = Contract(roundAddress, MatryxRound, accountNumber)
   const roundEndTime = await round.getEndTime()
 
-  var timeTilRoundInReview = roundEndTime - Date.now() / 1000
+  let timeTilRoundInReview = roundEndTime - Date.now() / 1000
   timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
 
-  console.log(`Waiting ${timeTilRoundInReview}s until review period`)
+  console.log(chalk`{grey [Waiting ${~~timeTilRoundInReview}s until review period]}`)
   await sleep(timeTilRoundInReview * 1000)
 
   const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
@@ -180,29 +194,56 @@ module.exports = async exit => {
     await init()
     let roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 240,
-      reviewPeriodDuration: 600,
-      bounty: web3.toWei(5),
+      end: Math.floor(Date.now() / 1000) + 15,
+      reviewPeriodDuration: 15,
+      bounty: web3.toWei(3),
       closed: false
     }
     const tournamentCreator = 0
     const tournament = await createTournament(web3.toWei(10), roundData, tournamentCreator)
     const submission = await createSubmission(tournament, 1)
     // await updateSubmission(submission)
-    await createSubmission(tournament, 2)
-    await createSubmission(tournament, 3)
-    const roundTwoData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 45,
-      reviewPeriodDuration: 600,
-      bounty: web3.toWei(2)
+    // await createSubmission(tournament, 2)
+    // await createSubmission(tournament, 3)
+
+    roundData = {
+      start: Math.floor(Date.now() / 1000) + 20,
+      end: Math.floor(Date.now() / 1000) + 35,
+      reviewPeriodDuration: 15,
+      bounty: web3.toWei(3),
+      closed: false
     }
-    const submissions = await logSubmissions(tournament)
-    await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), roundTwoData, 0)
+    let submissions = await logSubmissions(tournament)
+    await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), roundData, 1)
+    timeouts.forEach(t => clearTimeout(t))
+    await sleep(1000)
+    await createSubmission(tournament, 1)
+    await createSubmission(tournament, 2)
+
+    submissions = await logSubmissions(tournament)
+    await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), [0, 0, 0, 0, 0], 0)
+    await waitUntilClose(tournament)
+    timeouts.forEach(t => clearTimeout(t))
+    await createSubmission(tournament, 1)
+    await createSubmission(tournament, 2)
+
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 15,
+      reviewPeriodDuration: 15,
+      bounty: web3.toWei(3),
+      closed: false
+    }
+
+    submissions = await logSubmissions(tournament)
+    await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), roundData, 2)
+    timeouts.forEach(t => clearTimeout(t))
     // await logSubmissions(tournament)
+    await waitUntilClose(tournament)
   } catch (err) {
     console.log(err.message)
   } finally {
+    timeouts.forEach(t => clearTimeout(t))
     exit()
   }
 }

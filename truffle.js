@@ -19,6 +19,11 @@ selector = signature => sha3(signature).substr(0, 10)
 getTx = hash => wallet.provider.getTransaction(hash)
 getTxR = hash => wallet.provider.getTransactionReceipt(hash)
 
+hex = dec => '0x' + dec.toString(16)
+dec = hex => parseInt(hex, 16)
+fromWei = wei => +ethers.utils.formatEther(wei.toString())
+toWei = eth => ethers.utils.parseEther(eth.toString())
+
 // wallet key from ganache
 // wallet = new ethers.Wallet('0x' + '2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea')
 // wallet.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')

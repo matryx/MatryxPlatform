@@ -1,4 +1,5 @@
 const ethers = require('ethers')
+const chalk = require('chalk')
 const network = require('./network')
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
@@ -45,13 +46,15 @@ module.exports = {
       msg = 'transaction'
     }
 
-    console.log(`Waiting for ${msg} (${hash})...`)
+    console.log(chalk`{grey Waiting for {yellow ${msg}} ({cyan ${hash}})...}`)
     return new Promise((resolve, reject) => {
       (async function checkTx() {
         let res = await network.provider.getTransactionReceipt(hash)
         if (res) {
           if (!res.status) return reject({ message: 'revert' })
-          console.log(`  used ${+res.gasUsed} gas`)
+          let gas = +res.gasUsed
+          let color = gas < 1e6 ? 'green' : gas < 2e6 ? 'yellow' : 'red'
+          console.log(chalk`{grey   used {${color} ${+res.gasUsed}} gas}`)
           resolve(res)
         }
         else setTimeout(checkTx, 1000)
@@ -97,10 +100,9 @@ module.exports = {
     const platform = Contract(MatryxPlatform.address, MatryxPlatform, accountNum)
     const token = Contract(network.tokenAddress, MatryxToken, 0)
 
-    console.log('\nSetup called for account ' + accountNum)
+    console.log(chalk`\nSetup {yellow ${account}}`)
     const hasPeer = await platform.hasPeer(account)
     if (!hasPeer) {
-      console.log('Adding peer: ' + account + '...')
       let { hash } = await platform.createPeer({ gasLimit: 4.5e6 })
       await this.getMinedTx('Platform.createPeer', hash)
     }
@@ -117,7 +119,6 @@ module.exports = {
     console.log('Balance: ' + balance + ' MTX')
     let tokens = web3.toWei(1e5)
     if (balance == 0) {
-      console.log('Minting 10000 MTX...')
       let { hash } = await token.mint(account, tokens)
       await this.getMinedTx('Token.mint', hash)
     }
@@ -126,12 +127,11 @@ module.exports = {
     console.log('Allowance: ' + allowance + ' MTX')
     if (allowance == 0) {
       token.accountNumber = accountNum
-      console.log('Setting allowance...')
       let { hash } = await token.approve(MatryxPlatform.address, tokens, { gasPrice: 25 })
       await this.getMinedTx('Token.approve', hash)
     }
 
-    console.log('Account', accountNum, 'setup complete!\n')
+    console.log(`Account ${accountNum} setup complete!\n`)
 
     return {
       MatryxPlatform,
