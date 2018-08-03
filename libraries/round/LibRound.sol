@@ -179,7 +179,3 @@ library LibRound
         }
     }
 }
-
-// 0xc4c718469c03cc4e0bd4c7de60a7776c4ce6532f
-// 0x44a2d9a03b271d4c4cdc4d43cf2dda3878defac3
-// 0x0c484097e2f000aadaef0450ab35aa00652481a1

@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "../Ownable.sol";
-import "../MatryxRound.sol";
+import "../JMatryxRound.sol";
 import "../../interfaces/IMatryxPlatform.sol";
 import "../../libraries/LibConstruction.sol";
 
@@ -15,8 +15,8 @@ contract MatryxRoundFactory is Ownable {
         matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
     }
 
-    function createRound(address _owner, address _platformAddress, address _tournamentAddress, LibConstruction.RoundData roundData) public returns (address _roundAddress) {
-        MatryxRound newRound = new MatryxRound(_owner, _platformAddress, _tournamentAddress, matryxSubmissionFactoryAddress, roundData);
+    function createRound(address _platformAddress, address _tournamentAddress, LibConstruction.RoundData roundData) public returns (address _roundAddress) {
+        JMatryxRound newRound = new JMatryxRound(_platformAddress, _tournamentAddress, matryxSubmissionFactoryAddress, roundData);
         return newRound;
     }
 

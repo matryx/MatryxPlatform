@@ -15,16 +15,17 @@ contract JMatryxTournament {
     LibTournamentStateManagement.StateData stateData;
     LibTournamentStateManagement.EntryData entryData;
 
-    constructor (address _owner, address _platform, address _roundFactory, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public {
+    constructor (address _owner, address _platform, address _roundFactory, LibConstruction.TournamentData _tournamentData, LibConstruction.RoundData _roundData) public {
         assembly {
             if iszero(mload(0xc0)) { revert(0, 0) }         // require(_roundFactory != 0x0)
             if iszero(mload(0x80)) { revert(0, 0) }         // require(owner != 0x0)
             if iszero(mload(0x100)) { revert(0, 0) }        // require(tournamentData.title[0] != 0x0)
             if iszero(gt(mload(0x1e0), 0)) { revert(0, 0) } // require(tournamentData.initialBounty > 0)
 
-            sstore(owner_slot, mload(0x80))                 // _owner
-            sstore(platform_slot, mload(0xa0))              // _platform
-            sstore(roundFactory_slot, mload(0xc0))          // _roundFactory
+            sstore(owner_slot, _owner)                      // _owner
+            sstore(platform_slot, _platform)                // _platform
+            sstore(roundFactory_slot, _roundFactory)        // _roundFactory
+
             sstore(data_slot, mload(0xe0))                  // tournamentData.category
             sstore(add(data_slot, 1), mload(0x100))         // tournamentData.title[0]
             sstore(add(data_slot, 2), mload(0x120))         // tournamentData.title[1]
@@ -36,8 +37,17 @@ contract JMatryxTournament {
             sstore(add(data_slot, 8), mload(0x1e0))         // tournamentData.initialBounty
             sstore(add(data_slot, 9), mload(0x200))         // tournamentData.entryFee
 
-            // create round
 
+            // this is dumb. _tournamentData points to mem that holds arg number of _tournamentData
+            // actual struct data is at 0x80 + arg number - 1
+            // let m_tdata := add(0x80, mul(0x20, sub(mload(_tournamentData), 1)))
+
+            // copy tournamentData struct to data
+            // for { let i := 0 } lt(i, 10) { i := add(i, 1) } {
+            //     sstore(add(data_slot, i), mload(add(m_tdata, mul(0x20, i))))
+            // }
+
+            // Create Round
             // getTokenAddress first
             let offset := 0x100000000000000000000000000000000000000000000000000000000
             let sig := mul(0x10fe9ae8, offset) // getTokenAddress()
@@ -159,8 +169,7 @@ contract JMatryxTournament {
             }
 
             // --------------------------------
-
-            // modifiers
+            //            Modifiers
             // --------------------------------
             function onlyOwner() {
                 require(eq(sload(owner_slot), caller()))
@@ -199,7 +208,9 @@ contract JMatryxTournament {
                 require(call(gas(), round, 0, 0, 0x04, 0, 0x20))
                 require(iszero(eq(mload(0), 1)))   // LibEnums.RoundState.Unfunded
             }
+
             // --------------------------------
+
             // getPlatform() public view returns (address _platformAddress)
             function getPlatform() {
                 return32(sload(platform_slot))
@@ -487,7 +498,7 @@ contract JMatryxTournament {
             function allocateMoreToRound(offset) {
                 onlyOwner()
 
-                let token := getTokenAddress(offset)        // token address
+                let token := getTokenAddress(offset)    // token address
 
                 let ptr := mload(0x40)
 
@@ -648,7 +659,7 @@ contract JMatryxTournament {
                 if or(gt(clen, 0), gt(rlen, 0)) {
                     require(eq(clen, dlen))
 
-                    ptr := add(ptr, 0x20)                                     // free mem for arguments
+                    ptr := add(ptr, 0x20) // free mem for arguments
 
                     // setContributorsAndReferences((address[],uint128[],address[]))
                     mstore(ptr, mul(0xb288e0c1, offset))

@@ -330,11 +330,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         }
     }
 
-    function getBalance() public returns (uint256)
+    function getBalance() public view returns (uint256)
     {
         IMatryxRound round = IMatryxRound(roundAddress);
-        uint256 _balance = round.getBalance(this);
-        return _balance;
+        return round.getBalance(this);
     }
 
     function withdrawReward() public ownerContributorOrRound
