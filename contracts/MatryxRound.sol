@@ -98,7 +98,7 @@ contract MatryxRound is IMatryxRound {
     //     _;
     // }
 
-    function submissionExists(address _submissionAddress) public returns (bool)
+    function submissionExists(address _submissionAddress) public view returns (bool)
     {
         return submissionEntrantTrackingData.submissionExists[_submissionAddress];
     }

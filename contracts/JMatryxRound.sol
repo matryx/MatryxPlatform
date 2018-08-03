@@ -34,7 +34,7 @@ contract JMatryxRound {
             let sOffset := 0x100000000000000000000000000000000000000000000000000000000
             switch div(calldataload(0), sOffset)
 
-            case 0x7eba7ba6 { getSlot() }                              // getSlot(uint256)
+            // case 0x7eba7ba6 { getSlot() }                              // getSlot(uint256)
 
             case 0xb6a34975 { submissionExists(sOffset) }              // submissionExists(address)
             case 0x38e43895 { addBounty() }                            // addBounty(uint256)
@@ -78,9 +78,9 @@ contract JMatryxRound {
                 a := calldataload(add(0x04, mul(n, 0x20)))
             }
 
-            function getSlot() {
-                return32(sload(arg(0)))
-            }
+            // function getSlot() {
+            //     return32(sload(arg(0)))
+            // }
 
             /// @dev Stores the word v in memory and returns
             function return32(v) {
@@ -507,7 +507,6 @@ contract JMatryxRound {
 }
 
 interface IJMatryxRound {
-    function getSlot(uint256 _slot) public constant returns (bytes32);
     function submissionExists(address _submissionAddress) public view returns (bool);
     function addBounty(uint256 _mtxAllocation) public;
     function getState() public view returns (uint256);
@@ -525,7 +524,7 @@ interface IJMatryxRound {
     function submissionsChosen() public view returns (bool);
     function getWinningSubmissionAddresses() public view returns (address[]);
     function numberOfSubmissions() public view returns (uint256);
-    // function editRound(uint256 _currentRoundEndTime, LibConstruction.RoundData _roundData) public;
+    function editRound(uint256 _currentRoundEndTime, LibConstruction.RoundData _roundData) public;
     function transferToTournament(uint256 _amount) public;
     function selectWinningSubmissions(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public;
     function transferBountyToTournament() public returns (uint256);
