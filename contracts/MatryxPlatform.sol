@@ -245,6 +245,7 @@ contract MatryxPlatform is Ownable {
         if(categoryExists[_category] == false)
         {
             categoryList.push(_category);
+            categoryExists[_category] = true;
         }
 
         if(tournamentExistsInCategory[_category][_tournamentAddress] == false)
