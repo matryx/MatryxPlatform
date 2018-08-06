@@ -11,6 +11,7 @@ interface IMatryxRound
     function getState() public view returns (uint256);
     function getPlatform() public view returns (address);
     function getTournament() public view returns (address);
+    function getData() public view returns (LibConstruction.RoundData _roundData);
     function getStartTime() public view returns (uint256);
     function getEndTime() public view returns (uint256);
     function getReviewPeriodDuration() public view returns (uint256);

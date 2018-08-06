@@ -160,6 +160,10 @@ contract MatryxRound is IMatryxRound {
         return tournamentAddress;
     }
 
+    function getData() public view returns (LibConstruction.RoundData _roundData) {
+        return data;
+    }
+
     function getStartTime() public view returns (uint256)
     {
         return data.start;
