@@ -289,7 +289,7 @@ contract JMatryxTournament {
             // getData() public view returns (LibConstruction.TournamentData _data)
             function getData() {
                 let data := mload(0x40)
-                mstore(data, data_slot)                            // tournamentData.category
+                mstore(data, sload(data_slot))                     // tournamentData.category
                 mstore(add(data, 0x20), sload(add(data_slot, 1)))  // tournamentData.title[0]
                 mstore(add(data, 0x40), sload(add(data_slot, 2)))  // tournamentData.title[1]
                 mstore(add(data, 0x60), sload(add(data_slot, 3)))  // tournamentData.title[2]
