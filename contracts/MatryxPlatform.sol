@@ -277,7 +277,7 @@ contract MatryxPlatform is Ownable {
 
     function getTournamentsByCategory(bytes32 _category) external view returns (address[])
     {
-        return categoryToTournamentList[keccak256(_category)];
+        return categoryToTournamentList[_category];
     }
 
     function getCategoryCount(bytes32 _category) external view returns (uint256)
