@@ -28,10 +28,10 @@ library LibSubmissionTrust
 
     /// @dev Add a missing reference to a submission (callable only by submission's owner).
     /// @param _reference Address of additional reference to include.
-    function addReference(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address _reference, address platformAddress) public
+    function addReference(address platformAddress, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address _reference) public
     {
         require(trustData.addressToReferenceInfo[_reference].exists == false);
-        IMatryxPlatform(platformAddress).handleReferenceRequestForSubmission(_reference);
+        // IMatryxPlatform(platformAddress).handleReferenceRequestForSubmission(_reference);
         contributorsAndReferences.references.push(_reference);
         trustData.addressToReferenceInfo[_reference].index = uint32(contributorsAndReferences.references.length-1);
         trustData.addressToReferenceInfo[_reference].exists = true;
@@ -49,8 +49,17 @@ library LibSubmissionTrust
         }
     }
 
-    function addReferences(address platformAddress, LibConstruction.SubmissionData storage data, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address[] _references) public
+    function addReferences(address platformAddress, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address[] _references) public
     {
+        // log calldata
+        assembly {
+            let ptr := mload(0x40)
+            let size := calldatasize()
+            calldatacopy(ptr, 0, size)
+            log0(ptr, size)
+        }
+        return;
+
         for(uint32 i = 0; i < _references.length; i++)
         {
             require(trustData.addressToReferenceInfo[_references[i]].exists == false);
@@ -72,7 +81,7 @@ library LibSubmissionTrust
 
     /// @dev Remove an erroneous reference to a submission (callable only by submission's owner).
     /// @param _reference Address of reference to remove.
-    function removeReference(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address _reference, address platformAddress) public
+    function removeReference(address platformAddress, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address _reference) public
     {
         require(trustData.addressToReferenceInfo[_reference].exists == true);
         IMatryxPlatform(platformAddress).handleCancelledReferenceRequestForSubmission(_reference);

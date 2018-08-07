@@ -164,50 +164,6 @@ contract MatryxPlatform is Ownable {
         return contracts[_nameHash];
     }
 
-    // @dev Sends out reference requests for a particular submission.
-    // @param _references Reference whose authors will be sent requests.
-    // @returns Whether or not all references were successfully sent a request.
-    function handleReferenceRequestsForSubmission(address _submissionAddress, address[] _references) public onlyTournamentOrTournamentLib returns (bool)
-    {
-        for(uint256 i = 0; i < _references.length; i++)
-        {
-            address _referenceAddress = _references[i];
-
-            if(!isSubmission(_referenceAddress))
-            {
-                // TODO: Introduce uint error codes
-                // for returning things like "Reference _ is not submission"
-                continue;
-            }
-
-            IMatryxSubmission submission = IMatryxSubmission(_referenceAddress);
-            address author = submission.getAuthor();
-            IMatryxPeer(author).receiveReferenceRequest(_submissionAddress, _referenceAddress);
-            submission.receiveReferenceRequest();
-        }
-    }
-
-    // @dev Sends out a reference request for a submission (must be called by the submission).
-    // @param _reference Reference whose author will be sent a request.
-    // @returns Whether or not all references were successfully sent a request.
-    function handleReferenceRequestForSubmission(address _reference) public onlySubmission returns (bool)
-    {
-        require(isSubmission(_reference));
-        IMatryxSubmission submission = IMatryxSubmission(_reference);
-        address author = submission.getAuthor();
-        IMatryxPeer(author).receiveReferenceRequest(msg.sender, _reference);
-        submission.receiveReferenceRequest();
-    }
-
-    function handleCancelledReferenceRequestForSubmission(address _reference) public onlySubmission returns (bool)
-    {
-        require(isSubmission(_reference));
-        IMatryxSubmission submission = IMatryxSubmission(_reference);
-        address author = submission.getAuthor();
-        IMatryxPeer(author).receiveCancelledReferenceRequest(msg.sender, _reference);
-        submission.cancelReferenceRequest();
-    }
-
     function updateUsersTournaments(address _owner, address _tournament) internal
     {
         ownerToTournamentArray[_owner].push(_tournament);

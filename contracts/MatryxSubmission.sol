@@ -209,7 +209,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     function updateReferences(LibConstruction.ReferencesModificationData _referencesModificationData) public onlyOwner duringOpenSubmission
     {
-        LibSubmission.updateReferences(data, contributorsAndReferences, trustData, _referencesModificationData, platformAddress);
+        LibSubmission.updateReferences(platformAddress, data, contributorsAndReferences, trustData, _referencesModificationData);
     }
 
     function addToWinnings(uint256 _amount) public onlySubmissionOrRound
@@ -220,14 +220,14 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @dev Add a missing reference to a submission (callable only by submission's owner).
     /// @param _reference Address of additional reference to include.
 
-    function addReference(address _reference) onlyOwner public onlyOwner
+    function addReference(address _reference) public onlyOwner
     {
-        LibSubmissionTrust.addReference(contributorsAndReferences, trustData, _reference, platformAddress);
+        LibSubmissionTrust.addReference(platformAddress, contributorsAndReferences, trustData, _reference);
     }
 
     function addReferences(address[] _references) public onlyOwner
     {
-        LibSubmissionTrust.addReferences(platformAddress, data, contributorsAndReferences, trustData, _references);
+        LibSubmissionTrust.addReferences(platformAddress, contributorsAndReferences, trustData, _references);
     }
 
     // // Debug function. ?MAYBEDO:Delete
@@ -241,7 +241,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     function removeReference(address _reference) onlyOwner public
     {
-        LibSubmissionTrust.removeReference(contributorsAndReferences, trustData, _reference, platformAddress);
+        LibSubmissionTrust.removeReference(platformAddress, contributorsAndReferences, trustData, _reference);
     }
 
     function receiveReferenceRequest() public onlyPlatform

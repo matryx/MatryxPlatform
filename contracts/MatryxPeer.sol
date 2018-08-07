@@ -117,18 +117,6 @@ contract MatryxPeer is Ownable {
         return globalTrust;
     }
 
-    function receiveReferenceRequest(address _submissionAddress, address _reference) public onlyPlatform
-    {
-        ReceivedReferenceRequest(_submissionAddress, _reference);
-        submissionToReferencesMetadata[_submissionAddress].totalReferenceCount = submissionToReferencesMetadata[_submissionAddress].totalReferenceCount.add(1);
-    }
-
-    function receiveCancelledReferenceRequest(address _submissionAddress, address _reference) public onlyPlatform
-    {
-        ReferenceRequestCancelled(_submissionAddress, _reference);
-        submissionToReferencesMetadata[_submissionAddress].totalReferenceCount = submissionToReferencesMetadata[_submissionAddress].totalReferenceCount.sub(1);
-    }
-
     function giveTrust(address _peer) internal returns (uint128)
     {
         judgedPeerToUnnormalizedTrust[_peer] = judgedPeerToUnnormalizedTrust[_peer].add(one_eighteenDecimal);
@@ -161,7 +149,7 @@ contract MatryxPeer is Ownable {
     }
 
     function receiveTrust(uint128 _newTotalTrust, uint128 _senderReputation) public /*notMe notOwner*/ onlyPeer returns (uint128)
-    {	
+    {
         // remove peer's influence on my reputation before adding their new influence
         if(peerHasJudgedMe[msg.sender])
         {
@@ -169,7 +157,7 @@ contract MatryxPeer is Ownable {
         }
         // if we've never been judged by this peer before,
         // update state to reflect that we have now.
-        else 
+        else
         {
             peerHasJudgedMe[msg.sender] = true;
             judgingPeers.push(msg.sender);
@@ -257,7 +245,7 @@ contract MatryxPeer is Ownable {
         // Require that we're the author of the reference we're claiming is missing.
         // Require that the platform knows the submission.
         // Require that the platform knows the reference we're attempting to flag.
-        
+
         // Add 1 to the state vars keeping track of the number of
         // this peer's submissions that _submission fails to reference
         // as well as the submission's total number of references to submissions by this peer
@@ -314,8 +302,8 @@ contract MatryxPeer is Ownable {
     }
 
     /// @dev 					  Approve of a reference to a submission written by this peer
-    /// 						  on another submission. This method should be called by the 
-    /// 	 					  owner of this peer in order to approve a reference to one  
+    /// 						  on another submission. This method should be called by the
+    /// 	 					  owner of this peer in order to approve a reference to one
     /// 	 					  of their works within someone else's submission.
     /// @param _submissionAddress Address of the submission on which to approve the reference.
     /// @param _reference 		  Reference to approve.
@@ -324,10 +312,10 @@ contract MatryxPeer is Ownable {
         // Require that we're the author of the reference we're attempting to approve
         // Require that the platform knows the submission.
         // Require that the platform knows the reference we'd like to approve.
-        
+
         // Add 1 to the state var keeping track of the number of approved references on this submission
         submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.add(1);
-        
+
         IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
         submission.approveReference(_reference);
 
