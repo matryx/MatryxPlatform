@@ -102,7 +102,7 @@ library LibSubmission
     {
         if(_referencesModificationData.referencesToAdd.length != 0)
         {
-            LibSubmissionTrust.addReferences(data, contributorsAndReferences, trustData, _referencesModificationData.referencesToAdd, platformAddress);
+            LibSubmissionTrust.addReferences(platformAddress, data, contributorsAndReferences, trustData, _referencesModificationData.referencesToAdd);
         }
         // TODO: Add remove functionality
         data.timeUpdated = now;
@@ -218,7 +218,7 @@ library LibSubmission
         return transferAmount;
     }
 
-    function _myReward(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, RewardData storage rewardData, address _sender, uint256 transferAmount) internal view returns(uint256)
+    function _myReward(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, address _sender, uint256 transferAmount) internal view returns(uint256)
     {
         uint256 authorReward = transferAmount;
         if (contributorsAndReferences.contributors.length != 0) {

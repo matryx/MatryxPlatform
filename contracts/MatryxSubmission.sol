@@ -227,7 +227,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     function addReferences(address[] _references) public onlyOwner
     {
-        LibSubmissionTrust.addReferences(data, contributorsAndReferences, trustData, _references, platformAddress);
+        LibSubmissionTrust.addReferences(platformAddress, data, contributorsAndReferences, trustData, _references);
     }
 
     // // Debug function. ?MAYBEDO:Delete
@@ -303,7 +303,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         rewardData.contributorToBountyDividend[_contributor] = _bountyAllocation;
         rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(_bountyAllocation);
 
-        IMatryxRound round = IMatryxRound(roundAddress);
+        //IMatryxRound round = IMatryxRound(roundAddress);
     }
 
     function addContributors(address[] _contributorsToAdd, uint128[] _distribution) public onlyOwner

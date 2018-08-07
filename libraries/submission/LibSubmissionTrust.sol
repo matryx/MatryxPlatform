@@ -49,7 +49,7 @@ library LibSubmissionTrust
         }
     }
 
-    function addReferences(LibConstruction.SubmissionData storage data, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address[] _references, address platformAddress) public
+    function addReferences(address platformAddress, LibConstruction.SubmissionData storage data, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address[] _references) public
     {
         for(uint32 i = 0; i < _references.length; i++)
         {

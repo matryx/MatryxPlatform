@@ -330,7 +330,7 @@ contract JMatryxRound {
                 // editRound(LibConstruction.RoundData storage,uint256,LibConstruction.RoundData)
                 mstore(ptr, mul(0xb6668750, offset))
                 mstore(add(ptr, 0x04), sload(data_slot))
-                mstore(add(ptr, 0x24), arg(0))         // _currentRoundEndTime
+                mstore(add(ptr, 0x24), arg(0))   // _currentRoundEndTime
 
                 //copy _roundData
                 calldatacopy(add(ptr, 0x44), 0x24, 0xa0)
@@ -350,7 +350,7 @@ contract JMatryxRound {
                 mstore(add(ptr, 0x24), arg(0))        // _amount
 
                 // call Token.transfer
-                require(call(gas(), getTokenAddress(offset), ptr, 0, 0x44, 0, 0))
+                require(call(gas(), getTokenAddress(offset), 0, ptr, 0x44, 0, 0))
             }
 
             // function selectWinningSubmissions(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public onlyTournament duringReviewPeriod
