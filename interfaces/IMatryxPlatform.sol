@@ -7,9 +7,6 @@ interface IMatryxPlatform
 {
     function invokeTournamentOpenedEvent(bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee) public;
     function invokeTournamentClosedEvent(uint256 _finalRoundNumber, uint256 _MTXReward) public;
-    function handleReferenceRequestsForSubmission(address _submissionAddress, address[] _references) public returns (bool);
-    function handleReferenceRequestForSubmission(address _reference) public returns (bool);
-    function handleCancelledReferenceRequestForSubmission(address _reference) public returns (bool);
     function updateSubmissions(address _owner, address _submission) public;
     function removeSubmission(address _submissionAddress, address _tournamentAddress) public returns (bool);
     function getTournamentsByCategory(bytes32 _category) external view returns (address[]);

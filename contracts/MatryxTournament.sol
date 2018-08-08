@@ -425,7 +425,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
         if (contribsAndRefs.contributors.length != 0 || contribsAndRefs.references.length != 0)
         {
-            // IMatryxSubmission(newSubmission).setContributorsAndReferences(contribsAndRefs);
+            IMatryxSubmission(newSubmission).setContributorsAndReferences(contribsAndRefs);
         }
         // Send out reference requests to the authors of other submissions
         // IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(newSubmission, contribsAndRefs.references);

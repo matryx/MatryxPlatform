@@ -107,10 +107,10 @@ contract JMatryxTournament {
             // Tournament stateData
             case 0x6ec02be9 { submissionCount() }                     // submissionCount()
             case 0x89f3beb6 { entrantCount() }                        // entrantCount()
-            case 0xd60561ce { update(sigOffset) }                     // isRound(address)
+            case 0xd60561ce { update(sigOffset) }                     // update((bytes32,bytes32[3],bytes32[2],bytes32[2],uint256,bool))
             case 0x6984d070 { getRounds() }                           // getRounds()
             case 0x1865c57d { return32(getState(sigOffset)) }         // getState()
-            case 0x3bc5de30 { getData() }                             // update((bytes32,bytes32[3],bytes32[2],bytes32[2],uint256,bool)))
+            case 0x3bc5de30 { getData() }                             // getData()
             case 0xbe999705 { addFunds(sigOffset) }                   // addFunds(uint256)
 
             case 0x583c3a92 { selectWinners(sigOffset) }              // selectWinners((address[],uint256[],uint256,uint256),(uint256,uint256,uint256,uint256,bool))
@@ -121,8 +121,8 @@ contract JMatryxTournament {
             case 0x67f69ab1 { createRound(sigOffset) }                // createRound((uint256,uint256,uint256,uint256,bool),bool)
             case 0x23721e24 { sendBountyToRound(sigOffset) }          // sendBountyToRound(uint256,uint256)
             case 0x28d576d7 { enterUserInTournament(sigOffset) }      // enterUserInTournament(address)
-            case 0xe42b8c0a { createSubmission(sigOffset) }           // createSubmission((bytes32[3],bytes32[2],bytes32[2],uint256,uint256),(address[],uint128[],address[])
-            case 0x542fe6c2 { withdrawFromAbandoned(sigOffset) }
+            case 0xfa8f3ac5 { createSubmission(sigOffset) }           // createSubmission((bytes32[3],bytes32[2],bytes32[2],uint256,uint256),(address[],uint256[],address[]))
+            case 0x542fe6c2 { withdrawFromAbandoned(sigOffset) }      // withdrawFromAbandoned()
 
             // Ownable stuff
             case 0x893d20e8 { getOwner() }                            // getOwner()
@@ -468,8 +468,8 @@ contract JMatryxTournament {
                 calldatacopy(add(ptr, 0x64), 0x04, size)
 
                 // update selectWinnersData location
-                let swd_mem := add(ptr, 0x64)
-                mstore(swd_mem, add(mload(swd_mem), 0x60))
+                let m_swd := add(ptr, 0x64)
+                mstore(m_swd, add(mload(m_swd), 0x60))
 
                 size := add(size, 0x64)
 
@@ -661,8 +661,8 @@ contract JMatryxTournament {
 
                     ptr := add(ptr, 0x20) // free mem for arguments
 
-                    // setContributorsAndReferences((address[],uint128[],address[]))
-                    mstore(ptr, mul(0xb288e0c1, offset))
+                    // setContributorsAndReferences((address[],uint256[],address[]))
+                    mstore(ptr, mul(0x0a181f52, offset))
                     ptr := add(ptr, 0x04)
 
                     // struct pos in mem for call

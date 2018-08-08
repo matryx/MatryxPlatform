@@ -21,8 +21,8 @@ library LibSubmission
     {
         uint256 winnings;
         uint256 amountTransferredToReferences;
-        uint128 contributorBountyDivisor;
-        mapping(address=>uint128) contributorToBountyDividend;
+        uint256 contributorBountyDivisor;
+        mapping(address=>uint256) contributorToBountyDividend;
         mapping(address=>uint256) addressToAmountWithdrawn;
     }
 
@@ -89,13 +89,13 @@ library LibSubmission
             require(_contributorsModificationData.contributorsToAdd.length == _contributorsModificationData.contributorRewardDistribution.length);
             addContributors(contributorsAndReferences, rewardData, _contributorsModificationData.contributorsToAdd, _contributorsModificationData.contributorRewardDistribution);
         }
+
         if(_contributorsModificationData.contributorsToRemove.length != 0)
         {
-            // TODO: Finish and test
-            // removeContributors(contributorsAndReferences, rewardData, _contributorsModificationData.contributorsToRemove);
+            removeContributors(contributorsAndReferences, rewardData, _contributorsModificationData.contributorsToRemove);
         }
-        data.timeUpdated = now;
 
+        data.timeUpdated = now;
     }
 
     function updateReferences(address platformAddress, LibConstruction.SubmissionData storage data, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, LibConstruction.ReferencesModificationData _referencesModificationData) public
@@ -104,52 +104,195 @@ library LibSubmission
         {
             LibSubmissionTrust.addReferences(platformAddress, contributorsAndReferences, trustData, _referencesModificationData.referencesToAdd);
         }
-        // TODO: Add remove functionality
+
+        if(_referencesModificationData.referencesToRemove.length != 0)
+        {
+            removeReferences(contributorsAndReferences, trustData, _referencesModificationData.referencesToRemove);
+        }
+
         data.timeUpdated = now;
     }
 
     function setContributorsAndReferences(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, LibSubmission.TrustData storage trustData, LibConstruction.ContributorsAndReferences _contribsAndRefs) public
     {
         require(_contribsAndRefs.contributors.length == _contribsAndRefs.contributorRewardDistribution.length);
+
+        rewardData.contributorBountyDivisor = 0;
+
         for(uint32 i = 0; i < _contribsAndRefs.contributors.length; i++)
         {
             // if one of the contributors is already there, revert
             // otherwise, add it to the list
-            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(_contribsAndRefs.contributorRewardDistribution[i]);
-            rewardData.contributorToBountyDividend[_contribsAndRefs.contributors[i]] = _contribsAndRefs.contributorRewardDistribution[i];
+            uint256 dist = _contribsAndRefs.contributorRewardDistribution[i];
+            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(dist);
+            rewardData.contributorToBountyDividend[_contribsAndRefs.contributors[i]] = dist;
         }
 
         for(i = 0; i < _contribsAndRefs.references.length; i++)
         {
-            trustData.addressToReferenceInfo[_contribsAndRefs.references[i]].exists = true;
-            trustData.addressToReferenceInfo[_contribsAndRefs.references[i]].index = i;
+            address reference = _contribsAndRefs.references[i];
+            trustData.addressToReferenceInfo[reference].exists = true;
+            trustData.addressToReferenceInfo[reference].index = i;
         }
 
         contributorsAndReferences.contributors = _contribsAndRefs.contributors;
-        contributorsAndReferences.contributorRewardDistribution = _contribsAndRefs.contributorRewardDistribution;
         contributorsAndReferences.references = _contribsAndRefs.references;
     }
 
     // function addContributors(LibConstruction.ContributorsModificationData storage _contributorsModificationData) internal
-    function addContributors(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, address[] _contributorsToAdd, uint128[] _distribution) internal
+    function addContributors(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, address[] _contributorsToAdd, uint256[] _distribution) public
     {
         require(_contributorsToAdd.length == _distribution.length);
         for(uint32 i = 0; i < _contributorsToAdd.length; i++)
         {
-            // if one of the contributors is already there, revert
+            uint256 dist = _distribution[i];
+            // can't have 0 proportion
+            require(dist != 0);
+
+            // if one of the contributors is already there, update their distribution
             // otherwise, add it to the list
-            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(_distribution[i]);
-            rewardData.contributorToBountyDividend[_contributorsToAdd[i]] = _distribution[i];
-            contributorsAndReferences.contributors.push(_contributorsToAdd[i]);
+            address contributor = _contributorsToAdd[i];
+            uint256 dividend = rewardData.contributorToBountyDividend[contributor];
+
+            if (dividend != 0) {
+                rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.sub(dividend);
+            }
+
+            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(dist);
+            rewardData.contributorToBountyDividend[contributor] = dist;
+
+            if (dividend == 0) {
+                contributorsAndReferences.contributors.push(contributor);
+            }
         }
     }
 
-    function removeContributors(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, address[] _contributorsToRemove) public
+    function removeContributors(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, uint256[] _contributorsToRemove) public
     {
         for(uint32 i = 0; i < _contributorsToRemove.length; i++)
         {
-            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.sub(rewardData.contributorToBountyDividend[_contributorsToRemove[i]]);
-            rewardData.contributorToBountyDividend[_contributorsToRemove[i]] = 0;
+            address contributor = contributorsAndReferences.contributors[_contributorsToRemove[i]];
+            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.sub(rewardData.contributorToBountyDividend[contributor]);
+            rewardData.contributorToBountyDividend[contributor] = 0;
+        }
+
+        // TODO: Swap with above and test
+        // assembly {
+            // let len := arg(1) // array length
+            // for { let i := 0 } lt(i, len) { i := add(i, 1) } {
+            //     let contrib := calldataload(add(0x04, add(arg(0), mul(0x20, i)))) // arg(0) is offset of _contribs... in bytes
+            //     mstore(0x0, contrib)
+            //     mstore(0x20, add(rewardData_slot, 3)) // RewardData.contributorToBountyDividend
+            //     let s_dividend := keccak256(0x0, 0x40)
+            //     let dividend := sload(s_dividend)
+            //     sstore(add(rewardData_slot, 2), sub(sload(add(rewardData_slot, 2)), dividend)) // RewardData.contributorToBountyDivisor
+
+            //     sstore(s_dividend, 0)
+            // }
+        // }
+
+        assembly {
+            let ptr := mload(0x40)
+
+            let arrLen := sload(contributorsAndReferences_slot)
+            let end := sub(arrLen, 1)
+
+            mstore(0, contributorsAndReferences_slot)
+            let s_cons := keccak256(0, 0x20)
+
+            let c_ids := add(_contributorsToRemove, 0x24)
+            let idsLen := calldataload(sub(c_ids, 0x20))
+
+            // clear out flag memory
+            for { let i := 0 } lt(i, arrLen) { i := add(i, 1) } {
+                mstore(add(ptr, mul(i, 0x20)), 0)
+            }
+
+            // flag items in memory
+            for { let i := 0 } lt(i, idsLen) { i := add(i, 1) } {
+                let id := calldataload(add(c_ids, mul(i, 0x20)))
+                mstore(add(ptr, mul(id, 0x20)), 1) // flag for replace
+            }
+
+            let last := 0
+            // loop through and replace flagged
+            for { let i := 0 } lt(i, end) { i := add(i, 1) } {
+                if eq(mload(add(ptr, mul(i, 0x20))), 1) {
+                    let flagged := 1
+                    for {} and(eq(flagged, 1), gt(end, 0)) {} {
+                        flagged := mload(add(ptr, mul(end, 0x20)))
+
+                        if iszero(flagged) {
+                            last := sload(add(s_cons, end))
+                        }
+
+                        end := sub(end, 1)
+                    }
+
+                    sstore(add(s_cons, i), last) // replace
+                }
+            }
+
+            // update contributors length
+            sstore(contributorsAndReferences_slot, sub(arrLen, idsLen))
+        }
+    }
+
+    /// @dev Removes references to a submission (callable only by submission's owner).
+    /// @param _referencesToRemove Indices of references to remove.
+    function removeReferences(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, uint256[] _referencesToRemove) public
+    {
+        for (uint256 i = 0; i < _referencesToRemove.length; i++) {
+            address reference = contributorsAndReferences.references[_referencesToRemove[i]];
+            require(trustData.addressToReferenceInfo[reference].exists);
+            delete trustData.addressToReferenceInfo[reference];
+        }
+
+        assembly {
+            let ptr := mload(0x40)
+
+            // contributorsAndReferences.references
+            let arrLen := sload(add(contributorsAndReferences_slot, 2))
+            let end := sub(arrLen, 1)
+
+            mstore(0, add(contributorsAndReferences_slot, 2))
+            let s_refs := keccak256(0, 0x20)
+
+            let c_ids := add(_referencesToRemove, 0x44)
+            let idsLen := calldataload(sub(c_ids, 0x20))
+
+            // clear out flag memory
+            for { let i := 0 } lt(i, arrLen) { i := add(i, 1) } {
+                mstore(add(ptr, mul(i, 0x20)), 0)
+            }
+
+            // flag items in memory
+            for { let i := 0 } lt(i, idsLen) { i := add(i, 1) } {
+                let id := calldataload(add(c_ids, mul(i, 0x20)))
+                mstore(add(ptr, mul(id, 0x20)), 1) // flag for replace
+            }
+
+            let last := 0
+            // loop through and replace flagged
+            for { let i := 0 } lt(i, end) { i := add(i, 1) } {
+                if eq(mload(add(ptr, mul(i, 0x20))), 1) {
+                    let flagged := 1
+                    for {} and(eq(flagged, 1), gt(end, 0)) {} {
+                        flagged := mload(add(ptr, mul(end, 0x20)))
+
+                        if iszero(flagged) {
+                            last := sload(add(s_refs, end))
+                        }
+
+                        end := sub(end, 1)
+                    }
+
+                    sstore(add(s_refs, i), last) // replace
+                }
+            }
+
+            // update references length
+            sstore(add(contributorsAndReferences_slot, 2), sub(arrLen, idsLen))
         }
     }
 

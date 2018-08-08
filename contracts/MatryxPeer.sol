@@ -1,12 +1,12 @@
 pragma solidity ^0.4.18;
 
-import '../libraries/math/SafeMath.sol';
-import '../libraries/math/SafeMath128.sol';
-import '../interfaces/IMatryxPlatform.sol';
-import '../interfaces/IMatryxTournament.sol';
-import '../interfaces/IMatryxRound.sol';
-import '../interfaces/IMatryxSubmission.sol';
-import './Ownable.sol';
+import "../libraries/math/SafeMath.sol";
+import "../libraries/math/SafeMath128.sol";
+import "../interfaces/IMatryxPlatform.sol";
+import "../interfaces/IMatryxTournament.sol";
+import "../interfaces/IMatryxRound.sol";
+import "../interfaces/IMatryxSubmission.sol";
+import "./Ownable.sol";
 
 /// @title MatryxPeer - A peer within the MatryxPlatform.
 /// @author Max Howard - <max@nanome.ai>
@@ -37,12 +37,8 @@ contract MatryxPeer is Ownable {
     mapping(address=>mapping(address=>uint128)) submissionToReferenceToDistrustGiven;
 
     // Tracks the proportion of references this peer has approved on a given submission
-    mapping(address=>uint256) submissionToApprovedReferences;
     mapping(address=>uint256) submissionToReferenceCount;
     mapping(address=>ReferencesMetadata) submissionToReferencesMetadata;
-
-    event ReceivedReferenceRequest(address _submissionAddress, address reference);
-    event ReferenceRequestCancelled(address _submissionAddress, address reference);
 
     /*
         * Structs
@@ -50,9 +46,8 @@ contract MatryxPeer is Ownable {
 
     struct ReferencesMetadata
     {
-        uint128 approvedReferenceCount;
         uint128 missingReferenceCount;
-        uint128 totalReferenceCount;
+        uint128 referenceCount;
     }
 
     /*
@@ -139,7 +134,7 @@ contract MatryxPeer is Ownable {
             totalTrustGiven = totalTrustGiven.sub(1);
         }
 
-        //if I have never judged this peer before, update structs to reflect that I have now
+        // if I have never judged this peer before, update structs to reflect that I have now
         if (haveJudgedPeer[_peer] == false){
             haveJudgedPeer[_peer] = true;
             judgedPeers.push(_peer);
@@ -260,7 +255,7 @@ contract MatryxPeer is Ownable {
 
     function getMissingReferenceCount(address _submissionAddress) public view returns (uint128, uint128)
     {
-        return (submissionToReferencesMetadata[_submissionAddress].missingReferenceCount, submissionToReferencesMetadata[_submissionAddress].totalReferenceCount);
+        return (submissionToReferencesMetadata[_submissionAddress].missingReferenceCount, submissionToReferencesMetadata[_submissionAddress].referenceCount);
     }
 
     /// @dev					  Removes a flag on a missing reference from a submission.
@@ -301,81 +296,30 @@ contract MatryxPeer is Ownable {
         globalTrust = globalTrust.add(_trustRemoved);
     }
 
-    /// @dev 					  Approve of a reference to a submission written by this peer
-    /// 						  on another submission. This method should be called by the
-    /// 	 					  owner of this peer in order to approve a reference to one
-    /// 	 					  of their works within someone else's submission.
-    /// @param _submissionAddress Address of the submission on which to approve the reference.
-    /// @param _reference 		  Reference to approve.
-    function approveReference(address _submissionAddress, address _reference) public onlyOwner senderOwnsReference(_reference) forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
-    {
-        // Require that we're the author of the reference we're attempting to approve
-        // Require that the platform knows the submission.
-        // Require that the platform knows the reference we'd like to approve.
-
-        // Add 1 to the state var keeping track of the number of approved references on this submission
-        submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.add(1);
-
-        IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
-        submission.approveReference(_reference);
-
-        address submissionAuthor = submission.getAuthor();
-        submissionToReferenceToTrustGiven[_submissionAddress][_reference] = giveTrust(submissionAuthor);
-    }
-
-    /// @dev 					  Remove approval of a reference from a submission.
-    /// @param _submissionAddress Address of the submission which was previously given an approval
-    /// 						  for one of its references.
-    /// @param _reference 		  Address of the reference to decry.
-    function removeReferenceApproval(address _submissionAddress, address _reference) public ownerOrSubmission(_submissionAddress) forExistingSubmission(_submissionAddress) forExistingSubmission(_reference)
-    {
-        // Require that the platform knows the submission.
-        // Require that the platform knows the reference we'd like to decry.
-        // Require that we're the author of the reference we're attempting to decry.
-        // Require that we have approvel the reference before
-        //require(submissionToReferenceToTrustGiven[_submissionAddress][_reference] > 0);
-
-        // Remove 1 from the state var keeping track of the number of approved references on this submission
-        submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount = submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.sub(1);
-        totalTrustGiven = totalTrustGiven.sub(1);
-
-        IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
-        submission.removeReferenceApproval(_reference);
-
-        address submissionAuthor = submission.getAuthor();
-
-        //revoke the trust that was given upon approving the submission
-        judgedPeerToUnnormalizedTrust[submissionAuthor] = judgedPeerToUnnormalizedTrust[submissionAuthor].add(one_eighteenDecimal);
-
-        MatryxPeer(submissionAuthor).revokeTrust(submissionToReferenceToTrustGiven[_submissionAddress][_reference]);
-
-        //clean up previous trust given
-        submissionToReferenceToTrustGiven[_submissionAddress][_reference] = 0;
-    }
-
     function revokeTrust(uint128 _trustGiven) public
     {
         //revoke the trust that was given upon approving the submission
         judgingPeerToUnnormalizedTrust[msg.sender] = judgingPeerToUnnormalizedTrust[msg.sender].sub(one_eighteenDecimal);
+        // this reverts (╯°□°）╯︵ ┻━┻
         //judgingPeerToTotalTrustGiven[msg.sender] = judgingPeerToTotalTrustGiven[msg.sender].sub(_trustGiven);
         //judgingPeerToInfluenceOnMyReputation[msg.sender] = judgingPeerToInfluenceOnMyReputation[msg.sender].sub(_trustGiven);
 
         globalTrust = globalTrust.sub(_trustGiven);
     }
 
-    function getApprovedAndTotalReferenceCounts(address _submissionAddress) public view returns (uint128, uint128)
+    function getReferenceCount(address _submissionAddress) public view returns (uint128)
     {
-        return (submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount, submissionToReferencesMetadata[_submissionAddress].totalReferenceCount);
+        return submissionToReferencesMetadata[_submissionAddress].referenceCount;
     }
 
-    function getApprovedReferenceProportion(address _submissionAddress) public view returns (uint128)
+    function getReferenceProportion(address _submissionAddress) public view returns (uint128)
     {
-        if(submissionToReferencesMetadata[_submissionAddress].totalReferenceCount + submissionToReferencesMetadata[_submissionAddress].missingReferenceCount == 0)
+        if(submissionToReferencesMetadata[_submissionAddress].referenceCount.add(submissionToReferencesMetadata[_submissionAddress].missingReferenceCount) == 0)
         {
             return 0;
         }
 
-        return submissionToReferencesMetadata[_submissionAddress].approvedReferenceCount.div(submissionToReferencesMetadata[_submissionAddress].totalReferenceCount.add(submissionToReferencesMetadata[_submissionAddress].missingReferenceCount));
+        return submissionToReferencesMetadata[_submissionAddress].referenceCount.div(submissionToReferencesMetadata[_submissionAddress].referenceCount.add(submissionToReferencesMetadata[_submissionAddress].missingReferenceCount));
     }
 
     function peersJudged() public view returns (uint256)

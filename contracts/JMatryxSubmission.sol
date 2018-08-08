@@ -1,9 +1,6 @@
 pragma solidity ^0.4.18;
 pragma experimental ABIEncoderV2;
 
-import "../libraries/math/SafeMath.sol";
-import "../libraries/math/SafeMath128.sol";
-import "../libraries/strings/strings.sol";
 import "../libraries/LibConstruction.sol";
 import "../libraries/submission/LibSubmission.sol";
 import "../libraries/submission/LibSubmissionTrust.sol";
@@ -14,8 +11,8 @@ contract JMatryxSubmission {
     address tournament;
     address round;
 
-    LibConstruction.SubmissionData data;
-    LibSubmission.RewardData rewardData;
+    LibConstruction.SubmissionData data; // slot 4
+    LibSubmission.RewardData rewardData; // slot 13, divisor 15
     LibSubmission.TrustData trustData;
     LibConstruction.ContributorsAndReferences contribsAndRefs;
 
@@ -46,40 +43,30 @@ contract JMatryxSubmission {
             let sOffset := 0x100000000000000000000000000000000000000000000000000000000
             switch div(calldataload(0), sOffset)
 
-            // case 0x7eba7ba6 { getSlot() }                          // getSlot(uint256)
-            case 0xe76c293e { getTournament() }                       // getTournament()
-            case 0x9f8743f7 { getRound() }                            // getRound()
-            // case 0xa52dd12f { isAccessible() }                      // isAccessible(address)
-            case 0x3bc5de30 { getData() }                             // getData()
-            case 0xff3c1a8f { getTitle() }                            // getTitle()
-            case 0xa5faa125 { getAuthor() }                           // getAuthor()
-            case 0x245edf06 { getDescriptionHash() }                  // getDescriptionHash()
-            case 0x8493f71f { getFileHash() }                         // getFileHash()
-            case 0x7a6337fa { getReferences() }                       // getReferences()
-            case 0xaf157c19 { getContributors() }                     // getContributors()
-            case 0xae1ca692 { getTimeSubmitted() }                    // getTimeSubitted()
-            case 0x9b057610 { getTotalWinnings() }                    // getTotalWinnings()
-            case 0x5de8439f { updateData(sOffset) }                   // updateData((bytes32[3],bytes32[2],bytes32[2]))
-            case 0x076b7f76 { updateContributors(sOffset) }           // updateContributors((address[],uint128[],address[]))
-            case 0x57de221f { updateReferences(sOffset) }             // updateReferences((address[],address[]))
-            case 0x09b542bb { addToWinnings() }                       // addToWinnings(uint256)
-            case 0x0fb3395c { addReference(sOffset) }                 // addReference(address)
-            case 0x9fb86a87 { addReferences(sOffset) }                // addReference(address[])
-            case 0x23bab50b { removeReference(sOffset) }              // removeReference(address)
-            case 0xc7af3551 { receiveReferenceRequest() }             // receiveReferenceRequest()
-            case 0x444e31ca { cancelReferenceRequest(sOffset) }       // cancelReferenceRequest()
-            case 0xe7139ec0 { approveReference(sOffset) }             // approveReference(address)
-            case 0xe4e3e83a { removeReferenceApproval(sOffset) }      // removeReferenceApproval(address)
-            case 0x32c9c9d3 { flagMissingReference(sOffset) }         // flagMisingReference(address)
-            case 0x0cbfdb2d { removeMissingReferenceFlag(sOffset) }   // removeMissingReferenceFlag(address)
-            case 0xb288e0c1 { setContributorsAndReferences(sOffset) } // setContributorsAndReferences((address[],uint128[],address[]))
-            case 0xf889b6d4 { addContributor(sOffset)}                // addContributor(address,uint128)
-            case 0x6948f406 { addContributors(sOffset) }              // addContributors(address[],uint128[])
-            case 0x74756091 { removeContributor(sOffset) }            // removeContributor(uint256)
-            case 0xbeda86b9 { removeContributors(sOffset) }           // removeContributors(uint256[])
-            case 0x12065fe0 { getBalance(sOffset) }                   // getBalance()
-            case 0xc885bc58 { withdrawReward(sOffset) }               // withdrawReward()
-            case 0x42849570 { myReward(sOffset) }                     // myReward()
+            // case 0x7eba7ba6 { getSlot() }                                  // getSlot(uint256)
+            case 0xe76c293e { getTournament() }                            // getTournament()
+            case 0x9f8743f7 { getRound() }                                 // getRound()
+            // case 0xa52dd12f { isAccessible() }                          // isAccessible(address)
+            case 0x3bc5de30 { getData(sOffset) }                           // getData()
+            case 0xff3c1a8f { getTitle(sOffset) }                          // getTitle()
+            case 0xa5faa125 { getAuthor(sOffset) }                         // getAuthor()
+            case 0x245edf06 { getDescriptionHash(sOffset) }                // getDescriptionHash()
+            case 0x8493f71f { getFileHash(sOffset) }                       // getFileHash()
+            case 0x7a6337fa { getReferences(sOffset) }                     // getReferences()
+            case 0xaf157c19 { getContributors(sOffset) }                   // getContributors()
+            case 0xf23e1cb4 { getContributorRewardDistribution(sOffset) }  // getContributorRewardDistribution()
+            case 0xae1ca692 { getTimeSubmitted() }                         // getTimeSubitted()
+            case 0x9b057610 { getTotalWinnings() }                         // getTotalWinnings()
+            case 0x5de8439f { updateData(sOffset) }                        // updateData((bytes32[3],bytes32[2],bytes32[2]))
+            case 0x49ca4d7f { updateContributors(sOffset) }                // updateContributors((address[],uint256[],uint256[]))
+            case 0x93d1e712 { updateReferences(sOffset) }                  // updateReferences((address[],uint256[]))
+            case 0x09b542bb { addToWinnings(sOffset) }                     // addToWinnings(uint256)
+            case 0x32c9c9d3 { flagMissingReference(sOffset) }              // flagMisingReference(address)
+            case 0x0cbfdb2d { removeMissingReferenceFlag(sOffset) }        // removeMissingReferenceFlag(address)
+            case 0x0a181f52 { setContributorsAndReferences(sOffset) }      // setContributorsAndReferences((address[],uint256[],address[]))
+            case 0x12065fe0 { getBalance(sOffset) }                        // getBalance()
+            case 0xc885bc58 { withdrawReward(sOffset) }                    // withdrawReward()
+            case 0x42849570 { myReward(sOffset) }                          // myReward()
 
             // Ownable stuff
             case 0x893d20e8 { getOwner() }                            // getOwner()
@@ -139,6 +126,10 @@ contract JMatryxSubmission {
                 require(eq(sload(platform_slot), caller()))
             }
 
+            function onlyTournament() {
+                require(eq(sload(tournament_slot), caller()))
+            }
+
             function onlyOwner() {
                 require(eq(sload(owner_slot), caller()))
             }
@@ -151,26 +142,32 @@ contract JMatryxSubmission {
             }
 
             function onlyPeer(offset) {
-                // TODO
                 mstore(0, mul(0x3e44cf78, offset)) // MatryxPlatform.isPeer
                 mstore(0x04, caller())
                 require(call(gas(), sload(platform_slot), 0, 0, 0x24, 0, 0x20))
             }
 
-            function whenAccessible() {
-                // require(isAccessible(caller()))
+            function whenAccessible(offset) {
+                require(isAccessible(offset))
             }
 
-            function onlySubmissionOrRound() {
-                // TODO
+            function onlySubmissionOrRound(offset) {
+                mstore(0, mul(0x8b706ff8, offset)) // submissionExixts(address)
+                mstore(0x04, caller())
+                require(call(gas(), sload(round_slot), 0, 0, 0x24, 0, 0x20)) //round.submissionExists(msg.sender)
+                let isSubmission := mload(0)
+                let isRound := eq(sload(round_slot), caller())
+                require(or(isSubmission, isRound))
             }
 
             function onlyOwnerOrThis() {
                 require(or(eq(sload(owner_slot), caller()), eq(address(), caller())))
             }
 
-            function duringOpenSubmission() {
-                // TODO
+            function duringOpenSubmission(offset) {
+                mstore(0, mul(0x1865c57d, offset)) // getState()
+                require(call(gas(), sload(round_slot), 0, 0, 0x04, 0, 0x20)) // round.getState()
+                require(eq(mload(0), 2)) // LibEnum.RoundState.Open
             }
 
 
@@ -186,11 +183,58 @@ contract JMatryxSubmission {
                 return32(sload(round_slot))
             }
 
-            // TODO:
             // function isAccessible(address _requester) public view returns (bool)
+            function isAccessible(offset) -> a {
+                let platform := sload(platform_slot)
+                let round := sload(round_slot)
+                let owner := sload(owner_slot)
 
-            function getData() {
-                whenAccessible()
+                a := eq(platform, caller())                                               // isPlatform
+                a := or(a, eq(round, caller()))                                           // isRound
+                a := or(a, eq(owner, caller()))                                           // ownsThisSubmission
+
+                let state := 0
+                if iszero(a) {
+                    mstore(0, mul(0x1865c57d, offset))                                    // getState()
+                    require(call(gas(), round, 0, 0, 0x04, 0, 0x20))                      // round.getState
+                    state := mload(0)
+
+                    a := or(a, gt(state, 4))                                              // round is Closed or Abandoned
+                }
+
+                if iszero(a) {
+                    let tournament := sload(tournament_slot)
+
+                    mstore(0, mul(0x52c01fab, offset))                                    // isEntrant(address)
+                    mstore(0x04, caller())
+                    require(call(gas(), tournament, 0, 0, 0x24, 0, 0x20))                 // tournament.isEntrant(caller)
+                    let isEntrant := mload(0)
+
+                    mstore(0, mul(0x893d20e8, offset))                                    // getOwner()
+                    require(call(gas(), tournament, 0, 0, 0x04, 0, 0x20))                 // tournament.getOwner
+                    let ownsTournament := eq(mload(0), caller())
+
+                    let roundAtLeastInReview := gt(state, 2)                              // after 2, in review (or more)
+                    a := or(a, and(roundAtLeastInReview, or(ownsTournament, isEntrant)))  // duringReviewAndRequesterInTournament
+                }
+
+                if iszero(a) {
+                    mstore(0, mul(0x3e44cf78, offset))                                    // isPeer(address)
+                    mstore(0x04, caller())
+                    require(call(gas(), platform, 0, 0, 0x24, 0, 0x20))                   // platform.isPeer(caller)
+                    a := or(a, mload(0))
+                }
+
+                if iszero(a) {
+                    mstore(0, mul(0x818b5fa8, offset))                                    // isSubmission(address)
+                    mstore(0x04, caller())
+                    require(call(gas(), platform, 0, 0, 0x24, 0, 0x20))                   // platform.isSubmission(caller)
+                    a := or(a, mload(0))
+                }
+            }
+
+            function getData(offset) {
+                whenAccessible(offset)
 
                 let data := mload(0x40)
                 mstore(data, sload(data_slot))                     // data.title[0]
@@ -206,8 +250,8 @@ contract JMatryxSubmission {
                 return(data, 0x120)
             }
 
-            function getTitle() {
-                whenAccessible()
+            function getTitle(offset) {
+                whenAccessible(offset)
 
                 let title := mload(0x40)
                 mstore(title, sload(data_slot))                     // data.title[0]
@@ -217,37 +261,38 @@ contract JMatryxSubmission {
                 return(title, 0x60)
             }
 
-            function getAuthor() {
-                whenAccessible()
+            function getAuthor(offset) {
+                whenAccessible(offset)
 
-                // TODO:
-                // author = IMatryxPlatform(platformAddress).peerAddress(_owner);
-                // require(author != 0x0);
+                mstore(0, mul(0x6a44e43d, offset)) // peerAddress(address)
+                mstore(0x04, sload(owner_slot))
+                require(call(gas(), sload(platform_slot), 0, 0, 0x24, 0, 0x20)) // platform.peerAddress(owner)
+                return(0, 0x20) // return author
             }
 
-            function getDescriptionHash() {
-                whenAccessible()
+            function getDescriptionHash(offset) {
+                whenAccessible(offset)
 
                 let description := mload(0x40)
-                mstore(description, sload(add(data_slot, 3)))   // data.descriptionHash[0]
+                mstore(description, sload(add(data_slot, 3)))              // data.descriptionHash[0]
                 mstore(add(description, 0x20), sload(add(data_slot, 4)))   // data.descriptionHash[1]
 
                 return(description, 0x40)
             }
 
-            function getFileHash() {
-                whenAccessible()
+            function getFileHash(offset) {
+                whenAccessible(offset)
 
                 let file := mload(0x40)
-                mstore(file, sload(add(data_slot, 5)))   // data.fileHash[0]
+                mstore(file, sload(add(data_slot, 5)))              // data.fileHash[0]
                 mstore(add(file, 0x20), sload(add(data_slot, 6)))   // data.fileHash[1]
 
                 return(file, 0x40)
             }
 
             // function getReferences() public view whenAccessible(msg.sender) returns(address[])
-            function getReferences() {
-                whenAccessible()
+            function getReferences(offset) {
+                whenAccessible(offset)
 
                 mstore(0, add(contribsAndRefs_slot, 2))   // contribsAndRefs.references
                 let refs := keccak256(0, 0x20)
@@ -274,8 +319,8 @@ contract JMatryxSubmission {
             }
 
             // function getContributors() public view whenAccessible(msg.sender) returns(address[])
-            function getContributors() {
-                whenAccessible()
+            function getContributors(offset) {
+                whenAccessible(offset)
 
                 mstore(0, contribsAndRefs_slot)   // contribsAndRefs.contributors
                 let contribs := keccak256(0, 0x20)
@@ -301,6 +346,30 @@ contract JMatryxSubmission {
                 return(ret, add(0x40, mul(len, 0x20)))
             }
 
+            function getContributorRewardDistribution(offset) {
+                whenAccessible(offset)
+
+                let ptr := mload(0x40)
+                let len := sload(contribsAndRefs_slot)
+
+                mstore(ptr, 0x20)           // elem size
+                mstore(add(ptr, 0x20), len) // arr len
+
+                mstore(0, contribsAndRefs_slot)
+                let s_car := keccak256(0, 0x20)
+
+                mstore(0x20, add(rewardData_slot, 3)) // rewardData.contributorToBountyDividend
+
+                for { let i := 0 } lt(i, len) { i := add(i, 1) } {
+                    let con := sload(add(s_car, i))
+                    mstore(0, con)
+                    let dist := keccak256(0, 0x40)    // rewardData.contributorToBountyDividend[contributor]
+                    mstore(add(ptr, mul(add(i, 2), 0x20)), sload(dist))
+                }
+
+                return(ptr, mul(add(len, 2), 0x20))
+            }
+
             function getTimeSubmitted() {
                 return32(sload(add(data_slot, 7))) // data.timeSubmitted
             }
@@ -312,7 +381,7 @@ contract JMatryxSubmission {
             // function updateData(LibConstruction.SubmissionModificationData _modificationData) public onlyOwner duringOpenSubmission
             function updateData(offset) {
                 onlyOwner()
-                duringOpenSubmission()
+                duringOpenSubmission(offset)
 
                 let ptr := mload(0x40)
                 // LibSubmission.updateData(LibConstruction.SubmissionData storage,LibConstruction.SubmissionModificationData)
@@ -328,7 +397,7 @@ contract JMatryxSubmission {
             // function updateContributors(LibConstruction.ContributorsModificationData _contributorsModificationData) public onlyOwner duringOpenSubmission
             function updateContributors(offset) {
                 onlyOwner()
-                // duringOpenSubmission()
+                duringOpenSubmission(offset)
 
                 let ptr := mload(0x40)
                 // LibSubmisison.updateContributors(LibConstruction.SubmissionData storage,LibConstruction.ContributorsAndReferences storage,LibSubmission.RewardData storage,LibConstruction.ContributorsModificationData)
@@ -343,13 +412,13 @@ contract JMatryxSubmission {
                 calldatacopy(m_cmd, 0x04, size)
                 mstore(m_cmd, add(mload(m_cmd), 0x60))
 
-                require(delegatecall(gas(), LibSubmission, ptr, add(size, 0x64), 0, 0))
+                require(delegatecall(gas(), LibSubmission, ptr, add(size, 0x64), 0, 0)) // LibSubmission.updateContributors()
             }
 
             // function updateReferences(LibConstruction.ReferencesModificationData _referencesModificationData) public onlyOwner duringOpenSubmission
             function updateReferences(offset) {
                 onlyOwner()
-                // duringOpenSubmission()
+                duringOpenSubmission(offset)
 
                 let ptr := mload(0x40)
                 // LibSubmission.updateReferences(address,LibConstruction.SubmissionData storage,LibConstruction.ContributorsAndReferences storage,LibSubmission.TrustData storage,LibConstruction.ReferencesModificationData)
@@ -369,99 +438,15 @@ contract JMatryxSubmission {
             }
 
             // function addToWinnings(uint256 _amount) public onlySubmissionOrRound
-            function addToWinnings() {
+            function addToWinnings(offset) {
+                onlySubmissionOrRound(offset)
+
                 sstore(rewardData_slot, add(sload(rewardData_slot), arg(0)))
-            }
-
-            // function addReference(address _reference) public onlyOwner
-            function addReference(offset) {
-                onlyOwner()
-
-                let ptr := mload(0x40)
-                // LibSubmissionTrust.addReference(address,LibConstruction.ContributorsAndReferences storage,LibSubmission.TrustData storage,address)
-                mstore(ptr, mul(0xd4cc491b, offset))
-                mstore(add(ptr, 0x04), sload(platform_slot))
-                mstore(add(ptr, 0x24), contribsAndRefs_slot)
-                mstore(add(ptr, 0x44), trustData_slot)
-                mstore(add(ptr, 0x64), arg(0)) // _reference
-
-                require(delegatecall(gas(), LibSubmissionTrust, ptr, 0x84, 0, 0))
-            }
-
-            // function addReferences(address[] _references) public onlyOwner
-            function addReferences(offset) {
-                onlyOwner()
-
-                let ptr := mload(0x40)
-                // LibSubmissionTrust.addReferences(address,LibConstruction.ContributorsAndReferences storage,LibSubmission.TrustData storage,address[])
-                mstore(ptr, mul(0x167fcf6f, offset))
-                mstore(add(ptr, 0x04), sload(platform_slot))
-                mstore(add(ptr, 0x24), contribsAndRefs_slot)
-                mstore(add(ptr, 0x44), trustData_slot)
-
-                // store references[]
-                let size := sub(calldatasize(), 0x04)
-                calldatacopy(add(ptr, 0x64), 0x04, size)
-
-                require(delegatecall(gas(), LibSubmissionTrust, ptr, add(size, 0x64), 0, 0))
-            }
-
-            // function removeReference(address _reference) onlyOwner public
-            function removeReference(offset) {
-                onlyOwner()
-
-                let ptr := mload(0x40)
-                // LibSubmissionTrust.removeReference(address,LibConstruction.ContributorsAndReferences storage,LibSubmission.TrustData storage,address)
-                mstore(ptr, mul(0xcb06d336, offset))
-                mstore(add(ptr, 0x04), sload(platform_slot))
-                mstore(add(ptr, 0x24), contribsAndRefs_slot)
-                mstore(add(ptr, 0x44), trustData_slot)
-                mstore(add(ptr, 0x64), arg(0)) // _reference
-
-                require(delegatecall(gas(), LibSubmissionTrust, ptr, 0x84, 0, 0))
-            }
-
-            // function receiveReferenceRequest() public onlyPlatform
-            function receiveReferenceRequest() {
-                onlyPlatform()
-                sstore(add(trustData_slot,3), add(sload(trustData_slot),1))
-            }
-
-            // function cancelReferenceRequest() public onlyPlatform
-            function cancelReferenceRequest(offset) {
-                onlyPlatform()
-                sstore(add(trustData_slot,3), sub(sload(trustData_slot),1))
-            }
-
-            // function approveReference(address _reference) public onlyPeer
-            function approveReference(offset) {
-                onlyPeer(offset)
-
-                let ptr := mload(0x40)
-                // LibSubmissionTrust.approveReference(LibSubmission.TrustData storage,address)
-                mstore(ptr, mul(0xed357c94, offset))
-                mstore(add(ptr, 0x04), trustData_slot)
-                mstore(add(ptr, 0x24), arg(0)) // _reference
-
-                require(delegatecall(gas(), LibSubmissionTrust, ptr, 0x44, 0, 0))
-            }
-
-            // function removeReferenceApproval(address _reference) public onlyPeer
-            function removeReferenceApproval(offset) {
-                onlyPeer(offset)
-
-                let ptr := mload(0x40)
-                // LibSubmissionTrust.removeReferenceApproval(LibSubmission.TrustData storage,address)
-                mstore(ptr, mul(0xf5d78738,offset))
-                mstore(add(ptr, 0x04), trustData_slot)
-                mstore(add(ptr, 0x24), arg(0)) // _reference
-                require(delegatecall(gas(), LibSubmissionTrust, ptr, 0x44, 0, 0))
             }
 
             //  function flagMissingReference(address _reference) public onlyPeer
             function flagMissingReference(offset) {
                 onlyPeer(offset)
-
                 let ptr := mload(0x40)
                 // LibSubmissionTrust.flagMissingReference(LibSubmission.TrustData storage,address)
                 mstore(ptr, mul(0x35974e8f, offset))
@@ -474,6 +459,7 @@ contract JMatryxSubmission {
             function removeMissingReferenceFlag(offset) {
                 onlyPeer(offset)
                 let ptr := mload(0x40)
+
                 // LibSubmissionTrust.flagMissingReference(LibSubmission.TrustData storage,address)
                 mstore(ptr, mul(0xb0bba0ff, offset))
                 mstore(add(ptr,0x04), trustData_slot)
@@ -481,9 +467,11 @@ contract JMatryxSubmission {
                 require(delegatecall(gas(), LibSubmissionTrust, ptr, 0x44, 0, 0))
             }
 
-            //  function setContributorsAndReferences(LibConstruction.ContributorsAndReferences _contribsAndRefs) public // onlyOwner? add appropriate modifier
+            //  function setContributorsAndReferences(LibConstruction.ContributorsAndReferences _contribsAndRefs) public onlyTournament
             function setContributorsAndReferences(offset) {
+                onlyTournament()
                 let ptr := mload(0x40)
+
                 // LibSubmission.setContributorsAndReferences(LibConstruction.ContributorsAndReferences storage,LibSubmission.RewardData storage,LibSubmission.TrustData storage,LibConstruction.ContributorsAndReferences)
                 mstore(ptr, mul(0xb376fecb, offset))
                 mstore(add(ptr, 0x04), contribsAndRefs_slot)
@@ -497,73 +485,6 @@ contract JMatryxSubmission {
                 mstore(m_car, add(mload(m_car), 0x60))
 
                 require(delegatecall(gas(), LibSubmission, ptr, add(size, 0x64), 0, 0))
-            }
-
-            //  function addContributor(address _contributor, uint128 _bountyAllocation) public onlyOwner
-            function addContributor(offset) {
-                onlyOwner()
-                let ptr := mload(0x40)
-
-                // contributorsAndReferences.contributors.push(_contributor);
-                mstore(0, contribsAndRefs_slot)
-                let s_subs := keccak256(0, 0x20)
-                let len := sload(contribsAndRefs_slot)
-                sstore(contribsAndRefs_slot, add(len, 1)) // increment num submissions
-                sstore(add(s_subs, len), arg(0))
-
-                // rewardData.contributorToBountyDividend[_contributor] = _bountyAllocation;
-                mstore(0x0, arg(0))
-                mstore(0x20, add(rewardData_slot,3))
-                sstore(keccak256(0x0,0x40), arg(1))
-
-                // rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(_bountyAllocation);
-                mstore(0x0, add(rewardData_slot,2))
-                sstore(add(rewardData_slot, 2), add(sload(add(rewardData_slot, 2)), 1))
-            }
-
-            // function addContributors(address[] _contributorsToAdd, uint128[] _distribution) public onlyOwner
-            function addContributors(offset) {
-                onlyOwner()
-                let ptr := mload(0x40)
-                mstore(ptr, mul(0x06121c69,offset))
-                mstore(add(ptr,0x04), arg(0))
-                mstore(add(ptr,0x24), arg(1))
-                require(delegatecall(gas(), LibSubmission, ptr, 0x44, 0, 0))
-            }
-
-            // function removeContributor(uint256 _contributorIndex) public onlyOwner {
-            function removeContributor(offset) {
-                onlyOwner()
-
-                mstore(0x0, arg(0))
-                mstore(0x20, contribsAndRefs_slot)
-                let s_contrib := keccak256(0x0, 0x40)
-                let contrib := sload(s_contrib) // contributor at index
-                mstore(0x0, contrib)
-                mstore(0x20, add(rewardData_slot, 3)) // RewardData.contributorToBountyDividend
-                let s_dividend := keccak256(0x0, 0x40)
-                let dividend := sload(s_dividend)
-                sstore(add(rewardData_slot, 2), sub(sload(add(rewardData_slot, 2)), dividend)) // RewardData.contributorToBountyDivisor
-
-                sstore(s_dividend, 0)
-                sstore(s_contrib, 0)
-            }
-
-            // function removeContributors(address[] _contributorsToRemove) public onlyOwner
-            function removeContributors(offset) {
-                onlyOwner()
-
-                let len:= arg(1) // array length
-                for { let i := 0 } lt(i, len) { i := add(i, 1) } {
-                    let contrib := calldataload(add(0x04, add(arg(0), mul(0x20, i)))) // arg(0) is offset of _contribs... in bytes
-                    mstore(0x0, contrib)
-                    mstore(0x20, add(rewardData_slot, 3)) // RewardData.contributorToBountyDividend
-                    let s_dividend := keccak256(0x0, 0x40)
-                    let dividend := sload(s_dividend)
-                    sstore(add(rewardData_slot, 2), sub(sload(add(rewardData_slot, 2)), dividend)) // RewardData.contributorToBountyDivisor
-
-                    sstore(s_dividend, 0)
-                }
             }
 
             // function getBalance() public view returns (uint256)
@@ -628,8 +549,8 @@ contract JMatryxSubmission {
             /// @dev transferOwnership: transfers ownership to newOwner
             /// @param address newOwner
             function transferOwnership() {
+                onlyOwner()
                 let _newOwner := arg(0)
-                require(eq(sload(owner_slot), caller()))
                 require(_newOwner)
                 sstore(owner_slot, _newOwner)
             }
@@ -639,6 +560,7 @@ contract JMatryxSubmission {
 
 
 interface IJMatryxSubmission {
+    // function getSlot(uint256) public view returns (bytes32);
     function getTournament() public view returns (address);
     function getRound() public view returns (address);
     function isAccessible(address _requester) public view returns (bool);
@@ -649,26 +571,16 @@ interface IJMatryxSubmission {
     function getFileHash() public view returns (bytes32[2]);
     function getReferences() public view returns(address[]);
     function getContributors() public view returns(address[]);
+    function getContributorRewardDistribution() public view returns (uint256[]);
     function getTimeSubmitted() public view returns(uint256);
     function getTotalWinnings() public view returns(uint256);
     function updateData(LibConstruction.SubmissionModificationData _modificationData) public;
     function updateContributors(LibConstruction.ContributorsModificationData _contributorsModificationData) public;
     function updateReferences(LibConstruction.ReferencesModificationData _referencesModificationData) public;
     function addToWinnings(uint256 _amount) public;
-    function addReference(address _reference) public;
-    function addReferences(address[] _references) public;
-    function removeReference(address _reference) public;
-    function receiveReferenceRequest() public;
-    function cancelReferenceRequest() public;
-    function approveReference(address _reference) public;
-    function removeReferenceApproval(address _reference) public;
     function flagMissingReference(address _reference) public;
     function removeMissingReferenceFlag(address _reference) public;
     function setContributorsAndReferences(LibConstruction.ContributorsAndReferences _contribsAndRefs) public;
-    function addContributor(address _contributor, uint128 _bountyAllocation) public;
-    function addContributors(address[] _contributorsToAdd, uint128[] _distribution) public;
-    function removeContributor(uint256 _contributorIndex) public;
-    function removeContributors(address[] _contributorsToRemove) public;
     function getBalance() public view returns (uint256);
     function withdrawReward() public;
     function myReward() public view returns (uint256);
@@ -678,17 +590,3 @@ interface IJMatryxSubmission {
     function isOwner(address sender) public view returns (bool _isOwner);
     function transferOwnership(address newOwner) public view;
 }
-
-/**
-
-DA REAL SHIT RIGHT HERE
-
-167fcf6f
-00 000000000000000000000000969d037af62f3648116a9f1f2ddd52be3c338f94
-20 000000000000000000000000000000000000000000000000000000000000001c
-40 0000000000000000000000000000000000000000000000000000000000000012
-60 0000000000000000000000000000000000000000000000000000000000000080
-80 0000000000000000000000000000000000000000000000000000000000000001
-a0 00000000000000000000000081afec148c5146800499f0862176caf99cb63051
-
- */

@@ -64,7 +64,7 @@ library LibConstruction
     struct ContributorsAndReferences
     {
         address[] contributors;
-        uint128[] contributorRewardDistribution;
+        uint256[] contributorRewardDistribution;
         address[] references;
     }
 
@@ -78,13 +78,13 @@ library LibConstruction
     struct ContributorsModificationData
     {
         address[] contributorsToAdd;
-        uint128[] contributorRewardDistribution;
-        address[] contributorsToRemove;
+        uint256[] contributorRewardDistribution;
+        uint256[] contributorsToRemove;
     }
 
     struct ReferencesModificationData
     {
         address[] referencesToAdd;
-        address[] referencesToRemove;
+        uint256[] referencesToRemove;
     }
 }

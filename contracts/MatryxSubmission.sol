@@ -67,6 +67,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         _;
     }
 
+    modifier onlyTournament() {
+        require(msg.sender == tournamentAddress);
+        _;
+    }
+
     // modifier onlyRound()
     // {
     // 	require(msg.sender == roundAddress);
@@ -150,8 +155,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         return isPlatform || isRound || ownsThisSubmission || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester) || roundIsClosed;
     }
 
-    function getData() public view whenAccessible(msg.sender) returns(LibConstruction.SubmissionData _data)
-    {
+    function getData() public view whenAccessible(msg.sender) returns(LibConstruction.SubmissionData _data) {
         return data;
     }
 
@@ -163,13 +167,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         return author;
     }
 
-    function getDescriptionHash() public view whenAccessible(msg.sender) returns (bytes32[2])
-    {
+    function getDescriptionHash() public view whenAccessible(msg.sender) returns (bytes32[2]) {
         return data.descriptionHash;
     }
 
-    function getFileHash() public view whenAccessible(msg.sender) returns (bytes32[2])
-    {
+    function getFileHash() public view whenAccessible(msg.sender) returns (bytes32[2]) {
         return data.fileHash;
     }
 
@@ -179,6 +181,30 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     function getContributors() public view whenAccessible(msg.sender) returns(address[]) {
         return contributorsAndReferences.contributors;
+    }
+
+    function getContributorRewardDistribution() public view whenAccessible(msg.sender) returns (uint256[]) {
+        assembly {
+            let ptr := mload(0x40)
+            let len := sload(contributorsAndReferences_slot)
+
+            mstore(ptr, 0x20)           // elem size
+            mstore(add(ptr, 0x20), len) // arr len
+
+            mstore(0, contributorsAndReferences_slot)
+            let s_car := keccak256(0, 0x20)
+
+            mstore(0x20, add(rewardData_slot, 3)) // rewardData.contributorToBountyDividend
+
+            for { let i := 0 } lt(i, len) { i := add(i, 1) } {
+                let con := sload(add(s_car, i))
+                mstore(0, con)
+                let dist := keccak256(0, 0x40)    // rewardData.contributorToBountyDividend[contributor]
+                mstore(add(ptr, mul(add(i, 2), 0x20)), sload(dist))
+            }
+
+            return(ptr, mul(add(len, 2), 0x20))
+        }
     }
 
     function getTimeSubmitted() public view returns(uint256) {
@@ -217,59 +243,11 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         rewardData.winnings = rewardData.winnings.add(_amount);
     }
 
-    /// @dev Add a missing reference to a submission (callable only by submission's owner).
-    /// @param _reference Address of additional reference to include.
-
-    function addReference(address _reference) public onlyOwner
-    {
-        LibSubmissionTrust.addReference(platformAddress, contributorsAndReferences, trustData, _reference);
-    }
-
-    function addReferences(address[] _references) public onlyOwner
-    {
-        LibSubmissionTrust.addReferences(platformAddress, contributorsAndReferences, trustData, _references);
-    }
-
     // // Debug function. ?MAYBEDO:Delete
     // function addressIsFlagged(address _reference) public view returns (bool, bool)
     // {
     // 	return (addressToReferenceInfo[_reference].flagged, missingReferenceToIndex[_reference].exists);
     // }
-
-    /// @dev Remove an erroneous reference to a submission (callable only by submission's owner).
-    /// @param _reference Address of reference to remove.
-
-    function removeReference(address _reference) onlyOwner public
-    {
-        LibSubmissionTrust.removeReference(platformAddress, contributorsAndReferences, trustData, _reference);
-    }
-
-    function receiveReferenceRequest() public onlyPlatform
-    {
-        trustData.totalReferenceCount = trustData.totalReferenceCount.add(1);
-    }
-
-    function cancelReferenceRequest() public onlyPlatform
-    {
-        trustData.totalReferenceCount = trustData.totalReferenceCount.sub(1);
-    }
-
-    /// @dev Called by the owner of _reference when this submission is approved to list _reference
-    /// as a reference.
-    /// _reference Reference being approved by msg.sender.
-    function approveReference(address _reference) public onlyPeer
-    {
-        LibSubmissionTrust.approveReference(trustData, _reference);
-    }
-
-    /// @dev 			  Called by the owner of the _reference to remove their approval of a reference
-    ///		 			  within this submission.
-    /// @param _reference Reference that peer is revoking the approval of to be included
-    ///					  in this submission.
-    function removeReferenceApproval(address _reference) public onlyPeer
-    {
-        LibSubmissionTrust.removeReferenceApproval(trustData, _reference);
-    }
 
     /// @dev 	Called by the owner of _reference when this submission does not list _reference
     /// 		as a reference.
@@ -289,45 +267,9 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     /// @dev Sets contributors and references at submission creation time
     /// @param _contribsAndRefs Struct containing contributors, reward distribution, and references
-    function setContributorsAndReferences(LibConstruction.ContributorsAndReferences _contribsAndRefs) public // onlyOwner? add appropriate modifier
+    function setContributorsAndReferences(LibConstruction.ContributorsAndReferences _contribsAndRefs) public onlyTournament
     {
         LibSubmission.setContributorsAndReferences(contributorsAndReferences, rewardData, trustData, _contribsAndRefs);
-    }
-
-    /// @dev Add a contributor to a submission (callable only by submission's owner).
-    /// @param _contributor Address of contributor to add to the submission.
-    function addContributor(address _contributor, uint128 _bountyAllocation) public onlyOwner
-    {
-        contributorsAndReferences.contributors.push(_contributor);
-
-        rewardData.contributorToBountyDividend[_contributor] = _bountyAllocation;
-        rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(_bountyAllocation);
-
-        //IMatryxRound round = IMatryxRound(roundAddress);
-    }
-
-    function addContributors(address[] _contributorsToAdd, uint128[] _distribution) public onlyOwner
-    {
-        LibSubmission.addContributors(contributorsAndReferences, rewardData, _contributorsToAdd, _distribution);
-    }
-
-    /// @dev Remove a contributor from a submission (callable only by submission's owner).
-    /// @param _contributorIndex Index of the contributor to remove from the submission.
-    function removeContributor(uint256 _contributorIndex) onlyOwner public onlyOwner
-    {
-        rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.sub(rewardData.contributorToBountyDividend[contributorsAndReferences.contributors[_contributorIndex]]);
-        rewardData.contributorToBountyDividend[contributorsAndReferences.contributors[_contributorIndex]] = 0;
-
-        delete contributorsAndReferences.contributors[_contributorIndex];
-    }
-
-    function removeContributors(address[] _contributorsToRemove) public onlyOwner
-    {
-        for(uint32 i = 0; i < _contributorsToRemove.length; i++)
-        {
-            rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.sub(rewardData.contributorToBountyDividend[_contributorsToRemove[i]]);
-            rewardData.contributorToBountyDividend[_contributorsToRemove[i]] = 0;
-        }
     }
 
     function getBalance() public view returns (uint256)
