@@ -3,8 +3,6 @@ pragma solidity ^0.4.18;
 import "../libraries/math/SafeMath.sol";
 import "../libraries/math/SafeMath128.sol";
 import "../interfaces/IMatryxPlatform.sol";
-import "../interfaces/IMatryxTournament.sol";
-import "../interfaces/IMatryxRound.sol";
 import "../interfaces/IMatryxSubmission.sol";
 import "./Ownable.sol";
 
@@ -314,12 +312,15 @@ contract MatryxPeer is Ownable {
 
     function getReferenceProportion(address _submissionAddress) public view returns (uint128)
     {
-        if(submissionToReferencesMetadata[_submissionAddress].referenceCount.add(submissionToReferencesMetadata[_submissionAddress].missingReferenceCount) == 0)
+        uint128 subReferenceCount = submissionToReferencesMetadata[_submissionAddress].referenceCount;
+        uint128 subMissingReferenceCount = submissionToReferencesMetadata[_submissionAddress].missingReferenceCount;
+
+        if(subReferenceCount.add(subMissingReferenceCount) == 0)
         {
             return 0;
         }
 
-        return submissionToReferencesMetadata[_submissionAddress].referenceCount.div(submissionToReferencesMetadata[_submissionAddress].referenceCount.add(submissionToReferencesMetadata[_submissionAddress].missingReferenceCount));
+        return subReferenceCount.div(subReferenceCount.add(subMissingReferenceCount));
     }
 
     function peersJudged() public view returns (uint256)

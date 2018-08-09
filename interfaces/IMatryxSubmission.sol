@@ -12,11 +12,13 @@ interface IMatryxSubmission {
   function getAuthor() public view returns(address);
   function getDescriptionHash() public view returns (bytes32[2]);
   function getFileHash() public view returns (bytes32[2]);
+  function getPermittedDownloaders() public view returns (address[]);
   function getReferences() public view returns(address[]);
   function getContributors() public view returns(address[]);
   function getContributorRewardDistribution() public view returns (uint256[]);
   function getTimeSubmitted() public view returns(uint256);
   function getTimeUpdated() public view returns(uint256);
+  function unlockFile() public;
   function updateData(LibConstruction.SubmissionModificationData _modificationData) public;
   function updateContributors(LibConstruction.ContributorsModificationData _contributorsModificationData) public;
   function updateReferences(LibConstruction.ReferencesModificationData _referencesModificationData) public;

@@ -15,39 +15,55 @@ contract JMatryxSubmission {
     LibSubmission.RewardData rewardData; // slot 13, divisor 15
     LibSubmission.TrustData trustData;
     LibConstruction.ContributorsAndReferences contribsAndRefs;
-    mapping(address=>bool) allowedToViewFile;
+    LibSubmission.FileDownloadTracking downloadData;
 
     constructor(address _owner, address _platform, address _tournament, address _round, LibConstruction.SubmissionData _submissionData) public {
         assembly {
-            sstore(owner_slot, _owner)                      // _owner
-            sstore(platform_slot, _platform)                // _platform
-            sstore(tournament_slot, _tournament)            // _tournament
-            sstore(round_slot, _round)                      // _round
+            sstore(owner_slot, _owner)                                // _owner
+            sstore(platform_slot, _platform)                          // _platform
+            sstore(tournament_slot, _tournament)                      // _tournament
+            sstore(round_slot, _round)                                // _round
 
             // copy _submissionData struct to data
-            sstore(data_slot, mload(0x100))                 // submisisonData.title[0]
-            sstore(add(data_slot, 1), mload(0x120))         // submisisonData.title[1]
-            sstore(add(data_slot, 2), mload(0x140))         // submisisonData.title[2]
-            sstore(add(data_slot, 3), mload(0x160))         // submisisonData.descriptionHash[0]
-            sstore(add(data_slot, 4), mload(0x180))         // submisisonData.descriptionHash[1]
-            sstore(add(data_slot, 5), mload(0x1a0))         // submisisonData.fileHash[0]
-            sstore(add(data_slot, 6), mload(0x1c0))         // submisisonData.fileHash[1]
+            sstore(data_slot, mload(0x100))                           // submisisonData.title[0]
+            sstore(add(data_slot, 1), mload(0x120))                   // submisisonData.title[1]
+            sstore(add(data_slot, 2), mload(0x140))                   // submisisonData.title[2]
+            sstore(add(data_slot, 3), mload(0x160))                   // submisisonData.descriptionHash[0]
+            sstore(add(data_slot, 4), mload(0x180))                   // submisisonData.descriptionHash[1]
+            sstore(add(data_slot, 5), mload(0x1a0))                   // submisisonData.fileHash[0]
+            sstore(add(data_slot, 6), mload(0x1c0))                   // submisisonData.fileHash[1]
 
+            // get current time
             let start := timestamp()
-            sstore(add(data_slot, 7), start)                // submisisonData.timeSubmitted = now
-            sstore(add(data_slot, 8), start)                // submisisonData.timeUpdated = now
+            sstore(add(data_slot, 7), start)                          // submisisonData.timeSubmitted = now
+            sstore(add(data_slot, 8), start)                          // submisisonData.timeUpdated = now
 
+            // allow submission owner to view its files
             mstore(0x0, _owner)
-            mstore(0x20, allowedToViewFile_slot)
+            mstore(0x20, downloadData_slot)
             let s_ownerAllowed := keccak256(0x0, 0x40)
-            sstore(s_ownerAllowed, 1)                       // allowedToViewFile[_owner] = true
+            sstore(s_ownerAllowed, 1)                                 // permittedToViewFile[_owner] = true
+
+            let sizeOfAllowed := sload(add(downloadData_slot, 1))
+            mstore(0x0, add(downloadData_slot, 1))
+            let s_allAllowed := keccak256(0x0, 0x20)                  // downloadData.allPermittedToViewFile
+            sstore(add(s_allAllowed, sizeOfAllowed), _owner)          // downloadData.allPermittedToViewFile.push(_owner)
+            sizeOfAllowed := add(sizeOfAllowed, 1)
 
             let sOffset := 0x100000000000000000000000000000000000000000000000000000000
             mstore(0x0, mul(0x893d20e8, sOffset))
-            if iszero(call(gas(), _tournament, 0, 0, 0x04, 0, 0x20)) { revert(0, 0) }
-            mstore(0x20, allowedToViewFile_slot)
+            if iszero(call(gas(), _tournament, 0, 0, 0x04, 0, 0x20))  // tournament.getOwner()
+            {
+                revert(0, 0)
+            }
+            mstore(0x20, downloadData_slot)
+
+            // allow tournament owner to view submisison files
             let s_tournamentOwnerAllowed := keccak256(0x0, 0x40)
-            sstore(s_tournamentOwnerAllowed, 1)            // allowedToViewFile[tournamentOwner] = true
+            sstore(s_tournamentOwnerAllowed, 1)                       // allowedToViewFile[tournamentOwner] = true
+
+            sstore(add(s_allAllowed, sizeOfAllowed), mload(0x0))      // downloadData.allPermittedToViewFile.push(_owner)
+            sstore(add(downloadData_slot, 1), add(sizeOfAllowed, 1))  // downloadData.allPermittedToViewFile.size += 2
         }
     }
 
@@ -59,12 +75,13 @@ contract JMatryxSubmission {
             // case 0x7eba7ba6 { getSlot() }                                  // getSlot(uint256)
             case 0xe76c293e { getTournament() }                            // getTournament()
             case 0x9f8743f7 { getRound() }                                 // getRound()
-            // case 0xa52dd12f { isAccessible() }                          // isAccessible(address)
+            case 0xa52dd12f { return32(isAccessible(sOffset)) }            // isAccessible(address)
             case 0x3bc5de30 { getData(sOffset) }                           // getData()
             case 0xff3c1a8f { getTitle(sOffset) }                          // getTitle()
             case 0xa5faa125 { getAuthor(sOffset) }                         // getAuthor()
             case 0x245edf06 { getDescriptionHash(sOffset) }                // getDescriptionHash()
             case 0x8493f71f { getFileHash(sOffset) }                       // getFileHash()
+            case 0x14889e99 { getPermittedDownloaders() }                  // getPermittedDownloaders()
             case 0x7a6337fa { getReferences(sOffset) }                     // getReferences()
             case 0xaf157c19 { getContributors(sOffset) }                   // getContributors()
             case 0xf23e1cb4 { getContributorRewardDistribution(sOffset) }  // getContributorRewardDistribution()
@@ -83,12 +100,12 @@ contract JMatryxSubmission {
             case 0x42849570 { myReward(sOffset) }                          // myReward()
 
             // Ownable stuff
-            case 0x893d20e8 { getOwner() }                            // getOwner()
-            case 0x2f54bf6e { isOwner() }                             // isOwner(address)
-            case 0xf2fde38b { transferOwnership() }                   // transferOwnership(address)
+            case 0x893d20e8 { getOwner() }                                 // getOwner()
+            case 0x2f54bf6e { isOwner() }                                  // isOwner(address)
+            case 0xf2fde38b { transferOwnership() }                        // transferOwnership(address)
 
-            // Bro why you tryna call a function that doesn't exist?  // ¯\_(ツ)_/¯
-            default {                                                 // (╯°□°）╯︵ ┻━┻
+            // Bro why you tryna call a function that doesn't exist?       // ¯\_(ツ)_/¯
+            default {                                                      // (╯°□°）╯︵ ┻━┻
                 mstore(0, 0xdead)
                 log0(0x1e, 0x02)
                 mstore(0, calldataload(0))
@@ -130,6 +147,32 @@ contract JMatryxSubmission {
             function safeadd(a, b) -> c {
                 c := add(a, b)
                 require(or(eq(a, c), lt(a, c)))
+            }
+
+            function returnDynamicArray(s_array)
+            {
+                mstore(0, s_array)   // contribsAndRefs.references
+                let s_elems := keccak256(0, 0x20)
+
+                // length of dyn array
+                let len := sload(s_array)
+                let ptr := mload(0x40)
+                let ret := ptr
+
+                // size of array elements
+                mstore(ptr, 0x20)
+                ptr := add(ptr, 0x20)
+                // number of elements in array
+                mstore(ptr, len)
+
+                // add all references to memory
+                for { let i := 0 } lt(i, len) { i := add(i, 1) } {
+                    ptr := add(ptr, 0x20)
+                    mstore(ptr, sload(add(s_elems, i)))
+                }
+
+                // 0x40 for elem size + length
+                return(ret, add(0x40, mul(len, 0x20)))
             }
 
             // -----------------
@@ -180,7 +223,7 @@ contract JMatryxSubmission {
 
             function s_callerCanViewFile(offset) -> b {
                 mstore(0x0, caller())
-                mstore(0x20, allowedToViewFile_slot)
+                mstore(0x20, downloadData_slot)
                 let s_allowed := keccak256(0x0, 0x40)
                 b := s_allowed
             }
@@ -334,60 +377,20 @@ contract JMatryxSubmission {
                 return(file, 0x40)
             }
 
+            function getPermittedDownloaders() {
+                returnDynamicArray(add(downloadData_slot, 1))
+            }
+
             // function getReferences() public view whenAccessible(msg.sender) returns(address[])
             function getReferences(offset) {
                 whenAccessible(offset)
-
-                mstore(0, add(contribsAndRefs_slot, 2))   // contribsAndRefs.references
-                let refs := keccak256(0, 0x20)
-
-                // length of dyn array
-                let len := sload(add(contribsAndRefs_slot, 2))
-                let ptr := mload(0x40)
-                let ret := ptr
-
-                // size of array elements
-                mstore(ptr, 0x20)
-                ptr := add(ptr, 0x20)
-                // number of elements in array
-                mstore(ptr, len)
-
-                // add all references to memory
-                for { let i := 0 } lt(i, len) { i := add(i, 1) } {
-                    ptr := add(ptr, 0x20)
-                    mstore(ptr, sload(add(refs, i)))
-                }
-
-                // 0x40 for elem size + length
-                return(ret, add(0x40, mul(len, 0x20)))
+                returnDynamicArray(add(contribsAndRefs_slot, 2))
             }
 
             // function getContributors() public view whenAccessible(msg.sender) returns(address[])
             function getContributors(offset) {
                 whenAccessible(offset)
-
-                mstore(0, contribsAndRefs_slot)   // contribsAndRefs.contributors
-                let contribs := keccak256(0, 0x20)
-
-                // length of dyn array
-                let len := sload(contribsAndRefs_slot)
-                let ptr := mload(0x40)
-                let ret := ptr
-
-                // size of array elements
-                mstore(ptr, 0x20)
-                ptr := add(ptr, 0x20)
-                // number of elements in array
-                mstore(ptr, len)
-
-                // add all references to memory
-                for { let i := 0 } lt(i, len) { i := add(i, 1) } {
-                    ptr := add(ptr, 0x20)
-                    mstore(ptr, sload(add(contribs, i)))
-                }
-
-                // 0x40 for elem size + length
-                return(ret, add(0x40, mul(len, 0x20)))
+                returnDynamicArray(contribsAndRefs_slot)
             }
 
             function getContributorRewardDistribution(offset) {
@@ -430,7 +433,14 @@ contract JMatryxSubmission {
                 if eq(sload(s_allowed), 0) {
                     sstore(s_allowed, 1)
                 }
+
+                mstore(0x0, add(downloadData_slot, 1))
+                let s_allowedArray := keccak256(0x0, 0x20)
+                let size := sload(add(downloadData_slot, 1))
+                sstore(add(s_allowedArray, size), caller())
+                sstore(add(downloadData_slot, 1), add(size, 1))
             }
+
             // function updateData(LibConstruction.SubmissionModificationData _modificationData) public onlyOwner duringOpenSubmission
             function updateData(offset) {
                 onlyOwner()
@@ -525,19 +535,20 @@ contract JMatryxSubmission {
                 onlyTournament()
                 let ptr := mload(0x40)
 
-                // LibSubmission.setContributorsAndReferences(LibConstruction.ContributorsAndReferences storage,LibSubmission.RewardData storage,LibSubmission.TrustData storage,LibConstruction.ContributorsAndReferences)
-                mstore(ptr, mul(0xb376fecb, offset))
+                // LibSubmission.setContributorsAndReferences(LibConstruction.ContributorsAndReferences storage,LibSubmission.RewardData storage,LibSubmission.TrustData storage,LibSubmission.FileDownloadTracking storage,LibConstruction.ContributorsAndReferences)
+                mstore(ptr, mul(0x15392d2f, offset))
                 mstore(add(ptr, 0x04), contribsAndRefs_slot)
                 mstore(add(ptr, 0x24), rewardData_slot)
                 mstore(add(ptr, 0x44), trustData_slot)
+                mstore(add(ptr, 0x64), downloadData_slot)
 
                 // copy _contribsAndRefs and update location
                 let size := sub(calldatasize(), 0x04)
-                let m_car := add(ptr, 0x64)
+                let m_car := add(ptr, 0x84)
                 calldatacopy(m_car, 0x04, size)
-                mstore(m_car, add(mload(m_car), 0x60))
+                mstore(m_car, add(mload(m_car), 0x80))
 
-                require(delegatecall(gas(), LibSubmission, ptr, add(size, 0x64), 0, 0))
+                require(delegatecall(gas(), LibSubmission, ptr, add(size, 0x84), 0, 0))
             }
 
             // function getBalance() public view returns (uint256)
@@ -622,6 +633,7 @@ interface IJMatryxSubmission {
     function getAuthor() public view returns(address);
     function getDescriptionHash() public view returns (bytes32[2]);
     function getFileHash() public view returns (bytes32[2]);
+    function getPermittedDownloaders() public view returns (address[]);
     function getReferences() public view returns(address[]);
     function getContributors() public view returns(address[]);
     function getContributorRewardDistribution() public view returns (uint256[]);

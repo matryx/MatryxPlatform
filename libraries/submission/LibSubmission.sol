@@ -57,6 +57,12 @@ library LibSubmission
         uint128 numberApproved;
     }
 
+    struct FileDownloadTracking
+    {
+        mapping(address=>bool) permittedToViewFile;
+        address[] allPermittedToViewFile;
+    }
+
     struct uint128_optional
     {
         bool exists;
@@ -113,7 +119,7 @@ library LibSubmission
         data.timeUpdated = now;
     }
 
-    function setContributorsAndReferences(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, LibSubmission.TrustData storage trustData, LibConstruction.ContributorsAndReferences _contribsAndRefs) public
+    function setContributorsAndReferences(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, LibSubmission.TrustData storage trustData, LibSubmission.FileDownloadTracking storage downloadData, LibConstruction.ContributorsAndReferences _contribsAndRefs) public
     {
         require(_contribsAndRefs.contributors.length == _contribsAndRefs.contributorRewardDistribution.length);
 
@@ -123,9 +129,16 @@ library LibSubmission
         {
             // if one of the contributors is already there, revert
             // otherwise, add it to the list
+            address contributor = _contribsAndRefs.contributors[i];
             uint256 dist = _contribsAndRefs.contributorRewardDistribution[i];
             rewardData.contributorBountyDivisor = rewardData.contributorBountyDivisor.add(dist);
-            rewardData.contributorToBountyDividend[_contribsAndRefs.contributors[i]] = dist;
+            rewardData.contributorToBountyDividend[contributor] = dist;
+
+            if(downloadData.permittedToViewFile[contributor] == false)
+            {
+                downloadData.permittedToViewFile[contributor] = true;
+                downloadData.allPermittedToViewFile.push(contributor);
+            }
         }
 
         for(i = 0; i < _contribsAndRefs.references.length; i++)

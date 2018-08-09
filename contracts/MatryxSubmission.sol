@@ -30,10 +30,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     // Submission
     LibConstruction.SubmissionData data;
+    LibConstruction.ContributorsAndReferences contributorsAndReferences;
     LibSubmission.RewardData rewardData;
     LibSubmission.TrustData trustData;
-    LibConstruction.ContributorsAndReferences contributorsAndReferences;
-    mapping(address=>bool) allowedToViewFile;
+    LibSubmission.FileDownloadTracking downloadData;
 
     address author;
 
@@ -53,8 +53,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         data.timeSubmitted = now;
         data.timeUpdated = now;
 
-        allowedToViewFile[_owner] = true;
-        allowedToViewFile[Ownable(tournamentAddress).getOwner()] = true;
+        downloadData.permittedToViewFile[_owner] = true;
+        downloadData.permittedToViewFile[Ownable(tournamentAddress).getOwner()] = true;
     }
 
     /*
@@ -172,7 +172,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     function getData() public view whenAccessible(msg.sender) returns(LibConstruction.SubmissionData _data) {
         LibConstruction.SubmissionData memory returnData = data;
 
-        if(!allowedToViewFile[msg.sender])
+        if(!downloadData.permittedToViewFile[msg.sender])
         {
             returnData.fileHash[0] = 0x0;
             returnData.fileHash[1] = 0x0;
@@ -194,8 +194,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     }
 
     function getFileHash() public view whenAccessible(msg.sender) returns (bytes32[2]) {
-        require(allowedToViewFile[msg.sender]);
+        require(downloadData.permittedToViewFile[msg.sender]);
         return data.fileHash;
+    }
+
+    function getPermittedDownloaders() public view returns (address[]) {
+        return downloadData.allPermittedToViewFile;
     }
 
     function getReferences() public view whenAccessible(msg.sender) returns(address[]) {
@@ -247,7 +251,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     */
 
     function unlockFile() public onlyHasPeer atLeastInReview {
-        allowedToViewFile[msg.sender] = true;
+        downloadData.permittedToViewFile[msg.sender] = true;
+        downloadData.allPermittedToViewFile.push(msg.sender);
     }
 
     function updateData(LibConstruction.SubmissionModificationData _modificationData) public onlyOwner duringOpenSubmission
@@ -296,7 +301,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @param _contribsAndRefs Struct containing contributors, reward distribution, and references
     function setContributorsAndReferences(LibConstruction.ContributorsAndReferences _contribsAndRefs) public onlyTournament
     {
-        LibSubmission.setContributorsAndReferences(contributorsAndReferences, rewardData, trustData, _contribsAndRefs);
+        LibSubmission.setContributorsAndReferences(contributorsAndReferences, rewardData, trustData, downloadData, _contribsAndRefs);
     }
 
     function getBalance() public view returns (uint256)
