@@ -136,25 +136,17 @@ library LibRound
                 IMatryxSubmission(_selectWinnersData.winningSubmissions[j]).addToWinnings(reward);
             }
 
-            uint256 newBounty;
-
-            if(IMatryxTournament(IMatryxRound(this).getTournament()).getBalance() < data.bounty)
-            {
-                newBounty = IMatryxTournament(IMatryxRound(this).getTournament()).getBalance();
-            }
-            else
-            {
-                newBounty = data.bounty;
-            }
-
             LibConstruction.RoundData memory roundData;
             if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.DoNothing))
             {
+                uint256 newBounty = IMatryxTournament(IMatryxRound(this).getTournament()).getBalance();
+                newBounty = newBounty < data.bounty ? newBounty : data.bounty;
+
                 roundData = LibConstruction.RoundData({
                     start: data.end.add(data.reviewPeriodDuration),
                     end: data.end.add(data.reviewPeriodDuration).add(data.end.sub(data.start)),
                     reviewPeriodDuration: data.reviewPeriodDuration,
-                    bounty: data.bounty,
+                    bounty: newBounty,
                     closed: false
                 });
                 IMatryxTournament(IMatryxRound(this).getTournament()).createRound(roundData, true);
