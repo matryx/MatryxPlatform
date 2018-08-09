@@ -3,32 +3,37 @@ const path = require('path')
 const ethers = require('ethers')
 
 const mnemonicHelper = require('mnemonichelper')
+let accounts, privateKeys, mnemonicPath, provider, tokenAddress, network
 
-const network = 'ropsten'
-// const network = 'ganache'
+const setNetwork = id => {
+    // if network already set, short circuit
+    if (network === id) return
 
-const mnemonicPath = path.join(__dirname, '../../keys', network + '_mnemonic.txt')
-const mnemonic = fs.readFileSync(mnemonicPath, 'utf8').trim().replace(/(\n|\r|\t|\u2028|\u2029|)/gm, '')
+    network = id
+    if (network === 'ganache') {
+        provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
+        tokenAddress = '0x0c484097e2f000aadaef0450ab35aa00652481a1'
+    }
+    else if (network === 'ropsten') {
+        provider = new ethers.providers.InfuraProvider('ropsten', 'metamask')
+        tokenAddress = '0xf35a0f92848bdfdb2250b60344e87b176b499a8f'
+    }
+    else console.log('bro check yo network')
 
-let provider, tokenAddress
-if (network === 'ganache') {
-    provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
-    tokenAddress = '0x0c484097e2f000aadaef0450ab35aa00652481a1'
+    mnemonicPath = path.join(__dirname, '../../keys', network + '_mnemonic.txt')
+    const mnemonic = fs.readFileSync(mnemonicPath, 'utf8').trim().replace(/(\n|\r|\t|\u2028|\u2029|)/gm, '')
+
+    const accs = mnemonicHelper.getAccounts(mnemonic, 0, 10)
+    accounts = accs.map(acc => acc[0])
+    privateKeys = accs.map(acc => acc[1])
 }
-else if (network === 'ropsten') {
-    provider = new ethers.providers.InfuraProvider('ropsten', 'metamask')
-    tokenAddress = '0xf35a0f92848bdfdb2250b60344e87b176b499a8f'
-}
-else console.log('bro check yo network')
-
-let accs = mnemonicHelper.getAccounts(mnemonic, 0, 10)
-let accounts = accs.map(acc => acc[0])
-let privateKeys = accs.map(acc => acc[1])
 
 module.exports = {
-    accounts,
-    privateKeys,
-    provider,
-    tokenAddress,
-    mnemonicPath
+    setNetwork,
+    get network() { return network },
+    get accounts() { return accounts },
+    get privateKeys() { return privateKeys },
+    get provider() { return provider },
+    get tokenAddress() { return tokenAddress },
+    get mnemonicPath() { return mnemonicPath }
 }
