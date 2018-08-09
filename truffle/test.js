@@ -157,8 +157,10 @@ const logSubmissions = async tournament => {
   console.log(chalk`Current round: {green ${roundAddress}}`)
   const round = Contract(roundAddress, MatryxRound)
   const submissions = await round.getSubmissions()
-  console.log(submissions)
-  return submissions;
+  submissions.forEach((s, i) => {
+    console.log(chalk`Submission ${i + 1}: {green ${s}}`)
+  })
+  return submissions
 }
 
 const waitUntilClose = async (tournament) => {
