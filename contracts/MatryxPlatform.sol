@@ -133,8 +133,7 @@ contract MatryxPlatform is Ownable {
 
     modifier notOwner(address _tournamentAddress)
     {
-        require(true);
-        // require(entrantToOwnsTournament[msg.sender][_tournamentAddress] == false);
+        require(entrantToOwnsTournament[msg.sender][_tournamentAddress] == false);
         _;
     }
 
@@ -184,7 +183,6 @@ contract MatryxPlatform is Ownable {
         require(submissionExists[_submissionAddress]);
         require(addressToOwnsSubmission[msg.sender][_submissionAddress]);
 
-        IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
         address owner = Ownable(_submissionAddress).getOwner();
         uint256 submissionIndex = ownerToSubmissionToSubmissionIndex[owner][_submissionAddress].value;
 
@@ -239,7 +237,7 @@ contract MatryxPlatform is Ownable {
 
     function getCategoryCount(bytes32 _category) external view returns (uint256)
     {
-        return categoryToTournamentList[_category].length - emptyCountByCategory[_category];
+        return categoryToTournamentList[_category].length.sub(emptyCountByCategory[_category]);
     }
 
     function getCategoryByIndex(uint256 _index) public view returns (bytes32)
@@ -251,11 +249,6 @@ contract MatryxPlatform is Ownable {
     {
         return (categoryList.length, categoryList);
     }
-
-    // function switchTournamentCategory(string discipline) onlyTournament public
-    // {
-    //   revert();
-    // }
 
     /*
     * Tournament Entry Methods
@@ -288,24 +281,6 @@ contract MatryxPlatform is Ownable {
     * Tournament Admin Methods
     */
 
-    // function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress)
-    // {
-    //     IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-    //     address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
-    //     emit TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title, tournamentData.descriptionHash, tournamentData.initialBounty, tournamentData.entryFee);
-
-    //     require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.initialBounty));
-    //     IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
-    //     // update data structures
-    //     allTournaments.push(newTournament);
-    //     tournamentExists[newTournament] = true;
-    //     updateUsersTournaments(msg.sender, newTournament);
-
-    //     addTournamentToCategory(newTournament, tournamentData.category);
-
-    //     return newTournament;
-    // }
-
     /// @dev Create a new tournament.
     /// @param tournamentData Data to populate the new tournament with. Includes:
     ///    category: Discipline the tournament falls under.
@@ -337,6 +312,7 @@ contract MatryxPlatform is Ownable {
 
         return newTournament;
     }
+
     /*
     * Access Control Methods
     */
@@ -464,9 +440,5 @@ contract MatryxPlatform is Ownable {
     function getTournaments() public view returns (address[])
     {
         return allTournaments;
-    }
-
-    function forceRevert() public {
-        revert();
     }
 }
