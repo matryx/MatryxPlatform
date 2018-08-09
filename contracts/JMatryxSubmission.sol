@@ -463,19 +463,20 @@ contract JMatryxSubmission {
                 duringOpenSubmission(offset)
 
                 let ptr := mload(0x40)
-                // LibSubmisison.updateContributors(LibConstruction.SubmissionData storage,LibConstruction.ContributorsAndReferences storage,LibSubmission.RewardData storage,LibConstruction.ContributorsModificationData)
-                mstore(ptr, mul(0xca3e2b74, offset))
+                // LibSubmisison.updateContributors(LibConstruction.SubmissionData storage,LibConstruction.ContributorsAndReferences storage,LibSubmission.RewardData storage,LibSubmission.FileDownloadTracking storage,LibConstruction.ContributorsModificationData)
+                mstore(ptr, mul(0x852972b2, offset))
                 mstore(add(ptr, 0x04), data_slot)
                 mstore(add(ptr, 0x24), contribsAndRefs_slot)
                 mstore(add(ptr, 0x44), rewardData_slot)
+                mstore(add(ptr, 0x64), downloadData_slot)
 
                 // copy _contributorsModificationData and update location
                 let size := sub(calldatasize(), 0x04)
-                let m_cmd := add(ptr, 0x64)
+                let m_cmd := add(ptr, 0x84)
                 calldatacopy(m_cmd, 0x04, size)
-                mstore(m_cmd, add(mload(m_cmd), 0x60))
+                mstore(m_cmd, add(mload(m_cmd), 0x80))
 
-                require(delegatecall(gas(), LibSubmission, ptr, add(size, 0x64), 0, 0)) // LibSubmission.updateContributors()
+                require(delegatecall(gas(), LibSubmission, ptr, add(size, 0x84), 0, 0)) // LibSubmission.updateContributors()
             }
 
             // function updateReferences(LibConstruction.ReferencesModificationData _referencesModificationData) public onlyOwner duringOpenSubmission

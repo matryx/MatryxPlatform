@@ -48,13 +48,15 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         data = _submissionData;
         owner = _owner;
         author = IMatryxPlatform(platformAddress).peerAddress(_owner);
-        require(author != 0x0);
 
         data.timeSubmitted = now;
         data.timeUpdated = now;
 
         downloadData.permittedToViewFile[_owner] = true;
-        downloadData.permittedToViewFile[Ownable(tournamentAddress).getOwner()] = true;
+        downloadData.allPermittedToViewFile.push(_owner);
+        address tournamentOwner = Ownable(tournamentAddress).getOwner();
+        downloadData.permittedToViewFile[tournamentOwner] = true;
+        downloadData.allPermittedToViewFile.push(tournamentOwner);
     }
 
     /*
@@ -262,7 +264,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     function updateContributors(LibConstruction.ContributorsModificationData _contributorsModificationData) public onlyOwner duringOpenSubmission
     {
-        LibSubmission.updateContributors(data, contributorsAndReferences, rewardData, _contributorsModificationData);
+        LibSubmission.updateContributors(data, contributorsAndReferences, rewardData, downloadData, _contributorsModificationData);
     }
 
     function updateReferences(LibConstruction.ReferencesModificationData _referencesModificationData) public onlyOwner duringOpenSubmission

@@ -88,12 +88,12 @@ library LibSubmission
         data.timeUpdated = now;
     }
 
-    function updateContributors(LibConstruction.SubmissionData storage data, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, LibConstruction.ContributorsModificationData _contributorsModificationData) public
+    function updateContributors(LibConstruction.SubmissionData storage data, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, LibSubmission.FileDownloadTracking storage downloadData, LibConstruction.ContributorsModificationData _contributorsModificationData) public
     {
         if(_contributorsModificationData.contributorsToAdd.length != 0)
         {
             require(_contributorsModificationData.contributorsToAdd.length == _contributorsModificationData.contributorRewardDistribution.length);
-            addContributors(contributorsAndReferences, rewardData, _contributorsModificationData.contributorsToAdd, _contributorsModificationData.contributorRewardDistribution);
+            addContributors(contributorsAndReferences, rewardData, downloadData, _contributorsModificationData.contributorsToAdd, _contributorsModificationData.contributorRewardDistribution);
         }
 
         if(_contributorsModificationData.contributorsToRemove.length != 0)
@@ -153,7 +153,7 @@ library LibSubmission
     }
 
     // function addContributors(LibConstruction.ContributorsModificationData storage _contributorsModificationData) internal
-    function addContributors(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, address[] _contributorsToAdd, uint256[] _distribution) public
+    function addContributors(LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.RewardData storage rewardData, LibSubmission.FileDownloadTracking storage downloadData, address[] _contributorsToAdd, uint256[] _distribution) public
     {
         require(_contributorsToAdd.length == _distribution.length);
         for(uint32 i = 0; i < _contributorsToAdd.length; i++)
@@ -176,6 +176,8 @@ library LibSubmission
 
             if (dividend == 0) {
                 contributorsAndReferences.contributors.push(contributor);
+                downloadData.permittedToViewFile[contributor] = true;
+                downloadData.allPermittedToViewFile.push(contributor);
             }
         }
     }
