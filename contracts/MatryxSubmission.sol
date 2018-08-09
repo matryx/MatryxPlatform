@@ -33,6 +33,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     LibSubmission.RewardData rewardData;
     LibSubmission.TrustData trustData;
     LibConstruction.ContributorsAndReferences contributorsAndReferences;
+    mapping(address=>bool) allowedToViewFile;
 
     address author;
 
@@ -51,6 +52,9 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
         data.timeSubmitted = now;
         data.timeUpdated = now;
+
+        allowedToViewFile[_owner] = true;
+        allowedToViewFile[Ownable(tournamentAddress).getOwner()] = true;
     }
 
     /*
@@ -87,6 +91,16 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     modifier onlyPeer()
     {
         require(IMatryxPlatform(platformAddress).isPeer(msg.sender));
+        _;
+    }
+
+    modifier onlyHasPeer() {
+        require(IMatryxPlatform(platformAddress).hasPeer(msg.sender));
+        _;
+    }
+
+    modifier atLeastInReview() {
+        require(IMatryxRound(roundAddress).getState() >= uint256(LibEnums.RoundState.InReview));
         _;
     }
 
@@ -156,7 +170,15 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     }
 
     function getData() public view whenAccessible(msg.sender) returns(LibConstruction.SubmissionData _data) {
-        return data;
+        LibConstruction.SubmissionData memory returnData = data;
+
+        if(!allowedToViewFile[msg.sender])
+        {
+            returnData.fileHash[0] = 0x0;
+            returnData.fileHash[1] = 0x0;
+        }
+
+        return returnData;
     }
 
     function getTitle() public view whenAccessible(msg.sender) returns(bytes32[3]) {
@@ -172,6 +194,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     }
 
     function getFileHash() public view whenAccessible(msg.sender) returns (bytes32[2]) {
+        require(allowedToViewFile[msg.sender]);
         return data.fileHash;
     }
 
@@ -222,6 +245,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /*
     * Setter Methods
     */
+
+    function unlockFile() public onlyHasPeer atLeastInReview {
+        allowedToViewFile[msg.sender] = true;
+    }
 
     function updateData(LibConstruction.SubmissionModificationData _modificationData) public onlyOwner duringOpenSubmission
     {

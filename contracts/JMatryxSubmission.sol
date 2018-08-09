@@ -15,6 +15,7 @@ contract JMatryxSubmission {
     LibSubmission.RewardData rewardData; // slot 13, divisor 15
     LibSubmission.TrustData trustData;
     LibConstruction.ContributorsAndReferences contribsAndRefs;
+    mapping(address=>bool) allowedToViewFile;
 
     constructor(address _owner, address _platform, address _tournament, address _round, LibConstruction.SubmissionData _submissionData) public {
         assembly {
@@ -35,6 +36,18 @@ contract JMatryxSubmission {
             let start := timestamp()
             sstore(add(data_slot, 7), start)                // submisisonData.timeSubmitted = now
             sstore(add(data_slot, 8), start)                // submisisonData.timeUpdated = now
+
+            mstore(0x0, _owner)
+            mstore(0x20, allowedToViewFile_slot)
+            let s_ownerAllowed := keccak256(0x0, 0x40)
+            sstore(s_ownerAllowed, 1)                       // allowedToViewFile[_owner] = true
+
+            let sOffset := 0x100000000000000000000000000000000000000000000000000000000
+            mstore(0x0, mul(0x893d20e8, sOffset))
+            if iszero(call(gas(), _tournament, 0, 0, 0x04, 0, 0x20)) { revert(0, 0) }
+            mstore(0x20, allowedToViewFile_slot)
+            let s_tournamentOwnerAllowed := keccak256(0x0, 0x40)
+            sstore(s_tournamentOwnerAllowed, 1)            // allowedToViewFile[tournamentOwner] = true
         }
     }
 
@@ -57,6 +70,7 @@ contract JMatryxSubmission {
             case 0xf23e1cb4 { getContributorRewardDistribution(sOffset) }  // getContributorRewardDistribution()
             case 0xae1ca692 { getTimeSubmitted() }                         // getTimeSubitted()
             case 0x9b057610 { getTotalWinnings() }                         // getTotalWinnings()
+            case 0xb09103d8 { unlockFile(sOffset) }                        // unlockFile()
             case 0x5de8439f { updateData(sOffset) }                        // updateData((bytes32[3],bytes32[2],bytes32[2]))
             case 0x49ca4d7f { updateContributors(sOffset) }                // updateContributors((address[],uint256[],uint256[]))
             case 0x93d1e712 { updateReferences(sOffset) }                  // updateReferences((address[],uint256[]))
@@ -147,12 +161,32 @@ contract JMatryxSubmission {
                 require(call(gas(), sload(platform_slot), 0, 0, 0x24, 0, 0x20))
             }
 
+            function onlyHasPeer(offset) {
+                mstore(0x0, mul(0x532311c4, offset))  // hasPeer(address)
+                mstore(0x04, caller())
+                require(call(gas(), sload(platform_slot), 0, 0, 0x24, 0, 0x20))
+                require(mload(0x0))
+            }
+
+            function atLeastInReview(offset) {
+                mstore(0, mul(0x1865c57d, offset))                           // getState()
+                require(call(gas(), sload(round_slot), 0, 0, 0x04, 0, 0x20)) // round.getState()
+                require(gt(mload(0), 2))                                     // round.state >= InReview
+            }
+
             function whenAccessible(offset) {
                 require(isAccessible(offset))
             }
 
+            function s_callerCanViewFile(offset) -> b {
+                mstore(0x0, caller())
+                mstore(0x20, allowedToViewFile_slot)
+                let s_allowed := keccak256(0x0, 0x40)
+                b := s_allowed
+            }
+
             function onlySubmissionOrRound(offset) {
-                mstore(0, mul(0x8b706ff8, offset)) // submissionExixts(address)
+                mstore(0, mul(0x8b706ff8, offset))                           // submissionExixts(address)
                 mstore(0x04, caller())
                 require(call(gas(), sload(round_slot), 0, 0, 0x24, 0, 0x20)) //round.submissionExists(msg.sender)
                 let isSubmission := mload(0)
@@ -165,9 +199,9 @@ contract JMatryxSubmission {
             }
 
             function duringOpenSubmission(offset) {
-                mstore(0, mul(0x1865c57d, offset)) // getState()
+                mstore(0, mul(0x1865c57d, offset))                           // getState()
                 require(call(gas(), sload(round_slot), 0, 0, 0x04, 0, 0x20)) // round.getState()
-                require(eq(mload(0), 2)) // LibEnum.RoundState.Open
+                require(eq(mload(0), 2))                                     // LibEnum.RoundState.Open
             }
 
 
@@ -237,15 +271,23 @@ contract JMatryxSubmission {
                 whenAccessible(offset)
 
                 let data := mload(0x40)
-                mstore(data, sload(data_slot))                     // data.title[0]
-                mstore(add(data, 0x20), sload(add(data_slot, 1)))  // data.title[1]
-                mstore(add(data, 0x40), sload(add(data_slot, 2)))  // data.title[2]
-                mstore(add(data, 0x60), sload(add(data_slot, 3)))  // data.descriptionHash[0]
-                mstore(add(data, 0x80), sload(add(data_slot, 4)))  // data.descriptionHash[1]
-                mstore(add(data, 0xa0), sload(add(data_slot, 5)))  // data.fileHash[0]
-                mstore(add(data, 0xc0), sload(add(data_slot, 6)))  // data.fileHash[1]
-                mstore(add(data, 0xe0), sload(add(data_slot, 7)))  // data.timeSubmitted
-                mstore(add(data, 0x100), sload(add(data_slot, 8))) // data.timeUpdated
+                mstore(data, sload(data_slot))                          // data.title[0]
+                mstore(add(data, 0x20), sload(add(data_slot, 1)))       // data.title[1]
+                mstore(add(data, 0x40), sload(add(data_slot, 2)))       // data.title[2]
+                mstore(add(data, 0x60), sload(add(data_slot, 3)))       // data.descriptionHash[0]
+                mstore(add(data, 0x80), sload(add(data_slot, 4)))       // data.descriptionHash[1]
+
+                let allowed := sload(s_callerCanViewFile(offset))
+                if eq(allowed, 0) {                                     // if(!allowedToViewFile[msg.sender])
+                    mstore(add(data, 0xa0), 0)                          // data.fileHash[0]
+                    mstore(add(data, 0xc0), 0)                          // data.fileHash[1]
+                }
+                if eq(allowed, 1) {
+                    mstore(add(data, 0xa0), sload(add(data_slot, 5)))   // data.fileHash[0]
+                    mstore(add(data, 0xc0), sload(add(data_slot, 6)))   // data.fileHash[1]
+                }
+                mstore(add(data, 0xe0), sload(add(data_slot, 7)))       // data.timeSubmitted
+                mstore(add(data, 0x100), sload(add(data_slot, 8)))      // data.timeUpdated
 
                 return(data, 0x120)
             }
@@ -254,9 +296,9 @@ contract JMatryxSubmission {
                 whenAccessible(offset)
 
                 let title := mload(0x40)
-                mstore(title, sload(data_slot))                     // data.title[0]
-                mstore(add(title, 0x20), sload(add(data_slot, 1)))  // data.title[1]
-                mstore(add(title, 0x40), sload(add(data_slot, 2)))  // data.title[2]
+                mstore(title, sload(data_slot))                         // data.title[0]
+                mstore(add(title, 0x20), sload(add(data_slot, 1)))      // data.title[1]
+                mstore(add(title, 0x40), sload(add(data_slot, 2)))      // data.title[2]
 
                 return(title, 0x60)
             }
@@ -282,6 +324,8 @@ contract JMatryxSubmission {
 
             function getFileHash(offset) {
                 whenAccessible(offset)
+                require(sload(s_callerCanViewFile(offset)))
+
 
                 let file := mload(0x40)
                 mstore(file, sload(add(data_slot, 5)))              // data.fileHash[0]
@@ -378,6 +422,15 @@ contract JMatryxSubmission {
                 return32(sload(rewardData_slot))  // rewardData.winnings
             }
 
+            function unlockFile(offset) {
+                onlyHasPeer(offset)
+                atLeastInReview(offset)
+
+                let s_allowed := s_callerCanViewFile(offset)
+                if eq(sload(s_allowed), 0) {
+                    sstore(s_allowed, 1)
+                }
+            }
             // function updateData(LibConstruction.SubmissionModificationData _modificationData) public onlyOwner duringOpenSubmission
             function updateData(offset) {
                 onlyOwner()
