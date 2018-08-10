@@ -58,7 +58,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         owner = _owner;
         data = tournamentData;
 
-        _createRound(roundData, false);
+        _createRound(roundData, true);
         // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
     }
 
@@ -313,19 +313,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     function update(LibConstruction.TournamentModificationData tournamentData) public onlyOwner
     {
         data.update(tournamentData, platformAddress);
-    }
-
-    /// @dev Add additional funds to the tournament
-    function addFunds(uint256 _fundsToAdd) public
-    {
-        uint256 tournamentState = this.getState();
-        require(
-            tournamentState == uint256(LibEnums.TournamentState.NotYetOpen) ||
-            tournamentState == uint256(LibEnums.TournamentState.Open) ||
-            tournamentState == uint256(LibEnums.TournamentState.OnHold));
-
-        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
-        require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, address(this), _fundsToAdd));
     }
 
     /*

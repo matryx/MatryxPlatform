@@ -70,7 +70,7 @@ contract JMatryxTournament {
             mstore(add(ptr, 0xc4), mload(0x260))  // roundData.reviewPeriodDuration
             mstore(add(ptr, 0xe4), mload(0x280))  // roundData.bounty
             mstore(add(ptr, 0x104), mload(0x2a0)) // roundData.closed
-            mstore(add(ptr, 0x124), 0)
+            mstore(add(ptr, 0x124), 1)            // _automaticCreation
 
             // call createRound
             res := delegatecall(gas(), LibTournamentAdminMethods, ptr, 0x144, ptr, 0x20)
@@ -111,7 +111,6 @@ contract JMatryxTournament {
             case 0x6984d070 { getRounds() }                           // getRounds()
             case 0x1865c57d { return32(getState(sigOffset)) }         // getState()
             case 0x3bc5de30 { getData() }                             // getData()
-            case 0xbe999705 { addFunds(sigOffset) }                   // addFunds(uint256)
 
             case 0x583c3a92 { selectWinners(sigOffset) }              // selectWinners((address[],uint256[],uint256,uint256),(uint256,uint256,uint256,uint256,bool))
             case 0xd6830846 { editGhostRound(sigOffset) }             // editGhostRound(uint256,uint256,uint256,uint256,bool)
@@ -434,22 +433,6 @@ contract JMatryxTournament {
                 require(delegatecall(gas(), LibTournamentAdminMethods, mem, 0x184, 0x0, 0x20))
             }
 
-            // addFunds(uint256 _fundsToAdd)
-            function addFunds(offset) {
-                let fundsToAdd := arg(0)
-                let state := getState(offset)
-                // LibEnums.TournamentState state 0 NotYetOpen, 1 Open, 2 OnHold
-                require(or(or(eq(state, 0), eq(state, 1)), eq(state, 2)))
-
-                let ptr := mload(0x40)
-                mstore(ptr, mul(0x23b872dd, offset)) // transferFrom(address,address,uint256)
-                mstore(add(ptr, 0x04), origin())
-                mstore(add(ptr, 0x24), address())
-                mstore(add(ptr, 0x44), fundsToAdd)
-                let token := getTokenAddress(offset)
-                require(call(gas(), token, 0, ptr, 0x64, 0, 0x20))
-            }
-
             // selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData)
             function selectWinners (offset) {
                 onlyOwner()
@@ -743,7 +726,6 @@ interface IJMatryxTournament {
     function submissionCount() public view returns (uint256);
     function entrantCount() public view returns (uint256);
     function update(LibConstruction.TournamentModificationData tournamentData) public;
-    function addFunds(uint256 _fundsToAdd) public;
 
     function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public;
     function editGhostRound(LibConstruction.RoundData _roundData) public;

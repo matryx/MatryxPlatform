@@ -31,7 +31,6 @@ interface IMatryxTournament
     function submissionCount() public view returns (uint256);
     function entrantCount() public view returns (uint256);
     function update(LibConstruction.TournamentModificationData tournamentData) public;
-    function addFunds(uint256 _fundsToAdd) public;
 
     function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public;
     function editGhostRound(LibConstruction.RoundData _roundData) public;

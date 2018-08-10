@@ -161,7 +161,7 @@ library LibTournamentAdminMethods
 
         if(_automaticCreation == false)
         {
-            require(roundData.bounty > 0);
+            require(IMatryxTournament(this).getBalance() >= roundData.bounty && roundData.bounty > 0);
         }
 
         newRoundAddress = roundFactory.createRound(platformAddress, this, roundData);
