@@ -75,7 +75,7 @@ contract JMatryxRound {
             // Helper Methods
             // -------------------------------
             /// @dev Gets nth argument from calldata
-            function arg(n) -> a {
+            function arg(n)->a {
                 a := calldataload(add(0x04, mul(n, 0x20)))
             }
 
@@ -95,13 +95,13 @@ contract JMatryxRound {
             }
 
             /// @dev SafeMath subtraction
-            function safesub(a, b) -> c {
+            function safesub(a, b)->c {
                 require(or(lt(b, a), eq(b, a)))
                 c := sub(a, b)
             }
 
             /// @dev SafeMath addition
-            function safeadd(a, b) -> c {
+            function safeadd(a, b)->c {
                 c := add(a, b)
                 require(or(eq(a, c), lt(a, c)))
             }
@@ -133,33 +133,6 @@ contract JMatryxRound {
             //     Functions
             // -----------------
 
-            /*
-                function submissionExists(address _submissionAddress) public returns (bool)
-                function addBounty(uint256 _mtxAllocation) public onlyTournament
-                function getState() public view returns (uint256)
-                function getPlatform() public view returns (address)
-                function getTournament() public view returns (address)
-                function getStartTime() public view returns (uint256)
-                function getEndTime() public view returns (uint256)
-                function getBounty() public view returns (uint256)
-                function getRemainingBounty() public view returns (uint256)
-                function getTokenAddress() public view returns (address)
-                function getSubmissions() public view returns (address[] _submissions)
-                function getBalance(address _submissionAddress) public view returns (uint256)
-                function getRoundBalance() public view returns (uint256)
-                function submissionsChosen() public view returns (bool)
-                function getWinningSubmissionAddresses() public view returns (address[])
-                function numberOfSubmissions() public view returns (uint256)
-                function editRound(uint256 _currentRoundEndTime, LibConstruction.RoundData _roundData) public onlyTournament
-                function transferToTournament(uint256 _amount) public onlyTournament
-                function selectWinningSubmissions(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public onlyTournament duringReviewPeriod
-                function transferBountyToTournament() public onlyTournament returns (uint256)
-                function transferAllToWinners(uint256 _tournamentBalance) public onlyTournament
-                function startNow() public onlyTournament
-                function closeRound() public onlyTournament
-                function createSubmission(address _owner, address platformAddress, LibConstruction.SubmissionData submissionData) public onlyTournament duringOpenRound returns (address _submissionAddress)
-            */
-
             // function submissionExists(address _submissionAddress) public returns (bool)
             function submissionExists(submission) {
                 mstore(0x0, arg(0))
@@ -179,7 +152,7 @@ contract JMatryxRound {
             }
 
             // function getState() public view returns (uint256)
-            function getState(offset) -> s {
+            function getState(offset)->s {
                 let ptr := mload(0x40)
                 // getState(address,LibConstruction.RoundData storage, LibRound.SelectWinnersData storage,LibRound.SubmissionsData storage)
                 mstore(ptr, mul(0x05b00ec1, offset))
@@ -234,12 +207,12 @@ contract JMatryxRound {
             }
 
             // function getRemainingBounty() public view returns (uint256)
-            function getRemainingBounty(offset) -> r {
+            function getRemainingBounty(offset)->r {
                 r := getBalance(offset, address())
             }
 
             // getTokenAddress() public view returns (address _matryxTokenAddress)
-            function getTokenAddress(offset) -> token {
+            function getTokenAddress(offset)->token {
                 mstore(0, mul(0x10fe9ae8, offset)) // getTokenAddress()
 
                 // call platform.getTokenAddress and put in 0
@@ -274,7 +247,7 @@ contract JMatryxRound {
             }
 
             // function getBalance(address _submissionAddress) public view returns (uint256)
-            function getBalance(offset, account) -> b {
+            function getBalance(offset, account)->b {
                 let token := getTokenAddress(offset)
                 mstore(0x0, mul(0x70a08231, offset)) // balanceOf(address)
                 mstore(0x04, account)
@@ -318,7 +291,7 @@ contract JMatryxRound {
             }
 
             // function numberOfSubmissions() public view returns (uint256)
-            function numberOfSubmissions() -> n {
+            function numberOfSubmissions()->n {
                 n := sload(submissionsData_slot) // submissionsData.submissions
             }
 

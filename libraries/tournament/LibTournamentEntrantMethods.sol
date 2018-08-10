@@ -34,8 +34,6 @@ library LibTournamentEntrantMethods
         stateData.entryFeesTotal = stateData.entryFeesTotal.add(data.entryFee);
         entryData.numberOfEntrants = entryData.numberOfEntrants.add(1);
 
-        (, address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
-
         return true;
     }
 
@@ -53,22 +51,22 @@ library LibTournamentEntrantMethods
 
     function returnEntryFeeToEntrant(LibTournamentStateManagement.StateData storage stateData, LibTournamentStateManagement.EntryData storage entryData, address _entrant, address matryxTokenAddress) internal
     {
-        // Make sure entrants don't withdraw their entry fee early
-        (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
-        IMatryxToken matryxToken = IMatryxToken(matryxTokenAddress);
-        require(matryxToken.transfer(_entrant, entryData.addressToEntryFeePaid[_entrant].value));
+        // Transfer entry fee
+        require(IMatryxToken(matryxTokenAddress).transfer(_entrant, entryData.addressToEntryFeePaid[_entrant].value));
+
+        // Update tournament state and entry data
         stateData.entryFeesTotal = stateData.entryFeesTotal.sub(entryData.addressToEntryFeePaid[_entrant].value);
         entryData.addressToEntryFeePaid[_entrant].exists = false;
         entryData.addressToEntryFeePaid[_entrant].value = 0;
         entryData.numberOfEntrants = entryData.numberOfEntrants.sub(1);
     }
 
-    // function createSubmission(address currentRoundAddress, LibTournamentStateManagement.EntryData storage entryData, address platformAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
-    // function createSubmission(address[3] _requiredAddresses, LibTournamentStateManagement.EntryData storage entryData, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
     function createSubmission(address _platformAddress, address _roundAddress, LibTournamentStateManagement.EntryData storage entryData, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress)
     {
+        // Create submission
         address submissionAddress = IMatryxRound(_roundAddress).createSubmission(msg.sender, _platformAddress, submissionData);
 
+        // Update tournament entry data
         entryData.numberOfSubmissions = entryData.numberOfSubmissions.add(1);
         entryData.entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress].exists = true;
         entryData.entrantToSubmissionToSubmissionIndex[msg.sender][submissionAddress].value = entryData.entrantToSubmissions[msg.sender].length;
@@ -84,8 +82,6 @@ library LibTournamentEntrantMethods
 
         address currentRoundAddress;
         (, currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
-        uint256 numberOfEntrants = entryData.numberOfEntrants;
-        uint256 bounty = IMatryxTournament(this).getBounty();
 
         // If this is the first withdrawal being made...
         if(!stateData.hasBeenWithdrawnFrom)
@@ -96,8 +92,16 @@ library LibTournamentEntrantMethods
             stateData.hasBeenWithdrawnFrom = true;
         }
 
+        // Transfer an even share of the remaining tournament bounty to the entrant
+        uint256 bounty = IMatryxTournament(this).getBounty();
+        uint256 numberOfEntrants = entryData.numberOfEntrants;
         require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, bounty.mul(10**18).div(entryData.numberOfEntrants).div(10**18)));
-        returnEntryFeeToEntrant(stateData, entryData, msg.sender, matryxTokenAddress);
+
+        // Return entry fee to entrant if they haven't widthdrawn it yet
+        if (entryData.addressToEntryFeePaid[msg.sender].exists)
+        {
+            returnEntryFeeToEntrant(stateData, entryData, msg.sender, matryxTokenAddress);
+        }
 
         entryData.hasWithdrawn[msg.sender] = true;
     }

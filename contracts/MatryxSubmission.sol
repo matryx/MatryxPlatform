@@ -1,7 +1,6 @@
 pragma solidity ^0.4.18;
 pragma experimental ABIEncoderV2;
 
-
 import "../libraries/math/SafeMath.sol";
 import "../libraries/math/SafeMath128.sol";
 import "../libraries/strings/strings.sol";
@@ -9,8 +8,6 @@ import "../libraries/LibConstruction.sol";
 import "../libraries/LibEnums.sol";
 import "../libraries/submission/LibSubmission.sol";
 import "../libraries/submission/LibSubmissionTrust.sol";
-import "../interfaces/IMatryxToken.sol";
-import "../interfaces/IMatryxPeer.sol";
 import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
 import "../interfaces/IMatryxRound.sol";
@@ -24,6 +21,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     using strings for *;
 
     // Parent identification
+    address private owner;
     address private platformAddress;
     address private tournamentAddress;
     address private roundAddress;
@@ -35,8 +33,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     LibSubmission.TrustData trustData;
     LibSubmission.FileDownloadTracking downloadData;
 
-    address author;
-
     uint256 one = 10**18;
 
     constructor(address _owner, address _platformAddress, address _tournamentAddress, address _roundAddress, LibConstruction.SubmissionData _submissionData) public
@@ -47,7 +43,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
         data = _submissionData;
         owner = _owner;
-        author = IMatryxPlatform(platformAddress).peerAddress(_owner);
 
         data.timeSubmitted = now;
         data.timeUpdated = now;
@@ -63,11 +58,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     * Modifiers
     */
 
-    // modifier onlyAuthor() {
-    //    	require(msg.sender == author);
-    //    	_;
-    //  	}
-
     modifier onlyPlatform() {
         require(msg.sender == platformAddress);
         _;
@@ -77,12 +67,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         require(msg.sender == tournamentAddress);
         _;
     }
-
-    // modifier onlyRound()
-    // {
-    // 	require(msg.sender == roundAddress);
-    // 	_;
-    // }
 
     modifier ownerContributorOrRound()
     {
@@ -136,15 +120,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     * Getter Methods
     */
 
-    function() public {
-        assembly {
-            mstore(0, 0xdead)
-            log0(0x1e, 0x02)
-            mstore(0, calldataload(0x0))
-            log0(0, 0x04)
-        }
-    }
-
     function getTournament() public view returns (address) {
         return tournamentAddress;
     }
@@ -188,7 +163,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     }
 
     function getAuthor() public view whenAccessible(msg.sender) returns(address) {
-        return author;
+        return IMatryxPlatform(platformAddress).peerAddress(owner);
     }
 
     function getDescriptionHash() public view whenAccessible(msg.sender) returns (bytes32[2]) {
@@ -276,12 +251,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     {
         rewardData.winnings = rewardData.winnings.add(_amount);
     }
-
-    // // Debug function. ?MAYBEDO:Delete
-    // function addressIsFlagged(address _reference) public view returns (bool, bool)
-    // {
-    // 	return (addressToReferenceInfo[_reference].flagged, missingReferenceToIndex[_reference].exists);
-    // }
 
     /// @dev 	Called by the owner of _reference when this submission does not list _reference
     /// 		as a reference.

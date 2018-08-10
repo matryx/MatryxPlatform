@@ -4,7 +4,6 @@ pragma experimental ABIEncoderV2;
 import "../libraries/strings/strings.sol";
 import "../libraries/math/SafeMath.sol";
 import "../libraries/LibConstruction.sol";
-//import "../libraries/interfaces/tournament/iLibTournamentStateManagement.sol";
 import "../libraries/tournament/LibTournamentStateManagement.sol";
 import "../libraries/tournament/LibTournamentAdminMethods.sol";
 import "../libraries/tournament/LibTournamentEntrantMethods.sol";
@@ -12,7 +11,6 @@ import "../libraries/LibEnums.sol";
 import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
 import "../interfaces/IMatryxSubmission.sol";
-import "../interfaces/factories/IMatryxRoundFactory.sol";
 import "../interfaces/IMatryxRound.sol";
 import "../interfaces/IMatryxToken.sol";
 import "./Ownable.sol";
@@ -25,41 +23,29 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     using LibTournamentAdminMethods for LibConstruction.TournamentData;
 
     // TODO: condense and put in structs
-    // Platform identification
+    // TODO: Create setter for this (resume here for upgrade system.)
+
     address public platformAddress;
     address public matryxRoundFactoryAddress;
 
-    // TODO: Create setter for this (resume here for upgrade system.)
-    // address public libTournamentStateManagement;
-
-    //Tournament identification
     LibConstruction.TournamentData data;
     LibTournamentStateManagement.StateData stateData;
-    // Submission tracking
     LibTournamentStateManagement.EntryData entryData;
-
-    // address roundDelegate;
-    // bytes4 fnSelector_chooseWinner = bytes4(keccak256("chooseWinner(address)"));
-    // bytes4 fnSelector_createRound = bytes4(keccak256("createRound(uint256)"));
-    // bytes4 fnSelector_startRound = bytes4(keccak256("startRound(uint256)"));
 
     constructor(address _owner, address _platformAddress, address _matryxRoundFactoryAddress, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData)
     {
         //Clean inputs
         require(_owner != 0x0);
-        require(tournamentData.title[0] != 0x0);
+        require(tournamentData.title[0] != 0);
         require(tournamentData.initialBounty > 0);
         require(_matryxRoundFactoryAddress != 0x0);
 
+        owner = _owner;
         platformAddress = _platformAddress;
         matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
-
-        // Identification
-        owner = _owner;
         data = tournamentData;
 
-        _createRound(roundData, true);
-        // roundDelegate = IMatryxPlatform(platformAddress).getRoundLibAddress();
+        _createRound(roundData, true); // _automaticCreation
     }
 
     /*
@@ -82,9 +68,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Events
      */
 
-    event NewRound(uint256 _startTime, uint256 _endTime, uint256 _reviewPeriodDuration, address _roundAddress, uint256 _roundNumber);
-    //event RoundStarted(uint256 _roundIndex);
-    // Fired at the end of every round, one time per submission created in that round
     event SubmissionCreated(uint256 _roundIndex, address _submissionAddress);
     event RoundWinnersChosen(address[] _submissionAddresses);
 
@@ -95,9 +78,21 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         emit SubmissionCreated(stateData.rounds.length-1, _submissionAddress);
     }
 
+    /// @dev Allows rounds to invoke SubmissionCreated events on this tournament.
+    /// @param _winningAddresses Addresses of the winning submissions.
+    function invokeRoundWinnersChosenEvent(address[] _winningAddresses) public onlyRound
+    {
+        emit RoundWinnersChosen(_winningAddresses);
+    }
+
     /*
      * Modifiers
      */
+    modifier onlyOwner()
+    {
+        require(msg.sender == owner);
+        _;
+    }
 
     /// @dev Requires the function caller to be the platform.
     modifier onlyPlatform() {
@@ -109,19 +104,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         require(stateData.isRound[msg.sender]);
         _;
     }
-
-    // modifier onlySubmission(address _submissionAddress, address _author)
-    // {
-    //     // If the submission does not exist,
-    //     // the address of the submission we return will not be msg.sender
-    //     // It will either be
-    //     // 1) The first submission, or
-    //     // 2) all 0s from having deleted it previously.
-    //     uint256 indexOfSubmission = entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].value;
-    //     address submissionAddress = entrantToSubmissions[_author][indexOfSubmission];
-    //     require(_submissionAddress == msg.sender);
-    //     _;
-    // }
 
     modifier onlyPeerLinked(address _sender) {
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
@@ -146,44 +128,21 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     modifier ifRoundHasFunds()
     {
         address currentRoundAddress;
-
         (,currentRoundAddress) = currentRound();
         require(IMatryxRound(currentRoundAddress).getState() != uint256(LibEnums.RoundState.Unfunded));
         _;
     }
 
-    modifier onlyOwner()
-    {
-        require(msg.sender == owner);
-        _;
-    }
-
-    // /// @dev Requires the tournament to be open.
-    // modifier duringReviewPeriod()
-    // {
-    //     // TODO: Finish me!
-    //     require(isInReview());
-    //     _;
-    // }
-
-    // TODO: Use MatryxToken
-    // modifier whileBountyLeft(uint256 _nextRoundBounty)
-    // {
-    //     require(BountyLeft.sub(_nextRoundBounty) >= 0);
-    //     _;
-    // }
-
     /*
     * State Maintenance Methods
     */
 
-    function removeSubmission(address _submissionAddress, address _author) public onlyPlatform returns (bool)
+    function removeSubmission(address _submissionAddress, address _author) public onlyPlatform
     {
         require(entryData.entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].exists);
         entryData.numberOfSubmissions = entryData.numberOfSubmissions.sub(1);
         delete entryData.entrantToSubmissions[_author][entryData.entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].value];
         delete entryData.entrantToSubmissionToSubmissionIndex[_author][_submissionAddress];
-        return true;
     }
 
     /*
@@ -199,7 +158,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     }
 
     /// @dev Returns the state of the tournament. One of:
-    /// NotYetOpen, Open, Closed, Abandoned
+    /// { NotYetOpen, OnHold, Open, Closed, Abandoned }
     function getState() public view returns (uint256)
     {
         return LibTournamentStateManagement.getState(stateData);
@@ -258,8 +217,8 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return data.fileHash;
     }
 
-    /// @dev Returns the current round number.
-    /// @return _currentRound Number of the current round.
+    /// @dev Returns the current round number and address.
+    /// @return (_currentRound, _currentRoundAddress) Number and address of the current round.
     function currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress)
     {
         return LibTournamentStateManagement.currentRound(stateData);
@@ -290,8 +249,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @return (_roundIndices[], _submissionIndices[]) Locations of the sender's submissions.
     function mySubmissions() public view returns (address[])
     {
-        address[] memory _mySubmissions = entryData.entrantToSubmissions[msg.sender];
-        return _mySubmissions;
+        return entryData.entrantToSubmissions[msg.sender];
     }
 
     /// @dev Returns the number of submissions made to this tournament.
@@ -319,19 +277,18 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Tournament Admin Methods
      */
 
-    /// @dev Chooses the winner(s) of the current round. If this is the last round,
-    //       this method will also close the tournament.
+    /// @dev Chooses the winner(s) of the current round.
     /// @param _selectWinnersData Struct containing winning submission information including:
     ///        winningSubmissions: Winning submission addresses
     ///        rewardDistribution: Distribution indicating how to split the reward among the submissions
     ///        selectWinnerAction: SelectWinnerAction (DoNothing, StartNextRound, CloseTournament) indicating what to do after winner selection
     ///        rewardDistributionTotal: (Unused)
     /// @param _roundData Struct containing data for the next round including:
-    ///   start: Start time (seconds since unix-epoch) for next round
-    ///   end: End time (seconds since unix-epoch) for next round
-    ///   reviewPeriodDuration: Number of seconds to allow for winning submissions to be selected in next round
-    ///   bounty: Bounty in MTX for next round
-    ///   closed: (Unused)
+    ///        start: Start time (seconds since unix-epoch) for next round
+    ///        end: End time (seconds since unix-epoch) for next round
+    ///        reviewPeriodDuration: Number of seconds to allow for winning submissions to be selected in next round
+    ///        bounty: Bounty in MTX for next round
+    ///        closed: (Unused)
     function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public onlyOwner
     {
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
@@ -352,13 +309,13 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         LibTournamentAdminMethods.allocateMoreToRound(stateData, _mtxAllocation, matryxTokenAddress);
     }
 
-    /// @dev This function should be called after the user selects winners for their tournament and chooses the "DoNothing" option
+    /// @dev This function should be called after the user selects winners for their tournament and chooses the "Start Next Round" option
     function jumpToNextRound() public onlyOwner
     {
         LibTournamentAdminMethods.jumpToNextRound(stateData);
     }
 
-    /// @dev This function closes the tournament after the tournament owner selects their winners with the "DoNothing" option
+    /// @dev This function closes the tournament after the tournament owner selects winners with the "Close Tournament" option
     function stopTournament() public onlyOwner
     {
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
@@ -389,7 +346,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Entrant Methods
      */
 
-    // LibTournamentEntrantMethods
     /// @dev Enters the user into the tournament.
     /// @param _entrantAddress Address of the user to enter.
     /// @return success Whether or not the user was entered successfully.
@@ -398,7 +354,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         return LibTournamentEntrantMethods.enterUserInTournament(data, stateData, entryData, _entrantAddress);
     }
 
-    function collectMyEntryFee() public
+    function collectMyEntryFee() public onlyEntrant
     {
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         LibTournamentEntrantMethods.collectMyEntryFee(stateData, entryData, matryxTokenAddress);
@@ -414,8 +370,6 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         {
             IMatryxSubmission(newSubmission).setContributorsAndReferences(contribsAndRefs);
         }
-        // Send out reference requests to the authors of other submissions
-        // IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(newSubmission, contribsAndRefs.references);
 
         return newSubmission;
     }
