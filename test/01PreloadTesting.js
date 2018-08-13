@@ -4,8 +4,8 @@ var MatryxRound = artifacts.require("MatryxRound");
 var MatryxSubmission = artifacts.require("MatryxSubmission");
 var MatryxToken = artifacts.require("MatryxToken");
 
-var ethersLocal = '/Users/marinatorras/Projects/Matryx/ethers.js';
-var walletAddress = "0x1f2f539638f07fca5d83c0d584bc6be5351d5e1ef9e13e809a72c5e802060a67";
+const ethers = require('ethers')
+const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('./utils')
 
 contract('MatryxPlatform', function(accounts) {
 
@@ -13,8 +13,6 @@ contract('MatryxPlatform', function(accounts) {
     let tournament;
     let token;
     let submissionAddress;
-    //for code coverage
-    let gasEstimate = 30000000;
 
     it("Platform Preloading", async function () {
 
