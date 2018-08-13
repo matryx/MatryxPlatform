@@ -1,0 +1,341 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Tournament Administration &mdash; Matryx 0.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Trust and Reputation System" href="trust-and-reputation.html" />
+    <link rel="prev" title="Participating in a Tournament" href="tournament-participating.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Matryx
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Diving into Matryx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tournament-participating.html">Participating in a Tournament</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tournament Administration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-tournament">Creating a Tournament</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#your-tournaments">Your Tournaments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-tournament-details">Updating Tournament Details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-funds-to-your-tournament">Adding Funds to your Tournament</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#choosing-winners">Choosing Winners</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="trust-and-reputation.html">Trust and Reputation System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="abi-and-geth-interaction.html">Interacting with the Platform via Geth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source_faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source_versions.html">Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/api.html">Source Code Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Matryx</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Tournament Administration</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tournament-admin.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="tournament-administration">
+<h1>Tournament Administration<a class="headerlink" href="#tournament-administration" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="creating-a-tournament">
+<h2>Creating a Tournament<a class="headerlink" href="#creating-a-tournament" title="Permalink to this headline">¶</a></h2>
+<p>To create a tournament, you can call the <code class="docutils literal notranslate"><span class="pre">createTournament</span></code> function on the platform. The function signature is:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) returns (address _tournamentAddress)
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">TournamentData</span></code> and <code class="docutils literal notranslate"><span class="pre">RoundData</span></code> are stuctured as follows:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct TournamentData
+{
+    string category;
+    bytes32 title_1;
+    bytes32 title_2;
+    bytes32 title_3;
+    bytes32 descriptionHash_1;
+    bytes32 descriptionHash_2;
+    bytes32 fileHash_1;
+    bytes32 fileHash_2;
+    uint256 initialBounty;
+    uint256 entryFee;
+}
+
+struct RoundData
+{
+    uint256 start;
+    uint256 end;
+    uint256 reviewPeriodDuration;
+    uint256 bounty;
+}
+</pre></div>
+</div>
+<p>These structs contain all the information we need about the tournament that you are about to create and the first round that will kick off when the tournament starts. You can add more funds to the tournament bounty at any point, but you cannot remove funds from it after you make the <code class="docutils literal notranslate"><span class="pre">createTournament</span></code> call, so choose your initial bounty wisely!</p>
+<p>Similarly, you cannot remove funds from the share of the tournament bounty you assigned to the first round, and you won’t be able to edit the round details after the round has started. Be sure to enter a reasonable amount of time (in seconds) for the round’s start and end time, as well as its review period. You’ll need some time to look over the submissions and choose your round winners before the review period ends!</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The tournament and round bounty will be visible to any users looking to enter your tournament, as well as the tournament and round details.</p>
+</div>
+</div>
+<div class="section" id="your-tournaments">
+<h2>Your Tournaments<a class="headerlink" href="#your-tournaments" title="Permalink to this headline">¶</a></h2>
+<p>Congratulations, you have now created your first tournament! You can access all of your tournaments with the following call to the platform:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.myTournaments()
+</pre></div>
+</div>
+<p>The last address that this call returns is the address of your most recently created tournament.
+You can also check the current state of your tournament with</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.getState()
+</pre></div>
+</div>
+<p>This will tell you whether your tournament is Not Yet Open, On Hold, Open, Closed, or Abandoned.</p>
+</div>
+<div class="section" id="updating-tournament-details">
+<h2>Updating Tournament Details<a class="headerlink" href="#updating-tournament-details" title="Permalink to this headline">¶</a></h2>
+<p>To edit the details of your tournament, you can call the <code class="docutils literal notranslate"><span class="pre">update</span></code> function. The function signature is:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function update(LibConstruction.TournamentModificationData tournamentData, string _category) public onlyOwner
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">TournamentModificationData</span></code> is the following:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct TournamentModificationData
+{
+    bytes32 title_1;
+    bytes32 title_2;
+    bytes32 title_3;
+    bytes32 descriptionHash_1;
+    bytes32 descriptionHash_2;
+    bytes32 fileHash_1;
+    bytes32 fileHash_2;
+    uint256 entryFee;
+    bool entryFeeChanged;
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="adding-funds-to-your-tournament">
+<h2>Adding Funds to your Tournament<a class="headerlink" href="#adding-funds-to-your-tournament" title="Permalink to this headline">¶</a></h2>
+<p>Suppose you wanted to add 1000 MTX to the tournament bounty. To add more funds to your tournament, you can call the <code class="docutils literal notranslate"><span class="pre">addFunds</span></code> function as follows:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.addFunds(1000)
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Remember that you cannot remove funds from the tournament bounty after you’ve added them.</p>
+</div>
+</div>
+<div class="section" id="choosing-winners">
+<h2>Choosing Winners<a class="headerlink" href="#choosing-winners" title="Permalink to this headline">¶</a></h2>
+<p>Once the round enters its review period, users will no longer be able to make any more submissions, and all the submissions that participants have made will become accessible to you. It is now time to review the submissions and select some winners.</p>
+<p>To get all the submissions made to this round, you can call</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>round.getSubmissions()
+</pre></div>
+</div>
+<p>The function signature of <code class="docutils literal notranslate"><span class="pre">selectWinners</span></code> is the following:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function selectWinners(address[] _submissionAddresses, uint256[] _rewardDistribution, LibConstruction.RoundData _roundData, uint256 _selectWinnerAction) public onlyOwner
+</pre></div>
+</div>
+<p>This function is called on the tournament. You can specify which submissions get rewarded and how much MTX is assigned to each one by passing two arrays as parameters; the first parameter contains all the winning submissions’ addresses, and the second contains the reward each one will get, respectively, expressed as a percentage of the total round bounty.</p>
+<p>When you choose your round winners, you can choose to wait until the end of the review period for a new round to start automatically, start the next round immediately after selecting the winners, or close the tournament. The action you choose to proceed with (<code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code> or <code class="docutils literal notranslate"><span class="pre">2</span></code>, respectively) is passed as the last parameter. If you choose to start the next round immediately when you select the winners, it will be initialized with the round data that you provide. If you choose to wait until the end of the review period, the next round will automatically be created as an identical copy of the last round.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Once you close the tournament, you can’t open it up again. Any remaining funds that might still be in the tournament’s balance will be evenly distributed among the last round’s winners when you close the tournament.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If the round’s review period ends and you still have not chosen any winners, the tournament will be considered Abandoned, and any remaining funds in the tournament’s balance will be evenly distributed among all the round participants.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="trust-and-reputation.html" class="btn btn-neutral float-right" title="Trust and Reputation System" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="tournament-participating.html" class="btn btn-neutral" title="Participating in a Tournament" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Max Howard, Sam Hessenauer.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
