@@ -2,7 +2,6 @@ var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxTournament = artifacts.require("MatryxTournament");
 var MatryxRound = artifacts.require("MatryxRound");
 var MatryxToken = artifacts.require("MatryxToken");
-let SubmissionTrust = artifacts.require("SubmissionTrust");
 let MatryxPeer = artifacts.require("MatryxPeer");
 let MatryxSubmission = artifacts.require("MatryxSubmission");
 
@@ -185,8 +184,8 @@ contract('ReputationTesting', function(accounts)
       var peerNine = web3.eth.contract(MatryxPeer.abi).at(peerNineAddress);
       let reputationNine = await peerNine.getReputation();
 
-      let isValid = (reputationZero.toNumber() > reputationOne.toNumber()) && 
-                    (reputationOne.toNumber() > reputationTwo.toNumber()) && 
+      let isValid = (reputationZero.toNumber() > reputationOne.toNumber()) &&
+                    (reputationOne.toNumber() > reputationTwo.toNumber()) &&
                     (reputationTwo.toNumber() > reputationThree.toNumber()) &&
                     (reputationThree.toNumber() > reputationFour.toNumber()) &&
                     (reputationFour.toNumber() > reputationFive.toNumber()) &&

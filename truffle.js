@@ -1,78 +1,82 @@
-require('babel-register');
-require('babel-polyfill');
-require('babel-preset-env');
-var fs = require('fs')
-var path = require('path')
-var mnemonic_path = path.join(__dirname, '..', 'keys', 'dev_wallet_mnemonic.txt')
-var HDWalletProvider = require("truffle-hdwallet-provider");
+const fs = require('fs')
+const Web3 = require('web3')
+const HDWalletProvider = require("truffle-hdwallet-provider")
 
-var mnemonic;
+ethers = require('ethers')
+network = require('./truffle/network')
 
 // SETUP GLOBALS FOR CLI REPL
 const utils = require('./truffle/utils')
+getMinedTx = utils.getMinedTx
+bytesToString = utils.bytesToString
 stringToBytes = utils.stringToBytes
 stringToBytes32 = utils.stringToBytes32
+contract = utils.Contract
+
+selector = signature => '0x' + ethUtil.keccak(signature).hexSlice(0, 4)
 getFileContents = path => fs.readFileSync(path).toString()
-contract = (address, { abi }) => new ethers.Contract(address, abi, wallet)
 
-ethers = require('ethers')
+getTx = hash => wallet.provider.getTransaction(hash)
+getTxR = hash => wallet.provider.getTransactionReceipt(hash)
 
-// wallet key from ganache
-wallet = new ethers.Wallet('0x' + '2c22c05cb1417cbd17c57c1bd0f50142d8d7884984e07b2d272c24c6e120a9ea')
-wallet.provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
+hex = dec => '0x' + dec.toString(16)
+dec = hex => parseInt(hex, 16)
+
+fromWei = wei => +ethers.utils.formatEther(wei.toString())
+toWei = eth => ethers.utils.parseEther(eth.toString())
 
 console.log('Setup to copy paste:\n')
-console.log('platform = contract(MatryxPlatform.address, MatryxPlatform)')
-console.log('token = contract(MatryxToken.address, MatryxToken)\n')
+console.log('platform = contract(MatryxPlatform.address, MatryxPlatform);0')
+console.log('token = contract(network.tokenAddress, MatryxToken);0\n')
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
   // to customize your Truffle configuration!
-	networks:
-	{
-	  	development:
-	  	{
-	  		host: "localhost",
-	  		port: 8545,
-	    	network_id: "*", // match any network
-	     	gas: 6541593,
-  			gasPrice: 30000000
-		},
-		ropsten:  {
-     		provider: function() {
-        		return new HDWalletProvider(getFileContents(mnemonic_path), "https://ropsten.infura.io/metamask")
-     		},
-     		network_id: 3,
-     		gas:   6741593
-		},
-		testing:
-		{
-			host: "localhost",
-	  		port: 8545,
-	    	network_id: "*", // match any network
-	     	gas: 6741593,
-  			gasPrice: 30000000
-		},
-		coverage:
-		{
-			host: "localhost",
-			network_id: "*",
-			port: 8545,     // <-- If you change this, also set the port option in .solcover.js.
-			gas: 9000000000, // <-- Use this high gas value
-			gasPrice: 100000     // <-- Use this low gas price
-    	}
-	},
-	mocha:
-	{
-        enableTimeouts: false
+  networks: {
+    development: {
+      host: "localhost",
+      port: 8545,
+      provider: function () {
+        network.setNetwork('ganache')
+        wallet = new ethers.Wallet(network.privateKeys[0], network.provider)
+        return new Web3.providers.HttpProvider('http://localhost:8545')
+      },
+      network_id: "*", // match any network
+      gas: 6541593,
+      gasPrice: 30000000
     },
-
-	solc:
-	{
-  		optimizer:
-  		{
-	    	enabled: true,
-	    	runs: 4000
-  		}
-  	}
-};
+    ropsten: {
+      provider: function () {
+        network.setNetwork('ropsten')
+        wallet = new ethers.Wallet(network.privateKeys[0], network.provider)
+        const mnemonic = getFileContents(network.mnemonicPath)
+        return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/metamask")
+      },
+      network_id: 3,
+      gas: 5800000
+    },
+    testing: {
+      host: "localhost",
+      port: 8545,
+      network_id: "*", // match any network
+      gas: 6741593,
+      gasPrice: 30000000
+    },
+    coverage: {
+      host: "localhost",
+      network_id: "*",
+      port: 8545,     // <-- If you change this, also set the port option in .solcover.js.
+      gas: 9000000000, // <-- Use this high gas value
+      gasPrice: 100000     // <-- Use this low gas price
+    }
+  },
+  mocha: {
+    enableTimeouts: false
+  },
+  solc: {
+    optimizer: {
+      enabled: true,
+      runs: 4000
+    }
+  }
+}

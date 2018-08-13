@@ -5,6 +5,6 @@ import "../../libraries/LibConstruction.sol";
 
 interface IMatryxTournamentFactory
 {
-	function createTournament(string _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _owner) returns (address _tournamentAddress);
+	function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _owner) public returns (address _tournamentAddress);
 	function setPlatform(address _platformAddress) public;
 }

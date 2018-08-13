@@ -1,4 +1,5 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
 
 library LibConstruction
 {
@@ -24,27 +25,20 @@ library LibConstruction
 
     struct TournamentData
     {
-        string category;
-        bytes32 title_1;
-        bytes32 title_2;
-        bytes32 title_3;
-        bytes32 descriptionHash_1;
-        bytes32 descriptionHash_2;
-        bytes32 fileHash_1;
-        bytes32 fileHash_2;
+        bytes32 category;
+        bytes32[3] title;
+        bytes32[2] descriptionHash;
+        bytes32[2] fileHash;
         uint256 initialBounty;
         uint256 entryFee;
     }
 
     struct TournamentModificationData
     {
-        bytes32 title_1;
-        bytes32 title_2;
-        bytes32 title_3;
-        bytes32 descriptionHash_1;
-        bytes32 descriptionHash_2;
-        bytes32 fileHash_1;
-        bytes32 fileHash_2;
+        bytes32 category;
+        bytes32[3] title;
+        bytes32[2] descriptionHash;
+        bytes32[2] fileHash;
         uint256 entryFee;
         bool entryFeeChanged;
     }
@@ -55,29 +49,42 @@ library LibConstruction
         uint256 end;
         uint256 reviewPeriodDuration;
         uint256 bounty;
+        bool closed;
     }
 
     struct SubmissionData
     {
-        string title;
-        address owner;
-        bytes descriptionHash;
-        bytes fileHash;
-        bool isPublic;
-    	//address[] contributors;
-    	//uint128[] contributorRewardDistribution;
-    	//address[] references;
+        bytes32[3] title;
+        bytes32[2] descriptionHash;
+        bytes32[2] fileHash;
+        uint256 timeSubmitted;
+        uint256 timeUpdated;
+    }
+
+    struct ContributorsAndReferences
+    {
+        address[] contributors;
+        uint256[] contributorRewardDistribution;
+        address[] references;
     }
 
     struct SubmissionModificationData
     {
-        string title;
-        address owner;
-        bytes descriptionHash;
-        bytes fileHash;
-        bool isPublic;
-    	//address[] contributorsToAdd;
-    	//uint128[] contributorRewardDistribution;
-    	//address[] contributorsToRemove;
+        bytes32[3] title;
+        bytes32[2] descriptionHash;
+        bytes32[2] fileHash;
+    }
+
+    struct ContributorsModificationData
+    {
+        address[] contributorsToAdd;
+        uint256[] contributorRewardDistribution;
+        uint256[] contributorsToRemove;
+    }
+
+    struct ReferencesModificationData
+    {
+        address[] referencesToAdd;
+        uint256[] referencesToRemove;
     }
 }
