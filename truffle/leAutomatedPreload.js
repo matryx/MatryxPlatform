@@ -103,12 +103,12 @@ const createSubmission = async (tournament, accountNumber) => {
   }
 
   const contribsAndRefs = {
-    contributors: new Array(10).fill(0).map(r => genAddress()),
-    contributorRewardDistribution: new Array(10).fill(1),
-    references: new Array(10).fill(0).map(r => genAddress())
+    contributors: new Array(0).fill(0).map(r => genAddress()),
+    contributorRewardDistribution: new Array(0).fill(1),
+    references: new Array(0).fill(0).map(r => genAddress())
   }
 
-  let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
+  let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 4e6 })
   await getMinedTx('Tournament.createSubmission', tx.hash)
 
   const [_, roundAddress] = await tournament.currentRound()
@@ -194,6 +194,8 @@ module.exports = async exit => {
     await init()
     const tournamentCreator = 0
 
+    /*
+
     let RoundNotYetOpen = {
       start: Math.floor(Date.now() / 1000) + 9999999,
       end: Math.floor(Date.now() / 1000) + 99999999,
@@ -225,6 +227,8 @@ module.exports = async exit => {
     }
     const tournament_c = await createTournament(web3.toWei(10), RoundOpenWithZero, tournamentCreator)
 
+    */
+
     // ----------------------------------------------------------------------------------------------
 
     let RoundOpenWithThree = {
@@ -244,7 +248,7 @@ module.exports = async exit => {
 
     let RoundHasWinnersWithThree = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      end: Math.floor(Date.now() / 1000) + 300,
       reviewPeriodDuration: 12345678,
       bounty: web3.toWei(3),
       closed: false
@@ -260,7 +264,7 @@ module.exports = async exit => {
 
     let RoundInReviewWithZero = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10, // CHANGE FOR ROPSTEN
+      end: Math.floor(Date.now() / 1000) + 300, // CHANGE FOR ROPSTEN
       reviewPeriodDuration: 9999999,
       bounty: web3.toWei(3),
       closed: false
@@ -271,7 +275,7 @@ module.exports = async exit => {
 
     let RoundInReviewWithThree = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10, // CHANGE FOR ROPSTEN
+      end: Math.floor(Date.now() / 1000) + 300, // CHANGE FOR ROPSTEN
       reviewPeriodDuration: 9999999,
       bounty: web3.toWei(3),
       closed: false
@@ -287,7 +291,7 @@ module.exports = async exit => {
 
     let RoundClosedWithThree = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10, // CHANGE FOR ROPSTEN
+      end: Math.floor(Date.now() / 1000) + 300, // CHANGE FOR ROPSTEN
       reviewPeriodDuration: 120,
       bounty: web3.toWei(3),
       closed: false
@@ -303,7 +307,7 @@ module.exports = async exit => {
 
     let RoundAbandonedWithZero = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 1,
+      end: Math.floor(Date.now() / 1000) + 300,
       reviewPeriodDuration: 1,
       bounty: web3.toWei(3),
       closed: false
@@ -314,7 +318,7 @@ module.exports = async exit => {
 
     let RoundAbandonedWithThree = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30, // CHANGE FOR ROPSTEN
+      end: Math.floor(Date.now() / 1000) + 300, // CHANGE FOR ROPSTEN
       reviewPeriodDuration: 1,
       bounty: web3.toWei(3),
       closed: false
