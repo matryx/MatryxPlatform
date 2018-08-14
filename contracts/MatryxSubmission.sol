@@ -8,10 +8,6 @@ import "../libraries/LibConstruction.sol";
 import "../libraries/LibEnums.sol";
 import "../libraries/submission/LibSubmission.sol";
 import "../libraries/submission/LibSubmissionTrust.sol";
-<<<<<<< HEAD
-import "../interfaces/IMatryxToken.sol";
-=======
->>>>>>> d2b955ccec2a4cb79cc5aac57318266e82482967
 import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
 import "../interfaces/IMatryxRound.sol";
