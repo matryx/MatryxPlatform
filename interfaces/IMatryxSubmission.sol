@@ -6,10 +6,10 @@ import "../libraries/LibConstruction.sol";
 interface IMatryxSubmission {
   function getTournament() public view returns (address);
   function getRound() public view returns (address);
+  function getSubmissionOwner() public view returns (address);
   function isAccessible(address _requester) public view returns (bool);
   function getData() public view returns(LibConstruction.SubmissionData _data);
   function getTitle() public view returns(bytes32[3]);
-  function getAuthor() public view returns(address);
   function getDescriptionHash() public view returns (bytes32[2]);
   function getFileHash() public view returns (bytes32[2]);
   function getPermittedDownloaders() public view returns (address[]);

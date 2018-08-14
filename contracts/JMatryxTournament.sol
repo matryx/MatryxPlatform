@@ -184,10 +184,10 @@ contract JMatryxTournament {
 
             function onlyPeerLinked(_sender, offset) {
                 let platform := sload(platform_slot)
-                mstore(0, mul(0x532311c4, offset)) // hasPeer(address)
+                mstore(0, mul(0x7a348ab3, offset)) // hasEnteredMatryx(address)
                 mstore(0x04, caller())
 
-                // call platform.hasPeer(msg.sender), revert if result false
+                // call platform.hasEnteredMatryx(msg.sender), revert if result false
                 require(call(gas(), platform, 0, 0, 0x44, 0, 0x20))
                 require(mload(0))
             }

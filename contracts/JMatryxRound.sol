@@ -133,33 +133,6 @@ contract JMatryxRound {
             //     Functions
             // -----------------
 
-            /*
-                function submissionExists(address _submissionAddress) public returns (bool)
-                function addBounty(uint256 _mtxAllocation) public onlyTournament
-                function getState() public view returns (uint256)
-                function getPlatform() public view returns (address)
-                function getTournament() public view returns (address)
-                function getStartTime() public view returns (uint256)
-                function getEndTime() public view returns (uint256)
-                function getBounty() public view returns (uint256)
-                function getRemainingBounty() public view returns (uint256)
-                function getTokenAddress() public view returns (address)
-                function getSubmissions() public view returns (address[] _submissions)
-                function getBalance(address _submissionAddress) public view returns (uint256)
-                function getRoundBalance() public view returns (uint256)
-                function submissionsChosen() public view returns (bool)
-                function getWinningSubmissionAddresses() public view returns (address[])
-                function numberOfSubmissions() public view returns (uint256)
-                function editRound(uint256 _currentRoundEndTime, LibConstruction.RoundData _roundData) public onlyTournament
-                function transferToTournament(uint256 _amount) public onlyTournament
-                function selectWinningSubmissions(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public onlyTournament duringReviewPeriod
-                function transferBountyToTournament() public onlyTournament returns (uint256)
-                function transferAllToWinners(uint256 _tournamentBalance) public onlyTournament
-                function startNow() public onlyTournament
-                function closeRound() public onlyTournament
-                function createSubmission(address _owner, address platformAddress, LibConstruction.SubmissionData submissionData) public onlyTournament duringOpenRound returns (address _submissionAddress)
-            */
-
             // function submissionExists(address _submissionAddress) public returns (bool)
             function submissionExists(submission) {
                 mstore(0x0, arg(0))
@@ -479,14 +452,8 @@ contract JMatryxRound {
 
                 // TODO: Change to 'authors.push' once MatryxPeer is part of MatryxPlatform
 
-                // address submissionAuthor = IMatryxPlatform(platformAddress).peerAddress(_owner);
-                mstore(0, mul(0x6a44e43d, offset)) // peerAddress(address)
-                mstore(0x04, owner)
-                require(call(gas(), sload(platform_slot), 0, 0, 0x24, 0, 0x20))
-                let author := mload(0)
-
                 // trackingData.authorToSubmissionAddress
-                mstore(0x0, author)
+                mstore(0x0, owner)
                 mstore(0x20, trackingData_slot)
                 let s_authorSubsLen := keccak256(0x0, 0x40)
                 let authorSubsLen := sload(s_authorSubsLen)
@@ -504,7 +471,7 @@ contract JMatryxRound {
                     let s_subOwners := keccak256(0, 0x20)
 
                     sstore(s_subOwnersLen, add(subOwnersLen, 1))    // increment num submissionOwners
-                    sstore(add(s_subOwners, subOwnersLen), author)  // add author to submissionOwners
+                    sstore(add(s_subOwners, subOwnersLen), owner)  // add owner to submissionOwners
                 }
 
                 // trackingData.authorToSubmissionAddress[submissionAuthor].push(submissionAddress);

@@ -125,7 +125,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     modifier onlyPeerLinked(address _sender) {
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-        require(platform.hasPeer(_sender));
+        require(platform.hasEnteredMatryx(_sender));
         _;
     }
 

@@ -78,7 +78,6 @@ contract JMatryxSubmission {
             case 0xa52dd12f { return32(isAccessible(sOffset)) }            // isAccessible(address)
             case 0x3bc5de30 { getData(sOffset) }                           // getData()
             case 0xff3c1a8f { getTitle(sOffset) }                          // getTitle()
-            case 0xa5faa125 { getAuthor(sOffset) }                         // getAuthor()
             case 0x245edf06 { getDescriptionHash(sOffset) }                // getDescriptionHash()
             case 0x8493f71f { getFileHash(sOffset) }                       // getFileHash()
             case 0x14889e99 { getPermittedDownloaders() }                  // getPermittedDownloaders()
@@ -198,14 +197,15 @@ contract JMatryxSubmission {
                 require(or(or(eq(sload(owner_slot), caller()), mload(0)), eq(sload(round_slot), caller()))) // require msg.sender == owner or contributor or round
             }
 
+/*
             function onlyPeer(offset) {
                 mstore(0, mul(0x3e44cf78, offset)) // MatryxPlatform.isPeer
                 mstore(0x04, caller())
                 require(call(gas(), sload(platform_slot), 0, 0, 0x24, 0, 0x20))
             }
-
-            function onlyHasPeer(offset) {
-                mstore(0x0, mul(0x532311c4, offset))  // hasPeer(address)
+*/
+            function onlyHasEnteredMatryx(offset) {
+                mstore(0x0, mul(0x7a348ab3, offset))  // hasEnteredMatryx(address)
                 mstore(0x04, caller())
                 require(call(gas(), sload(platform_slot), 0, 0, 0x24, 0, 0x20))
                 require(mload(0x0))
@@ -296,9 +296,9 @@ contract JMatryxSubmission {
                 }
 
                 if iszero(a) {
-                    mstore(0, mul(0x3e44cf78, offset))                                    // isPeer(address)
+                    mstore(0, mul(0x7a348ab3, offset))                                    // hasEnteredMatryx(address)
                     mstore(0x04, caller())
-                    require(call(gas(), platform, 0, 0, 0x24, 0, 0x20))                   // platform.isPeer(caller)
+                    require(call(gas(), platform, 0, 0, 0x24, 0, 0x20))                   // platform.hasEnteredMatryx(caller)
                     a := or(a, mload(0))
                 }
 
@@ -344,15 +344,6 @@ contract JMatryxSubmission {
                 mstore(add(title, 0x40), sload(add(data_slot, 2)))      // data.title[2]
 
                 return(title, 0x60)
-            }
-
-            function getAuthor(offset) {
-                whenAccessible(offset)
-
-                mstore(0, mul(0x6a44e43d, offset)) // peerAddress(address)
-                mstore(0x04, sload(owner_slot))
-                require(call(gas(), sload(platform_slot), 0, 0, 0x24, 0, 0x20)) // platform.peerAddress(owner)
-                return(0, 0x20) // return author
             }
 
             function getDescriptionHash(offset) {
@@ -426,7 +417,7 @@ contract JMatryxSubmission {
             }
 
             function unlockFile(offset) {
-                onlyHasPeer(offset)
+                onlyHasEnteredMatryx(offset)
                 atLeastInReview(offset)
 
                 let s_allowed := s_callerCanViewFile(offset)
@@ -508,9 +499,9 @@ contract JMatryxSubmission {
                 sstore(rewardData_slot, add(sload(rewardData_slot), arg(0)))
             }
 
-            //  function flagMissingReference(address _reference) public onlyPeer
+            //  function flagMissingReference(address _reference) public onlyHasEnteredMatryx
             function flagMissingReference(offset) {
-                onlyPeer(offset)
+                onlyHasEnteredMatryx(offset)
                 let ptr := mload(0x40)
                 // LibSubmissionTrust.flagMissingReference(LibSubmission.TrustData storage,address)
                 mstore(ptr, mul(0x35974e8f, offset))
@@ -519,9 +510,9 @@ contract JMatryxSubmission {
                 require(delegatecall(gas(), LibSubmissionTrust, ptr, 0x44, 0, 0))
             }
 
-            //  function removeMissingReferenceFlag(address _reference) public onlyPeer
+            //  function removeMissingReferenceFlag(address _reference) public onlyHasEnteredMatryx
             function removeMissingReferenceFlag(offset) {
-                onlyPeer(offset)
+                onlyHasEnteredMatryx(offset)
                 let ptr := mload(0x40)
 
                 // LibSubmissionTrust.flagMissingReference(LibSubmission.TrustData storage,address)
@@ -631,7 +622,6 @@ interface IJMatryxSubmission {
     function isAccessible(address _requester) public view returns (bool);
     function getData() public view returns(LibConstruction.SubmissionData _data);
     function getTitle() public view returns(bytes32[3]);
-    function getAuthor() public view returns(address);
     function getDescriptionHash() public view returns (bytes32[2]);
     function getFileHash() public view returns (bytes32[2]);
     function getPermittedDownloaders() public view returns (address[]);

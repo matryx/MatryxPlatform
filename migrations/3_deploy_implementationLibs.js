@@ -6,6 +6,7 @@ const LibTournamentAdminMethods = artifacts.require("../libraries/tournament/Lib
 const LibTournamentEntrantMethods = artifacts.require("../libraries/tournament/LibTournamentEntrantMethods.sol")
 const LibTournamentStateManagement = artifacts.require("../libraries/tournament/LibTournamentStateManagement.sol")
 const LibRound = artifacts.require("../libraries/round/LibRound.sol")
+const LibCategories = artifacts.require("../libraries/platform/LibCategories.sol")
 
 module.exports = function (deployer) {
     deployer.link(SafeMath, LibSubmissionTrust)
@@ -19,5 +20,6 @@ module.exports = function (deployer) {
         deployer.link(LibTournamentStateManagement, LibTournamentEntrantMethods)
         await deployer.deploy(LibTournamentEntrantMethods)
         await deployer.deploy(LibRound)
+        await deployer.deploy(LibCategories)
     })
 }

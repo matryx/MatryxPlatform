@@ -61,21 +61,9 @@ contract MatryxPeer is Ownable {
     modifier onlyPeer()
     {
         IMatryxPlatform platform = IMatryxPlatform(platformAddress);
-        require(platform.isPeer(msg.sender));
+        require(platform.hasEnteredMatryx(msg.sender));
         _;
     }
-
-    // modifier notMe()
-    // {
-    // 	require(msg.sender != address(this));
-    // 	_;
-    // }
-
-    // modifier notOwner()
-    // {
-    // 	require(msg.sender != owner);
-    // 	_;
-    // }
 
     modifier ownerOrSubmission(address _submission)
     {
@@ -247,8 +235,8 @@ contract MatryxPeer is Ownable {
         IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
         submission.flagMissingReference(_missingReference);
 
-        address submissionAuthor = submission.getAuthor();
-        submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] = giveDistrust(submissionAuthor);
+        address submissionOwner = submission.getSubmissionOwner();
+        submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] = giveDistrust(submissionOwner);
     }
 
     function getMissingReferenceCount(address _submissionAddress) public view returns (uint128, uint128)
@@ -274,11 +262,11 @@ contract MatryxPeer is Ownable {
         IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
         submission.removeMissingReferenceFlag(_missingReference);
 
-        address submissionAuthor = submission.getAuthor();
+        address submissionOwner = submission.getSubmissionOwner();
 
-        judgedPeerToUnnormalizedTrust[submissionAuthor] = judgedPeerToUnnormalizedTrust[submissionAuthor].add(one_eighteenDecimal);
+        judgedPeerToUnnormalizedTrust[submissionOwner] = judgedPeerToUnnormalizedTrust[submissionOwner].add(one_eighteenDecimal);
 
-        MatryxPeer(submissionAuthor).restoreTrust(submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference]);
+        MatryxPeer(submissionOwner).restoreTrust(submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference]);
 
         //clean up previous distrust given
         submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] = 0;

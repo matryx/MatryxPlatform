@@ -6,17 +6,16 @@ var MatryxPeerFactory = artifacts.require("MatryxPeerFactory");
 var MatryxTournamentFactory = artifacts.require("MatryxTournamentFactory");
 var MatryxSubmissionFactory = artifacts.require("MatryxSubmissionFactory");
 var { tokenAddress } = require('../truffle/network');
+const LibCategories = artifacts.require("../libraries/platform/LibCategories.sol")
 
 
 module.exports = function (deployer) {
-	return deployer.deploy(MatryxPlatform, tokenAddress, MatryxPeerFactory.address, MatryxTournamentFactory.address, MatryxSubmissionFactory.address).then((platform) => {
+	deployer.link(LibCategories, MatryxPlatform);
+	return deployer.deploy(MatryxPlatform, tokenAddress, MatryxTournamentFactory.address, MatryxSubmissionFactory.address).then((platform) => {
+
 		// Supply the platform address to the contracts that need it.
 		MatryxTournamentFactory.deployed().then((tournamentFactory) => {
 			tournamentFactory.setPlatform(MatryxPlatform.address);
-		});
-
-		MatryxPeerFactory.deployed().then((peerFactory) => {
-			peerFactory.setPlatform(MatryxPlatform.address);
 		});
 
 		// TODO: Make this particular call in the platform constructor by passing iterable mapping struct

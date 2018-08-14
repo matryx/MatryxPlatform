@@ -328,13 +328,12 @@ contract MatryxRound is IMatryxRound {
         submissionEntrantTrackingData.submissionExists[submissionAddress] = true;
         submissionsData.submissions.push(submissionAddress);
         // TODO: Change to 'authors.push' once MatryxPeer is part of MatryxPlatform
-        address submissionAuthor = IMatryxPlatform(platformAddress).peerAddress(_owner);
-        if(submissionEntrantTrackingData.authorToSubmissionAddress[submissionAuthor].length == 0)
+        if(submissionEntrantTrackingData.authorToSubmissionAddress[_owner].length == 0)
         {
             submissionsData.submissionOwners.push(_owner);
         }
 
-        submissionEntrantTrackingData.authorToSubmissionAddress[submissionAuthor].push(submissionAddress);
+        submissionEntrantTrackingData.authorToSubmissionAddress[_owner].push(submissionAddress);
 
         IMatryxTournament(tournamentAddress).invokeSubmissionCreatedEvent(submissionAddress);
         return submissionAddress;

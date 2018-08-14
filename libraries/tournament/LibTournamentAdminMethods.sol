@@ -24,7 +24,7 @@ library LibTournamentAdminMethods
         // TODO: Update the category on the platform
         if(tournamentData.category != 0x0)
         {
-            IMatryxPlatform(platformAddress).switchTournamentCategory(address(this), self.category, tournamentData.category);
+            IMatryxPlatform(platformAddress).updateTournamentCategory(address(this), self.category, tournamentData.category);
             self.category = tournamentData.category;
         }
         if(tournamentData.title[0] != 0x0)

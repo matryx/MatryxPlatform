@@ -101,10 +101,10 @@ module.exports = {
     const token = Contract(network.tokenAddress, MatryxToken, 0)
 
     console.log(chalk`\nSetup {yellow ${account}}`)
-    const hasPeer = await platform.hasPeer(account)
-    if (!hasPeer) {
-      let { hash } = await platform.createPeer({ gasLimit: 4.5e6 })
-      await this.getMinedTx('Platform.createPeer', hash)
+    const hasEnteredMatryx = await platform.hasEnteredMatryx(account)
+    if (!hasEnteredMatryx) {
+      let { hash } = await platform.enterMatryx({ gasLimit: 4.5e6 })
+      await this.getMinedTx('Platform.enterMatryx', hash)
     }
 
     const tokenReleaseAgent = await token.releaseAgent()

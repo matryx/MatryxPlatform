@@ -3,6 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/math/SafeMath128.sol";
+import "../libraries/platform/LibCategories.sol";
 import "../interfaces/IMatryxToken.sol";
 import "../interfaces/IMatryxPeer.sol";
 import "../interfaces/IMatryxPlatform.sol";
@@ -21,43 +22,33 @@ contract MatryxPlatform is Ownable {
 
     // TODO: condense and put in structs
     address public matryxTokenAddress;
-    address public matryxPeerFactoryAddress;
     address public matryxTournamentFactoryAddress;
     address public matryxSubmissionFactoryAddress;
     address public matryxRoundLibAddress;
 
     mapping(bytes32=>address) private contracts;
+    mapping(address=>bool) public hasEnteredMatryx;
 
+    //tournaments stuff
     address[] public allTournaments;
-    // bytes32 public hashOfTopCategory;
-    // bytes32 public hashOfLastCategory;
-    // mapping(uint256=>bytes32) public  topCategoryByCount;
-    // mapping(bytes32=>category) public categoryIterator;
-    bytes32[] public categoryList;
-    mapping(bytes32=>bool) categoryExists;
-    mapping(bytes32=>address[]) categoryToTournamentList;
-    mapping(bytes32=>mapping(address=>bool)) tournamentExistsInCategory;
-    mapping(bytes32=>uint256) emptyCountByCategory;
-    mapping(address=>CategoryInfo) tournamentAddressToCategoryInfo;
-
-    mapping(address=>bool) public peerExists;
-    mapping(address=>address) public ownerToPeerAndPeerToOwner;
-    mapping(address=>mapping(address=>bool)) addressToOwnsSubmission;
     mapping(address=>bool) tournamentExists;
-    mapping(address=>bool) submissionExists;
-
     mapping(address=>address[]) ownerToTournamentArray;
     mapping(address=>mapping(address=>bool)) entrantToOwnsTournament;
+
+    //submissions stuff
+    mapping(address=>bool) submissionExists;
+    mapping(address=>mapping(address=>bool)) addressToOwnsSubmission;
     mapping(address=>address[]) ownerToSubmissionArray;
     mapping(address=>mapping(address=>uint256_optional))  ownerToSubmissionToSubmissionIndex;
 
     // Hyperparams
     uint256_optional submissionGratitude = uint256_optional({exists: true, value: 2*10**17});
 
-    constructor(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress) public
+    LibCategories.CategoriesData categoriesData;
+
+    constructor(address _matryxTokenAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress) public
     {
         matryxTokenAddress = _matryxTokenAddress;
-        matryxPeerFactoryAddress = _matryxPeerFactoryAddress;
         matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
         matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
     }
@@ -119,9 +110,9 @@ contract MatryxPlatform is Ownable {
         _;
     }
 
-    modifier onlyPeerLinked(address _sender)
+    modifier onlyMatryxEntrant()
     {
-        require(hasPeer(_sender));
+        require(hasEnteredMatryx[msg.sender]);
         _;
     }
 
@@ -194,60 +185,36 @@ contract MatryxPlatform is Ownable {
         return true;
     }
 
-    function addTournamentToCategory(address _tournamentAddress, bytes32 _category) public onlyTournamentOwnerOrPlatform(_tournamentAddress)
+    function addTournamentToCategory(address _tournamentAddress, bytes32 _category) internal onlyTournamentOwnerOrPlatform(_tournamentAddress)
     {
-        if(categoryExists[_category] == false)
-        {
-            categoryList.push(_category);
-            categoryExists[_category] = true;
-        }
-
-        if(tournamentExistsInCategory[_category][_tournamentAddress] == false)
-        {
-            tournamentExistsInCategory[_category][_tournamentAddress] = true;
-            tournamentAddressToCategoryInfo[_tournamentAddress].category = _category;
-            tournamentAddressToCategoryInfo[_tournamentAddress].index = (categoryToTournamentList[_category]).length;
-            categoryToTournamentList[_category].push(_tournamentAddress);
-        }
+        LibCategories.addTournamentToCategory(categoriesData, _tournamentAddress, _category);
     }
 
-    function removeTournamentFromCategory(address _tournamentAddress, bytes32 _category) public onlyTournamentOwnerOrPlatform(_tournamentAddress)
+    function removeTournamentFromCategory(address _tournamentAddress) internal onlyTournamentOwnerOrPlatform(_tournamentAddress)
     {
-        if(tournamentExistsInCategory[_category][_tournamentAddress])
-        {
-            // It's there! Let's remove it
-            uint256 indexInCategoryList = tournamentAddressToCategoryInfo[_tournamentAddress].index;
-            tournamentExistsInCategory[_category][_tournamentAddress] = false;
-            categoryToTournamentList[_category][indexInCategoryList] = 0x0;
-            tournamentAddressToCategoryInfo[_tournamentAddress].index = 0;
-            emptyCountByCategory[_category] = emptyCountByCategory[_category].add(1);
-        }
+        bytes32 currentCategory = IMatryxTournament(_tournamentAddress).getCategory();
+        LibCategories.removeTournamentFromCategory(categoriesData, currentCategory, _tournamentAddress);
     }
 
-    function switchTournamentCategory(address _tournamentAddress, bytes32 _oldCategory, bytes32 _newCategory) public onlyTournamentOwnerOrPlatform(_tournamentAddress)
+    function updateTournamentCategory(address _tournamentAddress, bytes32 _newCategory) public onlyTournamentOwnerOrPlatform(_tournamentAddress)
     {
-        removeTournamentFromCategory(_tournamentAddress, _oldCategory);
+        removeTournamentFromCategory(_tournamentAddress);
         addTournamentToCategory(_tournamentAddress, _newCategory);
     }
 
-    function getTournamentsByCategory(bytes32 _category) external view returns (address[])
+    function getTournamentsByCategory(bytes32 _category) public view returns (address[])
     {
-        return categoryToTournamentList[_category];
+        return LibCategories.getTournamentsByCategory(categoriesData, _category);
     }
 
-    function getCategoryCount(bytes32 _category) external view returns (uint256)
+    function getCategoryCount(bytes32 _category) public view returns (uint256)
     {
-        return categoryToTournamentList[_category].length.sub(emptyCountByCategory[_category]);
+        return LibCategories.getCategoryCount(categoriesData, _category);
     }
 
-    function getCategoryByIndex(uint256 _index) public view returns (bytes32)
+    function getAllCategories() public view returns (LibCategories.category[])
     {
-        return categoryList[_index];
-    }
-
-    function getAllCategories() public view returns (uint256, bytes32[])
-    {
-        return (categoryList.length, categoryList);
+        return categoriesData.categoryList;
     }
 
     /*
@@ -257,22 +224,16 @@ contract MatryxPlatform is Ownable {
     /// @dev Enter the user into a tournament and charge the entry fee.
     /// @param _tournamentAddress Address of the tournament to enter into.
     /// @return _success Whether or not user was successfully entered into the tournament.
-    function enterTournament(address _tournamentAddress) public onlyPeerLinked(msg.sender) notOwner(_tournamentAddress) returns (bool _success)
+    function enterTournament(address _tournamentAddress) public onlyMatryxEntrant() notOwner(_tournamentAddress) returns (bool _success)
     {
         require(tournamentExists[_tournamentAddress]);
 
         IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
         uint256 entryFee = tournament.getEntryFee();
 
-        bool success = IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, _tournamentAddress, entryFee);
-        if(success)
-        {
-            success = tournament.enterUserInTournament(msg.sender);
-            if(success)
-            {
-                emit UserEnteredTournament(msg.sender, _tournamentAddress);
-            }
-        }
+        require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, _tournamentAddress, entryFee));
+        require(tournament.enterUserInTournament(msg.sender));
+        emit UserEnteredTournament(msg.sender, _tournamentAddress);
 
         return true;
     }
@@ -317,38 +278,15 @@ contract MatryxPlatform is Ownable {
     * Access Control Methods
     */
 
-    function createPeer() public returns (address)
+    function enterMatryx() public returns (address)
     {
-        require(ownerToPeerAndPeerToOwner[msg.sender] == 0x0);
-        IMatryxPeerFactory peerFactory = IMatryxPeerFactory(matryxPeerFactoryAddress);
-        address peer = peerFactory.createPeer(msg.sender);
-        peerExists[peer] = true;
-        ownerToPeerAndPeerToOwner[msg.sender] = peer;
-        ownerToPeerAndPeerToOwner[peer] = msg.sender;
+        require(hasEnteredMatryx[msg.sender] == false);
+        hasEnteredMatryx[msg.sender] = true;
     }
 
-    function isPeer(address _peerAddress) public view returns (bool)
+    function hasEnteredMatryx(address _sender) public view returns (bool)
     {
-        return peerExists[_peerAddress];
-    }
-
-    function hasPeer(address _sender) public view returns (bool)
-    {
-        return (ownerToPeerAndPeerToOwner[_sender] != 0x0);
-    }
-
-    function peerExistsAndOwnsSubmission(address _peer, address _reference) public view returns (bool)
-    {
-        bool isAPeer = peerExists[_peer];
-        bool referenceIsSubmission = submissionExists[_reference];
-        bool peerOwnsSubmission = addressToOwnsSubmission[ownerToPeerAndPeerToOwner[_peer]][_reference];
-
-        return isAPeer && referenceIsSubmission && peerOwnsSubmission;
-    }
-
-    function peerAddress(address _sender) public view returns (address)
-    {
-        return ownerToPeerAndPeerToOwner[_sender];
+        return (hasEnteredMatryx[_sender]);
     }
 
     function isSubmission(address _submissionAddress) public view returns (bool)

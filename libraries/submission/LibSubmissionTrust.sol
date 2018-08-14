@@ -4,7 +4,6 @@ pragma experimental ABIEncoderV2;
 import "../../libraries/math/SafeMath128.sol";
 import "../../libraries/math/SafeMath.sol";
 import "../../libraries/submission/LibSubmission.sol";
-import "../../interfaces/IMatryxPeer.sol";
 import "../../interfaces/IMatryxSubmission.sol";
 import "../../interfaces/IMatryxPlatform.sol";
 
@@ -37,10 +36,12 @@ library LibSubmissionTrust
 
             if(trustData.addressToReferenceInfo[_references[i]].flagged)
             {
-                address referenceAuthor = IMatryxSubmission(_references[i]).getAuthor();
-                // If this testing session fails, the below line is the culprit.
-                IMatryxPeer(referenceAuthor).removeMissingReferenceFlag(this, _references[i]);
-                cleanAuthorTrust(trustData, referenceAuthor, _references[i]);
+                //TODO - Move peer functions into platform, re-write reputation system
+
+                // address referenceOwner = IMatryxSubmission(_references[i]).getOwner();
+                // // If this testing session fails, the below line is the culprit.
+                // IMatryxPlatform(platformAddress).removeMissingReferenceFlag(this, _references[i]);
+                // cleanAuthorTrust(trustData, referenceOwner, _references[i]);
             }
         }
 
@@ -52,43 +53,44 @@ library LibSubmissionTrust
     /// @param  _reference Missing reference in this submission.
     function flagMissingReference(LibSubmission.TrustData storage trustData, address _reference) public
     {
-        require(trustData.addressToReferenceInfo[_reference].exists == false);
-        require(trustData.addressToReferenceInfo[_reference].flagged == false);
+        //TODO - Move peer functions into platform, re-write reputation system
 
-        // Update state variables regarding the missing reference
-        trustData.missingReferences.push(_reference);
-        trustData.missingReferenceToIndex[_reference] = LibSubmission.uint128_optional(true, uint128(trustData.missingReferences.length)-1);
-        trustData.addressToReferenceInfo[_reference].flagged = true;
+        // require(trustData.addressToReferenceInfo[_reference].exists == false);
+        // require(trustData.addressToReferenceInfo[_reference].flagged == false);
 
-        // Update submission reputation state variables
-        IMatryxPeer peer = IMatryxPeer(msg.sender);
-        uint128 peersReputation = peer.getReputation();
-        uint128 originalTrust = trustData.approvalTrust;
+        // // Update state variables regarding the missing reference
+        // trustData.missingReferences.push(_reference);
+        // trustData.missingReferenceToIndex[_reference] = LibSubmission.uint128_optional(true, uint128(trustData.missingReferences.length)-1);
+        // trustData.addressToReferenceInfo[_reference].flagged = true;
 
-        if(trustData.referenceStatsByAuthor[msg.sender].numberMissing == 0)
-        {
-            trustData.approvingPeers.push(msg.sender);
-        }
-        else
-        {
-            trustData.approvalTrust = trustData.approvalTrust.sub(trustData.authorToApprovalTrustGiven[msg.sender]);
-            trustData.totalPossibleTrust = trustData.totalPossibleTrust.sub(trustData.addressToReferenceInfo[_reference].authorReputation);
-        }
+        // // Update submission reputation state variables
+        // uint128 reputation = getReputation(msg.sender);
+        // uint128 originalTrust = trustData.approvalTrust;
 
-        trustData.referenceStatsByAuthor[msg.sender].numberMissing = uint32(uint128(trustData.referenceStatsByAuthor[msg.sender].numberMissing).add(1));
+        // if(trustData.referenceStatsByAuthor[msg.sender].numberMissing == 0)
+        // {
+        //     trustData.approvingPeers.push(msg.sender);
+        // }
+        // else
+        // {
+        //     trustData.approvalTrust = trustData.approvalTrust.sub(trustData.authorToApprovalTrustGiven[msg.sender]);
+        //     trustData.totalPossibleTrust = trustData.totalPossibleTrust.sub(trustData.addressToReferenceInfo[_reference].authorReputation);
+        // }
 
-        uint128 normalizedProportionOfReferenceApprovals = peer.getReferenceProportion(this);
-        uint128 trustToAdd = peersReputation.mul(normalizedProportionOfReferenceApprovals);
-        trustToAdd = trustToAdd.div(1*10**18);
-        trustData.authorToApprovalTrustGiven[msg.sender] = trustToAdd;
-        trustData.approvalTrust = trustData.approvalTrust.add(trustToAdd);
-        trustData.addressToReferenceInfo[_reference].authorReputation = peersReputation;
-        trustData.totalPossibleTrust = trustData.totalPossibleTrust.add(peersReputation);
-        // Store the difference in reputation that flagging this reference caused to this submission.
-        // We may need this value if this flag is ever revoked by the trust-detracting peer.
-        trustData.addressToReferenceInfo[_reference].negativeReputationEffect = originalTrust.sub(trustData.approvalTrust);
+        // trustData.referenceStatsByAuthor[msg.sender].numberMissing = uint32(uint128(trustData.referenceStatsByAuthor[msg.sender].numberMissing).add(1));
 
-        trustData.totalReferenceCount = trustData.totalReferenceCount.add(1);
+        // uint128 normalizedProportionOfReferenceApprovals = msg.sender.getReferenceProportion(this);
+        // uint128 trustToAdd = reputation.mul(normalizedProportionOfReferenceApprovals);
+        // trustToAdd = trustToAdd.div(1*10**18);
+        // trustData.authorToApprovalTrustGiven[msg.sender] = trustToAdd;
+        // trustData.approvalTrust = trustData.approvalTrust.add(trustToAdd);
+        // trustData.addressToReferenceInfo[_reference].authorReputation = reputation;
+        // trustData.totalPossibleTrust = trustData.totalPossibleTrust.add(reputation);
+        // // Store the difference in reputation that flagging this reference caused to this submission.
+        // // We may need this value if this flag is ever revoked by the trust-detracting peer.
+        // trustData.addressToReferenceInfo[_reference].negativeReputationEffect = originalTrust.sub(trustData.approvalTrust);
+
+        // trustData.totalReferenceCount = trustData.totalReferenceCount.add(1);
     }
 
     /// @dev    Called by the owner of _reference to remove a missing reference flag placed on a reference
@@ -96,16 +98,18 @@ library LibSubmissionTrust
     /// @param _reference Reference previously marked by peer as missing.
     function removeMissingReferenceFlag(LibSubmission.TrustData storage trustData, address _reference) public
     {
-        //Ensure that this reference was previously flagged as missing (MatryxSubmission)
-        require(trustData.addressToReferenceInfo[_reference].flagged == true);
+        //TODO - Move peer functions into platform, re-write reputation system
 
-        trustData.missingReferenceToIndex[_reference].exists = false;
-        trustData.addressToReferenceInfo[_reference].flagged = false;
-        delete trustData.missingReferences[trustData.missingReferenceToIndex[_reference].value];
+        // //Ensure that this reference was previously flagged as missing (MatryxSubmission)
+        // require(trustData.addressToReferenceInfo[_reference].flagged == true);
 
-        trustData.referenceStatsByAuthor[msg.sender].numberMissing = uint32(uint128(trustData.referenceStatsByAuthor[msg.sender].numberMissing).sub(1));
+        // trustData.missingReferenceToIndex[_reference].exists = false;
+        // trustData.addressToReferenceInfo[_reference].flagged = false;
+        // delete trustData.missingReferences[trustData.missingReferenceToIndex[_reference].value];
 
-        trustData.approvalTrust = trustData.approvalTrust.add(trustData.addressToReferenceInfo[_reference].negativeReputationEffect);
-        trustData.authorToApprovalTrustGiven[msg.sender] = trustData.authorToApprovalTrustGiven[msg.sender].add(trustData.addressToReferenceInfo[_reference].negativeReputationEffect);
+        // trustData.referenceStatsByAuthor[msg.sender].numberMissing = uint32(uint128(trustData.referenceStatsByAuthor[msg.sender].numberMissing).sub(1));
+
+        // trustData.approvalTrust = trustData.approvalTrust.add(trustData.addressToReferenceInfo[_reference].negativeReputationEffect);
+        // trustData.authorToApprovalTrustGiven[msg.sender] = trustData.authorToApprovalTrustGiven[msg.sender].add(trustData.addressToReferenceInfo[_reference].negativeReputationEffect);
     }
 }

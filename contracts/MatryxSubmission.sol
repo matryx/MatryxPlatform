@@ -10,7 +10,6 @@ import "../libraries/LibEnums.sol";
 import "../libraries/submission/LibSubmission.sol";
 import "../libraries/submission/LibSubmissionTrust.sol";
 import "../interfaces/IMatryxToken.sol";
-import "../interfaces/IMatryxPeer.sol";
 import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
 import "../interfaces/IMatryxRound.sol";
@@ -35,8 +34,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     LibSubmission.TrustData trustData;
     LibSubmission.FileDownloadTracking downloadData;
 
-    address author;
-
     uint256 one = 10**18;
 
     constructor(address _owner, address _platformAddress, address _tournamentAddress, address _roundAddress, LibConstruction.SubmissionData _submissionData) public
@@ -47,7 +44,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
         data = _submissionData;
         owner = _owner;
-        author = IMatryxPlatform(platformAddress).peerAddress(_owner);
 
         data.timeSubmitted = now;
         data.timeUpdated = now;
@@ -90,14 +86,8 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         _;
     }
 
-    modifier onlyPeer()
-    {
-        require(IMatryxPlatform(platformAddress).isPeer(msg.sender));
-        _;
-    }
-
-    modifier onlyHasPeer() {
-        require(IMatryxPlatform(platformAddress).hasPeer(msg.sender));
+    modifier onlyHasEnteredMatryx() {
+        require(IMatryxPlatform(platformAddress).hasEnteredMatryx(msg.sender));
         _;
     }
 
@@ -153,6 +143,10 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         return roundAddress;
     }
 
+    function getSubmissionOwner() public view returns (address) {
+        return owner;
+    }
+
     function isAccessible(address _requester) public view returns (bool)
     {
         IMatryxRound round = IMatryxRound(roundAddress);
@@ -168,7 +162,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         // TODO: think about next steps (encryption)
         bool roundIsClosed = IMatryxRound(roundAddress).getState() >= uint256(LibEnums.RoundState.Closed);
 
-        return isPlatform || isRound || ownsThisSubmission || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester) || roundIsClosed;
+        return isPlatform || isRound || ownsThisSubmission || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isSubmission(_requester) || roundIsClosed;
     }
 
     function getData() public view whenAccessible(msg.sender) returns(LibConstruction.SubmissionData _data) {
@@ -185,10 +179,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
     function getTitle() public view whenAccessible(msg.sender) returns(bytes32[3]) {
         return data.title;
-    }
-
-    function getAuthor() public view whenAccessible(msg.sender) returns(address) {
-        return author;
     }
 
     function getDescriptionHash() public view whenAccessible(msg.sender) returns (bytes32[2]) {
@@ -252,7 +242,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     * Setter Methods
     */
 
-    function unlockFile() public onlyHasPeer atLeastInReview {
+    function unlockFile() public onlyHasEnteredMatryx atLeastInReview {
         downloadData.permittedToViewFile[msg.sender] = true;
         downloadData.allPermittedToViewFile.push(msg.sender);
     }
@@ -286,7 +276,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @dev 	Called by the owner of _reference when this submission does not list _reference
     /// 		as a reference.
     /// @param  _reference Missing reference in this submission.
-    function flagMissingReference(address _reference) public onlyPeer
+    function flagMissingReference(address _reference) public onlyHasEnteredMatryx
     {
         LibSubmissionTrust.flagMissingReference(trustData, _reference);
     }
@@ -294,7 +284,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /// @dev 			  Called by the owner of _reference to remove a missing reference flag placed on a reference
     ///		 			  as missing.
     /// @param _reference Reference previously marked by peer as missing.
-    function removeMissingReferenceFlag(address _reference) public onlyPeer
+    function removeMissingReferenceFlag(address _reference) public onlyHasEnteredMatryx
     {
         LibSubmissionTrust.removeMissingReferenceFlag(trustData, _reference);
     }
