@@ -197,13 +197,6 @@ contract JMatryxSubmission {
                 require(or(or(eq(sload(owner_slot), caller()), mload(0)), eq(sload(round_slot), caller()))) // require msg.sender == owner or contributor or round
             }
 
-/*
-            function onlyPeer(offset) {
-                mstore(0, mul(0x3e44cf78, offset)) // MatryxPlatform.isPeer
-                mstore(0x04, caller())
-                require(call(gas(), sload(platform_slot), 0, 0, 0x24, 0, 0x20))
-            }
-*/
             function onlyHasEnteredMatryx(offset) {
                 mstore(0x0, mul(0x7a348ab3, offset))  // hasEnteredMatryx(address)
                 mstore(0x04, caller())

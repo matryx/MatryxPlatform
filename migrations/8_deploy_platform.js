@@ -2,7 +2,6 @@ var SafeMath = artifacts.require("../libraries/math/SafeMath.sol");
 var Strings = artifacts.require("../libraries/strings/strings.sol");
 var LibTournamentEntrantMethods = artifacts.require("../libraries/tournament/LibTournamentEntrantMethods.sol");
 var MatryxPlatform = artifacts.require("MatryxPlatform");
-var MatryxPeerFactory = artifacts.require("MatryxPeerFactory");
 var MatryxTournamentFactory = artifacts.require("MatryxTournamentFactory");
 var MatryxSubmissionFactory = artifacts.require("MatryxSubmissionFactory");
 var { tokenAddress } = require('../truffle/network');

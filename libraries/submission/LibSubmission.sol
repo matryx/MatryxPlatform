@@ -28,30 +28,26 @@ library LibSubmission
 
     struct TrustData
     {
-        uint128 approvalTrust;
         uint256 totalPossibleTrust;
-        uint256 approvedReferenceCount;
         uint256 totalReferenceCount;
-        address[] approvingPeers;
         address[] missingReferences;
         mapping(address=>uint128_optional) missingReferenceToIndex;
         mapping(address=>ReferencedSubmissionInfo) addressToReferenceInfo;
-        mapping(address=>ReferencedAuthorStats) referenceStatsByAuthor;
-        mapping(address=>uint128) authorToApprovalTrustGiven;
+        mapping(address=>ReferencedOwnerStats) referenceStatsByOwner;
+        mapping(address=>uint128) referencedOwnerToTrustGiven;
     }
 
     struct ReferencedSubmissionInfo
     {
         uint32 index;
         bool exists;
-        bool approved;
         bool flagged;
         uint128 negativeReputationEffect;
         uint128 positiveReputationEffect;
-        uint128 authorReputation;
+        uint128 ownerReputation;
     }
 
-    struct ReferencedAuthorStats
+    struct ReferencedOwnerStats
     {
         uint128 numberMissing;
         uint128 numberApproved;
@@ -329,11 +325,11 @@ library LibSubmission
             uint256 remainingReward = submissionReward.sub(transferAmount).sub(rewardData.amountTransferredToReferences);
             if(remainingReward == 0) return;
 
-            uint256 weight = (one).div(trustData.approvedReferenceCount);
+            uint256 weight = (one).div(trustData.totalReferenceCount);
             uint256 weightedReward = weight.mul(remainingReward).div(one);
             for(uint j = 0; j < contributorsAndReferences.references.length; j++)
             {
-                if(trustData.addressToReferenceInfo[contributorsAndReferences.references[j]].approved)
+                if(trustData.addressToReferenceInfo[contributorsAndReferences.references[j]].exists)
                 {
                     // TODO: Revisit with trust system
                     // uint256 weight = (addressToReferenceInfo[contributorsAndReferences.references[j]].authorReputation).mul(10**18).div(totalPossibleTrust);

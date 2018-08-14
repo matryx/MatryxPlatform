@@ -12,17 +12,19 @@ library LibSubmissionTrust
     using SafeMath for uint256;
     using SafeMath128 for uint128;
 
-    function cleanAuthorTrust(LibSubmission.TrustData storage trustData, address _referenceAuthor, address _reference) internal
+    function cleanSubmissionOwnerTrust(LibSubmission.TrustData storage trustData, address _owner, address _reference) internal
     {
+        // TODO - Move peer functions into platform, re-write reputation system
+
         // If there are no more approved or flagged references by this author,
         // remove their influence over our reputation (subtract their reputation from
         // this submission's total possible trust value)
-        uint128 numberApprovedOrMissing = uint128(trustData.referenceStatsByAuthor[_referenceAuthor].numberApproved).add(uint128(trustData.referenceStatsByAuthor[_referenceAuthor].numberMissing));
-        if(numberApprovedOrMissing == 0)
-        {
-            trustData.totalPossibleTrust = trustData.totalPossibleTrust.sub(trustData.addressToReferenceInfo[_reference].authorReputation);
-            trustData.addressToReferenceInfo[_reference].authorReputation = 0;
-        }
+        // uint128 numberApprovedOrMissing = uint128(trustData.referenceStatsByAuthor[_owner].numberApproved).add(uint128(trustData.referenceStatsByAuthor[_owner].numberMissing));
+        // if(numberApprovedOrMissing == 0)
+        // {
+        //     trustData.totalPossibleTrust = trustData.totalPossibleTrust.sub(trustData.addressToReferenceInfo[_reference].authorReputation);
+        //     trustData.addressToReferenceInfo[_reference].authorReputation = 0;
+        // }
     }
 
     function addReferences(address platformAddress, LibConstruction.ContributorsAndReferences storage contributorsAndReferences, LibSubmission.TrustData storage trustData, address[] _references) public
@@ -41,7 +43,7 @@ library LibSubmissionTrust
                 // address referenceOwner = IMatryxSubmission(_references[i]).getOwner();
                 // // If this testing session fails, the below line is the culprit.
                 // IMatryxPlatform(platformAddress).removeMissingReferenceFlag(this, _references[i]);
-                // cleanAuthorTrust(trustData, referenceOwner, _references[i]);
+                // cleanSubmissionOwnerTrust(trustData, referenceOwner, _references[i]);
             }
         }
     }

@@ -182,7 +182,7 @@ contract JMatryxTournament {
                 require(isRound(caller()))
             }
 
-            function onlyPeerLinked(_sender, offset) {
+            function hasEnteredMatryx(_sender, offset) {
                 let platform := sload(platform_slot)
                 mstore(0, mul(0x7a348ab3, offset)) // hasEnteredMatryx(address)
                 mstore(0x04, caller())
@@ -606,7 +606,7 @@ contract JMatryxTournament {
             // createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs)
             function createSubmission(offset) {
                 onlyEntrant()
-                onlyPeerLinked(caller(), offset)
+                hasEnteredMatryx(caller(), offset)
                 ifRoundHasFunds(offset)
                 whileTournamentOpen(offset)
 
