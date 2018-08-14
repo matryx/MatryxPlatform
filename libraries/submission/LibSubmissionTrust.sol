@@ -44,8 +44,6 @@ library LibSubmissionTrust
                 // cleanAuthorTrust(trustData, referenceOwner, _references[i]);
             }
         }
-
-        // IMatryxPlatform(platformAddress).handleReferenceRequestsForSubmission(this, _references);
     }
 
     /// @dev    Called by the owner of _reference when this submission does not list _reference

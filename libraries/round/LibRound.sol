@@ -101,7 +101,6 @@ library LibRound
         require(_roundData.start > _currentRoundEndTime);
         require(_roundData.end > _roundData.start);
         require(_roundData.reviewPeriodDuration > 0);
-        require(_roundData.end.sub(_roundData.start) > 0);
 
         data.start = _roundData.start;
         data.end = _roundData.end;

@@ -1,7 +1,6 @@
 pragma solidity ^0.4.18;
 pragma experimental ABIEncoderV2;
 
-
 import "../libraries/math/SafeMath.sol";
 import "../libraries/math/SafeMath128.sol";
 import "../libraries/strings/strings.sol";
@@ -9,7 +8,10 @@ import "../libraries/LibConstruction.sol";
 import "../libraries/LibEnums.sol";
 import "../libraries/submission/LibSubmission.sol";
 import "../libraries/submission/LibSubmissionTrust.sol";
+<<<<<<< HEAD
 import "../interfaces/IMatryxToken.sol";
+=======
+>>>>>>> d2b955ccec2a4cb79cc5aac57318266e82482967
 import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
 import "../interfaces/IMatryxRound.sol";
@@ -23,6 +25,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     using strings for *;
 
     // Parent identification
+    address private owner;
     address private platformAddress;
     address private tournamentAddress;
     address private roundAddress;
@@ -59,11 +62,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     * Modifiers
     */
 
-    // modifier onlyAuthor() {
-    //    	require(msg.sender == author);
-    //    	_;
-    //  	}
-
     modifier onlyPlatform() {
         require(msg.sender == platformAddress);
         _;
@@ -73,12 +71,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         require(msg.sender == tournamentAddress);
         _;
     }
-
-    // modifier onlyRound()
-    // {
-    // 	require(msg.sender == roundAddress);
-    // 	_;
-    // }
 
     modifier ownerContributorOrRound()
     {
@@ -125,15 +117,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     /*
     * Getter Methods
     */
-
-    function() public {
-        assembly {
-            mstore(0, 0xdead)
-            log0(0x1e, 0x02)
-            mstore(0, calldataload(0x0))
-            log0(0, 0x04)
-        }
-    }
 
     function getTournament() public view returns (address) {
         return tournamentAddress;
@@ -266,12 +249,6 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     {
         rewardData.winnings = rewardData.winnings.add(_amount);
     }
-
-    // // Debug function. ?MAYBEDO:Delete
-    // function addressIsFlagged(address _reference) public view returns (bool, bool)
-    // {
-    // 	return (addressToReferenceInfo[_reference].flagged, missingReferenceToIndex[_reference].exists);
-    // }
 
     /// @dev 	Called by the owner of _reference when this submission does not list _reference
     /// 		as a reference.

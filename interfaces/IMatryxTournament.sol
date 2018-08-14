@@ -10,6 +10,7 @@ interface IMatryxTournament
     function getPlatform() public view returns (address _platformAddress);
     function getTokenAddress() public view returns (address _matryxTokenAddress);
 
+    function removeSubmission(address _submissionAddress, address _author) public;
     function isEntrant(address _address) public view returns (bool _isEntrant);
     function isRound(address _address) public view returns (bool _isRound);
 

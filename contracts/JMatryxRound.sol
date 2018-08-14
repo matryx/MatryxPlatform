@@ -75,7 +75,7 @@ contract JMatryxRound {
             // Helper Methods
             // -------------------------------
             /// @dev Gets nth argument from calldata
-            function arg(n) -> a {
+            function arg(n)->a {
                 a := calldataload(add(0x04, mul(n, 0x20)))
             }
 
@@ -95,13 +95,13 @@ contract JMatryxRound {
             }
 
             /// @dev SafeMath subtraction
-            function safesub(a, b) -> c {
+            function safesub(a, b)->c {
                 require(or(lt(b, a), eq(b, a)))
                 c := sub(a, b)
             }
 
             /// @dev SafeMath addition
-            function safeadd(a, b) -> c {
+            function safeadd(a, b)->c {
                 c := add(a, b)
                 require(or(eq(a, c), lt(a, c)))
             }
@@ -152,7 +152,7 @@ contract JMatryxRound {
             }
 
             // function getState() public view returns (uint256)
-            function getState(offset) -> s {
+            function getState(offset)->s {
                 let ptr := mload(0x40)
                 // getState(address,LibConstruction.RoundData storage, LibRound.SelectWinnersData storage,LibRound.SubmissionsData storage)
                 mstore(ptr, mul(0x05b00ec1, offset))
@@ -207,12 +207,12 @@ contract JMatryxRound {
             }
 
             // function getRemainingBounty() public view returns (uint256)
-            function getRemainingBounty(offset) -> r {
+            function getRemainingBounty(offset)->r {
                 r := getBalance(offset, address())
             }
 
             // getTokenAddress() public view returns (address _matryxTokenAddress)
-            function getTokenAddress(offset) -> token {
+            function getTokenAddress(offset)->token {
                 mstore(0, mul(0x10fe9ae8, offset)) // getTokenAddress()
 
                 // call platform.getTokenAddress and put in 0
@@ -247,7 +247,7 @@ contract JMatryxRound {
             }
 
             // function getBalance(address _submissionAddress) public view returns (uint256)
-            function getBalance(offset, account) -> b {
+            function getBalance(offset, account)->b {
                 let token := getTokenAddress(offset)
                 mstore(0x0, mul(0x70a08231, offset)) // balanceOf(address)
                 mstore(0x04, account)
@@ -291,7 +291,7 @@ contract JMatryxRound {
             }
 
             // function numberOfSubmissions() public view returns (uint256)
-            function numberOfSubmissions() -> n {
+            function numberOfSubmissions()->n {
                 n := sload(submissionsData_slot) // submissionsData.submissions
             }
 

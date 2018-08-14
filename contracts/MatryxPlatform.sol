@@ -21,11 +21,13 @@ contract MatryxPlatform is Ownable {
     using SafeMath128 for uint128;
 
     // TODO: condense and put in structs
+    // Matryx Addresses
     address public matryxTokenAddress;
     address public matryxTournamentFactoryAddress;
     address public matryxSubmissionFactoryAddress;
     address public matryxRoundLibAddress;
 
+    //Contract Signatures to addresses
     mapping(bytes32=>address) private contracts;
     mapping(address=>bool) public hasEnteredMatryx;
 
@@ -45,13 +47,6 @@ contract MatryxPlatform is Ownable {
     uint256_optional submissionGratitude = uint256_optional({exists: true, value: 2*10**17});
 
     LibCategories.CategoriesData categoriesData;
-
-    constructor(address _matryxTokenAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress) public
-    {
-        matryxTokenAddress = _matryxTokenAddress;
-        matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
-        matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
-    }
 
     /*
     * Structs
@@ -78,6 +73,13 @@ contract MatryxPlatform is Ownable {
     event UserEnteredTournament(address _entrant, address _tournamentAddress);
     event QueryID(string queryID);
 
+    constructor(address _matryxTokenAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress) public
+    {
+        matryxTokenAddress = _matryxTokenAddress;
+        matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
+        matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
+    }
+
     /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
     /// @param _finalRoundNumber Index of the round containing the winning submission.
     function invokeTournamentClosedEvent(uint256 _finalRoundNumber, uint256 _MTXReward) public onlyTournament
@@ -88,15 +90,12 @@ contract MatryxPlatform is Ownable {
     /*
     * Modifiers
     */
-
-    modifier onlyTournament
-    {
+    modifier onlyTournament {
         require(tournamentExists[msg.sender]);
         _;
     }
 
-    modifier onlyTournamentOrTournamentLib
-    {
+    modifier onlyTournamentOrTournamentLib {
         bool isTournament = tournamentExists[msg.sender];
         bool isTournamentLib = getContractAddress(keccak256("LibTournamentEntrantMethods")) == msg.sender;
 
@@ -104,8 +103,7 @@ contract MatryxPlatform is Ownable {
         _;
     }
 
-    modifier onlySubmission
-    {
+    modifier onlySubmission{
         require(submissionExists[msg.sender]);
         _;
     }
@@ -116,14 +114,12 @@ contract MatryxPlatform is Ownable {
         _;
     }
 
-    modifier onlyTournamentOwnerOrPlatform(address _tournamentAddress)
-    {
+    modifier onlyTournamentOwnerOrPlatform(address _tournamentAddress){
         require(msg.sender == _tournamentAddress || entrantToOwnsTournament[msg.sender][_tournamentAddress] || msg.sender == address(this));
         _;
     }
 
-    modifier notOwner(address _tournamentAddress)
-    {
+    modifier notOwner(address _tournamentAddress) {
         require(entrantToOwnsTournament[msg.sender][_tournamentAddress] == false);
         _;
     }
@@ -135,41 +131,45 @@ contract MatryxPlatform is Ownable {
     /// @dev Sets an address for a contract the platform should know about.
     /// @param _nameHash Keccak256 hash of the name of the contract to give an address to.
     /// @param _contractAddress Address to be assigned for the given contract name.
-    function setContractAddress(bytes32 _nameHash, address _contractAddress) public onlyOwner
-    {
+    function setContractAddress(bytes32 _nameHash, address _contractAddress) public onlyOwner {
         contracts[_nameHash] = _contractAddress;
     }
 
-
-    function setTokenAddress(address _matryxTokenAddress) public onlyOwner
-    {
+    /// @dev explicitly set the MatryxToken address
+    /// @param _matryxTokenAddress address of Matryx Token
+    function setTokenAddress(address _matryxTokenAddress) public onlyOwner {
         matryxTokenAddress = _matryxTokenAddress;
     }
 
     /// @dev Gets the address of a contract the platform knows about.
     /// @param _nameHash Keccak256 hash of the name of the contract to look for.
     /// @return Address of the contract with the designated name.
-    function getContractAddress(bytes32 _nameHash) public returns (address contractAddress)
-    {
+    function getContractAddress(bytes32 _nameHash) public returns (address contractAddress) {
         return contracts[_nameHash];
     }
 
-    function updateUsersTournaments(address _owner, address _tournament) internal
-    {
+    /// @dev Updates tournament ownership data.
+    /// @param _owner address of the owner.
+    /// @param _tournament address of the tournament.
+    function updateUsersTournaments(address _owner, address _tournament) internal {
         ownerToTournamentArray[_owner].push(_tournament);
         entrantToOwnsTournament[_owner][_tournament] = true;
     }
 
-    function updateSubmissions(address _owner, address _submission) public onlyTournamentOrTournamentLib
-    {
+    /// @dev Updates submission mappings.
+    /// @param _owner owner of the submission.
+    /// @param _submission the submission address
+    function updateSubmissions(address _owner, address _submission) public onlyTournamentOrTournamentLib {
         ownerToSubmissionToSubmissionIndex[_owner][_submission] = uint256_optional({exists:true, value:ownerToSubmissionArray[_owner].length});
         ownerToSubmissionArray[_owner].push(_submission);
         addressToOwnsSubmission[_owner][_submission] = true;
         submissionExists[_submission] = true;
     }
 
-    function removeSubmission(address _submissionAddress, address _tournamentAddress) public returns (bool)
-    {
+    /// @dev removes a submission from a tournament
+    /// @param _submissionAddress address of a particular MatryxSubmission
+    /// @param _tournamentAddress address of a particular MatryxTournament
+    function removeSubmission(address _submissionAddress, address _tournamentAddress) public {
         require(tournamentExists[_tournamentAddress]);
         require(submissionExists[_submissionAddress]);
         require(addressToOwnsSubmission[msg.sender][_submissionAddress]);
@@ -181,8 +181,7 @@ contract MatryxPlatform is Ownable {
         delete ownerToSubmissionArray[owner][submissionIndex];
         delete ownerToSubmissionToSubmissionIndex[owner][_submissionAddress];
 
-        //IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, owner);
-        return true;
+        IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, owner);
     }
 
     function addTournamentToCategory(address _tournamentAddress, bytes32 _category) internal onlyTournamentOwnerOrPlatform(_tournamentAddress)
@@ -255,8 +254,7 @@ contract MatryxPlatform is Ownable {
     ///    reviewPeriodDuration: The amount of the tournament owner has to determine the winners of the round.
     ///    bounty: The reward for the first round's winners.
     /// @return _tournamentAddress Address of the newly created tournament.
-    function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress)
-    {
+    function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress){
         IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
         address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
 
@@ -289,16 +287,14 @@ contract MatryxPlatform is Ownable {
         return (hasEnteredMatryx[_sender]);
     }
 
-    function isSubmission(address _submissionAddress) public view returns (bool)
-    {
+    function isSubmission(address _submissionAddress) public view returns (bool){
         return submissionExists[_submissionAddress];
     }
 
     /// @dev Returns whether or not the given tournament belongs to the sender.
     /// @param _tournamentAddress Address of the tournament to check.
     /// @return _isMine Whether or not the tournament belongs to the sender.
-    function getTournament_IsMine(address _tournamentAddress) public view returns (bool _isMine)
-    {
+    function getTournament_IsMine(address _tournamentAddress) public view returns (bool _isMine) {
         require(tournamentExists[_tournamentAddress]);
         Ownable tournament = Ownable(_tournamentAddress);
         return (tournament.getOwner() == msg.sender);
@@ -312,16 +308,14 @@ contract MatryxPlatform is Ownable {
     ///                   references
     /// @param _gratitude Weight from 0 to 1 (18 decimal uint) specifying enforced submission
     ///                   gratitude
-    function setSubmissionGratitude(uint256 _gratitude) public onlyOwner
-    {
+    function setSubmissionGratitude(uint256 _gratitude) public onlyOwner {
         assert(_gratitude >= 0 && _gratitude <= (1*10**18));
         submissionGratitude = uint256_optional({exists: true, value: _gratitude});
     }
 
     event TimeStamp(uint256 time);
 
-    function getNow() public view returns (uint256)
-    {
+    function getNow() public view returns (uint256) {
         emit TimeStamp(now);
         return now;
     }
@@ -330,8 +324,7 @@ contract MatryxPlatform is Ownable {
     * Getter Methods
     */
 
-    function getTokenAddress() public view returns (address)
-    {
+    function getTokenAddress() public view returns (address) {
         return matryxTokenAddress;
     }
 

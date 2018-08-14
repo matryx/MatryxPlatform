@@ -1,8 +1,6 @@
-const ethers = require('ethers')
 const chalk = require('chalk')
 
-const { setup, getMinedTx, stringToBytes32, stringToBytes, Contract } = require('./utils')
-const sleep = ms => new Promise(done => setTimeout(done, ms))
+const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('./utils')
 
 let MatryxTournament, MatryxRound, MatryxSubmission, platform, token, wallet
 let timeouts = []
@@ -105,9 +103,9 @@ const createSubmission = async (tournament, accountNumber) => {
   }
 
   const contribsAndRefs = {
-    contributors: new Array(0).fill(0).map(r => genAddress()),
-    contributorRewardDistribution: new Array(0).fill(1),
-    references: new Array(0).fill(0).map(r => genAddress())
+    contributors: new Array(10).fill(0).map(r => genAddress()),
+    contributorRewardDistribution: new Array(10).fill(1),
+    references: new Array(10).fill(0).map(r => genAddress())
   }
 
   let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
@@ -196,22 +194,22 @@ module.exports = async exit => {
     await init()
     let roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 15,
-      reviewPeriodDuration: 15,
+      end: Math.floor(Date.now() / 1000) + 420,
+      reviewPeriodDuration: 120,
       bounty: web3.toWei(3),
       closed: false
     }
     const tournamentCreator = 0
     const tournament = await createTournament(web3.toWei(10), roundData, tournamentCreator)
     const submission = await createSubmission(tournament, 1)
-    // await updateSubmission(submission)
-    // await createSubmission(tournament, 2)
-    // await createSubmission(tournament, 3)
+    await updateSubmission(submission)
+    await createSubmission(tournament, 2)
+    await createSubmission(tournament, 3)
 
     roundData = {
-      start: Math.floor(Date.now() / 1000) + 20,
-      end: Math.floor(Date.now() / 1000) + 35,
-      reviewPeriodDuration: 15,
+      start: Math.floor(Date.now() / 1000) + 420,
+      end: Math.floor(Date.now() / 1000) + 420,
+      reviewPeriodDuration: 120,
       bounty: web3.toWei(3),
       closed: false
     }
@@ -240,7 +238,7 @@ module.exports = async exit => {
     submissions = await logSubmissions(tournament)
     await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), roundData, 2)
     timeouts.forEach(t => clearTimeout(t))
-    // await logSubmissions(tournament)
+    await logSubmissions(tournament)
     await waitUntilClose(tournament)
   } catch (err) {
     console.log(err.message)

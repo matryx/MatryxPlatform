@@ -16,8 +16,8 @@ library LibTournamentAdminMethods
     using SafeMath for uint256;
     using strings for *;
 
-    event NewRound(uint256 _startTime, uint256 _endTime, uint256 _reviewPeriodDuration, address _roundAddress, uint256 _roundNumber);
     event RoundWinnersChosen(address[] _submissionAddresses);
+    event NewRound(uint256 start, uint256 end, uint256 ReviewPeriodDuration, address roundAddress, uint256 roundNumber);
 
     function update(LibConstruction.TournamentData storage self, LibConstruction.TournamentModificationData tournamentData, address platformAddress) public
     {
@@ -45,32 +45,33 @@ library LibTournamentAdminMethods
         }
     }
 
-    /// @dev Chooses the winner(s) of the current round. If this is the last round,
-    //       this method will also close the tournament.
+    /// @dev Chooses the winner(s) of the current round.
     /// @param stateData State data for the tournament
     /// @param _selectWinnersData Struct containing winning submission information
     function selectWinners(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public
     {
-        // Round must be in review or have winners to close
+        // Round must be in review
         (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 roundState = uint256(IMatryxRound(currentRoundAddress).getState());
-        require(roundState == uint256(LibEnums.RoundState.InReview) || roundState == uint256(LibEnums.RoundState.HasWinners), "Round is not in review or winners have not been chosen.");
+        require(roundState == uint256(LibEnums.RoundState.InReview), "Round is not in review.");
         uint256 remainingBalance = IMatryxTournament(this).getBalance();
+
         // Event to notify web3 of the winning submission address
         emit RoundWinnersChosen(_selectWinnersData.winningSubmissions);
         IMatryxRound(currentRoundAddress).selectWinningSubmissions(_selectWinnersData, _roundData);
+
+        // Close the tournament if the tournament owner chooses to
         if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.CloseTournament))
         {
             closeTournament(stateData, platformAddress, matryxTokenAddress, remainingBalance, currentRoundAddress);
         }
     }
 
-    /// @dev Edits the next round that is created during the previous rounds ChooseWinningSubmissions
+    /// @dev Edits the next round that is created during the previous round's ChooseWinningSubmissions
     /// @param stateData State data for the tournament (see above)
     /// @param _roundData Incoming new round data
     function editGhostRound(LibTournamentStateManagement.StateData storage stateData, LibConstruction.RoundData _roundData, address matryxTokenAddress) public
     {
-
         (uint256 ghostRoundIndex, address ghostRoundAddress) = LibTournamentStateManagement.getGhostRound(stateData);
         if(ghostRoundAddress != 0x0)
         {
@@ -82,6 +83,7 @@ library LibTournamentAdminMethods
                 stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(addAmount);
                 require(IMatryxToken(matryxTokenAddress).transfer(ghostRoundAddress, addAmount));
             }
+
             else if(_roundData.bounty < ghostRoundBounty)
             {
                 // Have ghost round transfer to the tournament
@@ -98,6 +100,7 @@ library LibTournamentAdminMethods
     function allocateMoreToRound(LibTournamentStateManagement.StateData storage stateData, uint256 _mtxAllocation, address matryxTokenAddress) public
     {
         require(_mtxAllocation <= IMatryxTournament(this).getBalance());
+
         (, address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 currentRoundState = IMatryxRound(currentRoundAddress).getState();
         require(
@@ -110,15 +113,15 @@ library LibTournamentAdminMethods
         IMatryxRound(currentRoundAddress).addBounty(_mtxAllocation);
     }
 
-    /// @dev This function should be called after the user selects winners for their tournament and chooses the "DoNothing" option
+    /// @dev This function should be called after the user selects winners for their tournament and chooses the "Start Next Round" option
     function jumpToNextRound(LibTournamentStateManagement.StateData storage stateData) public
     {
         (uint256 currentRoundIndex, address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         IMatryxRound(currentRoundAddress).closeRound();
-        IMatryxRound(stateData.rounds[currentRoundIndex+1]).startNow();
+        IMatryxRound(stateData.rounds[currentRoundIndex.add(1)]).startNow();
     }
 
-    /// @dev This function closes the tournament after the tournament owner selects their winners with the "DoNothing" option
+    /// @dev This function closes the tournament after the tournament owner selects their winners with the "Close Tournament" option
     function stopTournament(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress) public
     {
         uint256 remainingBalance = IMatryxTournament(this).getBalance();
@@ -144,9 +147,15 @@ library LibTournamentAdminMethods
     /// @return The new round's address.
     function createRound(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, address matryxRoundFactoryAddress, LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress)
     {
-        // only this, the tournamentFactory or rounds can call createRound
+        // Only this, the tournamentFactory or rounds can call createRound
         require(msg.sender == address(this) || msg.sender == IMatryxPlatform(platformAddress).getTournamentFactoryAddress() || stateData.isRound[msg.sender]);
         require(roundData.start < roundData.end, "Time parameters are invalid.");
+
+        // Rounds that are not created automatically must have a valid bounty
+        if(_automaticCreation == false)
+        {
+            require(IMatryxTournament(this).getBalance() >= roundData.bounty && roundData.bounty > 0);
+        }
 
         // Argument for start & duration instead of start & end
         if(roundData.start < now)
@@ -157,14 +166,7 @@ library LibTournamentAdminMethods
         }
 
         IMatryxRoundFactory roundFactory = IMatryxRoundFactory(matryxRoundFactoryAddress);
-        address newRoundAddress;
-
-        if(_automaticCreation == false)
-        {
-            require(IMatryxTournament(this).getBalance() >= roundData.bounty && roundData.bounty > 0);
-        }
-
-        newRoundAddress = roundFactory.createRound(platformAddress, this, roundData);
+        address newRoundAddress = roundFactory.createRound(platformAddress, this, roundData);
 
         // Transfer the round bounty to the round.
         // If this is the first round, the bounty is transfered to the round *by the platform in createTournament* (by tournament.sendBountyToRound)

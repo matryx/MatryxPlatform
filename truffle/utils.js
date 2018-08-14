@@ -62,6 +62,10 @@ module.exports = {
     })
   },
 
+  sleep(ms) {
+    return new Promise(done => setTimeout(done, ms))
+  },
+
   bytesToString(bytes) {
     let arr = bytes.map(b => Array.from(ethers.utils.arrayify(b)))
     let utf8 = [].concat(...arr).filter(x => x)
