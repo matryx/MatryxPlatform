@@ -485,7 +485,7 @@ contract JMatryxTournament {
 
                 let ptr := mload(0x40)
 
-                mstore(ptr, mul(0x072a4560, offset))    // allocateMoreToRound(uint256)
+                mstore(ptr, mul(0x5fd45f0b, offset))    // selector('allocateMoreToRound(LibTournamentStateManagement.StateData storage,uint256,address)')
                 mstore(add(ptr, 0x04), stateData_slot)  // stateData (slot)
                 mstore(add(ptr, 0x24), arg(0))          // _mtxAllocation
                 mstore(add(ptr, 0x44), token)           // token address
