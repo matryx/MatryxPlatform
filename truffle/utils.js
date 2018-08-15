@@ -85,6 +85,7 @@ module.exports = {
   },
 
   bytesToString(bytes) {
+    if (bytes.length && !bytes.map) bytes = [bytes]
     let arr = bytes.map(b => Array.from(ethers.utils.arrayify(b)))
     let utf8 = [].concat(...arr).filter(x => x)
     return ethers.utils.toUtf8String(utf8)
