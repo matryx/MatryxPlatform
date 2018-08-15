@@ -1,6 +1,8 @@
 const ethers = require('ethers')
 const chalk = require('chalk')
 const network = require('./network')
+var _ = require("lodash");
+var Promise = require("bluebird");
 const sleep = ms => new Promise(done => setTimeout(done, ms))
 
 function Contract(address, { abi }, accountNum = 0) {
@@ -39,6 +41,22 @@ function Contract(address, { abi }, accountNum = 0) {
 
 module.exports = {
   Contract,
+
+  assertEvent: function(contract, filter) {
+    return new Promise((resolve, reject) => {
+        var event = contract[filter.event]();
+        event.watch();
+        event.get((error, logs) => {
+            var log = _.filter(logs, filter);
+            if (log) {
+                resolve(log);
+            } else {
+                throw Error("Failed to find filtered event for " + filter.event);
+            }
+        });
+        event.stopWatching();
+    });
+},
 
   getMinedTx(msg, hash) {
     if (arguments.length == 1) {
