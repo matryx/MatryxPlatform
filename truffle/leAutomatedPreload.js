@@ -194,8 +194,6 @@ module.exports = async exit => {
     await init()
     const tournamentCreator = 0
 
-    /*
-
     let RoundNotYetOpen = {
       start: Math.floor(Date.now() / 1000) + 9999999,
       end: Math.floor(Date.now() / 1000) + 99999999,
@@ -226,8 +224,6 @@ module.exports = async exit => {
       closed: false
     }
     const tournament_c = await createTournament(web3.toWei(10), RoundOpenWithZero, tournamentCreator)
-
-    */
 
     // ----------------------------------------------------------------------------------------------
 
