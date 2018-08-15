@@ -268,9 +268,9 @@ contract MatryxTournament is Ownable, IMatryxTournament {
      * Setter Methods
      */
 
-    function update(LibConstruction.TournamentModificationData tournamentData) public onlyOwner
+    function update(LibConstruction.TournamentModificationData modData) public onlyOwner
     {
-        data.update(tournamentData, platformAddress);
+        LibTournamentAdminMethods.update(data, modData, platformAddress);
     }
 
     /*
