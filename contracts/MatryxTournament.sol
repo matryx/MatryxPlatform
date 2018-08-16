@@ -17,14 +17,14 @@ import "./Ownable.sol";
 
 /// @title Tournament - The Matryx tournament.
 /// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
-contract MatryxTournament is Ownable, IMatryxTournament {
+contract MatryxTournament is IMatryxTournament {
     using SafeMath for uint256;
     using strings for *;
     using LibTournamentAdminMethods for LibConstruction.TournamentData;
 
-    // TODO: condense and put in structs
     // TODO: Create setter for this (resume here for upgrade system.)
 
+    address public owner;
     address public platformAddress;
     address public matryxRoundFactoryAddress;
 
@@ -378,5 +378,28 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     {
         address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
         LibTournamentEntrantMethods.withdrawFromAbandoned(stateData, entryData, matryxTokenAddress);
+    }
+
+    // Ownable stuff
+
+    function getOwner() public view returns (address _owner)
+    {
+        return owner;
+    }
+
+    function isOwner(address _sender) public view returns (bool _isOwner)
+    {
+        bool senderIsOwner = (owner == _sender);
+        return senderIsOwner;
+    }
+
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner
+    {
+        require(newOwner != address(0));
+        owner = newOwner;
     }
 }

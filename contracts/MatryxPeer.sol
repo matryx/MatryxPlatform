@@ -229,14 +229,14 @@ contract MatryxPeer is Ownable {
 
         // Add 1 to the state vars keeping track of the number of
         // this peer's submissions that _submission fails to reference
-        // as well as the submission's total number of references to submissions by this peer
-        submissionToReferencesMetadata[_submissionAddress].missingReferenceCount = submissionToReferencesMetadata[_submissionAddress].missingReferenceCount.add(1);
+        // // as well as the submission's total number of references to submissions by this peer
+        // submissionToReferencesMetadata[_submissionAddress].missingReferenceCount = submissionToReferencesMetadata[_submissionAddress].missingReferenceCount.add(1);
 
-        IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
-        submission.flagMissingReference(_missingReference);
+        // IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
+        // submission.flagMissingReference(_missingReference);
 
-        address submissionOwner = submission.getSubmissionOwner();
-        submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] = giveDistrust(submissionOwner);
+        // address submissionOwner = submission.getOwner();
+        // submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] = giveDistrust(submissionOwner);
     }
 
     function getMissingReferenceCount(address _submissionAddress) public view returns (uint128, uint128)
@@ -256,20 +256,20 @@ contract MatryxPeer is Ownable {
         // Require that we've flagged the submission before.
         //require(submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] > 0);
 
-        submissionToReferencesMetadata[_submissionAddress].missingReferenceCount = submissionToReferencesMetadata[_submissionAddress].missingReferenceCount.sub(1);
-        totalTrustGiven = totalTrustGiven.add(1);
+        // submissionToReferencesMetadata[_submissionAddress].missingReferenceCount = submissionToReferencesMetadata[_submissionAddress].missingReferenceCount.sub(1);
+        // totalTrustGiven = totalTrustGiven.add(1);
 
-        IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
-        submission.removeMissingReferenceFlag(_missingReference);
+        // IMatryxSubmission submission = IMatryxSubmission(_submissionAddress);
+        // submission.removeMissingReferenceFlag(_missingReference);
 
-        address submissionOwner = submission.getSubmissionOwner();
+        // address submissionOwner = submission.getOwner();
 
-        judgedPeerToUnnormalizedTrust[submissionOwner] = judgedPeerToUnnormalizedTrust[submissionOwner].add(one_eighteenDecimal);
+        // judgedPeerToUnnormalizedTrust[submissionOwner] = judgedPeerToUnnormalizedTrust[submissionOwner].add(one_eighteenDecimal);
 
-        MatryxPeer(submissionOwner).restoreTrust(submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference]);
+        // MatryxPeer(submissionOwner).restoreTrust(submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference]);
 
-        //clean up previous distrust given
-        submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] = 0;
+        // //clean up previous distrust given
+        // submissionToReferenceToDistrustGiven[_submissionAddress][_missingReference] = 0;
     }
 
     function restoreTrust(uint128 _trustRemoved) public

@@ -12,9 +12,8 @@ import "../interfaces/IMatryxPlatform.sol";
 import "../interfaces/IMatryxTournament.sol";
 import "../interfaces/IMatryxRound.sol";
 import "../interfaces/IMatryxSubmission.sol";
-import "./Ownable.sol";
 
-contract MatryxSubmission is Ownable, IMatryxSubmission {
+contract MatryxSubmission is IMatryxSubmission {
     using SafeMath for uint256;
     using SafeMath128 for uint128;
     using SafeMath for uint32;
@@ -49,7 +48,7 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
 
         downloadData.permittedToViewFile[_owner] = true;
         downloadData.allPermittedToViewFile.push(_owner);
-        address tournamentOwner = Ownable(tournamentAddress).getOwner();
+        address tournamentOwner = IMatryxTournament(tournamentAddress).getOwner();
         downloadData.permittedToViewFile[tournamentOwner] = true;
         downloadData.allPermittedToViewFile.push(tournamentOwner);
     }
@@ -104,6 +103,12 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         _;
     }
 
+    modifier onlyOwner()
+    {
+        require(msg.sender == owner);
+        _;
+    }
+
     modifier duringOpenSubmission()
     {
         require(IMatryxRound(roundAddress).getState() == uint256(LibEnums.RoundState.Open));
@@ -122,21 +127,17 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         return roundAddress;
     }
 
-    function getSubmissionOwner() public view returns (address) {
-        return owner;
-    }
-
     function isAccessible(address _requester) public view returns (bool)
     {
         IMatryxRound round = IMatryxRound(roundAddress);
-        Ownable ownableTournament = Ownable(tournamentAddress);
+        IMatryxTournament tournament = IMatryxTournament(tournamentAddress);
 
         bool isPlatform = _requester == IMatryxTournament(tournamentAddress).getPlatform();
         bool isRound = _requester == roundAddress;
         bool ownsThisSubmission = _requester == owner;
         bool roundAtLeastInReview = IMatryxRound(roundAddress).getState() >= uint256(LibEnums.RoundState.InReview);
         bool requesterIsEntrant = IMatryxTournament(tournamentAddress).isEntrant(_requester);
-        bool requesterOwnsTournament = ownableTournament.getOwner() == _requester;
+        bool requesterOwnsTournament = tournament.getOwner() == _requester;
         bool duringReviewAndRequesterInTournament = roundAtLeastInReview && (requesterOwnsTournament || requesterIsEntrant);
         // TODO: think about next steps (encryption)
         bool roundIsClosed = IMatryxRound(roundAddress).getState() >= uint256(LibEnums.RoundState.Closed);
@@ -284,6 +285,29 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
     {
         uint256 transferAmount = LibSubmission.getTransferAmount(platformAddress, rewardData, trustData);
         return LibSubmission._myReward(contributorsAndReferences, rewardData, msg.sender, transferAmount);
+    }
+
+    // Ownable stuff
+
+    function getOwner() public view returns (address _owner)
+    {
+        return owner;
+    }
+
+    function isOwner(address _sender) public view returns (bool _isOwner)
+    {
+        bool senderIsOwner = (owner == _sender);
+        return senderIsOwner;
+    }
+
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner
+    {
+        require(newOwner != address(0));
+        owner = newOwner;
     }
 
 }

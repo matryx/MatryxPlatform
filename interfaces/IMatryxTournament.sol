@@ -44,4 +44,9 @@ interface IMatryxTournament
     function enterUserInTournament(address _entrantAddress) public returns (bool _success);
     function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public returns (address _newSubmission);
     function withdrawFromAbandoned() public;
+
+    // Ownable stuffs
+    function getOwner() public view returns (address _owner);
+    function isOwner(address sender) public view returns (bool _isOwner);
+    function transferOwnership(address newOwner) public;
 }

@@ -6,7 +6,6 @@ import "../libraries/LibConstruction.sol";
 interface IMatryxSubmission {
   function getTournament() public view returns (address);
   function getRound() public view returns (address);
-  function getSubmissionOwner() public view returns (address);
   function isAccessible(address _requester) public view returns (bool);
   function getData() public view returns(LibConstruction.SubmissionData _data);
   function getTitle() public view returns(bytes32[3]);
@@ -30,4 +29,9 @@ interface IMatryxSubmission {
   function withdrawReward() public;
   function myReward() public view returns (uint256);
   //function deleteSubmission() public;
+
+  // Ownable stuffs
+  function getOwner() public view returns (address _owner);
+  function isOwner(address sender) public view returns (bool _isOwner);
+  function transferOwnership(address newOwner) public;
 }

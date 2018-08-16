@@ -742,5 +742,5 @@ interface IJMatryxTournament {
     // Ownable stuffs
     function getOwner() public view returns (address _owner);
     function isOwner(address sender) public view returns (bool _isOwner);
-    function transferOwnership(address newOwner) public view;
+    function transferOwnership(address newOwner) public;
 }
