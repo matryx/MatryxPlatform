@@ -201,6 +201,11 @@ contract JMatryxTournament {
                 require(eq(s, 2)) // LibEnum.TournamentState.Open
             }
 
+            function whileEnterable(offset) {
+                let s := getState(offset)
+                require(or(eq(s, 2), eq(s, 1))) // LibEnum.TournamentState.Open or OnHold
+            }
+
             function ifRoundHasFunds(offset) {
                 let round := mload(add(currentRound(offset), 0x20))
                 mstore(0, mul(0x1865c57d, offset)) // getState()
@@ -573,8 +578,8 @@ contract JMatryxTournament {
             // enterUserInTournament(address _entrantAddress)
             function enterUserInTournament(offset) {
                 onlyPlatform()
-                whileTournamentOpen(offset)
-
+                whileEnterable(offset)
+                
                 let ent_address := arg(0)
                 let ptr := mload(0x40)
 
