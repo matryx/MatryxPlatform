@@ -1,5 +1,3 @@
-var MatryxPlatform = artifacts.require("MatryxPlatform");
-var MatryxToken = artifacts.require("MatryxToken");
 
 const ethers = require('ethers')
 const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('./utils')

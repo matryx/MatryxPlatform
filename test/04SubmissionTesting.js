@@ -1,7 +1,5 @@
 // TODO - test EVERYTHING
 
-var MatryxPlatform = artifacts.require("MatryxPlatform");
-var MatryxToken = artifacts.require("MatryxToken");
 const chalk = require('chalk')
 
 const ethers = require('ethers')
@@ -50,7 +48,7 @@ const createTournament = async (_title, _category, bounty, roundData, accountNum
   return tournament
 }
 
-const createSubmission = async (tournament, accountNumber) => {
+const createSubmission = async (tournament, contribs, accountNumber) => {
   await setup(artifacts, web3, accountNumber)
 
   tournament.accountNumber = accountNumber
@@ -75,22 +73,35 @@ const createSubmission = async (tournament, accountNumber) => {
     timeUpdated: 0
   }
 
+
+  const noContribsAndRefs = {
+    contributors: new Array(0).fill(0).map(r => genAddress()),
+    contributorRewardDistribution: new Array(0).fill(1),
+    references: new Array(0).fill(0).map(r => genAddress())
+  }
+
   const contribsAndRefs = {
     contributors: new Array(10).fill(0).map(r => genAddress()),
     contributorRewardDistribution: new Array(10).fill(1),
     references: new Array(10).fill(0).map(r => genAddress())
   }
 
-  let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
-  await getMinedTx('Tournament.createSubmission', tx.hash)
+  if (contribs) {
+    let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
+    await getMinedTx('Tournament.createSubmission', tx.hash)
+  }
+  else {
+    let tx = await tournament.createSubmission(submissionData, noContribsAndRefs, { gasLimit: 8e6 })
+    await getMinedTx('Tournament.createSubmission', tx.hash)
+  }
+
 
   const [_, roundAddress] = await tournament.currentRound()
   const round = Contract(roundAddress, MatryxRound)
   const submissions = await round.getSubmissions()
-  const submissionAddress = submissions.pop()
+  const submissionAddress = submissions[0]
   const submission = Contract(submissionAddress, MatryxSubmission, accountNumber)
 
-  //console.log(chalk`Submission created: {green ${submission.address}}\n`)
   return submission
 }
 
@@ -104,6 +115,7 @@ const updateSubmission = async submission => {
 
   tx = await submission.updateData(modData)
   await getMinedTx('Submission.updateData', tx.hash)
+  console.log("updated data")
 
   const conModData = {
     contributorsToAdd: new Array(3).fill(0).map(() => genAddress()),
@@ -113,6 +125,7 @@ const updateSubmission = async submission => {
 
   tx = await submission.updateContributors(conModData)
   await getMinedTx('Submission.updateContributors', tx.hash)
+  console.log("updated contributors")
 
   const refModData = {
     referencesToAdd: new Array(3).fill(0).map(() => genAddress()),
@@ -121,6 +134,8 @@ const updateSubmission = async submission => {
 
   tx = await submission.updateReferences(refModData)
   await getMinedTx('Submission.updateReferences', tx.hash)
+  console.log("updated references")
+
 }
 
 const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rewardDistribution, roundData, selectWinnerAction) => {
@@ -133,7 +148,6 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
   let timeTilRoundInReview = roundEndTime - Date.now() / 1000
   timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
 
-  console.log(chalk`{grey [Waiting ${~~timeTilRoundInReview}s until review period]}`)
   await sleep(timeTilRoundInReview * 1000)
 
   const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
@@ -147,27 +161,24 @@ const waitUntilClose = async (tournament) => {
   const reviewPeriodDuration = +await round.getReviewPeriodDuration()
   const timeTilClose = Math.max(0, roundEndTime + reviewPeriodDuration - Date.now() / 1000)
 
-  console.log(chalk`{grey [Waiting ${~~timeTilClose}s until current round over]}`)
   await sleep(timeTilClose * 1000)
 }
 
 const logSubmissions = async tournament => {
   const [_, roundAddress] = await tournament.currentRound();
-  console.log(chalk`Current round: {green ${roundAddress}}`)
   const round = Contract(roundAddress, MatryxRound)
   const submissions = await round.getSubmissions()
   submissions.forEach((s, i) => {
-    console.log(chalk`Submission ${i + 1}: {green ${s}}`)
   })
   return submissions
 }
 
-contract('Submission Testing', function(accounts) {
+contract('Submission Testing No Contributors and References', function(accounts) {
   let t; //tournament
   let r; //round
-  let s;
-  let sub;
-  let stime;
+  let s; //submission
+  let stime; //time at submisison creation
+  let utime; //time at submission updating
 
   it("Able to create a Submission", async function () {
       await init();
@@ -183,80 +194,174 @@ contract('Submission Testing', function(accounts) {
       let [_, roundAddress] = await t.currentRound()
       r = Contract(roundAddress, MatryxRound, 0)
 
-      s = await createSubmission(t, 1)
+      //Create submission with no contributors
+      s = await createSubmission(t,false, 1)
       stime = Math.floor(Date.now() / 1000);
-      console.log(stime)
-      //console.log(s.address)
-      //s = Contract(submission, MatryxSubmission, 1)
-      // await updateSubmission(submission)
-      // await createSubmission(tournament, 2)
-      // await createSubmission(tournament, 3)  
+      utime = Math.floor(Date.now() / 1000);
+      s = Contract(s.address, MatryxSubmission, 1)
 
       assert.ok(s.address, "Submission is not valid.");
   });
 
+  it("Submission is accessible to submission owner", async function () {
+    let access = await s.isAccessible(web3.eth.accounts[1]);
+    assert.isTrue(access, "Submission was not accessible to submission owner")
+  });
 
-  it("Submission is updated", async function () {
-   await updateSubmission(s)
-   sub = Contract(s.address, MatryxSubmission, 1)
-   let title = await sub.getTitle();
+  it("Submission Owner and Tournament Owner have Download Permissions", async function () {
+    let permitted = await s.getPermittedDownloaders();
+    let tOwner = await t.getOwner()
+    let sOwner = await s.getOwner()
+
+    let allTrue = permitted.some(x => x == tOwner) && permitted.some(x => x == sOwner)
+
+    assert.isTrue(allTrue, "Permissions are not correct")
+  });
+
+  it("Submisison has no References", async function () {
+    let ref = await s.getReferences();
+    assert.equal(ref.length, 0,"References are not correct")
+  });
+
+  it("Submission has no Contributors", async function () {
+    let contribs = await s.getContributors();
+    assert.equal(contribs.length, 0 ,"References are not correct")
+  });
+
+  it("Get Contributor Reward Distribution", async function () {
+    let crd = await s.getContributorRewardDistribution();
+    assert.equal(crd.length, 0, "Contributor reward distribution incorrect")
+  });
+
+  it("Submission title correctly updated", async function () {
+    await updateSubmission(s)
+    utime = Math.floor(Date.now() / 1000);
+    let title = await s.getTitle();
     assert.equal(bytesToString(title[0]), "AAAAAA" , "Submission Title should be Updated");
   });
 
   it("Get Submission Tournament", async function () {
-    let ts = await sub.getTournament();
+    let ts = await s.getTournament();
     assert.equal(ts, t.address, "Tournament Address is incorrect")
   });
 
   it("Get Submission Round", async function () {
-    let tr = await sub.getRound();
+    let tr = await s.getRound();
     assert.equal(tr, r.address, "Round Address is incorrect")
   });
 
-  //How to get the owner address 
   it("Get Submission Owner", async function () {
-    let to = await sub.c.getOwner();
+    let to = await s.getOwner();
     let actual = web3.eth.accounts[1]
+    console.log(to)
+    console.log(actual)
     assert.equal(to.toLowerCase(), actual.toLowerCase(), "Owner Address is incorrect")
   });
 
-  it("Owner Submission Accessability", async function () {
-    let access = await sub.isAccessible(web3.eth.accounts[1]);
-    assert.isTrue(access, "Owner Address has access to submission")
-  });
-
-  it("Correct Download Permissions", async function () {
-    let permitted = await sub.getPermittedDownloaders();
-    assert(permitted, "Permissions are not correct")
-  });
-
-  it("Correct References", async function () {
-    let ref = await sub.getReferences();
-    assert(ref,"References are not correct")
-  });
-
-  it("Correct Contributors", async function () {
-    let contribs = await sub.getContributors();
-    assert(contribs,"References are not correct")
-  });
-
   it("Get Time Submitted", async function () {
-    let submission_time = await sub.getTimeSubmitted().then(Number);
+    let submission_time = await s.getTimeSubmitted().then(Number);
+    console.log(submission_time)
+    console.log(stime)
     assert.isTrue(Math.abs(submission_time - stime) < 10, "Submission Time is not correct")
   });
 
   it("Get Time Updated", async function () {
-    let update_time = await sub.getTimeSubmitted().then(Number);
-    assert(update_time ,"Submission Time is not correct")
+    let update_time = await s.getTimeUpdated().then(Number);
+    console.log(update_time)
+    console.log(utime)
+    assert.isTrue(Math.abs(update_time - utime) < 10 ,"Update Time is not correct")
   });
 
   it("Choose Winner", async function () {
-    //await waitUntilClose(t);
     let submissions = await logSubmissions(t)
     await selectWinnersWhenInReview(t, 0, submissions, submissions.map(s => 1), [0, 0, 0, 0, 0], 0)
     let winnings = await s.getTotalWinnings();
-    //let winnings = await r.getState();
-    console.log(winnings);
     assert(winnings, "Winner was not chosen")
   });
+});
+
+contract('Submission Testing with Contributors', function(accounts) {
+
+  it("Able to create a Submission with Contributors and References", async function () {
+    await init();
+    roundData = {
+        start: Math.floor(Date.now() / 1000),
+        end: Math.floor(Date.now() / 1000) + 30,
+        reviewPeriodDuration: 60,
+        bounty: web3.toWei(5),
+        closed: false
+      }
+
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.currentRound()
+    r = Contract(roundAddress, MatryxRound, 0)
+
+    //Create submission with some contributors
+    s = await createSubmission(t, true, 1)
+    stime = Math.floor(Date.now() / 1000);
+    s = Contract(s.address, MatryxSubmission, 1)
+    assert.ok(s.address, "Submission is not valid.");
+  });
+
+  it("Submission is accessible to contributors", async function () {
+    let contribs = await s.getContributors()
+    console.log(contribs)
+    let c;
+    let accessibleToAll = true;
+
+    //Test accessibility for every contributor
+    for (var i = 0; i < contribs.length; i++) {
+      c = contribs[i]
+      let accessibleToC = await s.isAccessible(c)
+      accessibleToAll = accessibleToAll && accessibleToC
+      console.log(accessibleToAll)
+    }
+
+    let state = await r.getState()
+    console.log("state: " + state)
+    let ref = await s.getReferences()
+    console.log("ref: " + ref)
+    let accessibleRef = await s.isAccessible(ref[0])
+    console.log("ref test: " + accessibleRef);
+
+    assert.isTrue(accessibleToAll, "Submission was not accessible to all contributors")
+  });
+
+  it("Contributors have Download Permissions", async function () {
+    let permitted = await s.getPermittedDownloaders();
+
+    //check tournament owner has download permissions
+    let tOwner = await t.getOwner()
+    let allTrue = permitted.some(x => x == tOwner)
+
+    //check submission owner has download permisisons
+    let sOwner = await s.getOwner()
+    allTrue = permitted.some(x => x == sOwner)
+
+    let contribs = await s.getContributors()
+
+    //check all contributors have download permissions
+    for (var i = 0; i < contribs.length; i++) {
+      allTrue = permitted.some(x => x == contribs[i])
+    }
+
+    assert.isTrue(allTrue && (permitted.length == contribs.length + 2), "Download permissions are not correct")
+  });
+
+  it("Submisison has References", async function () {
+    let ref = await s.getReferences();
+    assert.equal(ref.length, 10, "References are not correct")
+  });
+
+  it("Submission has Contributors", async function () {
+    let contribs = await s.getContributors();
+    assert.equal(contribs.length, 10, "References are not correct")
+  });
+
+  it("Get Contributor Reward Distribution", async function () {
+    let crd = await s.getContributorRewardDistribution();
+    assert.equal(crd.length, 10, "Contributor reward distribution incorrect")
+  });
+
+
 });

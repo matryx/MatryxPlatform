@@ -1,8 +1,5 @@
 // TODO - test EVERYTHING
 
-var MatryxPlatform = artifacts.require("MatryxPlatform");
-var MatryxToken = artifacts.require("MatryxToken");
-
 const ethers = require('ethers')
 const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('./utils')
 let platform;
@@ -38,11 +35,29 @@ const createTournament = async (_title, _category, bounty, roundData, accountNum
     let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
     await getMinedTx('Platform.createTournament', tx.hash)
 
-    const address = await platform.allTournaments(count)
-    const tournament = Contract(address, MatryxTournament, accountNumber)
+    let address = await platform.allTournaments(count)
+    let tournament = Contract(address, MatryxTournament, accountNumber)
 
     return tournament
   }
+
+const waitUntilInReview = async (round) => {
+    let roundEndTime = await round.getEndTime()
+
+    let timeTilRoundInReview = roundEndTime - Date.now() / 1000
+    timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
+
+    await sleep(timeTilRoundInReview * 1000)
+}
+
+const waitUntilClose = async (round) => {
+    let roundEndTime = +await round.getEndTime()
+    let reviewPeriodDuration = +await round.getReviewPeriodDuration()
+    let timeTilClose = Math.max(0, roundEndTime + reviewPeriodDuration - Date.now() / 1000)
+    timeTilClose = timeTilClose > 0 ? timeTilClose : 0
+
+    await sleep(timeTilClose * 1000)
+}
 
 contract('NotYetOpen Round Testing', function(accounts) {
     let t; //tournament
@@ -185,4 +200,77 @@ contract('Open Round Testing', function(accounts) {
         let b = await r.getBounty();
         assert.equal(fromWei(b), 6, "Bounty was not added")
     });
+});
+
+// TODO - you have to make a submisison in order to go into InReview
+// contract('In Review Round Testing', function(accounts) {
+//     let t; //tournament
+//     let r; //round
+
+//     it("Able to create a round In Review", async function () {
+//         await init();
+//         roundData = {
+//             start: Math.floor(Date.now() / 1000),
+//             end: Math.floor(Date.now() / 1000) + 1,
+//             reviewPeriodDuration: 500,
+//             bounty: web3.toWei(5),
+//             closed: false
+//           }
+
+//         t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+
+//         let [_, roundAddress] = await t.currentRound()
+//         r = Contract(roundAddress, MatryxRound, 0)
+//         await waitUntilInReview(r);
+
+//         assert.ok(r.address, "Round is not valid.");
+//     });
+
+//     it("Round state is In Review", async function () {
+//         let state = await r.getState();
+//         console.log(state);
+//         assert.equal(state, 3, "Round State should be In Review");
+//     });
+
+// });
+
+contract('Abandoned Round Testing', function(accounts) {
+    let t; //tournament
+    let r; //round
+
+    it("Able to create an Abandoned round", async function () {
+        await init();
+        roundData = {
+            start: Math.floor(Date.now() / 1000),
+            end: Math.floor(Date.now() / 1000) + 1,
+            reviewPeriodDuration: 1,
+            bounty: web3.toWei(5),
+            closed: false
+          }
+
+        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+
+        let [_, roundAddress] = await t.currentRound()
+        r = Contract(roundAddress, MatryxRound, 0)
+        await waitUntilClose(r)
+
+        assert.ok(r.address, "Round is not valid.");
+    });
+
+    it("Round state is Abandoned", async function () {
+        let state = await r.getState();
+        console.log(state);
+        assert.equal(state, 6, "Round State should be Abandoned");
+    });
+
+    it("Unable to add bounty to Abandoned round", async function () {
+        try {
+            await t.allocateMoreToRound(web3.toWei(1));
+               assert.fail('Expected revert not received');
+          } catch (error) {
+            let revertFound = error.message.search('revert') >= 0;
+            assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
+          }
+    });
+
 });
