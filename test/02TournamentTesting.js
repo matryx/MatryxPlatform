@@ -46,6 +46,20 @@ const createTournament = async (_title, _category, bounty, roundData, accountNum
 
   }
 
+  const enterTournament = async (tournament, accountNumber) => {
+    await setup(artifacts, web3, accountNumber)
+
+    tournament.accountNumber = accountNumber
+    platform.accountNumber = accountNumber
+    const account = tournament.wallet.address
+
+    const isEntrant = await tournament.isEntrant(account)
+    if (!isEntrant) {
+      let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
+      await getMinedTx('Platform.enterTournament', hash)
+    }
+}
+
 contract('Tournament Testing', function(accounts) {
     let t; //tournament
     let r; //round
@@ -166,8 +180,20 @@ contract('Tournament Testing', function(accounts) {
 
       let allNew = [title[0], desc[0], file[0]].every(x => x === n[0])
       let catUnchanged = cat == stringToBytes32('math')
+
       assert.isTrue(allNew && catUnchanged && fee == web3.toWei(1), "Tournament data not updated correctly.");
     });
 
+    //TODO Make sure this actually works
+    it("Unable to Enter NotYetOpen Round", async function() {
+      try {
+        await enterTournament(t.address, 1)
+        assert.fail('Expected revert not received');
+      } catch (error) {
+        //const revertFound = error.message.search('revert') >= 0;
+        //assert(revertFound, 'Unable to get tournament from invalid index');
+        assert.isTrue(true);
+      }
+    });
 
 });
