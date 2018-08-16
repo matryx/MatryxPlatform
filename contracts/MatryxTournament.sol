@@ -125,6 +125,14 @@ contract MatryxTournament is Ownable, IMatryxTournament {
         _;
     }
 
+    modifier whileEnterable()
+    {
+        uint256 state = getState();
+        require(state == uint256(LibEnums.TournamentState.Open) ||
+                state == uint256(LibEnums.TournamentState.OnHold));
+        _;
+    }
+
     modifier ifRoundHasFunds()
     {
         address currentRoundAddress;
@@ -349,7 +357,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
     /// @dev Enters the user into the tournament.
     /// @param _entrantAddress Address of the user to enter.
     /// @return success Whether or not the user was entered successfully.
-    function enterUserInTournament(address _entrantAddress) public onlyPlatform whileTournamentOpen returns (bool _success)
+    function enterUserInTournament(address _entrantAddress) public onlyPlatform whileEnterable returns (bool _success)
     {
         return LibTournamentEntrantMethods.enterUserInTournament(data, stateData, entryData, _entrantAddress);
     }

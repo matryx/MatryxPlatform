@@ -86,14 +86,13 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Diving into Matryx</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#becoming-a-matryxpeer">Becoming a MatryxPeer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#approving-entry-fee-withdrawals">Approving Entry Fee Withdrawals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#approving-platform-transactions">Approving Platform Transactions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#entering-a-tournament">Entering a Tournament</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tournament-participating.html">Participating in a Tournament</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tournament-admin.html">Tournament Administration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="trust-and-reputation.html">Trust and Reputation System</a></li>
-<li class="toctree-l1"><a class="reference internal" href="abi-and-geth-interaction.html">Interacting with the Platform via Geth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trust-and-reputation.html">Reputation System</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_versions.html">Versions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source/api.html">Source Code Documentation</a></li>
@@ -167,26 +166,30 @@
 <p>Welcome!</p>
 <div class="section" id="becoming-a-matryxpeer">
 <h2>Becoming a MatryxPeer<a class="headerlink" href="#becoming-a-matryxpeer" title="Permalink to this headline">¶</a></h2>
-<p>To start using the platform, you first need to create a MatryxPeer for the Ethereum address you intend to use it with. You can do this as many times as you like with as many Ethereum addresses as you have, although the process does cost a bit of gas, so we’re not sure why you would. That said, creating a peer is as simple as running the following:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.createPeer({gas: platform.createPeer.estimateGas()});
+<p>To start using the platform, you first need to create a <code class="docutils literal notranslate"><span class="pre">MatryxPeer</span></code> for the Ethereum address you intend to use it with. You can do this as many times as you like with as many Ethereum addresses as you have, although the process does cost a bit of gas, so we’re not sure why you would. That said, creating a peer is as simple as running the following:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.createPeer({gas: platform.createPeer.estimateGas()})
 </pre></div>
 </div>
-<p>Congrats! Now that you’ve created a peer, anytime you use the platform the positive and negative trust you earn through interacting with others will be aggregated by this MatryxPeer representation you’ve just created. For the MatryxPlatform Beta, we simply use MatryxPeer as a way to ensure that you cite your sources.</p>
+<p>Congrats! Now that you’ve created a peer, anytime you use the platform the positive and negative trust you earn through interacting with others will be aggregated by this <code class="docutils literal notranslate"><span class="pre">MatryxPeer</span></code> representation you’ve just created. For the <code class="docutils literal notranslate"><span class="pre">MatryxPlatform</span></code> Beta, we simply use <code class="docutils literal notranslate"><span class="pre">MatryxPeer</span></code> as a way to ensure that you cite your sources.</p>
 </div>
-<div class="section" id="approving-entry-fee-withdrawals">
-<h2>Approving Entry Fee Withdrawals<a class="headerlink" href="#approving-entry-fee-withdrawals" title="Permalink to this headline">¶</a></h2>
-<p>You’ll now be able to enter tournaments, granted you’ve paid the entry fee. Let’s try that, shall we? In order to enter a tournament, you’ll first need to tell MatryxToken that you approve of the tournament collecting the fee designated by the tournament’s creator. This is done by calling</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>token.approve(tournament.address, tournament.entryFee());
+<div class="section" id="approving-platform-transactions">
+<h2>Approving Platform Transactions<a class="headerlink" href="#approving-platform-transactions" title="Permalink to this headline">¶</a></h2>
+<p>To interact with the platform, you first need to tell <code class="docutils literal notranslate"><span class="pre">MatryxToken</span></code> that you approve of <code class="docutils literal notranslate"><span class="pre">MatryxPlatform</span></code>, and specify a number of <code class="docutils literal notranslate"><span class="pre">tokens</span></code> you want to approve. This is done by calling</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>token.approve(MatryxPlatform.address, tokens)
 </pre></div>
 </div>
-<p>where ‘token’ is a web3 Contract representing MatryxToken. This fee is incurred solely to prevent malicious actors from attemping a cross-tournament Sybil attack and will be returned to you at the end of each tournament you enter.</p>
 </div>
 <div class="section" id="entering-a-tournament">
 <h2>Entering a Tournament<a class="headerlink" href="#entering-a-tournament" title="Permalink to this headline">¶</a></h2>
 <p>Now that you’ve done this, you should be able to enter the tournament. This is a call to the platform itself and goes like</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.enterTournament(tournament.address, {gas: platform.enterTournament.estimateGas(tournament.address)});
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.enterTournament(tournament.address)
 </pre></div>
 </div>
+<p>Whenever you enter a tournament, you will first have to pay the tournament entry fee designated by the tournament creator. To check a tournament’s entry fee in advance, you can call</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.getEntryFee()
+</pre></div>
+</div>
+<p>The value returned here is the Wei equivalent of MTX, so a single unit is equal to one-eighteenth of a MTX. This fee is incurred solely to prevent malicious actors from attemping a cross-tournament Sybil attack and will be returned to you at the end of each tournament you enter.</p>
 <p>Congratulations! You’ve now entered into your first Matryx Tournament! Assemble a team; Let’s save the world!!</p>
 </div>
 </div>
