@@ -75,7 +75,7 @@ contract JMatryxSubmission {
             // case 0x7eba7ba6 { getSlot() }                                  // getSlot(uint256)
             case 0xe76c293e { getTournament() }                            // getTournament()
             case 0x9f8743f7 { getRound() }                                 // getRound()
-            case 0xa52dd12f { return32(isAccessible(sOffset)) }            // isAccessible(address)
+            case 0xa52dd12f { return32(isAccessible(arg(0), sOffset)) }    // isAccessible(address)
             case 0x3bc5de30 { getData(sOffset) }                           // getData()
             case 0xff3c1a8f { getTitle(sOffset) }                          // getTitle()
             case 0x245edf06 { getDescriptionHash(sOffset) }                // getDescriptionHash()
@@ -211,7 +211,7 @@ contract JMatryxSubmission {
             }
 
             function whenAccessible(offset) {
-                require(isAccessible(offset))
+                require(isAccessible(caller(), offset))
             }
 
             function s_callerCanViewFile(offset) -> b {
@@ -254,14 +254,14 @@ contract JMatryxSubmission {
             }
 
             // function isAccessible(address _requester) public view returns (bool)
-            function isAccessible(offset) -> a {
+            function isAccessible(_requester, offset) -> a {
                 let platform := sload(platform_slot)
                 let round := sload(round_slot)
                 let owner := sload(owner_slot)
 
-                a := eq(platform, caller())                                               // isPlatform
-                a := or(a, eq(round, caller()))                                           // isRound
-                a := or(a, eq(owner, caller()))                                           // ownsThisSubmission
+                a := eq(platform, _requester)                                               // isPlatform
+                a := or(a, eq(round, _requester))                                           // isRound
+                a := or(a, eq(owner, _requester))                                           // ownsThisSubmission
 
                 let state := 0
                 if iszero(a) {
@@ -276,28 +276,28 @@ contract JMatryxSubmission {
                     let tournament := sload(tournament_slot)
 
                     mstore(0, mul(0x52c01fab, offset))                                    // isEntrant(address)
-                    mstore(0x04, caller())
-                    require(call(gas(), tournament, 0, 0, 0x24, 0, 0x20))                 // tournament.isEntrant(caller)
+                    mstore(0x04, _requester)
+                    require(call(gas(), tournament, 0, 0, 0x24, 0, 0x20))                 // tournament.isEntrant(_requester)
                     let isEntrant := mload(0)
 
                     mstore(0, mul(0x893d20e8, offset))                                    // getOwner()
                     require(call(gas(), tournament, 0, 0, 0x04, 0, 0x20))                 // tournament.getOwner
-                    let ownsTournament := eq(mload(0), caller())
+                    let ownsTournament := eq(mload(0), _requester)
 
                     let roundAtLeastInReview := gt(state, 2)                              // after 2, in review (or more)
                     a := or(a, and(roundAtLeastInReview, or(ownsTournament, isEntrant)))  // duringReviewAndRequesterInTournament
                 }
 
-                if iszero(a) {
-                    mstore(0, mul(0x7a348ab3, offset))                                    // hasEnteredMatryx(address)
-                    mstore(0x04, caller())
-                    require(call(gas(), platform, 0, 0, 0x24, 0, 0x20))                   // platform.hasEnteredMatryx(caller)
-                    a := or(a, mload(0))
-                }
+                // if iszero(a) {
+                //     mstore(0, mul(0x52c01fab, offset))                                 // isEntrant(address)
+                //     mstore(0x04, arg(0))
+                //     require(call(gas(), sload(tournament_slot), 0, 0, 0x24, 0, 0x20))  // tournament.isEntrant(_requester)
+                //     a := or(a, mload(0))
+                // }
 
                 if iszero(a) {
                     mstore(0, mul(0x818b5fa8, offset))                                    // isSubmission(address)
-                    mstore(0x04, caller())
+                    mstore(0x04, _requester)
                     require(call(gas(), platform, 0, 0, 0x24, 0, 0x20))                   // platform.isSubmission(caller)
                     a := or(a, mload(0))
                 }
@@ -637,5 +637,5 @@ interface IJMatryxSubmission {
     // Ownable stuffs
     function getOwner() public view returns (address _owner);
     function isOwner(address sender) public view returns (bool _isOwner);
-    function transferOwnership(address newOwner) public view;
+    function transferOwnership(address newOwner) public;
 }
