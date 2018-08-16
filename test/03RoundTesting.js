@@ -44,7 +44,7 @@ const createTournament = async (_title, _category, bounty, roundData, accountNum
     return tournament
   }
 
-contract('Round Testing', function(accounts) {
+contract('NotYetOpen Round Testing', function(accounts) {
     let t; //tournament
     let r; //round
 
@@ -135,5 +135,54 @@ contract('Round Testing', function(accounts) {
         let b = await r.getBounty();
         assert.equal(fromWei(b), 6, "Bounty was not added")
     });
+});
 
+contract('Open Round Testing', function(accounts) {
+    let t; //tournament
+    let r; //round
+
+    it("Able to create a tournament with a Open round", async function () {
+        await init();
+        roundData = {
+            start: Math.floor(Date.now() / 1000),
+            end: Math.floor(Date.now() / 1000) + 120,
+            reviewPeriodDuration: 60,
+            bounty: web3.toWei(5),
+            closed: false
+          }
+
+        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+        let [_, roundAddress] = await t.currentRound()
+        r = Contract(roundAddress, MatryxRound, 0)
+
+        assert.ok(r.address, "Round is not valid.");
+    });
+
+
+    it("Round state is Open", async function () {
+      let state = await r.getState();
+      console.log(state);
+      assert.equal(state, 2, "Round State should be Open");
+    });
+
+    it("Round should not have any submissions", async function () {
+        let sub = await r.getSubmissions();
+        assert.equal(sub.length, 0, "Round should not have submissions");
+    });
+
+    it("No submissions should have been chosen in this round", async function () {
+        let sub = await r.submissionsChosen();
+        assert.isFalse(sub, "Round should not have any chosen submissions");
+    });
+
+    it("Number of submissions should be zero", async function () {
+        let no_sub = await r.numberOfSubmissions();
+        assert.equal(no_sub.toNumber(), 0, "Number of Submissions should be Zero")
+    });
+
+    it("Add bounty to a round", async function () {
+        await t.allocateMoreToRound(web3.toWei(1));
+        let b = await r.getBounty();
+        assert.equal(fromWei(b), 6, "Bounty was not added")
+    });
 });
