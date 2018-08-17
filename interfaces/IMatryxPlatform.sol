@@ -24,6 +24,7 @@ interface IMatryxPlatform
     function peerExistsAndOwnsSubmission(address _peer, address _reference) public view returns (bool);
     function peerAddress(address _sender) public view returns (address);
     function isSubmission(address _submissionAddress) public view returns (bool);
+    function isTournament(address _tournamentAddress) public view returns (bool);
     function hashForCategory(bytes32 _categoryHash) public view returns (bytes32 _category);
     function getTournament_IsMine(address _tournamentAddress) public view returns (bool _isMine);
     function setSubmissionGratitude(uint256 _gratitude) public;

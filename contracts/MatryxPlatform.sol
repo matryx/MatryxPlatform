@@ -145,7 +145,7 @@ contract MatryxPlatform is Ownable {
     }
 
     /// @dev explicitly set the MatryxToken address
-    /// @param _matryxTokenAddress address of Matryx Token 
+    /// @param _matryxTokenAddress address of Matryx Token
     function setTokenAddress(address _matryxTokenAddress) public onlyOwner {
         matryxTokenAddress = _matryxTokenAddress;
     }
@@ -158,14 +158,14 @@ contract MatryxPlatform is Ownable {
     }
 
     /// @dev Updates tournament ownership data.
-    /// @param _owner address of the owner. 
-    /// @param _tournament address of the tournament. 
+    /// @param _owner address of the owner.
+    /// @param _tournament address of the tournament.
     function updateUsersTournaments(address _owner, address _tournament) internal {
         ownerToTournamentArray[_owner].push(_tournament);
         entrantToOwnsTournament[_owner][_tournament] = true;
     }
 
-    /// @dev Updates submission mappings. 
+    /// @dev Updates submission mappings.
     /// @param _owner owner of the submission.
     /// @param _submission the submission address
     function updateSubmissions(address _owner, address _submission) public onlyTournamentOrTournamentLib {
@@ -175,7 +175,7 @@ contract MatryxPlatform is Ownable {
         submissionExists[_submission] = true;
     }
 
-    /// @dev removes a submission from a tournament 
+    /// @dev removes a submission from a tournament
     /// @param _submissionAddress address of a particular MatryxSubmission
     /// @param _tournamentAddress address of a particular MatryxTournament
     function removeSubmission(address _submissionAddress, address _tournamentAddress) public {
@@ -212,7 +212,7 @@ contract MatryxPlatform is Ownable {
         }
     }
 
-    /// @dev Disassociated a tournament from a specific category 
+    /// @dev Disassociated a tournament from a specific category
     /// @param _tournamentAddress address of a particular MatryxTournament
     /// @param _category hash of the category that the tournament belongs to
     function removeTournamentFromCategory(address _tournamentAddress, bytes32 _category) public onlyTournamentOwnerOrPlatform(_tournamentAddress) {
@@ -230,7 +230,7 @@ contract MatryxPlatform is Ownable {
     /// @dev Changes a tournament from one category to another
     /// @param _tournamentAddress address of a particular MatryxTournament
     /// @param _oldCategory hash of the category that the tournament previously belonged to
-    /// @param _newCategory hash of the category that the tournament will now belong to 
+    /// @param _newCategory hash of the category that the tournament will now belong to
     function switchTournamentCategory(address _tournamentAddress, bytes32 _oldCategory, bytes32 _newCategory) public onlyTournamentOwnerOrPlatform(_tournamentAddress){
         removeTournamentFromCategory(_tournamentAddress, _oldCategory);
         addTournamentToCategory(_tournamentAddress, _newCategory);
@@ -238,7 +238,7 @@ contract MatryxPlatform is Ownable {
 
     /*
      * Getters
-     */ 
+     */
 
     function getTournamentsByCategory(bytes32 _category) external view returns (address[]){
         return categoryToTournamentList[_category];
@@ -345,6 +345,10 @@ contract MatryxPlatform is Ownable {
 
     function isSubmission(address _submissionAddress) public view returns (bool){
         return submissionExists[_submissionAddress];
+    }
+
+    function isTournament(address _tournamentAddress) public view returns (bool){
+        return tournamentExists[_tournamentAddress];
     }
 
     /// @dev Returns whether or not the given tournament belongs to the sender.
