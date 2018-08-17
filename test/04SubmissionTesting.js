@@ -115,7 +115,6 @@ const updateSubmission = async submission => {
 
   tx = await submission.updateData(modData)
   await getMinedTx('Submission.updateData', tx.hash)
-  console.log("updated data")
 
   const conModData = {
     contributorsToAdd: new Array(3).fill(0).map(() => genAddress()),
@@ -125,7 +124,6 @@ const updateSubmission = async submission => {
 
   tx = await submission.updateContributors(conModData)
   await getMinedTx('Submission.updateContributors', tx.hash)
-  console.log("updated contributors")
 
   const refModData = {
     referencesToAdd: new Array(3).fill(0).map(() => genAddress()),
@@ -134,7 +132,6 @@ const updateSubmission = async submission => {
 
   tx = await submission.updateReferences(refModData)
   await getMinedTx('Submission.updateReferences', tx.hash)
-  console.log("updated references")
 
 }
 
@@ -253,22 +250,16 @@ contract('Submission Testing No Contributors and References', function(accounts)
   it("Get Submission Owner", async function () {
     let to = await s.getOwner();
     let actual = web3.eth.accounts[1]
-    console.log(to)
-    console.log(actual)
     assert.equal(to.toLowerCase(), actual.toLowerCase(), "Owner Address is incorrect")
   });
 
   it("Get Time Submitted", async function () {
     let submission_time = await s.getTimeSubmitted().then(Number);
-    console.log(submission_time)
-    console.log(stime)
     assert.isTrue(Math.abs(submission_time - stime) < 10, "Submission Time is not correct")
   });
 
   it("Get Time Updated", async function () {
     let update_time = await s.getTimeUpdated().then(Number);
-    console.log(update_time)
-    console.log(utime)
     assert.isTrue(Math.abs(update_time - utime) < 10 ,"Update Time is not correct")
   });
 
@@ -305,7 +296,6 @@ contract('Submission Testing with Contributors', function(accounts) {
 
   it("Submission is accessible to contributors", async function () {
     let contribs = await s.getContributors()
-    console.log(contribs)
     let c;
     let accessibleToAll = true;
 
@@ -314,17 +304,16 @@ contract('Submission Testing with Contributors', function(accounts) {
       c = contribs[i]
       let accessibleToC = await s.isAccessible(c)
       accessibleToAll = accessibleToAll && accessibleToC
-      console.log(accessibleToAll)
     }
 
-    let state = await r.getState()
-    console.log("state: " + state)
-    let ref = await s.getReferences()
-    console.log("ref: " + ref)
-    let accessibleRef = await s.isAccessible(ref[0])
-    console.log("ref test: " + accessibleRef);
-
     assert.isTrue(accessibleToAll, "Submission was not accessible to all contributors")
+  });
+
+  it("Submission is not accessible to a reference", async function () {
+    let refs = await s.getReferences()
+    let accessibleToR = await s.isAccessible(refs[0])
+
+    assert.isFalse(accessibleToR, "Submission should not have been accessible to a reference")
   });
 
   it("Contributors have Download Permissions", async function () {

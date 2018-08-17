@@ -84,7 +84,8 @@ contract JMatryxSubmission {
             case 0x7a6337fa { getReferences(sOffset) }                     // getReferences()
             case 0xaf157c19 { getContributors(sOffset) }                   // getContributors()
             case 0xf23e1cb4 { getContributorRewardDistribution(sOffset) }  // getContributorRewardDistribution()
-            case 0xae1ca692 { getTimeSubmitted() }                         // getTimeSubitted()
+            case 0xae1ca692 { getTimeSubmitted() }                         // getTimeSubmitted()
+            case 0x8efa5410 { getTimeUpdated() }                           // getTimeUpdated()
             case 0x9b057610 { getTotalWinnings() }                         // getTotalWinnings()
             case 0xb09103d8 { unlockFile(sOffset) }                        // unlockFile()
             case 0x5de8439f { updateData(sOffset) }                        // updateData((bytes32[3],bytes32[2],bytes32[2]))
@@ -288,18 +289,19 @@ contract JMatryxSubmission {
                     a := or(a, and(roundAtLeastInReview, or(ownsTournament, isEntrant)))  // duringReviewAndRequesterInTournament
                 }
 
-                // if iszero(a) {
-                //     mstore(0, mul(0x52c01fab, offset))                                 // isEntrant(address)
-                //     mstore(0x04, arg(0))
-                //     require(call(gas(), sload(tournament_slot), 0, 0, 0x24, 0, 0x20))  // tournament.isEntrant(_requester)
-                //     a := or(a, mload(0))
-                // }
-
                 if iszero(a) {
                     mstore(0, mul(0x818b5fa8, offset))                                    // isSubmission(address)
                     mstore(0x04, _requester)
                     require(call(gas(), platform, 0, 0, 0x24, 0, 0x20))                   // platform.isSubmission(caller)
                     a := or(a, mload(0))
+                }
+
+                if iszero(a) {
+                    mstore(0, _requester)
+                    mstore(0x20, downloadData_slot)
+                    let access_pos := keccak256(0, 0x40)
+                    let access := sload(access_pos)                                       // downloadData.permittedToViewFile[_requester]
+                    a := or(a, access)
                 }
             }
 
@@ -403,6 +405,10 @@ contract JMatryxSubmission {
 
             function getTimeSubmitted() {
                 return32(sload(add(data_slot, 7))) // data.timeSubmitted
+            }
+
+            function getTimeUpdated() {
+                return32(sload(add(data_slot, 8))) // data.timeUpdated
             }
 
             function getTotalWinnings() {
@@ -622,6 +628,7 @@ interface IJMatryxSubmission {
     function getContributors() public view returns(address[]);
     function getContributorRewardDistribution() public view returns (uint256[]);
     function getTimeSubmitted() public view returns(uint256);
+    function getTimeUpdated() public view returns(uint256);
     function getTotalWinnings() public view returns(uint256);
     function updateData(LibConstruction.SubmissionModificationData _modificationData) public;
     function updateContributors(LibConstruction.ContributorsModificationData _contributorsModificationData) public;
