@@ -314,6 +314,7 @@ contract MatryxPlatform is Ownable {
     */
 
     function createPeer() public returns (address) {
+        require(IMatryxToken(matryxTokenAddress).balanceOf(msg.sender) > 0);
         require(ownerToPeerAndPeerToOwner[msg.sender] == 0x0);
         IMatryxPeerFactory peerFactory = IMatryxPeerFactory(matryxPeerFactoryAddress);
         address peer = peerFactory.createPeer(msg.sender);

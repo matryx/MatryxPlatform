@@ -142,8 +142,9 @@ contract MatryxSubmission is Ownable, IMatryxSubmission {
         bool duringReviewAndRequesterInTournament = roundAtLeastInReview && (requesterOwnsTournament || requesterIsEntrant);
         // TODO: think about next steps (encryption)
         bool roundIsClosed = IMatryxRound(roundAddress).getState() >= uint256(LibEnums.RoundState.Closed);
+        bool hasFileAccess = downloadData.permittedToViewFile[_requester];
 
-        return isPlatform || isRound || ownsThisSubmission || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isPeer(_requester) || IMatryxPlatform(platformAddress).isSubmission(_requester) || roundIsClosed;
+        return isPlatform || isRound || ownsThisSubmission || duringReviewAndRequesterInTournament || IMatryxPlatform(platformAddress).isSubmission(_requester) || roundIsClosed || hasFileAccess;
     }
 
     function getData() public view whenAccessible(msg.sender) returns(LibConstruction.SubmissionData _data) {

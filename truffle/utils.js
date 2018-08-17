@@ -104,13 +104,6 @@ module.exports = {
     const platform = Contract(MatryxPlatform.address, MatryxPlatform, accountNum)
     const token = Contract(network.tokenAddress, MatryxToken, 0)
 
-    console.log(chalk`\nSetup {yellow ${account}}`)
-    const hasPeer = await platform.hasPeer(account)
-    if (!hasPeer) {
-      let { hash } = await platform.createPeer({ gasLimit: 4.5e6 })
-      await this.getMinedTx('Platform.createPeer', hash)
-    }
-
     const tokenReleaseAgent = await token.releaseAgent()
     if (tokenReleaseAgent === '0x0000000000000000000000000000000000000000') {
       let { hash } = await token.setReleaseAgent(account)
@@ -125,6 +118,13 @@ module.exports = {
     if (balance == 0) {
       let { hash } = await token.mint(account, tokens)
       await this.getMinedTx('Token.mint', hash)
+    }
+
+    console.log(chalk`\nSetup {yellow ${account}}`)
+    const hasPeer = await platform.hasPeer(account)
+    if (!hasPeer) {
+      let { hash } = await platform.createPeer({ gasLimit: 4.5e6 })
+      await this.getMinedTx('Platform.createPeer', hash)
     }
 
     const allowance = await token.allowance(account, platform.address) / 1e18 | 0
