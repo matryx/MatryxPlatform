@@ -127,9 +127,7 @@ contract MatryxTournament is Ownable, IMatryxTournament {
 
     modifier whileEnterable()
     {
-        uint256 state = getState();
-        require(state == uint256(LibEnums.TournamentState.Open) ||
-                state == uint256(LibEnums.TournamentState.OnHold));
+        require(getState() <= uint256(LibEnums.TournamentState.Open));
         _;
     }
 
