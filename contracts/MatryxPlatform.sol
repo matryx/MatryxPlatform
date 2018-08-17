@@ -269,16 +269,8 @@ contract MatryxPlatform is Ownable {
         IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
         uint256 entryFee = tournament.getEntryFee();
 
-        bool success = IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, _tournamentAddress, entryFee);
-        if(success)
-        {
-            success = tournament.enterUserInTournament(msg.sender);
-            if(success)
-            {
-                emit UserEnteredTournament(msg.sender, _tournamentAddress);
-            }
-        }
-
+        require(tournament.enterUserInTournament(msg.sender));
+        emit UserEnteredTournament(msg.sender, _tournamentAddress);
         return true;
     }
 

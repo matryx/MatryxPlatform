@@ -53,7 +53,7 @@ module.exports = {
         return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/metamask")
       },
       network_id: 3,
-      gas: 4700000
+      gas: 4500000
     },
     testing: {
       host: "localhost",
