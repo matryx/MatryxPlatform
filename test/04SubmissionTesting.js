@@ -6,8 +6,6 @@ const ethers = require('ethers')
 const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('./utils')
 let platform;
 
-
-
 const genId = length => new Array(length).fill(0).map(() => Math.floor(36 * Math.random()).toString(36)).join('')
 const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * Math.random()).toString(16)).join('')
 
@@ -135,42 +133,7 @@ const updateSubmission = async submission => {
 
 }
 
-const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rewardDistribution, roundData, selectWinnerAction) => {
-  tournament.accountNumber = accountNumber
-
-  const [_, roundAddress] = await tournament.currentRound()
-  const round = Contract(roundAddress, MatryxRound, accountNumber)
-  const roundEndTime = await round.getEndTime()
-
-  let timeTilRoundInReview = roundEndTime - Date.now() / 1000
-  timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
-
-  await sleep(timeTilRoundInReview * 1000)
-
-  const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
-  await getMinedTx('Tournament.selectWinners', tx.hash)
-}
-
-const waitUntilClose = async (tournament) => {
-  const [_, roundAddress] = await tournament.currentRound();
-  const round = Contract(roundAddress, MatryxRound)
-  const roundEndTime = +await round.getEndTime()
-  const reviewPeriodDuration = +await round.getReviewPeriodDuration()
-  const timeTilClose = Math.max(0, roundEndTime + reviewPeriodDuration - Date.now() / 1000)
-
-  await sleep(timeTilClose * 1000)
-}
-
-const logSubmissions = async tournament => {
-  const [_, roundAddress] = await tournament.currentRound();
-  const round = Contract(roundAddress, MatryxRound)
-  const submissions = await round.getSubmissions()
-  submissions.forEach((s, i) => {
-  })
-  return submissions
-}
-
-contract('Submission Testing No Contributors and References', function(accounts) {
+contract('Submission Testing with No Contributors and References', function(accounts) {
   let t; //tournament
   let r; //round
   let s; //submission
@@ -192,7 +155,7 @@ contract('Submission Testing No Contributors and References', function(accounts)
       r = Contract(roundAddress, MatryxRound, 0)
 
       //Create submission with no contributors
-      s = await createSubmission(t,false, 1)
+      s = await createSubmission(t, false, 1)
       stime = Math.floor(Date.now() / 1000);
       utime = Math.floor(Date.now() / 1000);
       s = Contract(s.address, MatryxSubmission, 1)
@@ -263,12 +226,6 @@ contract('Submission Testing No Contributors and References', function(accounts)
     assert.isTrue(Math.abs(update_time - utime) < 10 ,"Update Time is not correct")
   });
 
-  it("Choose Winner", async function () {
-    let submissions = await logSubmissions(t)
-    await selectWinnersWhenInReview(t, 0, submissions, submissions.map(s => 1), [0, 0, 0, 0, 0], 0)
-    let winnings = await s.getTotalWinnings();
-    assert(winnings, "Winner was not chosen")
-  });
 });
 
 contract('Submission Testing with Contributors', function(accounts) {
@@ -354,3 +311,4 @@ contract('Submission Testing with Contributors', function(accounts) {
 
 
 });
+
