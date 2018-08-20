@@ -176,7 +176,6 @@ contract('Open Round Testing', function(accounts) {
 
     it("Round state is Open", async function () {
       let state = await r.getState();
-      console.log(state);
       assert.equal(state, 2, "Round State should be Open");
     });
 
@@ -228,7 +227,6 @@ contract('Open Round Testing', function(accounts) {
 
 //     it("Round state is In Review", async function () {
 //         let state = await r.getState();
-//         console.log(state);
 //         assert.equal(state, 3, "Round State should be In Review");
 //     });
 
@@ -259,7 +257,6 @@ contract('Abandoned Round Testing', function(accounts) {
 
     it("Round state is Abandoned", async function () {
         let state = await r.getState();
-        console.log(state);
         assert.equal(state, 6, "Round State should be Abandoned");
     });
 
