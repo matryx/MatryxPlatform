@@ -5,20 +5,38 @@
       "constant": false,
       "inputs": [
         {
-          "name": "_platform",
+          "name": "_platformAddress",
           "type": "address"
         },
         {
-          "name": "_tournament",
+          "name": "_tournamentAddress",
           "type": "address"
         },
         {
-          "name": "_owner",
-          "type": "address"
-        },
-        {
-          "name": "_bountyMTX",
-          "type": "uint256"
+          "components": [
+            {
+              "name": "start",
+              "type": "uint256"
+            },
+            {
+              "name": "end",
+              "type": "uint256"
+            },
+            {
+              "name": "reviewPeriodDuration",
+              "type": "uint256"
+            },
+            {
+              "name": "bounty",
+              "type": "uint256"
+            },
+            {
+              "name": "closed",
+              "type": "bool"
+            }
+          ],
+          "name": "roundData",
+          "type": "tuple"
         }
       ],
       "name": "createRound",
@@ -31,26 +49,63 @@
       "payable": false,
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_nameHash",
+          "type": "bytes32"
+        },
+        {
+          "name": "_contractAddress",
+          "type": "address"
+        }
+      ],
+      "name": "setContractAddress",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_nameHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getContractAddress",
+      "outputs": [
+        {
+          "name": "contractAddress",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
   ],
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "pragma solidity ^0.4.18;\n\ninterface IMatryxRoundFactory\n{\n\tfunction createRound(address _platform, address _tournament, address _owner, uint256 _bountyMTX) public returns (address _roundAddress);\n}",
-  "sourcePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/interfaces/factories/IMatryxRoundFactory.sol",
+  "source": "pragma solidity ^0.4.18;\npragma experimental ABIEncoderV2;\n\nimport \"../../libraries/LibConstruction.sol\";\n\ninterface IMatryxRoundFactory\n{\n\tfunction createRound(address _platformAddress, address _tournamentAddress, LibConstruction.RoundData roundData) public returns (address _roundAddress);\n    function setContractAddress(bytes32 _nameHash, address _contractAddress) public;\n    function getContractAddress(bytes32 _nameHash) public returns (address contractAddress);\n}\n",
+  "sourcePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/factories/IMatryxRoundFactory.sol",
   "ast": {
-    "absolutePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/interfaces/factories/IMatryxRoundFactory.sol",
+    "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/factories/IMatryxRoundFactory.sol",
     "exportedSymbols": {
       "IMatryxRoundFactory": [
-        8156
+        7598
       ]
     },
-    "id": 8157,
+    "id": 7599,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 8142,
+        "id": 7570,
         "literals": [
           "solidity",
           "^",
@@ -58,7 +113,27 @@
           ".18"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:22"
+        "src": "0:24:37"
+      },
+      {
+        "id": 7571,
+        "literals": [
+          "experimental",
+          "ABIEncoderV2"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "25:33:37"
+      },
+      {
+        "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/libraries/LibConstruction.sol",
+        "file": "../../libraries/LibConstruction.sol",
+        "id": 7572,
+        "nodeType": "ImportDirective",
+        "scope": 7599,
+        "sourceUnit": 7769,
+        "src": "60:45:37",
+        "symbolAliases": [],
+        "unitAlias": ""
       },
       {
         "baseContracts": [],
@@ -66,16 +141,17 @@
         "contractKind": "interface",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 8156,
+        "id": 7598,
         "linearizedBaseContracts": [
-          8156
+          7598
         ],
         "name": "IMatryxRoundFactory",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": null,
-            "id": 8155,
+            "documentation": null,
+            "id": 7583,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": false,
@@ -83,16 +159,16 @@
             "name": "createRound",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8151,
+              "id": 7579,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8144,
-                  "name": "_platform",
+                  "id": 7574,
+                  "name": "_platformAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8155,
-                  "src": "80:17:22",
+                  "scope": 7583,
+                  "src": "161:24:37",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -100,10 +176,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 8143,
+                    "id": 7573,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "80:7:22",
+                    "src": "161:7:37",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -114,11 +190,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 8146,
-                  "name": "_tournament",
+                  "id": 7576,
+                  "name": "_tournamentAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8155,
-                  "src": "99:19:22",
+                  "scope": 7583,
+                  "src": "187:26:37",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -126,10 +202,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 8145,
+                    "id": 7575,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "99:7:22",
+                    "src": "187:7:37",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -140,71 +216,47 @@
                 },
                 {
                   "constant": false,
-                  "id": 8148,
-                  "name": "_owner",
+                  "id": 7578,
+                  "name": "roundData",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8155,
-                  "src": "120:14:22",
+                  "scope": 7583,
+                  "src": "215:35:37",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_address",
-                    "typeString": "address"
+                    "typeIdentifier": "t_struct$_RoundData_$7710_memory_ptr",
+                    "typeString": "struct LibConstruction.RoundData"
                   },
                   "typeName": {
-                    "id": 8147,
-                    "name": "address",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "120:7:22",
+                    "contractScope": null,
+                    "id": 7577,
+                    "name": "LibConstruction.RoundData",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 7710,
+                    "src": "215:25:37",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_address",
-                      "typeString": "address"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8150,
-                  "name": "_bountyMTX",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8155,
-                  "src": "136:18:22",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_uint256",
-                    "typeString": "uint256"
-                  },
-                  "typeName": {
-                    "id": 8149,
-                    "name": "uint256",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "136:7:22",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_uint256",
-                      "typeString": "uint256"
+                      "typeIdentifier": "t_struct$_RoundData_$7710_storage_ptr",
+                      "typeString": "struct LibConstruction.RoundData"
                     }
                   },
                   "value": null,
                   "visibility": "internal"
                 }
               ],
-              "src": "79:76:22"
+              "src": "160:91:37"
             },
             "payable": false,
             "returnParameters": {
-              "id": 8154,
+              "id": 7582,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8153,
+                  "id": 7581,
                   "name": "_roundAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8155,
-                  "src": "172:21:22",
+                  "scope": 7583,
+                  "src": "268:21:37",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -212,10 +264,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 8152,
+                    "id": 7580,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "172:7:22",
+                    "src": "268:7:37",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -225,33 +277,198 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "171:23:22"
+              "src": "267:23:37"
             },
-            "scope": 8156,
-            "src": "59:136:22",
+            "scope": 7598,
+            "src": "140:151:37",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7590,
+            "implemented": false,
+            "isConstructor": false,
+            "isDeclaredConst": false,
+            "modifiers": [],
+            "name": "setContractAddress",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7588,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7585,
+                  "name": "_nameHash",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7590,
+                  "src": "324:17:37",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  },
+                  "typeName": {
+                    "id": 7584,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "324:7:37",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7587,
+                  "name": "_contractAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7590,
+                  "src": "343:24:37",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7586,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "343:7:37",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "323:45:37"
+            },
+            "payable": false,
+            "returnParameters": {
+              "id": 7589,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "375:0:37"
+            },
+            "scope": 7598,
+            "src": "296:80:37",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7597,
+            "implemented": false,
+            "isConstructor": false,
+            "isDeclaredConst": false,
+            "modifiers": [],
+            "name": "getContractAddress",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7593,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7592,
+                  "name": "_nameHash",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7597,
+                  "src": "409:17:37",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  },
+                  "typeName": {
+                    "id": 7591,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "409:7:37",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "408:19:37"
+            },
+            "payable": false,
+            "returnParameters": {
+              "id": 7596,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7595,
+                  "name": "contractAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7597,
+                  "src": "444:23:37",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7594,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "444:7:37",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "443:25:37"
+            },
+            "scope": 7598,
+            "src": "381:88:37",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 8157,
-        "src": "26:171:22"
+        "scope": 7599,
+        "src": "107:364:37"
       }
     ],
-    "src": "0:197:22"
+    "src": "0:472:37"
   },
   "legacyAST": {
-    "absolutePath": "/Users/maxhoward/Desktop/Ethereum/Development/Matryx AWS/Projects/matryx-alpha-source/interfaces/factories/IMatryxRoundFactory.sol",
+    "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/factories/IMatryxRoundFactory.sol",
     "exportedSymbols": {
       "IMatryxRoundFactory": [
-        8156
+        7598
       ]
     },
-    "id": 8157,
+    "id": 7599,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 8142,
+        "id": 7570,
         "literals": [
           "solidity",
           "^",
@@ -259,7 +476,27 @@
           ".18"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:22"
+        "src": "0:24:37"
+      },
+      {
+        "id": 7571,
+        "literals": [
+          "experimental",
+          "ABIEncoderV2"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "25:33:37"
+      },
+      {
+        "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/libraries/LibConstruction.sol",
+        "file": "../../libraries/LibConstruction.sol",
+        "id": 7572,
+        "nodeType": "ImportDirective",
+        "scope": 7599,
+        "sourceUnit": 7769,
+        "src": "60:45:37",
+        "symbolAliases": [],
+        "unitAlias": ""
       },
       {
         "baseContracts": [],
@@ -267,16 +504,17 @@
         "contractKind": "interface",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 8156,
+        "id": 7598,
         "linearizedBaseContracts": [
-          8156
+          7598
         ],
         "name": "IMatryxRoundFactory",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": null,
-            "id": 8155,
+            "documentation": null,
+            "id": 7583,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": false,
@@ -284,16 +522,16 @@
             "name": "createRound",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8151,
+              "id": 7579,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8144,
-                  "name": "_platform",
+                  "id": 7574,
+                  "name": "_platformAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8155,
-                  "src": "80:17:22",
+                  "scope": 7583,
+                  "src": "161:24:37",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -301,10 +539,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 8143,
+                    "id": 7573,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "80:7:22",
+                    "src": "161:7:37",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -315,11 +553,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 8146,
-                  "name": "_tournament",
+                  "id": 7576,
+                  "name": "_tournamentAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8155,
-                  "src": "99:19:22",
+                  "scope": 7583,
+                  "src": "187:26:37",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -327,10 +565,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 8145,
+                    "id": 7575,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "99:7:22",
+                    "src": "187:7:37",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -341,71 +579,47 @@
                 },
                 {
                   "constant": false,
-                  "id": 8148,
-                  "name": "_owner",
+                  "id": 7578,
+                  "name": "roundData",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8155,
-                  "src": "120:14:22",
+                  "scope": 7583,
+                  "src": "215:35:37",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_address",
-                    "typeString": "address"
+                    "typeIdentifier": "t_struct$_RoundData_$7710_memory_ptr",
+                    "typeString": "struct LibConstruction.RoundData"
                   },
                   "typeName": {
-                    "id": 8147,
-                    "name": "address",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "120:7:22",
+                    "contractScope": null,
+                    "id": 7577,
+                    "name": "LibConstruction.RoundData",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 7710,
+                    "src": "215:25:37",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_address",
-                      "typeString": "address"
-                    }
-                  },
-                  "value": null,
-                  "visibility": "internal"
-                },
-                {
-                  "constant": false,
-                  "id": 8150,
-                  "name": "_bountyMTX",
-                  "nodeType": "VariableDeclaration",
-                  "scope": 8155,
-                  "src": "136:18:22",
-                  "stateVariable": false,
-                  "storageLocation": "default",
-                  "typeDescriptions": {
-                    "typeIdentifier": "t_uint256",
-                    "typeString": "uint256"
-                  },
-                  "typeName": {
-                    "id": 8149,
-                    "name": "uint256",
-                    "nodeType": "ElementaryTypeName",
-                    "src": "136:7:22",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_uint256",
-                      "typeString": "uint256"
+                      "typeIdentifier": "t_struct$_RoundData_$7710_storage_ptr",
+                      "typeString": "struct LibConstruction.RoundData"
                     }
                   },
                   "value": null,
                   "visibility": "internal"
                 }
               ],
-              "src": "79:76:22"
+              "src": "160:91:37"
             },
             "payable": false,
             "returnParameters": {
-              "id": 8154,
+              "id": 7582,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8153,
+                  "id": 7581,
                   "name": "_roundAddress",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8155,
-                  "src": "172:21:22",
+                  "scope": 7583,
+                  "src": "268:21:37",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -413,10 +627,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 8152,
+                    "id": 7580,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "172:7:22",
+                    "src": "268:7:37",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -426,26 +640,191 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "171:23:22"
+              "src": "267:23:37"
             },
-            "scope": 8156,
-            "src": "59:136:22",
+            "scope": 7598,
+            "src": "140:151:37",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7590,
+            "implemented": false,
+            "isConstructor": false,
+            "isDeclaredConst": false,
+            "modifiers": [],
+            "name": "setContractAddress",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7588,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7585,
+                  "name": "_nameHash",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7590,
+                  "src": "324:17:37",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  },
+                  "typeName": {
+                    "id": 7584,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "324:7:37",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7587,
+                  "name": "_contractAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7590,
+                  "src": "343:24:37",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7586,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "343:7:37",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "323:45:37"
+            },
+            "payable": false,
+            "returnParameters": {
+              "id": 7589,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "375:0:37"
+            },
+            "scope": 7598,
+            "src": "296:80:37",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7597,
+            "implemented": false,
+            "isConstructor": false,
+            "isDeclaredConst": false,
+            "modifiers": [],
+            "name": "getContractAddress",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7593,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7592,
+                  "name": "_nameHash",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7597,
+                  "src": "409:17:37",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  },
+                  "typeName": {
+                    "id": 7591,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "409:7:37",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "408:19:37"
+            },
+            "payable": false,
+            "returnParameters": {
+              "id": 7596,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7595,
+                  "name": "contractAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7597,
+                  "src": "444:23:37",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7594,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "444:7:37",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "443:25:37"
+            },
+            "scope": 7598,
+            "src": "381:88:37",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 8157,
-        "src": "26:171:22"
+        "scope": 7599,
+        "src": "107:364:37"
       }
     ],
-    "src": "0:197:22"
+    "src": "0:472:37"
   },
   "compiler": {
     "name": "solc",
-    "version": "0.4.19+commit.c4cbbb05.Emscripten.clang"
+    "version": "0.4.24+commit.e67f0147.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "2.0.0",
-  "updatedAt": "2018-04-05T19:07:08.474Z"
+  "schemaVersion": "2.0.1",
+  "updatedAt": "2018-08-20T16:57:24.277Z"
 }

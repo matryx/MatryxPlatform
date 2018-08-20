@@ -1,25 +1,26 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
 
-import '../MatryxTournament.sol';
-import '../Ownable.sol';
+import "../../libraries/LibConstruction.sol";
+import "../../interfaces/IMatryxPlatform.sol";
+import "../JMatryxTournament.sol";
+import "../Ownable.sol";
 
 contract MatryxTournamentFactory is Ownable {
-	address public matryxTokenAddress;
-	address public platformAddress;
-	address public matryxRoundFactoryAddress;
+    address public platformAddress;
+    address public matryxRoundFactoryAddress;
 
-	function MatryxTournamentFactory(address _matryxTokenAddress, address _matryxRoundFactoryAddress) public {
-		matryxTokenAddress = _matryxTokenAddress;
-		matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
-	}
+    constructor(address _matryxRoundFactoryAddress) public {
+        matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
+    }
 
-	function createTournament(address _owner, string _category, string _tournamentTitle, bytes _externalAddress, uint256 _BountyMTX, uint256 _entryFee) public returns (address _tournamentAddress) {
-		MatryxTournament newTournament = new MatryxTournament(platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, _owner, _category, _tournamentTitle, _externalAddress, _BountyMTX, _entryFee);
-		return newTournament;
-	}
+    function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData, address _owner) public returns (address _tournamentAddress) {
+        JMatryxTournament newTournament = new JMatryxTournament(_owner, platformAddress, matryxRoundFactoryAddress, tournamentData, roundData);
+        return newTournament;
+    }
 
-	function setPlatform(address _platformAddress) public onlyOwner
-	{
-		platformAddress = _platformAddress;
-	}
+    function setPlatform(address _platformAddress) public onlyOwner
+    {
+        platformAddress = _platformAddress;
+    }
 }

@@ -1,23 +1,27 @@
 var SafeMath = artifacts.require("../libraries/math/SafeMath.sol");
 var Strings = artifacts.require("../libraries/strings/strings.sol");
-var SubmissionTrust = artifacts.require("SubmissionTrust");
-var RoundManagement = artifacts.require("./reputation/RoundManagement.sol");
+var LibTournamentEntrantMethods = artifacts.require("../libraries/tournament/LibTournamentEntrantMethods.sol");
 var MatryxPlatform = artifacts.require("MatryxPlatform");
 var MatryxPeerFactory = artifacts.require("MatryxPeerFactory");
 var MatryxTournamentFactory = artifacts.require("MatryxTournamentFactory");
+var MatryxSubmissionFactory = artifacts.require("MatryxSubmissionFactory");
+var { tokenAddress } = require('../truffle/network');
 
-module.exports = function(deployer) {
-	return deployer.deploy(MatryxPlatform, "0x89c81164a847fae12841c7d2371864c7656f91c9", MatryxPeerFactory.address, MatryxTournamentFactory.address, SubmissionTrust.address).then(() =>
-	{
+
+module.exports = function (deployer) {
+	return deployer.deploy(MatryxPlatform, tokenAddress, MatryxPeerFactory.address, MatryxTournamentFactory.address, MatryxSubmissionFactory.address).then((platform) => {
 		// Supply the platform address to the contracts that need it.
-		MatryxTournamentFactory.deployed().then((tournamentFactory) =>
-		{
+		MatryxTournamentFactory.deployed().then((tournamentFactory) => {
 			tournamentFactory.setPlatform(MatryxPlatform.address);
 		});
 
-		MatryxPeerFactory.deployed().then((peerFactory) =>
-		{
+		MatryxPeerFactory.deployed().then((peerFactory) => {
 			peerFactory.setPlatform(MatryxPlatform.address);
-		})
+		});
+
+		// TODO: Make this particular call in the platform constructor by passing iterable mapping struct
+		// leave the set and get methods though :) Could be useful for manual things later (think: modifiers for registers of allowed addresses)
+		platform.setContractAddress(web3.sha3("LibTournamentEntrantMethods"), LibTournamentEntrantMethods.address);
+		platform.setTokenAddress(tokenAddress);
 	});
-};
+}

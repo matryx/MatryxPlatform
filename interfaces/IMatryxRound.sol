@@ -1,23 +1,35 @@
 pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
+
+import "../libraries/LibConstruction.sol";
+import "../libraries/round/LibRound.sol";
 
 interface IMatryxRound
 {
-	function removeSubmission(address _submissionAddress) public returns (bool);
-	function isOpen() public constant returns (bool);
-	function isInReview() public constant returns (bool);
-	function submissionIsAccessible(uint256 _index) public constant returns (bool);
-	function requesterIsContributor(address _requester) public constant returns (bool);
-	function setParticipantType(address _participantAddress, uint256 _type) public;
-	function getBounty() public constant returns (uint256);
-	function getTokenAddress() public constant returns (address);
-	function getSubmissions() public constant returns (address[] _submissions);
-	function getSubmissionAuthor(uint256 _index) public constant returns (address) ;
-	function submissionChosen() public constant returns (bool);
-	function getWinningSubmissionAddress() public constant returns (address);
-	function numberOfSubmissions() public constant returns (uint256);
-	function Start(uint256 _duration, uint256 _reviewPeriod) public;
-	function chooseWinningSubmission(address _submissionAddress) public;
-	function awardBounty(address _submissionAddress, uint256 _remainingBounty) public;
-	function createSubmission(string _name, address _owner, address _author, bytes _externalAddress, address[] _references, address[] _contributors, uint128[] _contributorRewardDistribution) public returns (address _submissionAddress);
-	function getBalance(address _submissionAddress) public constant returns (uint256);
+    function submissionExists(address _submissionAddress) public view returns (bool);
+    function addBounty(uint256 _mtxAllocation) public;
+    function getState() public view returns (uint256);
+    function getPlatform() public view returns (address);
+    function getTournament() public view returns (address);
+    function getData() public view returns (LibConstruction.RoundData _roundData);
+    function getStartTime() public view returns (uint256);
+    function getEndTime() public view returns (uint256);
+    function getReviewPeriodDuration() public view returns (uint256);
+    function getBounty() public view returns (uint256);
+    function getRemainingBounty() public view returns (uint256);
+    function getTokenAddress() public view returns (address);
+    function getSubmissions() public view returns (address[] _submissions);
+    function getBalance(address _submissionAddress) public view returns (uint256);
+    function getRoundBalance() public view returns (uint256);
+    function submissionsChosen() public view returns (bool);
+    function getWinningSubmissionAddresses() public view returns (address[]);
+    function numberOfSubmissions() public view returns (uint256);
+    function editRound(uint256 _currentRoundEndTime, LibConstruction.RoundData _roundData) public;
+    function transferToTournament(uint256 _amount) public;
+    function selectWinningSubmissions(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public;
+    function transferBountyToTournament() public returns (uint256);
+    function transferAllToWinners(uint256 _tournamentBalance) public;
+    function startNow() public;
+    function closeRound() public;
+    function createSubmission(address _owner, address platformAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
 }

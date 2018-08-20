@@ -13,8 +13,19 @@
     If you're not careful, you run the risk of attempting (and failing) to migrate an abstract contract.
 8)  Write validation functions to ensure the state of your contracts are stable. These are particular
     important to call after calling a function on a contract you did not write!
-9)  Using 'var' at the top of a far loop is probably not what you want to do.
+9)  Using 'var' at the top of a for loop is probably not what you want to do.
 10) Using a for loop is probably not what you want to do (at least very often).
 11) If you have no peers on your geth node and you explicitly told geth about your peers,
     it's probably a wifi issue. Try switching networks.
 
+
+
++============+
+|  JULIA     |
+|  Lessons   |
++============+
+1) Constructor Parameters are stored sequentially in memory and start at 0x80
+2) Return a variable: mstore(0, v) //store parameter
+                      return(0, 0x20) //return 32 bytes of memory
+3) we shift over 28 bytes which is 56 zeros to put signature at the upper bytes of the word
+4)

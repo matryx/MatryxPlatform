@@ -1,0 +1,318 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Participating in a Tournament &mdash; Matryx 0.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tournament Administration" href="tournament-admin.html" />
+    <link rel="prev" title="Diving into Matryx" href="getting-started.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Matryx
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Diving into Matryx</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Participating in a Tournament</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-submission">Creating a Submission</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#editing-your-submissions">Editing your Submissions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#exiting-a-tournament">Exiting a Tournament</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tournament-admin.html">Tournament Administration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trust-and-reputation.html">Reputation System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source_faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source_versions.html">Versions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/api.html">Source Code Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Matryx</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Participating in a Tournament</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tournament-participating.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="participating-in-a-tournament">
+<h1>Participating in a Tournament<a class="headerlink" href="#participating-in-a-tournament" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="creating-a-submission">
+<h2>Creating a Submission<a class="headerlink" href="#creating-a-submission" title="Permalink to this headline">¶</a></h2>
+<p>To create a submission, you will first need to assemble all of your submission details and content as follows:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionData
+{
+    bytes32[3] title;
+    bytes32[2] descriptionHash;
+    bytes32[2] fileHash;
+    uint256 timeSubmitted;
+    uint256 timeUpdated;
+}
+</pre></div>
+</div>
+<p>Here you have the opportunity to cite any contributors or references in your submission and specify the intended reward distribution among all the contributors (expressed as a percentage or a proportion). This information should be included into the submission as follows:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ContributorsAndReferences
+{
+    address[] contributors;
+    uint256[] contributorRewardDistribution;
+    address[] references;
+}
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The contributors and contributor reward distribution arrays must have the same number of entries.</p>
+</div>
+<p>This is the <code class="docutils literal notranslate"><span class="pre">createSubmission</span></code> function signature:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function createSubmission(submissionData, contributorsAndReferences)
+</pre></div>
+</div>
+</div>
+<div class="section" id="editing-your-submissions">
+<h2>Editing your Submissions<a class="headerlink" href="#editing-your-submissions" title="Permalink to this headline">¶</a></h2>
+<p>As long as the current round remains open, you are able to edit any submissions you have made. To modify the data of your submisison, you can call the <code class="docutils literal notranslate"><span class="pre">updateData</span></code> function like this:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateData(submissionModificationData)
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">SubmissionModificationData</span></code> is the following:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionModificationData
+{
+    bytes32[3] title;
+    bytes32[2] descriptionHash;
+    bytes32[2] fileHash;
+}
+</pre></div>
+</div>
+<p>Similarly, you can update your submission’s contributors and references with the following calls:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateContributors(contributorsModificationData)
+mySubmission.updateReferences(referencesModificationData)
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">ContributorsModificationData</span></code> is</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ContributorsModificationData
+{
+    address[] contributorsToAdd;
+    uint256[] contributorRewardDistribution;
+    uint256[] contributorsToRemove;
+}
+</pre></div>
+</div>
+<p>and <code class="docutils literal notranslate"><span class="pre">ReferencesModificationData</span></code> is</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ReferencesModificationData
+{
+    address[] referencesToAdd;
+    uint256[] referencesToRemove;
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="exiting-a-tournament">
+<h2>Exiting a Tournament<a class="headerlink" href="#exiting-a-tournament" title="Permalink to this headline">¶</a></h2>
+<p>You can choose to exit an ongoing tournament at any time. When you exit, you can claim the entry fee that you paid when you first entered the tournament with this call:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.collectMyEntryFee()
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you later decide to enter the tournament again, you will have to pay the current tournament entry fee before you’re able to make any submissions.</p>
+</div>
+<p>If a tournament you are currently participating in happens to become Abandoned, you can collect your share of the remaining tournament bounty with the following call:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.withdrawFromAbandoned()
+</pre></div>
+</div>
+<p>Your tournament entry fee will also be returned to you when you make this call.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tournament-admin.html" class="btn btn-neutral float-right" title="Tournament Administration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="getting-started.html" class="btn btn-neutral" title="Diving into Matryx" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Max Howard, Sam Hessenauer.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.2',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
