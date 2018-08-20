@@ -194,53 +194,53 @@ module.exports = async exit => {
     await init()
     const tournamentCreator = 0
 
-    // let RoundNotYetOpen = {
-    //   start: Math.floor(Date.now() / 1000) + 999999,
-    //   end: Math.floor(Date.now() / 1000) + 9999999,
-    //   reviewPeriodDuration: 12345678,
-    //   bounty: web3.toWei(3),
-    //   closed: false
-    // }
-    // const tournament_a = await createTournament(web3.toWei(10), RoundNotYetOpen, tournamentCreator)
+    let RoundNotYetOpen = {
+      start: Math.floor(Date.now() / 1000) + 999999,
+      end: Math.floor(Date.now() / 1000) + 9999999,
+      reviewPeriodDuration: 12345678,
+      bounty: web3.toWei(3),
+      closed: false
+    }
+    const tournament_a = await createTournament(web3.toWei(10), RoundNotYetOpen, tournamentCreator)
 
-    // // ----------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------
 
-    // let RoundUnfunded = {
-    //   start: Math.floor(Date.now() / 1000) + 60,
-    //   end: Math.floor(Date.now() / 1000) + 999999,
-    //   reviewPeriodDuration: 12345678,
-    //   bounty: 0,
-    //   closed: false
-    // }
-    // const tournament_b = await createTournament(web3.toWei(10), RoundUnfunded, tournamentCreator)
+    let RoundUnfunded = {
+      start: Math.floor(Date.now() / 1000) + 60,
+      end: Math.floor(Date.now() / 1000) + 999999,
+      reviewPeriodDuration: 12345678,
+      bounty: 0,
+      closed: false
+    }
+    const tournament_b = await createTournament(web3.toWei(10), RoundUnfunded, tournamentCreator)
 
-    // // ----------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------
 
-    // let RoundOpenWithZero = {
-    //   start: Math.floor(Date.now() / 1000),
-    //   end: Math.floor(Date.now() / 1000) + 999999,
-    //   reviewPeriodDuration: 12345678,
-    //   bounty: web3.toWei(3),
-    //   closed: false
-    // }
-    // const tournament_c = await createTournament(web3.toWei(10), RoundOpenWithZero, tournamentCreator)
+    let RoundOpenWithZero = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 999999,
+      reviewPeriodDuration: 12345678,
+      bounty: web3.toWei(3),
+      closed: false
+    }
+    const tournament_c = await createTournament(web3.toWei(10), RoundOpenWithZero, tournamentCreator)
 
-    // // ----------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------
 
-    // let RoundOpenWithThree = {
-    //   start: Math.floor(Date.now() / 1000),
-    //   end: Math.floor(Date.now() / 1000) + 999999,
-    //   reviewPeriodDuration: 12345678,
-    //   bounty: web3.toWei(3),
-    //   closed: false
-    // }
-    // const tournament_d = await createTournament(web3.toWei(10), RoundOpenWithThree, tournamentCreator)
-    // submission = await createSubmission(tournament_d, 1)
-    // await updateSubmission(submission)
-    // await createSubmission(tournament_d, 2)
-    // await createSubmission(tournament_d, 3)
+    let RoundOpenWithThree = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 999999,
+      reviewPeriodDuration: 12345678,
+      bounty: web3.toWei(3),
+      closed: false
+    }
+    const tournament_d = await createTournament(web3.toWei(10), RoundOpenWithThree, tournamentCreator)
+    submission = await createSubmission(tournament_d, 1)
+    await updateSubmission(submission)
+    await createSubmission(tournament_d, 2)
+    await createSubmission(tournament_d, 3)
 
-    // // ----------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------
 
     let RoundHasWinnersWithThree = {
       start: Math.floor(Date.now() / 1000),
@@ -258,14 +258,14 @@ module.exports = async exit => {
 
     // ----------------------------------------------------------------------------------------------
 
-    // let RoundInReviewWithZero = {
-    //   start: Math.floor(Date.now() / 1000),
-    //   end: Math.floor(Date.now() / 1000) + 300, // CHANGE FOR ROPSTEN
-    //   reviewPeriodDuration: 999999,
-    //   bounty: web3.toWei(3),
-    //   closed: false
-    // }
-    // const tournament_f = await createTournament(web3.toWei(10), RoundInReviewWithZero, tournamentCreator)
+    let RoundInReviewWithZero = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 300, // CHANGE FOR ROPSTEN
+      reviewPeriodDuration: 999999,
+      bounty: web3.toWei(3),
+      closed: false
+    }
+    const tournament_f = await createTournament(web3.toWei(10), RoundInReviewWithZero, tournamentCreator)
 
     // ----------------------------------------------------------------------------------------------
 
