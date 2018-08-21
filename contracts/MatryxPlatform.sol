@@ -285,8 +285,14 @@ contract MatryxPlatform is Ownable {
         return (hasEnteredMatryx[_sender]);
     }
 
-    function isSubmission(address _submissionAddress) public view returns (bool){
+    function isSubmission(address _submissionAddress) public view returns (bool)
+    {
         return submissionExists[_submissionAddress];
+    }
+
+    function isTournament(address _tournamentAddress) public view returns (bool)
+    {
+        return tournamentExists[_tournamentAddress];
     }
 
     /// @dev Returns whether or not the given tournament belongs to the sender.
