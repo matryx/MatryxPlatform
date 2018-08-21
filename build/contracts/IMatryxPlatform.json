@@ -595,9 +595,9 @@
   "sourceMap": "",
   "deployedSourceMap": "",
   "source": "pragma solidity ^0.4.18;\npragma experimental ABIEncoderV2;\n\nimport \"../libraries/LibConstruction.sol\";\n\ninterface IMatryxPlatform\n{\n    function invokeTournamentOpenedEvent(bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee) public;\n    function invokeTournamentClosedEvent(uint256 _finalRoundNumber, uint256 _MTXReward) public;\n    function updateSubmissions(address _owner, address _submission) public;\n    function removeSubmission(address _submissionAddress, address _tournamentAddress) public;\n    function getTournamentsByCategory(bytes32 _category) external view returns (address[]);\n    function getCategoryCount(bytes32 _category) external view returns (uint256);\n    // function getTopCategory(uint256 _index) external view returns (bytes32);\n    function getCategoryByIndex(uint256 _index) public view returns (bytes32);\n    function addTournamentToCategory(address _tournamentAddress, bytes32 _category) public;\n    function removeTournamentFromCategory(address _tournamentAddress, bytes32 _category) public;\n    function switchTournamentCategory(address _tournamentAddress, bytes32 _oldCategory, bytes32 _newCategory) public;\n    function enterTournament(address _tournamentAddress) public returns (bool _success);\n    function createTournament(bytes32 _category, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress);\n    function createPeer() public returns (address);\n    function isPeer(address _peerAddress) public view returns (bool);\n    function hasPeer(address _sender) public view returns (bool);\n    function peerExistsAndOwnsSubmission(address _peer, address _reference) public view returns (bool);\n    function peerAddress(address _sender) public view returns (address);\n    function isSubmission(address _submissionAddress) public view returns (bool);\n    function isTournament(address _tournamentAddress) public view returns (bool);\n    function hashForCategory(bytes32 _categoryHash) public view returns (bytes32 _category);\n    function getTournament_IsMine(address _tournamentAddress) public view returns (bool _isMine);\n    function setSubmissionGratitude(uint256 _gratitude) public;\n    function getTokenAddress() public view returns (address);\n    function getTournamentFactoryAddress() public view returns (address);\n    function getSubmissionGratitude() public view returns (uint256);\n    function myTournaments() public view returns (address[]);\n    function mySubmissions() public view returns (address[]);\n    function tournamentCount() public view returns (uint256 _tournamentCount);\n    function getTournamentAtIndex(uint256 _index) public view returns (address _tournamentAddress);\n}\n",
-  "sourcePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/IMatryxPlatform.sol",
+  "sourcePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/interfaces/IMatryxPlatform.sol",
   "ast": {
-    "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/IMatryxPlatform.sol",
+    "absolutePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/interfaces/IMatryxPlatform.sol",
     "exportedSymbols": {
       "IMatryxPlatform": [
         6994
@@ -627,7 +627,7 @@
         "src": "25:33:30"
       },
       {
-        "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/libraries/LibConstruction.sol",
+        "absolutePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/libraries/LibConstruction.sol",
         "file": "../libraries/LibConstruction.sol",
         "id": 6785,
         "nodeType": "ImportDirective",
@@ -3110,7 +3110,7 @@
     "src": "0:2824:30"
   },
   "legacyAST": {
-    "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/IMatryxPlatform.sol",
+    "absolutePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/interfaces/IMatryxPlatform.sol",
     "exportedSymbols": {
       "IMatryxPlatform": [
         6994
@@ -3140,7 +3140,7 @@
         "src": "25:33:30"
       },
       {
-        "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/libraries/LibConstruction.sol",
+        "absolutePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/libraries/LibConstruction.sol",
         "file": "../libraries/LibConstruction.sol",
         "id": 6785,
         "nodeType": "ImportDirective",
@@ -5628,5 +5628,5 @@
   },
   "networks": {},
   "schemaVersion": "2.0.1",
-  "updatedAt": "2018-08-20T16:57:24.275Z"
+  "updatedAt": "2018-08-18T00:22:27.856Z"
 }

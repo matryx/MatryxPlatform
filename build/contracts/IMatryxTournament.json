@@ -656,9 +656,9 @@
   "sourceMap": "",
   "deployedSourceMap": "",
   "source": "pragma solidity ^0.4.18;\npragma experimental ABIEncoderV2;\n\nimport \"../libraries/LibConstruction.sol\";\nimport \"../libraries/round/LibRound.sol\";\n\ninterface IMatryxTournament\n{\n    function invokeSubmissionCreatedEvent(address _submissionAddress) public;\n    function getPlatform() public view returns (address _platformAddress);\n    function getTokenAddress() public view returns (address _matryxTokenAddress);\n\n    function removeSubmission(address _submissionAddress, address _author) public;\n    function isEntrant(address _address) public view returns (bool _isEntrant);\n    function isRound(address _address) public view returns (bool _isRound);\n\n    function getRounds() public view returns (address[] _rounds);\n    function getState() public view returns (uint256 state);\n    function getData() public view returns (LibConstruction.TournamentData _data);\n    function currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress);\n    function getCategory() public view returns (bytes32 _category);\n    function getTitle() public view returns (bytes32[3] _title);\n    function getDescriptionHash() public view returns (bytes32[2] _descriptionHash);\n    function getFileHash() public view returns (bytes32[2] _fileHash);\n    function getBounty() public view returns (uint256);\n    function getBalance() public view returns (uint256);\n    function getEntryFee() public view returns (uint256);\n    function collectMyEntryFee() public;\n\n    function mySubmissions() public view returns (address[]);\n\n    function submissionCount() public view returns (uint256);\n    function entrantCount() public view returns (uint256);\n    function update(LibConstruction.TournamentModificationData tournamentData) public;\n\n    function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public;\n    function editGhostRound(LibConstruction.RoundData _roundData) public;\n    function allocateMoreToRound(uint256 _mtxAllocation) public;\n\n    function jumpToNextRound() public;\n    function stopTournament() public;\n    function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress);\n    function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public;\n    function enterUserInTournament(address _entrantAddress) public returns (bool _success);\n    function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public returns (address _newSubmission);\n    function withdrawFromAbandoned() public;\n}\n",
-  "sourcePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/IMatryxTournament.sol",
+  "sourcePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/interfaces/IMatryxTournament.sol",
   "ast": {
-    "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/IMatryxTournament.sol",
+    "absolutePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/interfaces/IMatryxTournament.sol",
     "exportedSymbols": {
       "IMatryxTournament": [
         7532
@@ -688,7 +688,7 @@
         "src": "25:33:34"
       },
       {
-        "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/libraries/LibConstruction.sol",
+        "absolutePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/libraries/LibConstruction.sol",
         "file": "../libraries/LibConstruction.sol",
         "id": 7348,
         "nodeType": "ImportDirective",
@@ -699,7 +699,7 @@
         "unitAlias": ""
       },
       {
-        "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/libraries/round/LibRound.sol",
+        "absolutePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/libraries/round/LibRound.sol",
         "file": "../libraries/round/LibRound.sol",
         "id": 7349,
         "nodeType": "ImportDirective",
@@ -2822,7 +2822,7 @@
     "src": "0:2599:34"
   },
   "legacyAST": {
-    "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/interfaces/IMatryxTournament.sol",
+    "absolutePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/interfaces/IMatryxTournament.sol",
     "exportedSymbols": {
       "IMatryxTournament": [
         7532
@@ -2852,7 +2852,7 @@
         "src": "25:33:34"
       },
       {
-        "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/libraries/LibConstruction.sol",
+        "absolutePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/libraries/LibConstruction.sol",
         "file": "../libraries/LibConstruction.sol",
         "id": 7348,
         "nodeType": "ImportDirective",
@@ -2863,7 +2863,7 @@
         "unitAlias": ""
       },
       {
-        "absolutePath": "/Users/maxhoward/Desktop/Ethereum/MatryxPlatform/libraries/round/LibRound.sol",
+        "absolutePath": "/Users/ajm13/Desktop/matryx/MatryxPlatform/libraries/round/LibRound.sol",
         "file": "../libraries/round/LibRound.sol",
         "id": 7349,
         "nodeType": "ImportDirective",
@@ -4991,5 +4991,5 @@
   },
   "networks": {},
   "schemaVersion": "2.0.1",
-  "updatedAt": "2018-08-20T16:57:24.276Z"
+  "updatedAt": "2018-08-18T00:22:27.858Z"
 }
