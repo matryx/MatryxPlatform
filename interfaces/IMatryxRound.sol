@@ -30,6 +30,5 @@ interface IMatryxRound
     function transferBountyToTournament() public returns (uint256);
     function transferAllToWinners(uint256 _tournamentBalance) public;
     function startNow() public;
-    function closeRound() public;
     function createSubmission(address _owner, address platformAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
 }

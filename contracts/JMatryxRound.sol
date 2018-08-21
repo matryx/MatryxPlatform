@@ -60,7 +60,6 @@ contract JMatryxRound {
             case 0x07417cf1 { transferBountyToTournament(sOffset) }    // transferBountyToTournament()
             case 0x5325cdba { transferAllToWinners(sOffset) }          // transferAllToWinners(uint256)
             case 0x0e3db9f2 { startNow() }                             // startNow()
-            case 0xe278fe6f { closeRound(sOffset) }                    // closeRound()
             case 0x57c60fb0 { createSubmission(sOffset) }              // createSubmission(address,address,(bytes32[3],bytes32[2],bytes32[2],uint256,uint256))
 
             // Bro why you tryna call a function that doesn't exist?  // ¯\_(ツ)_/¯
@@ -407,14 +406,6 @@ contract JMatryxRound {
                 sstore(add(data_slot, 1), add(start, dur))  // data.end = data.start + dur
             }
 
-            // function closeRound() public onlyTournament hasWinners
-            function closeRound(offset) {
-                onlyTournament()
-                hasWinners(offset)
-
-                sstore(add(data_slot, 4), 1)  // data.closed = true
-            }
-
             // function createSubmission(address _owner, address platformAddress, LibConstruction.SubmissionData submissionData) public onlyTournament duringOpenRound returns (address _submissionAddress)
             function createSubmission(offset) {
                 onlyTournament()
@@ -510,6 +501,5 @@ interface IJMatryxRound {
     function transferBountyToTournament() public returns (uint256);
     function transferAllToWinners(uint256 _tournamentBalance) public;
     function startNow() public;
-    function closeRound() public;
     function createSubmission(address _owner, address platformAddress, LibConstruction.SubmissionData submissionData) public returns (address _submissionAddress);
 }

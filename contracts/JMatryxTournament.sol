@@ -116,7 +116,6 @@ contract JMatryxTournament {
             case 0xd6830846 { editGhostRound(sigOffset) }             // editGhostRound(uint256,uint256,uint256,uint256,bool)
             case 0x072a4560 { allocateMoreToRound(sigOffset) }        // allocateMoreToRound(uint256 )
             case 0xc2f897bf { jumpToNextRound(sigOffset) }            // jumpToNextRound()
-            case 0x9baec207 { stopTournament(sigOffset) }             // stopTournament()
             case 0x67f69ab1 { createRound(sigOffset) }                // createRound((uint256,uint256,uint256,uint256,bool),bool)
             case 0x23721e24 { sendBountyToRound(sigOffset) }          // sendBountyToRound(uint256,uint256)
             case 0x28d576d7 { enterUserInTournament(sigOffset) }      // enterUserInTournament(address)
@@ -505,22 +504,6 @@ contract JMatryxTournament {
                 require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0x24, 0, 0x20))
             }
 
-            // stopTournament()
-            function stopTournament(offset) {
-                onlyOwner()
-
-                let ptr := mload(0x40)
-                let token := getTokenAddress(offset)
-
-                // stopTournament(LibTournamentStateManagement.StateData storage,address,address)
-                mstore(ptr, mul(0xa91d59d6, offset))
-                mstore(add(ptr, 0x04), data_slot)
-                mstore(add(ptr, 0x24), sload(platform_slot))
-                mstore(add(ptr, 0x44), token)
-
-                require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0x64, 0, 0))
-            }
-
             // createRound(roundData, automaticCreation)
             function createRound(offset) {
                 onlyRound()
@@ -732,7 +715,6 @@ interface IJMatryxTournament {
     function allocateMoreToRound(uint256 _mtxAllocation) public;
 
     function jumpToNextRound() public;
-    function stopTournament() public;
     function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public returns (address _roundAddress);
     function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public;
     function enterUserInTournament(address _entrantAddress) public returns (bool _success);

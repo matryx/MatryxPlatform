@@ -315,13 +315,6 @@ contract MatryxTournament is IMatryxTournament {
         LibTournamentAdminMethods.jumpToNextRound(stateData);
     }
 
-    /// @dev This function closes the tournament after the tournament owner selects winners with the "Close Tournament" option
-    function stopTournament() public onlyOwner
-    {
-        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
-        LibTournamentAdminMethods.stopTournament(stateData, platformAddress, matryxTokenAddress);
-    }
-
     /// @dev Creates a new round.
     /// @return The new round's address.
     function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public onlyRound returns (address _roundAddress)

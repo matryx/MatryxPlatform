@@ -226,11 +226,6 @@ contract MatryxRound is IMatryxRound {
         data.end = data.start.add(duration);
     }
 
-    /// @dev Sets closed flag to true
-    function closeRound() public onlyTournament hasWinners {
-        data.closed = true;
-    }
-
     /*
      * Entrant Methods
      */

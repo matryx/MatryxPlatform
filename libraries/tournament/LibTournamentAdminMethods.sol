@@ -54,7 +54,6 @@ library LibTournamentAdminMethods
         (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
         uint256 roundState = uint256(IMatryxRound(currentRoundAddress).getState());
         require(roundState == uint256(LibEnums.RoundState.InReview), "Round is not in review.");
-        uint256 remainingBalance = IMatryxTournament(this).getBalance();
 
         // Event to notify web3 of the winning submission address
         emit RoundWinnersChosen(_selectWinnersData.winningSubmissions);
@@ -63,6 +62,7 @@ library LibTournamentAdminMethods
         // Close the tournament if the tournament owner chooses to
         if(_selectWinnersData.selectWinnerAction == uint256(LibEnums.SelectWinnerAction.CloseTournament))
         {
+            uint256 remainingBalance = IMatryxTournament(this).getBalance();
             closeTournament(stateData, platformAddress, matryxTokenAddress, remainingBalance, currentRoundAddress);
         }
     }
@@ -117,17 +117,7 @@ library LibTournamentAdminMethods
     function jumpToNextRound(LibTournamentStateManagement.StateData storage stateData) public
     {
         (uint256 currentRoundIndex, address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
-        IMatryxRound(currentRoundAddress).closeRound();
         IMatryxRound(stateData.rounds[currentRoundIndex.add(1)]).startNow();
-    }
-
-    /// @dev This function closes the tournament after the tournament owner selects their winners with the "Close Tournament" option
-    function stopTournament(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress) public
-    {
-        uint256 remainingBalance = IMatryxTournament(this).getBalance();
-        (,address currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
-        IMatryxRound(currentRoundAddress).closeRound();
-        closeTournament(stateData, platformAddress, matryxTokenAddress, remainingBalance, currentRoundAddress);
     }
 
     // @dev Chooses the winner of the tournament.
