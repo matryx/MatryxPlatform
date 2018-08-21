@@ -97,11 +97,12 @@ const createSubmission = async (tournament, contribs, accountNumber) => {
   const [_, roundAddress] = await tournament.currentRound()
   const round = Contract(roundAddress, MatryxRound)
   const submissions = await round.getSubmissions()
-  const submissionAddress = submissions[0]
+  const submissionAddress = submissions[submissions.length-1]
   const submission = Contract(submissionAddress, MatryxSubmission, accountNumber)
 
   tournament.accountNumber = tAccount
   platform.accountNumber = pAccount
+
 
   return submission
 }
@@ -126,9 +127,11 @@ const selectWinnersWhenInReview = async (tournament, winners, rewardDistribution
 contract('Multiple Winning Submissions with No Contribs or Refs and Close Tournament', function(accounts) {
     let t; //tournament
     let r; //round
-    let s; //submission
+    let s1; //submission 1
+    let s2; //submission 2
+    let s3; //submission 3
 
-    it("Able to create a Submission with Contributors and References", async function () {
+  it("Able to create Multiple Submissions with no Contributors and References", async function () {
       await init();
       roundData = {
           start: Math.floor(Date.now() / 1000),
@@ -143,11 +146,44 @@ contract('Multiple Winning Submissions with No Contribs or Refs and Close Tourna
       r = Contract(roundAddress, MatryxRound, 0)
 
       //Create submission with some contributors
-      s = await createSubmission(t, true, 1)
+      s1 = await createSubmission(t, false, 1)
+      s2 = await createSubmission(t, false, 2)
+      s3 = await createSubmission(t, false, 3)
       stime = Math.floor(Date.now() / 1000);
-      s = Contract(s.address, MatryxSubmission, 1)
-      assert.ok(s.address, "Submission is not valid.");
-    });
+      assert.ok(s1.address, "Submission 1 is not valid.");
+      assert.ok(s2.address, "Submission 2 is not valid.");
+      assert.ok(s3.address, "Submission 3 is not valid.");
+  });
+
+  it("Able to choose multiple winners and close tournament", async function () {
+      let submissions = await r.getSubmissions()
+      await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0, 0], 2)
+      let r1 = await s1.myReward();
+      let r2 = await s2.myReward();
+      let r3 = await s3.myReward();
+      let allEqual = [fromWei(r1), fromWei(r2), fromWei(r3)].every(x => x === (10/3))
+      assert.isTrue(allEqual, "Bounty not distributed correctly among all winning submissions.")
+  });
+
+  it("Tournament should be closed", async function () {
+      let state = await t.getState();
+      assert.equal(state, 3, "Tournament is not Closed")
+  });
+
+  it("Round should be closed", async function () {
+      let state = await r.getState();
+      assert.equal(state, 5, "Round is not Closed")
+  });
+
+  it("Tournament and Round balance should now be 0", async function () {
+      t.accountNumber = 0
+      r.accountNumber = 0
+      let tB = await t.getBalance()
+      console.log(fromWei(tB))
+      let rB = await r.getRoundBalance()
+      console.log(fromWei(rB))
+      assert.isTrue(fromWei(tB) == 0 && fromWei(rB) == 0, "Tournament and round balance should both be 0")
+  });
 
 });
 
@@ -157,7 +193,88 @@ contract('Multiple Winning Submissions with No Contribs or Refs and Close Tourna
 contract('Multiple Winning Submissions with Contribs and Refs and Close Tournament', function(accounts) {
   let t; //tournament
   let r; //round
-  let s; //submission
+  let s1; //submission 1
+  let s2; //submission 2
+  let s3; //submission 3
+
+  it("Able to create Multiple Submissions with Contributors and References", async function () {
+    await init();
+    roundData = {
+        start: Math.floor(Date.now() / 1000),
+        end: Math.floor(Date.now() / 1000) + 30,
+        reviewPeriodDuration: 60,
+        bounty: web3.toWei(5),
+        closed: false
+      }
+
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.currentRound()
+    r = Contract(roundAddress, MatryxRound, 0)
+
+    //Create submission with some contributors
+    s1 = await createSubmission(t, true, 1)
+    s2 = await createSubmission(t, true, 2)
+    s3 = await createSubmission(t, true, 3)
+    stime = Math.floor(Date.now() / 1000);
+    s1 = Contract(s1.address, MatryxSubmission, 1)
+    s2 = Contract(s2.address, MatryxSubmission, 2)
+    s3 = Contract(s3.address, MatryxSubmission, 3)
+
+    //add accounts[3] as a new contributor to the first submission
+    let modCon = {
+      contributorsToAdd: [accounts[3]],
+      contributorRewardDistribution: [1],
+      contributorsToRemove: []
+    }
+    await s1.updateContributors(modCon);
+
+    assert.ok(s1.address, "Submission 1 is not valid.");
+    assert.ok(s2.address, "Submission 2 is not valid.");
+    assert.ok(s3.address, "Submission 3 is not valid.");
+  });
+
+  it("Able to choose multiple winners and close tournament, winners get correct bounty allocation", async function () {
+    let submissions = await r.getSubmissions()
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0, 0], 2)
+    s1.accountNumber = 1
+    let r1 = await s1.myReward();
+    s2.accountNumber = 2
+    let r2 = await s2.myReward();
+    s3.accountNumber = 3
+    let r3 = await s3.myReward();
+    console.log(fromWei(r1) + " " + fromWei(r2) + " "  + fromWei(r3))
+    let allEqual = [fromWei(r1), fromWei(r2), fromWei(r3)].every(x => x === (5/3))
+    assert.isTrue(allEqual, "Bounty not distributed correctly among all winning submissions.")
+  });
+
+  it("Remaining 50% of Bounty allocation distributed correctly to contributors", async function () {
+      contribs = await s1.getContributors()
+      c = contribs[contribs.length]
+
+      //switch to accounts[3]
+      s1.accountNumber = 3
+      let myReward = await s1.myReward()
+      //switch back to accounts[1]
+      s1.accountNumber = 1
+      assert.isTrue(fromWei(myReward) == ((5/3)/contribs.length), "Winnings should equal initial tournament bounty")
+  });
+
+  it("Tournament should be closed", async function () {
+      let state = await t.getState();
+      assert.equal(state, 3, "Tournament is not Closed")
+  });
+
+  it("Round should be closed", async function () {
+      let state = await r.getState();
+      assert.equal(state, 5, "Round is not Closed")
+  });
+
+  it("Tournament and Round balance should now be 0", async function () {
+      let tB = await t.getBalance()
+      let rB = await r.getRoundBalance()
+      console.log(fromWei(rB))
+      assert.isTrue(fromWei(tB) == 0 && fromWei(rB) == 0, "Tournament and round balance should both be 0")
+  });
 
 });
 

@@ -1,7 +1,5 @@
 // TODO - test EVERYTHING
 
-const chalk = require('chalk')
-const ethers = require('ethers')
 const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('./utils')
 let platform;
 
@@ -97,7 +95,7 @@ const createSubmission = async (tournament, contribs, accountNumber) => {
   const [_, roundAddress] = await tournament.currentRound()
   const round = Contract(roundAddress, MatryxRound)
   const submissions = await round.getSubmissions()
-  const submissionAddress = submissions[0]
+  const submissionAddress = submissions[submissions.length-1]
   const submission = Contract(submissionAddress, MatryxSubmission, accountNumber)
 
   tournament.accountNumber = tAccount
