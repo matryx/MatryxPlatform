@@ -18,6 +18,10 @@ const setNetwork = id => {
         provider = new ethers.providers.InfuraProvider('ropsten', 'metamask')
         tokenAddress = '0xf35a0f92848bdfdb2250b60344e87b176b499a8f'
     }
+    else if (network == 'coverage') {
+        provider = new ethers.providers.JsonRpcProvider('')
+        tokenAddress = '0x0c484097e2f000aadaef0450ab35aa00652481a1'
+    }
     else console.log('bro check yo network')
 
     mnemonicPath = path.join(__dirname, '../../keys', network + '_mnemonic.txt')
