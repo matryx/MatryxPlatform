@@ -206,8 +206,8 @@ contract MatryxRound is IMatryxRound {
 
     function transferAllToWinners(uint256 _tournamentBalance) public onlyTournament {
         // Calculate total reward denominator
-        uint256 totalBalance = data.bounty.add(_tournamentBalance).mul(10**18);
-        uint256 totalDist = winningSubmissionsData.rewardDistributionTotal.mul(10**18);
+        uint256 totalBalance = data.bounty.add(_tournamentBalance);
+        uint256 totalDist = winningSubmissionsData.rewardDistributionTotal;
 
         for(uint256 i = 0; i < winningSubmissionsData.winningSubmissions.length; i++)
         {

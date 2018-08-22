@@ -356,10 +356,15 @@ contract('Single Winning Submisison with no Contribs or Refs and Start Next Roun
       assert.equal(fromWei(tB), 5, "Tournament and round balance should both be 0")
   });
 
-  it("Rew Round balance should be 5", async function () {
+  it("New Round balance should be 5", async function () {
       let nrB = await nr.getRoundBalance()
       assert.equal(fromWei(nrB), 5, "Tournament and round balance should both be 0")
   });
+
+  it("First Round balance should now be 0", async function () {
+        let rB = await r.getRoundBalance()
+        assert.isTrue(fromWei(rB) == 0, "Round balance should be 0")
+    });
 
   it("Able to make a submission to the new round", async function () {
       let s2 = await createSubmission(t, false, 1)
@@ -470,10 +475,15 @@ contract('Single Winning Submisison with Contribs and Refs and Start Next Round'
       assert.equal(fromWei(tB), 5, "Tournament and round balance should both be 0")
   });
 
-  it("Rew Round balance should be 5", async function () {
+  it("New Round balance should be 5", async function () {
       let nrB = await nr.getRoundBalance()
       assert.equal(fromWei(nrB), 5, "Tournament and round balance should both be 0")
   });
+
+  it("First Round balance should now be 0", async function () {
+        let rB = await r.getRoundBalance()
+        assert.isTrue(fromWei(rB) == 0, "Tournament and round balance should both be 0")
+    });
 
   it("Able to make a submission to the new round", async function () {
       let s2 = await createSubmission(t, false, 1)
@@ -541,7 +551,7 @@ contract('Single Winning Submission with no Contribs or Refs and Do Nothing', fu
 
     it("Round balance should now be 0", async function () {
         let rB = await r.getRoundBalance()
-        assert.isTrue(fromWei(rB) == 0, "Tournament and round balance should both be 0")
+        assert.isTrue(fromWei(rB) == 0, "Round balance should be 0")
     });
 
     it("Ghost round address exists", async function () {
@@ -674,5 +684,10 @@ contract('Single Winning Submission with Contribs and Refs and Do Nothing', func
       let grB = await gr.getRoundBalance()
       assert.equal(fromWei(grB), 5, "Tournament and round balance should both be 0")
   });
+
+  it("First Round balance should now be 0", async function () {
+        let rB = await r.getRoundBalance()
+        assert.isTrue(fromWei(rB) == 0, "Round balance should be 0")
+    });
 
 });

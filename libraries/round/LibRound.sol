@@ -129,7 +129,7 @@ library LibRound
             for(uint256 j = 0; j < _selectWinnersData.winningSubmissions.length; j++)
             {
                 // Calculate total reward denominator and store it somewhere when
-                uint256 reward = _selectWinnersData.rewardDistribution[j].mul(10**18).div(_rewardDistributionTotal).mul(data.bounty).div(10**18);
+                uint256 reward = _selectWinnersData.rewardDistribution[j].mul(data.bounty).div(_rewardDistributionTotal);
                 // Transfer the reward to the submission
                 require(IMatryxToken(IMatryxPlatform(IMatryxRound(this).getPlatform()).getTokenAddress()).transfer(_selectWinnersData.winningSubmissions[j], reward));
                 IMatryxSubmission(_selectWinnersData.winningSubmissions[j]).addToWinnings(reward);
