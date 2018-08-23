@@ -131,7 +131,7 @@ library LibTournamentStateManagement
         if(IMatryxRound(stateData.rounds[stateData.rounds.length-2]).getState() == uint256(LibEnums.RoundState.HasWinners) &&
            IMatryxRound(stateData.rounds[stateData.rounds.length-1]).getState() == uint256(LibEnums.RoundState.NotYetOpen))
         {
-            return (stateData.rounds.length-1, stateData.rounds[stateData.rounds.length-1]);
+            return (stateData.rounds.length, stateData.rounds[stateData.rounds.length-1]);
         }
 
         return (0, address(0x0));
