@@ -133,7 +133,7 @@ contract('Single Winning Submisison with No Contribs or Refs and Close Tournamen
         roundData = {
             start: Math.floor(Date.now() / 1000),
             end: Math.floor(Date.now() / 1000) + 10,
-            reviewPeriodDuration: 60,
+            reviewPeriodDuration: 20,
             bounty: web3.toWei(5),
             closed: false
           }
@@ -289,7 +289,7 @@ contract('Single Winning Submisison with no Contribs or Refs and Start Next Roun
       roundData = {
           start: Math.floor(Date.now() / 1000),
           end: Math.floor(Date.now() / 1000) + 10,
-          reviewPeriodDuration: 60,
+          reviewPeriodDuration: 20,
           bounty: web3.toWei(5),
           closed: false
       }
@@ -376,9 +376,9 @@ contract('Single Winning Submisison with no Contribs or Refs and Start Next Roun
 
 
 
-/*
- * Case 4
- */
+
+// Case 4
+
 contract('Single Winning Submisison with Contribs and Refs and Start Next Round', function(accounts) {
   let t; //tournament
   let r; //round
@@ -494,9 +494,9 @@ contract('Single Winning Submisison with Contribs and Refs and Start Next Round'
 });
 
 
-/*
- * Case 5
- */
+
+// Case 5
+
 contract('Single Winning Submission with no Contribs or Refs and Do Nothing', function(accounts) {
     let t; //tournament
     let r; //round
@@ -597,7 +597,7 @@ contract('Single Winning Submission with Contribs and Refs and Do Nothing', func
     roundData = {
         start: Math.floor(Date.now() / 1000),
         end: Math.floor(Date.now() / 1000) + 30,
-        reviewPeriodDuration: 60,
+        reviewPeriodDuration: 20,
         bounty: web3.toWei(5),
         closed: false
       }
@@ -667,7 +667,7 @@ contract('Single Winning Submission with Contribs and Refs and Do Nothing', func
   it("Ghost round Review Period Duration is correct", async function () {
       gr = Contract(gr, MatryxRound, 0)
       let grrpd = await gr.getReviewPeriodDuration()
-      assert.equal((grrpd), 60, "New round details not updated correctly")
+      assert.equal((grrpd), 20, "New round details not updated correctly")
   });
 
   it("Ghost round bounty is correct", async function () {
