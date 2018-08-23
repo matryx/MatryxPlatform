@@ -127,14 +127,16 @@ contract JMatryxTournament {
             case 0x2f54bf6e { isOwner() }                             // isOwner(address)
             case 0xf2fde38b { transferOwnership() }                   // transferOwnership(address)
 
-            // Bro why you tryna call a function that doesn't exist?  // ¯\_(ツ)_/¯
-            default {                                                 // (╯°□°）╯︵ ┻━┻
-                mstore(0, 0xdead)
-                log0(0x1e, 0x02)
-                mstore(0, calldataload(0))
-                log0(0, 0x04)
-                return(0, 0x20)
-            }
+            // Bro why you tryna call a function that doesn't exist?  // ¯\_(ツ)_/¯ <(use this block for development)
+            // default {                                              // (╯°□°）╯︵ ┻━┻
+            //     mstore(0, 0xdead)
+            //     log0(0x1e, 0x02)
+            //     mstore(0, calldataload(0))
+            //     log0(0, 0x04)
+            //     return(0, 0x20)
+            // }
+
+            default { revert(0, 0) }
 
             // Helper Methods
             // -------------------------------

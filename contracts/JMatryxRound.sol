@@ -62,14 +62,17 @@ contract JMatryxRound {
             case 0x0e3db9f2 { startNow() }                             // startNow()
             case 0x57c60fb0 { createSubmission(sOffset) }              // createSubmission(address,address,(bytes32[3],bytes32[2],bytes32[2],uint256,uint256))
 
-            // Bro why you tryna call a function that doesn't exist?  // ¯\_(ツ)_/¯
-            default {                                                 // (╯°□°）╯︵ ┻━┻
-                mstore(0, 0xdead)
-                log0(0x1e, 0x02)
-                mstore(0, calldataload(0))
-                log0(0, 0x04)
-                return(0, 0x20)
-            }
+            // Bro why you tryna call a function that doesn't exist?  // ¯\_(ツ)_/¯ <(use this block for development)
+            // default {                                              // (╯°□°）╯︵ ┻━┻
+            //     mstore(0, 0xdead)
+            //     log0(0x1e, 0x02)
+            //     mstore(0, calldataload(0))
+            //     log0(0, 0x04)
+            //     return(0, 0x20)
+            // }
+
+            default { revert(0, 0) }
+
 
             // Helper Methods
             // -------------------------------
@@ -135,7 +138,7 @@ contract JMatryxRound {
             // function submissionExists(address _submissionAddress) public returns (bool)
             function submissionExists(submission) {
                 mstore(0x0, arg(0))
-                mstore(0x20, add(trackingData_slot,1))
+                mstore(0x20, add(trackingData_slot, 1)) // trackingData.submissionExists
                 mstore(0x0, sload(keccak256(0x0, 0x40)))
                 return(0x0, 0x20)
             }

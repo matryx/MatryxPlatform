@@ -104,14 +104,16 @@ contract JMatryxSubmission {
             case 0x2f54bf6e { isOwner() }                                  // isOwner(address)
             case 0xf2fde38b { transferOwnership() }                        // transferOwnership(address)
 
-            // Bro why you tryna call a function that doesn't exist?       // ¯\_(ツ)_/¯
-            default {                                                      // (╯°□°）╯︵ ┻━┻
-                mstore(0, 0xdead)
-                log0(0x1e, 0x02)
-                mstore(0, calldataload(0))
-                log0(0, 0x04)
-                return(0, 0x20)
-            }
+            // Bro why you tryna call a function that doesn't exist?  // ¯\_(ツ)_/¯ <(use this block for development)
+            // default {                                              // (╯°□°）╯︵ ┻━┻
+            //     mstore(0, 0xdead)
+            //     log0(0x1e, 0x02)
+            //     mstore(0, calldataload(0))
+            //     log0(0, 0x04)
+            //     return(0, 0x20)
+            // }
+
+            default { revert(0, 0) }
 
             // ----------------------
             //     Helper Methods
@@ -223,9 +225,9 @@ contract JMatryxSubmission {
             }
 
             function onlySubmissionOrRound(offset) {
-                mstore(0, mul(0x8b706ff8, offset))                           // submissionExixts(address)
+                mstore(0, mul(0xb6a34975, offset))                           // submissionExists(address)
                 mstore(0x04, caller())
-                require(call(gas(), sload(round_slot), 0, 0, 0x24, 0, 0x20)) //round.submissionExists(msg.sender)
+                require(call(gas(), sload(round_slot), 0, 0, 0x24, 0, 0x20)) // round.submissionExists(msg.sender)
                 let isSubmission := mload(0)
                 let isRound := eq(sload(round_slot), caller())
                 require(or(isSubmission, isRound))
@@ -495,7 +497,7 @@ contract JMatryxSubmission {
             function addToWinnings(offset) {
                 onlySubmissionOrRound(offset)
 
-                sstore(rewardData_slot, add(sload(rewardData_slot), arg(0)))
+                sstore(rewardData_slot, add(sload(rewardData_slot), arg(0))) // rewardData.winnings
             }
 
             //  function flagMissingReference(address _reference) public onlyHasEnteredMatryx
