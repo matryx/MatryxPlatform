@@ -105,6 +105,7 @@ library LibRound
         data.start = _roundData.start;
         data.end = _roundData.end;
         data.reviewPeriodDuration = _roundData.reviewPeriodDuration;
+        data.bounty = _roundData.bounty;
     }
 
     function selectWinningSubmissions(LibConstruction.RoundData storage data, LibRound.SelectWinnersData storage winningSubmissionsData, LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public
