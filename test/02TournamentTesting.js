@@ -1,7 +1,8 @@
-
-const ethers = require('ethers')
 const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('./utils')
 let platform;
+
+const genId = length => new Array(length).fill(0).map(() => Math.floor(36 * Math.random()).toString(36)).join('')
+const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * Math.random()).toString(16)).join('')
 
 const init = async () => {
     const data = await setup(artifacts, web3, 0)
@@ -44,19 +45,100 @@ const createTournament = async (_title, _category, bounty, roundData, accountNum
 
   }
 
-  const enterTournament = async (tournament, accountNumber) => {
-    await setup(artifacts, web3, accountNumber)
+const waitUntilClose = async (round) => {
+  let roundEndTime = +await round.getEndTime()
+  let reviewPeriodDuration = +await round.getReviewPeriodDuration()
+  let timeTilClose = Math.max(0, roundEndTime + reviewPeriodDuration - Date.now() / 1000)
+  timeTilClose = timeTilClose > 0 ? timeTilClose : 0
 
-    tournament.accountNumber = accountNumber
-    platform.accountNumber = accountNumber
-    const account = tournament.wallet.address
-
-    const isEntrant = await tournament.isEntrant(account)
-    if (!isEntrant) {
-      let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
-      await getMinedTx('Platform.enterTournament', hash)
-    }
+  await sleep(timeTilClose * 1000)
 }
+
+const waitUntilOpen = async (round) => {
+  let roundStartTime = +await round.getStartTime()
+  let timeTilOpen = Math.max(0, roundStartTime - Date.now() / 1000)
+  timeTilOpen = timeTilOpen > 0 ? timeTilOpen : 0
+
+  await sleep(timeTilOpen * 1000)
+}
+
+
+const createSubmission = async (tournament, contribs, accountNumber) => {
+  await setup(artifacts, web3, accountNumber)
+
+  tAccount = tournament.accountNumber
+  pAccount = platform.accountNumber
+
+  tournament.accountNumber = accountNumber
+  platform.accountNumber = accountNumber
+  const account = tournament.wallet.address
+
+  const isEntrant = await tournament.isEntrant(account)
+  if (!isEntrant) {
+    let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
+    await getMinedTx('Platform.enterTournament', hash)
+  }
+
+  const title = stringToBytes32('A submission ' + genId(6), 3)
+  const descriptionHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
+  const fileHash = stringToBytes32('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g', 2)
+
+  const submissionData = {
+    title,
+    descriptionHash,
+    fileHash,
+    timeSubmitted: 0,
+    timeUpdated: 0
+  }
+
+  const noContribsAndRefs = {
+    contributors: new Array(0).fill(0).map(r => genAddress()),
+    contributorRewardDistribution: new Array(0).fill(1),
+    references: new Array(0).fill(0).map(r => genAddress())
+  }
+
+  const contribsAndRefs = {
+    contributors: new Array(10).fill(0).map(r => genAddress()),
+    contributorRewardDistribution: new Array(10).fill(1),
+    references: new Array(10).fill(0).map(r => genAddress())
+  }
+
+  if (contribs) {
+    let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
+    await getMinedTx('Tournament.createSubmission', tx.hash)
+  }
+  else {
+    let tx = await tournament.createSubmission(submissionData, noContribsAndRefs, { gasLimit: 8e6 })
+    await getMinedTx('Tournament.createSubmission', tx.hash)
+  }
+
+  const [_, roundAddress] = await tournament.currentRound()
+  const round = Contract(roundAddress, MatryxRound)
+  const submissions = await round.getSubmissions()
+  const submissionAddress = submissions[submissions.length-1]
+  const submission = Contract(submissionAddress, MatryxSubmission, accountNumber)
+
+  tournament.accountNumber = tAccount
+  platform.accountNumber = pAccount
+
+  return submission
+}
+
+const selectWinnersWhenInReview = async (tournament, winners, rewardDistribution, roundData, selectWinnerAction) => {
+  const [_, roundAddress] = await tournament.currentRound()
+  const round = Contract(roundAddress, MatryxRound, tournament.accountNumber)
+  const roundEndTime = await round.getEndTime()
+
+  let timeTilRoundInReview = roundEndTime - Date.now() / 1000
+  timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
+
+  await sleep(timeTilRoundInReview * 1000)
+
+  const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
+  await getMinedTx('Tournament.selectWinners', tx.hash)
+}
+
+
 
 contract('Tournament Testing', function(accounts) {
     let t; //tournament
@@ -182,16 +264,65 @@ contract('Tournament Testing', function(accounts) {
       assert.isTrue(allNew && catUnchanged && fee == web3.toWei(1), "Tournament data not updated correctly.");
     });
 
-    //TODO Make sure this actually works
-    it("Unable to Enter NotYetOpen Round", async function() {
-      try {
-        await enterTournament(t.address, 1)
-        assert.fail('Expected revert not received');
-      } catch (error) {
-        //const revertFound = error.message.search('revert') >= 0;
-        //assert(revertFound, 'Unable to get tournament from invalid index');
-        assert.isTrue(true);
-      }
+
+});
+
+contract('On Hold Testing', function(accounts) {
+  let t; //tournament
+  let r; //round
+  let nr; //new round
+  let s; //submission
+
+  it("Able to create a tournament On Hold", async function () {
+      await init();
+      roundData = {
+          start: Math.floor(Date.now() / 1000) + 20,
+          end: Math.floor(Date.now() / 1000) + 40,
+          reviewPeriodDuration: 60,
+          bounty: web3.toWei(5),
+          closed: false
+          }
+
+      t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+      let [_, roundAddress] = await t.currentRound()
+      r = Contract(roundAddress, MatryxRound, 0)
+
+      //Wait until open
+      await waitUntilOpen(r)
+
+      //Create submissions
+      s = await createSubmission(t, false, 1)
+
+      let submissions = await r.getSubmissions()
+      await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0, 0], 0)
+      await waitUntilClose(r)
+
+      assert.ok(s.address, "Submission is not valid.");
     });
+
+    // TODO: Test all tournament On Hold stuff
+
+  // it("Tournament should be On Hold", async function () {
+  //     let [_, roundAddress] = await t.currentRound()
+  //     nr = Contract(roundAddress, MatryxRound, 0)
+
+  //     let state = await t.getState();
+  //     console.log(r.address)
+  //     console.log(nr.address)
+  //     console.log(state)
+  //     assert.equal(state, 1, "Tournament is not On Hold")
+  // });
+
+  // it("Round should be Closed", async function () {
+  //     let state = await r.getState();
+  //     console.log(state)
+  //     assert.equal(state, 5, "Round is not Closed")
+  // });
+
+  // it("Round should not have any submissions", async function () {
+  //     let sub = await r.getSubmissions();
+  //     assert.equal(sub.length, 0, "Round should not have submissions");
+  // });
+
 
 });
