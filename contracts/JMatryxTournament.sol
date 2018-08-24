@@ -100,7 +100,7 @@ contract JMatryxTournament {
             case 0xf49bff7b { return32(getBounty(sigOffset)) }        // getBounty()
             case 0x12065fe0 { return32(getBalance(sigOffset)) }       // getBalance()
             case 0xe586a4f0 { getEntryFee() }                         // getEntryFee()
-            case 0x45df1945 { collectMyEntryFee(sigOffset) }
+            case 0x45df1945 { collectMyEntryFee(sigOffset) }          // collectMyEntryFee()
 
             case 0xe139a20c { mySubmissions() }                       // mySubmissions()
 
@@ -575,12 +575,13 @@ contract JMatryxTournament {
             }
 
             function collectMyEntryFee(offset) {
-                let token := getTokenAddress(offset)    // token address
+                onlyEntrant()
 
+                let token := getTokenAddress(offset)    // token address
                 let ptr := mload(0x40)
 
-                // collectMyEntryFee(LibTournamentStateData.StateData storage,LibTournamentStateData.EntryData storage,address)
-                mstore(ptr, mul(0xff4fef08, offset))
+                // collectMyEntryFee(LibTournamentStateManagement.StateData storage,LibTournamentStateManagement.EntryData storage,address)
+                mstore(ptr, mul(0x734e4a16, offset))
                 mstore(add(ptr, 0x04), stateData_slot)
                 mstore(add(ptr, 0x24), entryData_slot)
                 mstore(add(ptr, 0x44), token)
