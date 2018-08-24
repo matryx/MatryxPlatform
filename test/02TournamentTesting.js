@@ -139,7 +139,6 @@ const selectWinnersWhenInReview = async (tournament, winners, rewardDistribution
 }
 
 
-
 contract('Tournament Testing', function(accounts) {
     let t; //tournament
     let r; //round
@@ -265,64 +264,109 @@ contract('Tournament Testing', function(accounts) {
     });
 
 
-});
+  });
 
-contract('On Hold Testing', function(accounts) {
+
+
+contract('On Hold Tournament Testing', function(accounts) {
   let t; //tournament
   let r; //round
-  let nr; //new round
+  let gr; //new round
   let s; //submission
 
-  it("Able to create a tournament On Hold", async function () {
+  it("Able to create the tournament", async function () {
       await init();
       roundData = {
-          start: Math.floor(Date.now() / 1000) + 20,
-          end: Math.floor(Date.now() / 1000) + 40,
-          reviewPeriodDuration: 60,
+          start: Math.floor(Date.now() / 1000),
+          end: Math.floor(Date.now() / 1000) + 10,
+          reviewPeriodDuration: 20,
           bounty: web3.toWei(5),
           closed: false
-          }
+      }
 
       t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
       let [_, roundAddress] = await t.currentRound()
       r = Contract(roundAddress, MatryxRound, 0)
 
-      //Wait until open
+      // Wait until open
       await waitUntilOpen(r)
 
-      //Create submissions
+      // Create submissions
       s = await createSubmission(t, false, 1)
-
       let submissions = await r.getSubmissions()
+
+      // Select winners
       await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0, 0], 0)
+
+      let rounds = await t.getRounds()
+      grAddress = rounds[rounds.length-1]
+      gr = Contract(grAddress, MatryxRound, 0)
+
+      roundData = {
+          start: Math.floor(Date.now() / 1000) + 60,
+          end: Math.floor(Date.now() / 1000) + 80,
+          reviewPeriodDuration: 40,
+          bounty: web3.toWei(5),
+          closed: false
+      }
+
+      await t.editGhostRound(roundData)
+
       await waitUntilClose(r)
+      assert.ok(gr, "Unable to create tournament")
+  });
 
-      assert.ok(s.address, "Submission is not valid.");
-    });
+  it("Tournament should be On Hold", async function () {
+      let state = await t.getState();
+      assert.equal(state, 1, "Tournament is not On Hold")
+  });
 
-    // TODO: Test all tournament On Hold stuff
+  it("First round should be Closed", async function () {
+      let state = await r.getState();
+      assert.equal(state, 5, "Round is not Closed")
+  });
 
-  // it("Tournament should be On Hold", async function () {
-  //     let [_, roundAddress] = await t.currentRound()
-  //     nr = Contract(roundAddress, MatryxRound, 0)
+  it("New Round should be Not Yet Open", async function () {
+      let state = await gr.getState();
+      assert.equal(state, 0, "Round should be Not Yet Open")
+  });
 
-  //     let state = await t.getState();
-  //     console.log(r.address)
-  //     console.log(nr.address)
-  //     console.log(state)
-  //     assert.equal(state, 1, "Tournament is not On Hold")
-  // });
+  it("New should not have any submissions", async function () {
+      let sub = await gr.getSubmissions();
+      assert.equal(sub.length, 0, "Round should not have submissions");
+  });
 
-  // it("Round should be Closed", async function () {
-  //     let state = await r.getState();
-  //     console.log(state)
-  //     assert.equal(state, 5, "Round is not Closed")
-  // });
+  it("Unable to make a submission while On Hold", async function () {
+      try {
+        await createSubmission(t, false, 1)
+        assert.fail('Expected revert not received');
+      } catch (error) {
+        let revertFound = error.message.search('revert') >= 0;
+        assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
+      }
+  });
 
-  // it("Round should not have any submissions", async function () {
-  //     let sub = await r.getSubmissions();
-  //     assert.equal(sub.length, 0, "Round should not have submissions");
-  // });
+  it("Unable to enter tournament while On Hold", async function () {
+      try {
+        t.accountNumber = 2
+        await platform.enterTournament(t.address)
+        assert.fail('Expected revert not received');
+      } catch (error) {
+        t.accountNumber = 0
+        let revertFound = error.message.search('revert') >= 0;
+        assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
+      }
+  });
 
+  it("Tournament becomes open again after the next round starts", async function () {
+      await sleep(40 * 1000)
+      let state = await t.getState();
+      assert.equal(state, 2, "Tournament should be open");
+  });
+
+  it("Round should be open", async function () {
+      let state = await gr.getState();
+      assert.equal(state, 2, "Round should be open");
+  });
 
 });

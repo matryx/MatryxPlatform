@@ -214,6 +214,8 @@ contract('NotYetOpen Round Testing', function(accounts) {
     });
 });
 
+
+
 contract('Open Round Testing', function(accounts) {
     let t; //tournament
     let r; //round
@@ -260,7 +262,46 @@ contract('Open Round Testing', function(accounts) {
         let b = await r.getBounty();
         assert.equal(fromWei(b), 6, "Bounty was not added")
     });
+
+    it("Able to enter the tournament and make submissions", async function () {
+        // Create submissions
+        s = await createSubmission(t, false, 1)
+        s2 = await createSubmission(t, false, 2)
+        assert.ok(s && s2, "Unable to make submissions")
+    });
+
+    it("Able to exit the tournament and collect my entry fee", async function () {
+        // Switch to accounts[1]
+        t.accountNumber = 1
+        let isEnt = await t.isEntrant(accounts[1])
+        await t.collectMyEntryFee()
+        isEnt = await t.isEntrant(accounts[1])
+        assert.isFalse(isEnt, "Unable to exit tournament")
+    });
+
+    it("Unable to collect my entry fee multiple times", async function () {
+        try {
+            t.accountNumber = 1
+            await t.collectMyEntryFee()
+            assert.fail('Expected revert not received');
+          } catch (error) {
+            let revertFound = error.message.search('revert') >= 0;
+            assert(revertFound, 'Should not have been able to add bounty to round in review');
+          }
+    });
+
+    it("Number of entrants should now be 0", async function () {
+        let ent = await t.entrantCount();
+        assert.equal(ent, 1, "Number of entrants should be 0")
+    });
+
+    it("Number of submissions should still be two", async function () {
+        let n_sub = await r.numberOfSubmissions();
+        assert.equal(n_sub.toNumber(), 2, "Number of Submissions should be 2")
+    });
+
 });
+
 
 contract('In Review Round Testing', function(accounts) {
     let t; //tournament
@@ -321,7 +362,7 @@ contract('In Review Round Testing', function(accounts) {
                assert.fail('Expected revert not received');
           } catch (error) {
             let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
+            assert(revertFound, 'Should not have been able to add bounty to round in review');
           }
     });
 
@@ -455,7 +496,7 @@ contract('Abandoned Round Testing', function(accounts) {
         await init();
         roundData = {
             start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 1,
+            end: Math.floor(Date.now() / 1000) + 20,
             reviewPeriodDuration: 1,
             bounty: web3.toWei(5),
             closed: false
@@ -465,6 +506,11 @@ contract('Abandoned Round Testing', function(accounts) {
 
         let [_, roundAddress] = await t.currentRound()
         r = Contract(roundAddress, MatryxRound, 0)
+
+        // Create a submission
+        s = await createSubmission(t, false, 1)
+
+        // Wait for the round to become Abandoned
         await waitUntilClose(r)
 
         assert.ok(r.address, "Round is not valid.");
@@ -484,6 +530,36 @@ contract('Abandoned Round Testing', function(accounts) {
             assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
           }
     });
+
+    it("Entrants are able to withdraw their share from the bounty from an abandoned round", async function () {
+        // Switch to acounts[1]
+        t.accountNumber = 1
+        await t.withdrawFromAbandoned()
+        let isEnt = await t.isEntrant(accounts[1])
+        assert.isFalse(isEnt, "tournament balance should be 0")
+    });
+
+    it("Unable to withdraw from tournament multiple times from the same account", async function () {
+        try {
+            t.accountNumber = 1
+            await t.withdrawFromAbandoned()
+            assert.fail('Expected revert not received');
+          } catch (error) {
+            let revertFound = error.message.search('revert') >= 0;
+            assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
+          }
+    });
+
+    it("Tournament balance is 0", async function () {
+        let tB = await t.getBalance()
+        assert.isTrue(tB == 0, "Tournament balance should be 0")
+    });
+
+    it("Round balance is 0", async function () {
+        let rB = await r.getRoundBalance()
+        assert.isTrue(rB == 0, "Tournament balance should be 0")
+    });
+
 
 });
 
@@ -591,7 +667,6 @@ contract('Unfunded Round Testing', function(accounts) {
 });
 
 
-//TODO: This all works with the normal tournament & round contracts but reverts with the Julia version
 contract('Ghost Round Testing', function(accounts) {
     let t; //tournament
     let r; //round
