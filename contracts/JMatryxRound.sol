@@ -304,7 +304,7 @@ contract JMatryxRound {
                 let ptr := mload(0x40)
                 // editRound(LibConstruction.RoundData storage,uint256,LibConstruction.RoundData)
                 mstore(ptr, mul(0xb6668750, offset))
-                mstore(add(ptr, 0x04), sload(data_slot))
+                mstore(add(ptr, 0x04), data_slot)
                 mstore(add(ptr, 0x24), arg(0))   // _currentRoundEndTime
 
                 //copy _roundData

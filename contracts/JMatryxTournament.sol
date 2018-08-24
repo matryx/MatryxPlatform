@@ -113,8 +113,8 @@ contract JMatryxTournament {
             case 0x3bc5de30 { getData() }                             // getData()
 
             case 0x583c3a92 { selectWinners(sigOffset) }              // selectWinners((address[],uint256[],uint256,uint256),(uint256,uint256,uint256,uint256,bool))
-            case 0xd6830846 { editGhostRound(sigOffset) }             // editGhostRound(uint256,uint256,uint256,uint256,bool)
-            case 0x072a4560 { allocateMoreToRound(sigOffset) }        // allocateMoreToRound(uint256 )
+            case 0x31691a7b { editGhostRound(sigOffset) }             // editGhostRound((uint256,uint256,uint256,uint256,bool))
+            case 0x072a4560 { allocateMoreToRound(sigOffset) }        // allocateMoreToRound(uint256)
             case 0xc2f897bf { jumpToNextRound(sigOffset) }            // jumpToNextRound()
             case 0x67f69ab1 { createRound(sigOffset) }                // createRound((uint256,uint256,uint256,uint256,bool),bool)
             case 0x23721e24 { sendBountyToRound(sigOffset) }          // sendBountyToRound(uint256,uint256)
@@ -464,17 +464,17 @@ contract JMatryxTournament {
             function editGhostRound(offset) {
                 onlyOwner()
 
-                let token := getTokenAddress(offset)
                 let ptr := mload(0x40)
+                let token := getTokenAddress(offset)
 
                 // editGhostRound(LibTournamentStateManagement.StateData storage,LibConstruction.RoundData,address)
                 mstore(ptr, mul(0x672ec623, offset))
 
-                // copy roundData
-                calldatacopy(add(ptr, 0x04), 0, calldatasize())
+                mstore(add(ptr, 0x04), stateData_slot)
+                calldatacopy(add(ptr, 0x24), 0x04, 0xa0) // copy _roundData
 
-                // sizeof RoundData 5 words (0xa0) + sizeof stateData_slot (0x20) = 0xc0
-                mstore(add(ptr, 0xc4), token)
+                mstore(add(ptr, 0xc4), token) // token address
+
                 require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0xe4, 0, 0))
             }
 
