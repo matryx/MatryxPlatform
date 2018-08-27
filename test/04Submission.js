@@ -1,8 +1,3 @@
-// TODO - test EVERYTHING
-
-const chalk = require('chalk')
-
-const ethers = require('ethers')
 const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('./utils')
 let platform;
 
@@ -203,13 +198,6 @@ contract('Submission Testing with No Contributors and References', function(acco
     assert.equal(crd.length, 0, "Contributor reward distribution incorrect")
   });
 
-  it("Submission title correctly updated", async function () {
-    await updateSubmission(s)
-    utime = Math.floor(Date.now() / 1000);
-    let title = await s.getTitle();
-    assert.equal(bytesToString(title[0]), "AAAAAA" , "Submission Title should be Updated");
-  });
-
   it("Get Submission Tournament", async function () {
     let ts = await s.getTournament();
     assert.equal(ts, t.address, "Tournament Address is incorrect")
@@ -231,9 +219,26 @@ contract('Submission Testing with No Contributors and References', function(acco
     assert.isTrue(Math.abs(submission_time - stime) < 10, "Submission Time is not correct")
   });
 
+  it("Submission title correctly updated", async function () {
+    await updateSubmission(s)
+    utime = Math.floor(Date.now() / 1000);
+    let title = await s.getTitle();
+    assert.equal(bytesToString(title[0]), "AAAAAA" , "Submission Title should be Updated");
+  });
+
+  it("Able to update contributors", async function () {
+      let con = await s.getContributors()
+      assert.equal(con.length, 3, "Contributors not updated correctly.")
+  });
+
+  it("Able to update references", async function () {
+      let ref = await s.getReferences()
+      assert.equal(ref.length, 3, "Refernces not updated correctly.")
+  });
+
   it("Get Time Updated", async function () {
-    let update_time = await s.getTimeUpdated().then(Number);
-    assert.isTrue(Math.abs(update_time - utime) < 10 ,"Update Time is not correct")
+      let update_time = await s.getTimeUpdated().then(Number);
+      assert.isTrue(Math.abs(update_time - utime) < 10 ,"Update Time is not correct")
   });
 
   it("Any Matryx entrant able to request download permissions", async function () {
@@ -243,9 +248,6 @@ contract('Submission Testing with No Contributors and References', function(acco
 
       //unlock the files from accounts[2]
       await s.unlockFile()
-
-      //switch back to accounts[1]
-      s.accountNumber = 1
 
       let permitted = await s.getPermittedDownloaders();
       let p2 = permitted.some(x => x.toLowerCase() == accounts[2])

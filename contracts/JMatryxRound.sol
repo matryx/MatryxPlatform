@@ -156,7 +156,7 @@ contract JMatryxRound {
             // function getState() public view returns (uint256)
             function getState(offset)->s {
                 let ptr := mload(0x40)
-                // getState(address,LibConstruction.RoundData storage, LibRound.SelectWinnersData storage,LibRound.SubmissionsData storage)
+                // getState(address,LibConstruction.RoundData storage,LibRound.SelectWinnersData storage,LibRound.SubmissionsData storage)
                 mstore(ptr, mul(0x05b00ec1, offset))
                 mstore(add(ptr, 0x04), sload(platform_slot))
                 mstore(add(ptr, 0x24), data_slot)

@@ -183,6 +183,17 @@ contract('Multiple Winning Submissions with No Contribs or Refs and Close Tourna
       assert.isTrue(fromWei(tB) == 0 && fromWei(rB) == 0, "Tournament and round balance should both be 0")
   });
 
+  it("Balance of each winning submission should be 10/4", async function () {
+    let b1 = await r.getBalance(s1.address);
+    let b2 = await r.getBalance(s2.address);
+    let b3 = await r.getBalance(s3.address);
+    let b4 = await r.getBalance(s4.address);
+
+    let allEqual = [fromWei(b1), fromWei(b2), fromWei(b3), fromWei(b4)].every(x => x === (10/4))
+
+    assert.isTrue(allEqual, "Incorrect winning submissions balance")
+});
+
 });
 
 /*
@@ -269,6 +280,17 @@ contract('Multiple Winning Submissions with Contribs and Refs and Close Tourname
         let tB = await t.getBalance()
         let rB = await r.getRoundBalance()
         assert.isTrue(fromWei(tB) == 0 && fromWei(rB) == 0, "Tournament and round balance should both be 0")
+    });
+
+    it("Balance of each winning submission should be 10/4", async function () {
+        let b1 = await r.getBalance(s1.address);
+        let b2 = await r.getBalance(s2.address);
+        let b3 = await r.getBalance(s3.address);
+        let b4 = await r.getBalance(s4.address);
+
+        let allEqual = [fromWei(b1), fromWei(b2), fromWei(b3), fromWei(b4)].every(x => x === (10/4))
+
+        assert.isTrue(allEqual, "Incorrect winning submissions balance")
     });
 
 });
@@ -371,6 +393,17 @@ contract('Multiple Winning Submissions with no Contribs or Refs and Start Next R
         r.accountNumber = 0
         let rB = await r.getRoundBalance()
         assert.isTrue(fromWei(rB) == 0, "Round balance should be 0")
+    });
+
+    it("Balance of each winning submission should be 5/4", async function () {
+        let b1 = await r.getBalance(s1.address);
+        let b2 = await r.getBalance(s2.address);
+        let b3 = await r.getBalance(s3.address);
+        let b4 = await r.getBalance(s4.address);
+
+        let allEqual = [fromWei(b1), fromWei(b2), fromWei(b3), fromWei(b4)].every(x => x === (5/4))
+
+        assert.isTrue(allEqual, "Incorrect winning submissions balance")
     });
 
     it("Able to make a submission to the new round", async function () {
@@ -504,6 +537,17 @@ contract('Multiple Winning Submissions with Contribs and Refs and Start Next Rou
       assert.ok(s2.address, "Submission is not valid.");
   });
 
+  it("Balance of each winning submission should be 5/4", async function () {
+    let b1 = await r.getBalance(s1.address);
+    let b2 = await r.getBalance(s2.address);
+    let b3 = await r.getBalance(s3.address);
+    let b4 = await r.getBalance(s4.address);
+
+    let allEqual = [fromWei(b1), fromWei(b2), fromWei(b3), fromWei(b4)].every(x => x === (5/4))
+
+    assert.isTrue(allEqual, "Incorrect winning submissions balance")
+});
+
 });
 
 
@@ -604,6 +648,17 @@ contract('Multiple Winning Submissions with no Contribs or Refs and Do Nothing',
       let grB = await gr.getRoundBalance()
       assert.equal(fromWei(grB), 5, "Tournament and round balance should both be 0")
   });
+
+  it("Balance of each winning submission should be 5/4", async function () {
+    let b1 = await r.getBalance(s1.address);
+    let b2 = await r.getBalance(s2.address);
+    let b3 = await r.getBalance(s3.address);
+    let b4 = await r.getBalance(s4.address);
+
+    let allEqual = [fromWei(b1), fromWei(b2), fromWei(b3), fromWei(b4)].every(x => x === (5/4))
+
+    assert.isTrue(allEqual, "Incorrect winning submissions balance")
+});
 
 });
 
@@ -719,6 +774,17 @@ contract('Multiple Winning Submissions with Contribs and Refs and Do Nothing', f
         r.accountNumber = 0
         let rB = await r.getRoundBalance()
         assert.isTrue(fromWei(rB) == 0, "Round balance should be 0")
+    });
+
+    it("Balance of each winning submission should be 5/4", async function () {
+        let b1 = await r.getBalance(s1.address);
+        let b2 = await r.getBalance(s2.address);
+        let b3 = await r.getBalance(s3.address);
+        let b4 = await r.getBalance(s4.address);
+
+        let allEqual = [fromWei(b1), fromWei(b2), fromWei(b3), fromWei(b4)].every(x => x === (5/4))
+
+        assert.isTrue(allEqual, "Incorrect winning submissions balance")
     });
 
 });

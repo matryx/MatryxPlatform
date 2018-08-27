@@ -287,7 +287,7 @@ contract JMatryxSubmission {
                     require(call(gas(), tournament, 0, 0, 0x04, 0, 0x20))                 // tournament.getOwner
                     let ownsTournament := eq(mload(0), _requester)
 
-                    let roundAtLeastInReview := gt(state, 2)                              // after 2, in review (or more)
+                    let roundAtLeastInReview := gt(state, 2)                              // round.state >= In Review
                     a := or(a, and(roundAtLeastInReview, or(ownsTournament, isEntrant)))  // duringReviewAndRequesterInTournament
                 }
 
@@ -356,7 +356,6 @@ contract JMatryxSubmission {
             function getFileHash(offset) {
                 whenAccessible(offset)
                 require(sload(s_callerCanViewFile(offset)))
-
 
                 let file := mload(0x40)
                 mstore(file, sload(add(data_slot, 5)))              // data.fileHash[0]

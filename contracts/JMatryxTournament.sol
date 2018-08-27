@@ -70,7 +70,7 @@ contract JMatryxTournament {
             mstore(add(ptr, 0xc4), mload(0x260))  // roundData.reviewPeriodDuration
             mstore(add(ptr, 0xe4), mload(0x280))  // roundData.bounty
             mstore(add(ptr, 0x104), mload(0x2a0)) // roundData.closed
-            mstore(add(ptr, 0x124), 1)            // _automaticCreation
+            mstore(add(ptr, 0x124), 1)            // _automaticCreation = true
 
             // call createRound
             res := delegatecall(gas(), LibTournamentAdminMethods, ptr, 0x144, ptr, 0x20)
@@ -91,7 +91,7 @@ contract JMatryxTournament {
 
             // Tournament data
             case 0x52c01fab { return32(isEntrant(arg(0))) }           // isEntrant(address)
-            case 0x8c1fc0bb { return32(isRound(arg(0))) }             // getData()
+            case 0x8c1fc0bb { return32(isRound(arg(0))) }             // isRound(address)
             case 0x8a19c8bc { return(currentRound(sigOffset), 0x40) } // currentRound()
             case 0x80258e47 { getCategory() }                         // getCategory()
             case 0xff3c1a8f { getTitle() }                            // getTitle()

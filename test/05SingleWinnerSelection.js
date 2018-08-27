@@ -1,5 +1,3 @@
-// TODO - test EVERYTHING
-
 const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('./utils')
 let platform;
 
@@ -201,6 +199,12 @@ contract('Single Winning Submisison with No Contribs or Refs and Close Tournamen
         let rB = await r.getRoundBalance()
         assert.isTrue(fromWei(tB) == 0 && fromWei(rB) == 0, "Tournament and round balance should both be 0")
     });
+
+    it("Submisison balance should be initial tournament + round bounty", async function () {
+        let b = await r.getBalance(s.address);
+        assert.equal(fromWei(b), fromWei(tBounty), "Winnings should equal initial tournament bounty")
+    });
+
 });
 
 
@@ -271,6 +275,11 @@ contract('Single Winning Submission with Contribs and Refs and Close Tournament'
       let rB = await r.getRoundBalance()
       assert.isTrue(fromWei(tB) == 0 && fromWei(rB) == 0, "Tournament and round balance should both be 0")
   });
+
+    it("Winning submission balance should be 10", async function () {
+        let b = await r.getBalance(s.address);
+        assert.equal(fromWei(b), 10, "Incorrect submission balance")
+    });
 
 });
 
@@ -365,6 +374,12 @@ contract('Single Winning Submisison with no Contribs or Refs and Start Next Roun
         let rB = await r.getRoundBalance()
         assert.isTrue(fromWei(rB) == 0, "Round balance should be 0")
     });
+
+    it("Winning submission balance should be 5", async function () {
+        let b = await r.getBalance(s.address);
+        assert.equal(fromWei(b), 5, "Incorrect submission balance")
+    });
+
 
   it("Able to make a submission to the new round", async function () {
       let s2 = await createSubmission(t, false, 1)
@@ -485,6 +500,11 @@ contract('Single Winning Submisison with Contribs and Refs and Start Next Round'
         assert.isTrue(fromWei(rB) == 0, "Tournament and round balance should both be 0")
     });
 
+    it("Winning submission balance should be 5", async function () {
+        let b = await r.getBalance(s.address);
+        assert.equal(fromWei(b), 5, "Incorrect submission balance")
+    });
+
   it("Able to make a submission to the new round", async function () {
       let s2 = await createSubmission(t, false, 1)
       s2 = Contract(s2.address, MatryxSubmission, 1)
@@ -580,6 +600,12 @@ contract('Single Winning Submission with no Contribs or Refs and Do Nothing', fu
         let grB = await gr.getRoundBalance()
         assert.equal(fromWei(grB), 5, "Tournament and round balance should both be 0")
     });
+
+    it("Winning submission balance should be 5", async function () {
+        let b = await r.getBalance(s.address);
+        assert.equal(fromWei(b), 5, "Incorrect submission balance")
+    });
+
 });
 
 
@@ -689,5 +715,11 @@ contract('Single Winning Submission with Contribs and Refs and Do Nothing', func
         let rB = await r.getRoundBalance()
         assert.isTrue(fromWei(rB) == 0, "Round balance should be 0")
     });
+
+  it("Winning submission balance should be 5", async function () {
+        let b = await r.getBalance(s.address);
+        assert.equal(fromWei(b), 5, "Incorrect submission balance")
+    });
+
 
 });

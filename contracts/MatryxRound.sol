@@ -19,7 +19,6 @@ contract MatryxRound is IMatryxRound {
     using SafeMath for uint256;
 
     // TODO: allow for refunds
-    // TODO: condense and put in structs
 
     address public platformAddress;
     address public tournamentAddress;
