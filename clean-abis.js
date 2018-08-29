@@ -22,11 +22,12 @@ if (stagedBuild === '') process.exit(0)
 const files = stagedBuild.split('\n')
 files.forEach(path => {
   const contract = JSON.parse(fs.readFileSync(path, 'utf8'))
+  if (!contract.abis.length) return
+
   const cleaned = {}
   KEEPERS.forEach(key => (cleaned[key] = contract[key]))
 
-  if (JSON.stringify(contract) !== JSON.stringify(cleaned)) {
-    fs.writeFileSync(path, JSON.stringify(cleaned, 0, 2))
-    exec(`git add ${path}`)
-  }
+  path = path.replace('contracts', 'abis')
+  fs.writeFileSync(path, JSON.stringify(cleaned, 0, 2))
+  exec(`git add -f ${path}`)
 })
