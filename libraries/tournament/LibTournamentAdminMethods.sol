@@ -120,16 +120,36 @@ library LibTournamentAdminMethods
         IMatryxRound(stateData.rounds[currentRoundIndex.add(1)]).startNow();
     }
 
-    // @dev Chooses the winner of the tournament.
+    /// @dev Chooses the winner of the tournament.
     function closeTournament(LibTournamentStateManagement.StateData storage stateData, address platformAddress, address matryxTokenAddress, uint256 remainingBalance, address currentRoundAddress) internal
     {
         require(IMatryxRound(currentRoundAddress).getState() == uint256(LibEnums.RoundState.Closed));
         // Transfer the remaining MTX in the tournament to the current round
         stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(remainingBalance);
-        IMatryxToken(matryxTokenAddress).transfer(currentRoundAddress, remainingBalance);
+        require(IMatryxToken(matryxTokenAddress).transfer(currentRoundAddress, remainingBalance));
         IMatryxRound(currentRoundAddress).transferAllToWinners(remainingBalance);
         IMatryxPlatform(platformAddress).invokeTournamentClosedEvent(stateData.rounds.length, IMatryxRound(currentRoundAddress).getBounty());
 
+        stateData.closed = true;
+    }
+
+    /// @dev Sends tournament funds back to the owner if the tournament goes to Abandoned due to no submissions
+    function recoverFunds(LibTournamentStateManagement.StateData storage stateData, address matryxTokenAddress) public
+    {
+        // Get current round
+        address currentRoundAddress;
+        (, currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
+        require(IMatryxRound(currentRoundAddress).numberOfSubmissions() == 0);
+
+        // Transfer the round funds to the tournament
+        IMatryxRound(currentRoundAddress).transferBountyToTournament();
+
+        // Transfer all tournament funds to the owner
+        uint256 tBalance = IMatryxTournament(this).getBalance();
+        require(IMatryxToken(matryxTokenAddress).transfer(msg.sender, tBalance));
+
+        // Bookkeeping
+        stateData.hasBeenWithdrawnFrom = true;
         stateData.closed = true;
     }
 

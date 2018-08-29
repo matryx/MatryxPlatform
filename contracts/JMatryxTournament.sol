@@ -121,6 +121,7 @@ contract JMatryxTournament {
             case 0x28d576d7 { enterUserInTournament(sigOffset) }      // enterUserInTournament(address)
             case 0xfa8f3ac5 { createSubmission(sigOffset) }           // createSubmission((bytes32[3],bytes32[2],bytes32[2],uint256,uint256),(address[],uint256[],address[]))
             case 0x542fe6c2 { withdrawFromAbandoned(sigOffset) }      // withdrawFromAbandoned()
+            case 0xb79550be { recoverFunds(sigOffset) }               // recoverFunds()
 
             // Ownable stuff
             case 0x893d20e8 { getOwner() }                            // getOwner()
@@ -665,6 +666,20 @@ contract JMatryxTournament {
                 require(delegatecall(gas(), LibTournamentEntrantMethods, ptr, 0x64, 0x0, 0))
             }
 
+            function recoverFunds(offset) {
+                onlyOwner()
+
+                let token := getTokenAddress(offset)
+                let ptr := mload(0x40)
+
+                // recoverFunds(LibTournamentStateManagement.StateData storage,address)
+                mstore(ptr, mul(0xd0174af6, offset))
+                mstore(add(ptr, 0x04), stateData_slot)
+                mstore(add(ptr, 0x24), token)
+
+                require(delegatecall(gas(), LibTournamentAdminMethods, ptr, 0x44, 0x0, 0))
+            }
+
             // Ownable stuffs
             function getOwner() {
                 return32(sload(owner_slot))
@@ -723,6 +738,7 @@ interface IJMatryxTournament {
     function enterUserInTournament(address _entrantAddress) public returns (bool _success);
     function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public returns(bytes32 _v);
     function withdrawFromAbandoned() public;
+    function recoverFunds() public;
 
     // Ownable stuffs
     function getOwner() public view returns (address _owner);

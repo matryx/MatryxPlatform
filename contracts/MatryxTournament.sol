@@ -373,6 +373,12 @@ contract MatryxTournament is IMatryxTournament {
         LibTournamentEntrantMethods.withdrawFromAbandoned(stateData, entryData, matryxTokenAddress);
     }
 
+    function recoverFunds() public onlyOwner
+    {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
+        LibTournamentAdminMethods.recoverFunds(stateData, matryxTokenAddress);
+    }
+
     // Ownable stuff
 
     function getOwner() public view returns (address _owner)
