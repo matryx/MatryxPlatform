@@ -1,4 +1,5 @@
 const fs = require('fs')
+const exec = require('child_process').execSync
 
 const CONTRACTS = './build/contracts/'
 const KEEPERS = [
@@ -9,13 +10,23 @@ const KEEPERS = [
   'updatedAt'
 ]
 
-const files = fs.readdirSync(CONTRACTS)
-files.forEach(file => {
-  const path = CONTRACTS + file
+const stagedBuild = exec(
+  'git diff-index --name-status --cached HEAD \
+  | grep -v ^D | grep build/contracts | cut -c3-'
+)
+  .toString()
+  .trim()
+
+if (stagedBuild === '') process.exit(0)
+
+const files = stagedBuild.split('\n')
+files.forEach(path => {
   const contract = JSON.parse(fs.readFileSync(path, 'utf8'))
   const cleaned = {}
-  KEEPERS.forEach(key => cleaned[key] = contract[key])
+  KEEPERS.forEach(key => (cleaned[key] = contract[key]))
 
-  if (JSON.stringify(contract) !== JSON.stringify(cleaned))
+  if (JSON.stringify(contract) !== JSON.stringify(cleaned)) {
     fs.writeFileSync(path, JSON.stringify(cleaned, 0, 2))
+    exec(`git add ${path}`)
+  }
 })
