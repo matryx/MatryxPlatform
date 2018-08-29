@@ -196,10 +196,14 @@ contract MatryxRound is IMatryxRound {
         LibRound.selectWinningSubmissions(data, winningSubmissionsData, _selectWinnersData, _roundData);
     }
 
-    /// @dev Allows contributors to withdraw a portion of the round bounty if the round has been abandoned.
+    /// @dev Transfers round bounty back to the tournament if the round has been abandoned.
     function transferBountyToTournament() public onlyTournament returns (uint256) {
         uint256 remaining = getRemainingBounty();
         require(IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress()).transfer(tournamentAddress, remaining));
+
+        // Bookkeeping
+        data.closed = true;
+
         return remaining;
     }
 

@@ -360,6 +360,9 @@ contract JMatryxRound {
                 mstore(add(ptr, 0x24), remBounty)               // remainingBounty
 
                 require(call(gas(), getTokenAddress(offset), 0, ptr, 0x44, 0, 0)) // token.transfer(tournamentAddress, remBounty)
+
+                sstore(add(data_slot, 4), 1)                    // data.closed = true
+
                 return32(remBounty)
             }
 

@@ -71,13 +71,13 @@ library LibRound
         }
         else if(now >= data.end && now < data.end.add(data.reviewPeriodDuration))
         {
-            if(data.closed)
-            {
-                return uint256(LibEnums.RoundState.Closed);
-            }
-            else if(submissionsData.submissions.length == 0)
+            if(submissionsData.submissions.length == 0)
             {
                 return uint256(LibEnums.RoundState.Abandoned);
+            }
+            else if(data.closed)
+            {
+                return uint256(LibEnums.RoundState.Closed);
             }
             else if(winningSubmissionsData.winningSubmissions.length > 0)
             {

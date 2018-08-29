@@ -95,10 +95,6 @@ library LibTournamentStateManagement
             {
                 return uint256(LibEnums.TournamentState.Open);
             }
-            else if(roundState == uint256(LibEnums.RoundState.Closed))
-            {
-                return uint256(LibEnums.TournamentState.Closed);
-            }
             else
             {
                 return uint256(LibEnums.TournamentState.Abandoned);
