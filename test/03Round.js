@@ -509,6 +509,7 @@ contract('Abandoned Round Testing', function(accounts) {
 
         // Create a submission
         s = await createSubmission(t, false, 1)
+        s = await createSubmission(t, false, 2)
 
         // Wait for the round to become Abandoned
         await waitUntilClose(r)
@@ -531,12 +532,25 @@ contract('Abandoned Round Testing', function(accounts) {
           }
     });
 
-    it("Entrants are able to withdraw their share from the bounty from an abandoned round", async function () {
+    it("Round is still open in round data before the first withdraw", async function () {
+        let data = await r.getData()
+        assert.isFalse(data.closed, "Round should be open")
+    });
+
+    it("First entrant is able to withdraw their share from the bounty from an abandoned round", async function () {
         // Switch to acounts[1]
         t.accountNumber = 1
         await t.withdrawFromAbandoned()
         let isEnt = await t.isEntrant(accounts[1])
-        assert.isFalse(isEnt, "tournament balance should be 0")
+        assert.isFalse(isEnt, "Should no longer be an entrant")
+    });
+
+    it("Second entrant also able to withdraw their share", async function () {
+        // Switch to acounts[2]
+        t.accountNumber = 2
+        await t.withdrawFromAbandoned()
+        let isEnt = await t.isEntrant(accounts[2])
+        assert.isFalse(isEnt, "Should no longer be an entrant")
     });
 
     it("Unable to withdraw from tournament multiple times from the same account", async function () {
@@ -560,6 +574,10 @@ contract('Abandoned Round Testing', function(accounts) {
         assert.isTrue(rB == 0, "Tournament balance should be 0")
     });
 
+    it("Round is closed", async function () {
+        let data = await r.getData()
+        assert.isTrue(data.closed, "Round should be closed")
+    });
 
 });
 
@@ -753,7 +771,6 @@ contract('Ghost Round Testing', function(accounts) {
         assert.equal(fromWei(grB), 5, "Tournament and round balance should both be 0")
     });
 
-
     // Tournament can send more funds to ghost round if round is edited
     it("Able to edit ghost round, send more MTX to the round", async function () {
         roundData = {
@@ -785,9 +802,8 @@ contract('Ghost Round Testing', function(accounts) {
         assert.equal(fromWei(tB), 2, "Tournament balance incorrect")
     });
 
-
     // Ghost round can send funds back to tournament upon being edited
-    it("Able to edit ghost round, send more MTX to the round", async function () {
+    it("Able to edit ghost round, send MTX from round back to tournament", async function () {
         roundData = {
             start: Math.floor(Date.now() / 1000) + 300,
             end: Math.floor(Date.now() / 1000) + 320,
@@ -816,6 +832,5 @@ contract('Ghost Round Testing', function(accounts) {
         let tB = await t.getBalance()
         assert.equal(fromWei(tB), 8, "Tournament balance incorrect")
     });
-
 
 });

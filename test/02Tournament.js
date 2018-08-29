@@ -370,3 +370,77 @@ contract('On Hold Tournament Testing', function(accounts) {
   });
 
 });
+
+contract('Abandoned Tournament due to No Submissions Testing', function(accounts) {
+  let t; //tournament
+  let r; //round
+
+  it("Able to create an Abandoned round", async function () {
+      await init();
+      roundData = {
+          start: Math.floor(Date.now() / 1000),
+          end: Math.floor(Date.now() / 1000) + 5,
+          reviewPeriodDuration: 1,
+          bounty: web3.toWei(5),
+          closed: false
+        }
+
+      t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+
+      let [_, roundAddress] = await t.currentRound()
+      r = Contract(roundAddress, MatryxRound, 0)
+
+      // Wait for the round to become Abandoned
+      await waitUntilClose(r)
+
+      assert.ok(r.address, "Round is not valid.");
+  });
+
+  it("Round state is Abandoned", async function () {
+      let state = await r.getState();
+      assert.equal(state, 6, "Round State should be Abandoned");
+  });
+
+  it("Unable to add bounty to Abandoned round", async function () {
+      try {
+          await t.allocateMoreToRound(web3.toWei(1));
+             assert.fail('Expected revert not received');
+        } catch (error) {
+          let revertFound = error.message.search('revert') >= 0;
+          assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
+        }
+  });
+
+  it("Only the tournament owner can attempt to recover the tournament funds", async function () {
+      try {
+          // Switch to some other account
+          t.accountNumber = 1
+          await t.recoverFunds();
+          assert.fail('Expected revert not received');
+        } catch (error) {
+          // Switch back to the tournament owner account
+          t.accountNumber = 0
+          let revertFound = error.message.search('revert') >= 0;
+          assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
+        }
+  });
+
+  it("Tournament owner is able to recover tournament funds", async function () {
+      let balBefore = await token.balanceOf(accounts[0])
+      await t.recoverFunds()
+      let balAfter = await token.balanceOf(accounts[0])
+      assert.isTrue(fromWei(balAfter) == (fromWei(balBefore) + 10), "Tournament funds not transferred back to the owner")
+  });
+
+  it("Tournament balance is 0", async function () {
+      let tB = await t.getBalance()
+      assert.isTrue(tB == 0, "Tournament balance should be 0")
+  });
+
+  it("Round balance is 0", async function () {
+      let rB = await r.getRoundBalance()
+      assert.isTrue(rB == 0, "Tournament balance should be 0")
+  });
+
+
+});
