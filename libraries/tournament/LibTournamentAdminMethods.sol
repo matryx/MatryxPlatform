@@ -159,7 +159,11 @@ library LibTournamentAdminMethods
     {
         // Only this, the tournamentFactory or rounds can call createRound
         require(msg.sender == address(this) || msg.sender == IMatryxPlatform(platformAddress).getTournamentFactoryAddress() || stateData.isRound[msg.sender]);
+
+        // Round timing restrictions
         require(roundData.start < roundData.end, "Time parameters are invalid.");
+        require(roundData.end.sub(roundData.start) <= 1 years);
+        require(roundData.reviewPeriodDuration <= 1 years);
 
         // Rounds that are not created automatically must have a valid bounty
         if(_automaticCreation == false)

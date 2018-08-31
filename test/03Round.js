@@ -670,7 +670,6 @@ contract('Unfunded Round Testing', function(accounts) {
     });
 
     it("Able to transfer tournament funds to the Unfunded round", async function () {
-        let state = await ur.getState();
         t.accountNumber = 0
         await t.allocateMoreToRound(toWei(2));
         let urB = await ur.getRoundBalance()
@@ -831,6 +830,103 @@ contract('Ghost Round Testing', function(accounts) {
     it("Tournament balance is correct", async function () {
         let tB = await t.getBalance()
         assert.equal(fromWei(tB), 8, "Tournament balance incorrect")
+    });
+
+});
+
+contract('Round Timing Restrictions Testing', function(accounts) {
+    let t; //tournament
+    let r; //round
+
+    it("Able to create a round with duration: 1 day", async function () {
+        await init();
+        roundData = {
+            start: Math.floor(Date.now() / 1000),
+            end: Math.floor(Date.now() / 1000) + 86400,
+            reviewPeriodDuration: 5,
+            bounty: web3.toWei(5),
+            closed: false
+        }
+
+        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+        let [_, roundAddress] = await t.currentRound()
+        r = Contract(roundAddress, MatryxRound, 0)
+
+        assert.ok(r.address, "Round not created successfully.");
+    });
+
+    it("Able to create a round with duration: 1 year", async function () {
+        await init();
+        roundData = {
+            start: Math.floor(Date.now() / 1000),
+            end: Math.floor(Date.now() / 1000) + 31536000,
+            reviewPeriodDuration: 5,
+            bounty: web3.toWei(5),
+            closed: false
+        }
+
+        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+        let [_, roundAddress] = await t.currentRound()
+        r = Contract(roundAddress, MatryxRound, 0)
+
+        assert.ok(r.address, "Round not created successfully.");
+    });
+
+    it("Unable to create a round with duration: 1 year + 1 second", async function () {
+        await init();
+        roundData = {
+            start: Math.floor(Date.now() / 1000),
+            end: Math.floor(Date.now() / 1000) + 31536001,
+            reviewPeriodDuration: 5,
+            bounty: web3.toWei(5),
+            closed: false
+        }
+
+        try {
+            t.accountNumber = 1
+            await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+            assert.fail('Expected revert not received');
+          } catch (error) {
+            let revertFound = error.message.search('revert') >= 0;
+            assert(revertFound, 'Should not have been able to create the round');
+          }
+    });
+
+    it("Able to create a round review period duration: 1 year", async function () {
+        await init();
+        roundData = {
+            start: Math.floor(Date.now() / 1000),
+            end: Math.floor(Date.now() / 1000) + 10,
+            reviewPeriodDuration: 31536000,
+            bounty: web3.toWei(5),
+            closed: false
+        }
+
+        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+        let [_, roundAddress] = await t.currentRound()
+        r = Contract(roundAddress, MatryxRound, 0)
+
+        assert.ok(r.address, "Round not created successfully.");
+    });
+
+    it("Unable to create a round with duration: 1 year + 1 second", async function () {
+        await init();
+        roundData = {
+            start: Math.floor(Date.now() / 1000),
+            end: Math.floor(Date.now() / 1000) + 10,
+            reviewPeriodDuration: 31536001,
+            bounty: web3.toWei(5),
+            closed: false
+        }
+
+        try {
+            t.accountNumber = 1
+            await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+            assert.fail('Expected revert not received');
+          } catch (error) {
+            let revertFound = error.message.search('revert') >= 0;
+            assert(revertFound, 'Should not have been able to create the round');
+          }
     });
 
 });
