@@ -92,8 +92,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tournament-admin.html">Tournament Administration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="trust-and-reputation.html">Trust and Reputation System</a></li>
-<li class="toctree-l1"><a class="reference internal" href="abi-and-geth-interaction.html">Interacting with the Platform via Geth</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trust-and-reputation.html">Reputation System</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_versions.html">Versions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source/api.html">Source Code Documentation</a></li>
@@ -168,45 +167,73 @@
 <p>To create a submission, you will first need to assemble all of your submission details and content as follows:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionData
 {
-    string title;
-    address owner;
-    bytes descriptionHash;
-    bytes fileHash;
-    bool isPublic;
+    bytes32[3] title;
+    bytes32[2] descriptionHash;
+    bytes32[2] fileHash;
+    uint256 timeSubmitted;
+    uint256 timeUpdated;
 }
 </pre></div>
 </div>
-<p>This is the <code class="docutils literal notranslate"><span class="pre">createSubmission</span></code> function signature:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function createSubmission(address[] _contributors, uint128[] _contributorRewardDistribution, address[] _references, LibConstruction.SubmissionData submissionData) public onlyEntrant onlyPeerLinked(msg.sender) ifRoundHasFunds whileTournamentOpen returns (address _submissionAddress)
+<p>Here you have the opportunity to cite any contributors or references in your submission and specify the intended reward distribution among all the contributors (expressed as a percentage or a proportion). This information should be included into the submission as follows:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ContributorsAndReferences
+{
+    address[] contributors;
+    uint256[] contributorRewardDistribution;
+    address[] references;
+}
 </pre></div>
 </div>
-<p>Here you have to opportunity to cite any contributors or references in your submission and specify the intended reward distribution among all the contributors (expressed as a percentage).</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The contributors and contributor reward distribution arrays must have the same number of entries.</p>
 </div>
+<p>This is the <code class="docutils literal notranslate"><span class="pre">createSubmission</span></code> function signature:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function createSubmission(submissionData, contributorsAndReferences)
+</pre></div>
+</div>
 </div>
 <div class="section" id="editing-your-submissions">
 <h2>Editing your Submissions<a class="headerlink" href="#editing-your-submissions" title="Permalink to this headline">¶</a></h2>
-<p>As long as the current round remains open, you are able to edit any submissions you have made. The <code class="docutils literal notranslate"><span class="pre">update</span></code> function is called on the submission you want to change, and this is the function signature:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function update(address[] _contributorsToAdd, uint128[] _contributorRewardDistribution, address[] _contributorsToRemove, LibConstruction.SubmissionModificationData _data)
+<p>As long as the current round remains open, you are able to edit any submissions you have made. To modify the data of your submisison, you can call the <code class="docutils literal notranslate"><span class="pre">updateData</span></code> function like this:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateData(submissionModificationData)
 </pre></div>
 </div>
 <p>Where <code class="docutils literal notranslate"><span class="pre">SubmissionModificationData</span></code> is the following:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionModificationData
 {
-    string title;
-    address owner;
-    bytes descriptionHash;
-    bytes fileHash;
-    bool isPublic;
+    bytes32[3] title;
+    bytes32[2] descriptionHash;
+    bytes32[2] fileHash;
+}
+</pre></div>
+</div>
+<p>Similarly, you can update your submission’s contributors and references with the following calls:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateContributors(contributorsModificationData)
+mySubmission.updateReferences(referencesModificationData)
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">ContributorsModificationData</span></code> is</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ContributorsModificationData
+{
+    address[] contributorsToAdd;
+    uint256[] contributorRewardDistribution;
+    uint256[] contributorsToRemove;
+}
+</pre></div>
+</div>
+<p>and <code class="docutils literal notranslate"><span class="pre">ReferencesModificationData</span></code> is</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ReferencesModificationData
+{
+    address[] referencesToAdd;
+    uint256[] referencesToRemove;
 }
 </pre></div>
 </div>
 </div>
 <div class="section" id="exiting-a-tournament">
 <h2>Exiting a Tournament<a class="headerlink" href="#exiting-a-tournament" title="Permalink to this headline">¶</a></h2>
-<p>You can choose to exit a tournament at any time as long as you haven’t made any submissions to a round that is still ongoing. When you exit, you can claim the entry fee that you paid when you first entered the tournament with this call:</p>
+<p>You can choose to exit an ongoing tournament at any time. When you exit, you can claim the entry fee that you paid when you first entered the tournament with this call:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.collectMyEntryFee()
 </pre></div>
 </div>
@@ -218,6 +245,7 @@
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.withdrawFromAbandoned()
 </pre></div>
 </div>
+<p>Your tournament entry fee will also be returned to you when you make this call.</p>
 </div>
 </div>
 
