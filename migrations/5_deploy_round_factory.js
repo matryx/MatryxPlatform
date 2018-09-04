@@ -1,6 +1,4 @@
-// Private Chain MTX Address: 0x89c81164a847fae12841c7d2371864c7656f91c9
 var SafeMath = artifacts.require("../libraries/math/SafeMath.sol");
-var Strings = artifacts.require("../libraries/strings/strings.sol");
 var LibTournamentAdminMethods = artifacts.require("../libraries/tournament/LibTournamentAdminMethods.sol");
 var LibRound = artifacts.require("../libraries/round/LibRound.sol");
 var MatryxRoundFactory = artifacts.require("MatryxRoundFactory");
