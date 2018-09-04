@@ -146,13 +146,6 @@ module.exports = {
       await this.getMinedTx('Token.mint', hash)
     }
 
-    console.log(chalk`\nSetup {yellow ${account}}`)
-    const hasPeer = await platform.hasPeer(account)
-    if (!hasPeer) {
-      let { hash } = await platform.createPeer({ gasLimit: 4.5e6 })
-      await this.getMinedTx('Platform.createPeer', hash)
-    }
-
     const allowance = await token.allowance(account, platform.address) / 1e18 | 0
     console.log('Allowance: ' + allowance + ' MTX')
     if (allowance == 0) {

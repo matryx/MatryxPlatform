@@ -120,6 +120,25 @@ const selectWinnersWhenInReview = async (tournament, winners, rewardDistribution
     await getMinedTx('Tournament.selectWinners', tx.hash)
   }
 
+const enterTournament = async (tournament, accountNumber) => {
+    await setup(artifacts, web3, accountNumber)
+    tAccount = tournament.accountNumber
+    pAccount = platform.accountNumber
+
+    tournament.accountNumber = accountNumber
+    platform.accountNumber = accountNumber
+    const account = tournament.wallet.address
+
+    const isEntrant = await tournament.isEntrant(account)
+    if (!isEntrant) {
+      let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
+      await getMinedTx('Platform.enterTournament', hash)
+    }
+
+    let isEnt = await tournament.isEntrant(account)
+    return isEnt
+  }
+
 
 contract('NotYetOpen Round Testing', function(accounts) {
     let t; //tournament
@@ -211,6 +230,11 @@ contract('NotYetOpen Round Testing', function(accounts) {
         await t.allocateMoreToRound(web3.toWei(1));
         let b = await r.getBounty();
         assert.equal(fromWei(b), 6, "Bounty was not added")
+    });
+
+    it("Able to enter Not Yet Open round", async function() {
+        let isEnt = await enterTournament(t, 2)
+        assert.isTrue(isEnt, "Could not enter tournament")
     });
 });
 
@@ -359,11 +383,16 @@ contract('In Review Round Testing', function(accounts) {
     it("Unable to allocate more tournament bounty to a round in review", async function () {
         try {
             await t.allocateMoreToRound(web3.toWei(1));
-               assert.fail('Expected revert not received');
+            assert.fail('Expected revert not received');
           } catch (error) {
             let revertFound = error.message.search('revert') >= 0;
             assert(revertFound, 'Should not have been able to add bounty to round in review');
           }
+    });
+
+    it("Able to enter round in review", async function () {
+        let isEnt = await enterTournament(t, 3)
+        assert.isTrue(isEnt, "Could not enter tournament")
     });
 
     it("Round balance should still be 5", async function () {
@@ -387,9 +416,10 @@ contract('In Review Round Testing', function(accounts) {
         //switch to accounts[1]
         t.accountNumber = 1
         try {
-            let tx = await t.createSubmission(submissionData, [[],[],[]])
+            await t.createSubmission(submissionData, [[],[],[]])
             assert.fail('Expected revert not received');
           } catch (error) {
+            t.accountNumber = 0
             let revertFound = error.message.search('revert') >= 0;
             assert(revertFound, 'Should not have been able to make a submission while In Review');
           }
@@ -452,8 +482,7 @@ contract('Closed Round Testing', function(accounts) {
 
     it("Unable to enter closed tournament", async function () {
         try {
-            t.accountNumber = 2
-            await platform.enterTournament(t.address)
+            await enterTournament(t, 2)
             assert.fail('Expected revert not received');
           } catch (error) {
             let revertFound = error.message.search('revert') >= 0;

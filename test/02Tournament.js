@@ -38,9 +38,6 @@ const createTournament = async (_title, _category, bounty, roundData, accountNum
     const address = await platform.allTournaments(count)
     const tournament = Contract(address, MatryxTournament, accountNumber)
 
-    // let [_, roundAddress] = await tournament.currentRound()
-    // let round = Contract(roundAddress, MatryxRound, accountNumber)
-
     return tournament
 
   }
@@ -65,7 +62,6 @@ const waitUntilOpen = async (round) => {
 
 const createSubmission = async (tournament, contribs, accountNumber) => {
   await setup(artifacts, web3, accountNumber)
-
   tAccount = tournament.accountNumber
   pAccount = platform.accountNumber
 
@@ -136,6 +132,25 @@ const selectWinnersWhenInReview = async (tournament, winners, rewardDistribution
 
   const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
   await getMinedTx('Tournament.selectWinners', tx.hash)
+}
+
+const enterTournament = async (tournament, accountNumber) => {
+  await setup(artifacts, web3, accountNumber)
+  tAccount = tournament.accountNumber
+  pAccount = platform.accountNumber
+
+  tournament.accountNumber = accountNumber
+  platform.accountNumber = accountNumber
+  const account = tournament.wallet.address
+
+  const isEntrant = await tournament.isEntrant(account)
+  if (!isEntrant) {
+    let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
+    await getMinedTx('Platform.enterTournament', hash)
+  }
+
+  let isEnt = await tournament.isEntrant(account)
+  return isEnt
 }
 
 
@@ -342,20 +357,13 @@ contract('On Hold Tournament Testing', function(accounts) {
         assert.fail('Expected revert not received');
       } catch (error) {
         let revertFound = error.message.search('revert') >= 0;
-        assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
+        assert(revertFound, 'Should not have been able to make a submission while On Hold');
       }
   });
 
-  it("Unable to enter tournament while On Hold", async function () {
-      try {
-        t.accountNumber = 2
-        await platform.enterTournament(t.address)
-        assert.fail('Expected revert not received');
-      } catch (error) {
-        t.accountNumber = 0
-        let revertFound = error.message.search('revert') >= 0;
-        assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
-      }
+  it("Able to enter tournament while On Hold", async function () {
+      let isEnt = await enterTournament(t, 2)
+      assert.isTrue(isEnt, "Could not enter the tournament")
   });
 
   it("Tournament becomes open again after the next round starts", async function () {
