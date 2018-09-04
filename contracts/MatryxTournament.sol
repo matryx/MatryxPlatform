@@ -125,6 +125,12 @@ contract MatryxTournament is IMatryxTournament {
         _;
     }
 
+    modifier whileEnterable()
+    {
+        require(getState() <= uint256(LibEnums.TournamentState.Open));
+        _;
+    }
+
     modifier ifRoundHasFunds()
     {
         address currentRoundAddress;
@@ -342,7 +348,7 @@ contract MatryxTournament is IMatryxTournament {
     /// @dev Enters the user into the tournament.
     /// @param _entrantAddress Address of the user to enter.
     /// @return success Whether or not the user was entered successfully.
-    function enterUserInTournament(address _entrantAddress) public onlyPlatform whileTournamentOpen returns (bool _success)
+    function enterUserInTournament(address _entrantAddress) public onlyPlatform whileEnterable returns (bool _success)
     {
         return LibTournamentEntrantMethods.enterUserInTournament(data, stateData, entryData, _entrantAddress);
     }

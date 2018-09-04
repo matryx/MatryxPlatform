@@ -295,6 +295,10 @@ contract MatryxPlatform is Ownable {
         return tournamentExists[_tournamentAddress];
     }
 
+    function isTournament(address _tournamentAddress) public view returns (bool){
+        return tournamentExists[_tournamentAddress];
+    }
+
     /// @dev Returns whether or not the given tournament belongs to the sender.
     /// @param _tournamentAddress Address of the tournament to check.
     /// @return _isMine Whether or not the tournament belongs to the sender.

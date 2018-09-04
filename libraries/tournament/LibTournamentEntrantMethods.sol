@@ -29,6 +29,7 @@ library LibTournamentEntrantMethods
         }
 
         // Change the tournament's state to reflect the user entering.
+        require(IMatryxToken(IMatryxTournament(address(this)).getTokenAddress()).transferFrom(_entrantAddress, address(this), data.entryFee));
         entryData.addressToEntryFeePaid[_entrantAddress].exists = true;
         entryData.addressToEntryFeePaid[_entrantAddress].value = data.entryFee;
         stateData.entryFeesTotal = stateData.entryFeesTotal.add(data.entryFee);

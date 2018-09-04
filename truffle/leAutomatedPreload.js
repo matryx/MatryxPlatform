@@ -49,7 +49,7 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   //   bounty
   // }
 
-  let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 6e6, gasPrice: 25 })
+  let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 4e6, gasPrice: 25 })
   await getMinedTx('Platform.createTournament', tx.hash)
 
   const address = await platform.allTournaments(count)
@@ -86,7 +86,7 @@ const createSubmission = async (tournament, accountNumber) => {
 
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) {
-    let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
+    let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 4e6 })
     await getMinedTx('Platform.enterTournament', hash)
   }
 
@@ -185,7 +185,7 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
   console.log(chalk`{grey [Waiting ${~~timeTilRoundInReview}s until review period]}`)
   await sleep(timeTilRoundInReview * 1000)
 
-  const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
+  const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 4e6 })
   await getMinedTx('Tournament.selectWinners', tx.hash)
 }
 
@@ -194,11 +194,9 @@ module.exports = async exit => {
     await init()
     const tournamentCreator = 0
 
-    /*
-
     let RoundNotYetOpen = {
-      start: Math.floor(Date.now() / 1000) + 9999999,
-      end: Math.floor(Date.now() / 1000) + 99999999,
+      start: Math.floor(Date.now() / 1000) + 999999,
+      end: Math.floor(Date.now() / 1000) + 9999999,
       reviewPeriodDuration: 12345678,
       bounty: web3.toWei(3),
       closed: false
@@ -209,7 +207,7 @@ module.exports = async exit => {
 
     let RoundUnfunded = {
       start: Math.floor(Date.now() / 1000) + 60,
-      end: Math.floor(Date.now() / 1000) + 9999999,
+      end: Math.floor(Date.now() / 1000) + 999999,
       reviewPeriodDuration: 12345678,
       bounty: 0,
       closed: false
@@ -220,20 +218,18 @@ module.exports = async exit => {
 
     let RoundOpenWithZero = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 9999999,
+      end: Math.floor(Date.now() / 1000) + 999999,
       reviewPeriodDuration: 12345678,
       bounty: web3.toWei(3),
       closed: false
     }
     const tournament_c = await createTournament(web3.toWei(10), RoundOpenWithZero, tournamentCreator)
 
-    */
-
     // ----------------------------------------------------------------------------------------------
 
     let RoundOpenWithThree = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 9999999,
+      end: Math.floor(Date.now() / 1000) + 999999,
       reviewPeriodDuration: 12345678,
       bounty: web3.toWei(3),
       closed: false
@@ -265,7 +261,7 @@ module.exports = async exit => {
     let RoundInReviewWithZero = {
       start: Math.floor(Date.now() / 1000),
       end: Math.floor(Date.now() / 1000) + 300, // CHANGE FOR ROPSTEN
-      reviewPeriodDuration: 9999999,
+      reviewPeriodDuration: 999999,
       bounty: web3.toWei(3),
       closed: false
     }
@@ -276,7 +272,7 @@ module.exports = async exit => {
     let RoundInReviewWithThree = {
       start: Math.floor(Date.now() / 1000),
       end: Math.floor(Date.now() / 1000) + 300, // CHANGE FOR ROPSTEN
-      reviewPeriodDuration: 9999999,
+      reviewPeriodDuration: 999999,
       bounty: web3.toWei(3),
       closed: false
     }

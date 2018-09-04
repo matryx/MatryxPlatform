@@ -86,6 +86,13 @@ const createSubmission = async (tournament, accountNumber) => {
 
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) {
+    let allowance = +await token.allowance(account, tournament.address)
+    if (!allowance) {
+      let entryFee = await tournament.getEntryFee()
+      token.accountNumber = accountNumber
+      let { hash } = await token.approve(tournament.address, entryFee)
+      await getMinedTx('Token.approve', hash)
+    }
     let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
     await getMinedTx('Platform.enterTournament', hash)
   }
@@ -194,8 +201,8 @@ module.exports = async exit => {
     await init()
     let roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 420,
-      reviewPeriodDuration: 120,
+      end: Math.floor(Date.now() / 1000) + 15,
+      reviewPeriodDuration: 20,
       bounty: web3.toWei(3),
       closed: false
     }
@@ -207,9 +214,9 @@ module.exports = async exit => {
     await createSubmission(tournament, 3)
 
     roundData = {
-      start: Math.floor(Date.now() / 1000) + 420,
-      end: Math.floor(Date.now() / 1000) + 420,
-      reviewPeriodDuration: 120,
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 15,
+      reviewPeriodDuration: 20,
       bounty: web3.toWei(3),
       closed: false
     }
