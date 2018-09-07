@@ -278,8 +278,33 @@ contract('Tournament Testing', function(accounts) {
       assert.isTrue(allNew && catUnchanged && fee == web3.toWei(1), "Tournament data not updated correctly.");
     });
 
+    it("Unable to create a tournament with 0 bounty", async function () {
+      let rData = {
+        start: Math.floor(Date.now() / 1000) + 10,
+        end: Math.floor(Date.now() / 1000) + 30,
+        reviewPeriodDuration: 20,
+        bounty: 0,
+        closed: false
+      }
+      let tData = {
+        category: stringToBytes('math'),
+        title: stringToBytes32('title 1', 3),
+        descriptionHash: stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2),
+        fileHash: stringToBytes32('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2),
+        initialBounty: 0,
+        entryFee: web3.toWei(2)
+      }
 
+      try {
+        await platform.createTournament(tData, rData, { gasLimit: 8e6, gasPrice: 25 })
+        assert.fail('Expected revert not received');
+      } catch (error) {
+        let revertFound = error.message.search('revert') >= 0;
+        assert(revertFound, 'Should not have been able to create a tournament with 0 bounty');
+      }
   });
+
+});
 
 
 

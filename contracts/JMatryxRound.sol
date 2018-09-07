@@ -269,7 +269,7 @@ contract JMatryxRound {
 
             // getWinningSubmissionAddresses() public view returns (address[] _winningSubmissions)
             function getWinningSubmissionAddresses() {
-                mstore(0, winningSubmissionsData_slot)  // winningSubmisisonsData.winningSubmissions
+                mstore(0, winningSubmissionsData_slot)  // winningSubmissionsData.winningSubmissions
                 let winningSubmissions := keccak256(0, 0x20)
 
                 // length of dyn array

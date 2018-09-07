@@ -39,7 +39,6 @@ library LibTournamentStateManagement
     ///      entrantToSubmissionToSubmissionIndex: Mapping from an entrant to a submission to its index
     ///      addressToEntryFeePaid: Whether or not this address has paid the tournament entry fee
     ///      numberOfEntrants: Total number of entrants in the tournament
-    ///      winnersChosen: Whether or not winners have already been chosen for this round
     struct EntryData
     {
         mapping(address=>bool) hasWithdrawn;
@@ -48,7 +47,6 @@ library LibTournamentStateManagement
         mapping(address=>mapping(address=>uint256_optional)) entrantToSubmissionToSubmissionIndex;
         mapping(address=>uint256_optional) addressToEntryFeePaid;
         uint256 numberOfEntrants;
-        bool winnersChosen;
     }
 
     /// @dev Returns the state of the tournament.

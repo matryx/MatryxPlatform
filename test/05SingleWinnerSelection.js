@@ -120,7 +120,7 @@ const selectWinnersWhenInReview = async (tournament, winners, rewardDistribution
 //
 // Case 1
 //
-contract('Single Winning Submisison with No Contribs or Refs and Close Tournament', function(accounts) {
+contract('Single Winning Submission with No Contribs or Refs and Close Tournament', function(accounts) {
     let t; //tournament
     let r; //round
     let s; //submission
@@ -200,7 +200,7 @@ contract('Single Winning Submisison with No Contribs or Refs and Close Tournamen
         assert.isTrue(fromWei(tB) == 0 && fromWei(rB) == 0, "Tournament and round balance should both be 0")
     });
 
-    it("Submisison balance should be initial tournament + round bounty", async function () {
+    it("Submission balance should be initial tournament + round bounty", async function () {
         let b = await r.getBalance(s.address);
         assert.equal(fromWei(b), fromWei(tBounty), "Winnings should equal initial tournament bounty")
     });
@@ -287,7 +287,7 @@ contract('Single Winning Submission with Contribs and Refs and Close Tournament'
 //
 // Case 3
 //
-contract('Single Winning Submisison with no Contribs or Refs and Start Next Round', function(accounts) {
+contract('Single Winning Submission with no Contribs or Refs and Start Next Round', function(accounts) {
   let t; //tournament
   let r; //round
   let nr; // new round (after choosing winners)
@@ -394,7 +394,7 @@ contract('Single Winning Submisison with no Contribs or Refs and Start Next Roun
 
 // Case 4
 
-contract('Single Winning Submisison with Contribs and Refs and Start Next Round', function(accounts) {
+contract('Single Winning Submission with Contribs and Refs and Start Next Round', function(accounts) {
   let t; //tournament
   let r; //round
   let nr; //new round

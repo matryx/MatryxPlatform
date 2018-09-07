@@ -24,7 +24,7 @@ library LibRound
     }
 
     /// @dev Struct information about the tournament submissions
-    ///        submissions: Addresses of all the submisisons
+    ///        submissions: Addresses of all the submissions
     ///        submissionOwners: Addresses of all the owners of submissions
     struct SubmissionsData
     {

@@ -25,18 +25,18 @@ contract JMatryxSubmission {
             sstore(round_slot, _round)                                // _round
 
             // copy _submissionData struct to data
-            sstore(data_slot, mload(0x100))                           // submisisonData.title[0]
-            sstore(add(data_slot, 1), mload(0x120))                   // submisisonData.title[1]
-            sstore(add(data_slot, 2), mload(0x140))                   // submisisonData.title[2]
-            sstore(add(data_slot, 3), mload(0x160))                   // submisisonData.descriptionHash[0]
-            sstore(add(data_slot, 4), mload(0x180))                   // submisisonData.descriptionHash[1]
-            sstore(add(data_slot, 5), mload(0x1a0))                   // submisisonData.fileHash[0]
-            sstore(add(data_slot, 6), mload(0x1c0))                   // submisisonData.fileHash[1]
+            sstore(data_slot, mload(0x100))                           // submissionData.title[0]
+            sstore(add(data_slot, 1), mload(0x120))                   // submissionData.title[1]
+            sstore(add(data_slot, 2), mload(0x140))                   // submissionData.title[2]
+            sstore(add(data_slot, 3), mload(0x160))                   // submissionData.descriptionHash[0]
+            sstore(add(data_slot, 4), mload(0x180))                   // submissionData.descriptionHash[1]
+            sstore(add(data_slot, 5), mload(0x1a0))                   // submissionData.fileHash[0]
+            sstore(add(data_slot, 6), mload(0x1c0))                   // submissionData.fileHash[1]
 
             // get current time
             let start := timestamp()
-            sstore(add(data_slot, 7), start)                          // submisisonData.timeSubmitted = now
-            sstore(add(data_slot, 8), start)                          // submisisonData.timeUpdated = now
+            sstore(add(data_slot, 7), start)                          // submissionData.timeSubmitted = now
+            sstore(add(data_slot, 8), start)                          // submissionData.timeUpdated = now
 
             // allow submission owner to view its files
             mstore(0x0, _owner)
@@ -58,7 +58,7 @@ contract JMatryxSubmission {
             }
             mstore(0x20, downloadData_slot)
 
-            // allow tournament owner to view submisison files
+            // allow tournament owner to view submission files
             let s_tournamentOwnerAllowed := keccak256(0x0, 0x40)
             sstore(s_tournamentOwnerAllowed, 1)                       // allowedToViewFile[tournamentOwner] = true
 
@@ -454,7 +454,7 @@ contract JMatryxSubmission {
                 duringOpenSubmission(offset)
 
                 let ptr := mload(0x40)
-                // LibSubmisison.updateContributors(LibConstruction.SubmissionData storage,LibConstruction.ContributorsAndReferences storage,LibSubmission.RewardData storage,LibSubmission.FileDownloadTracking storage,LibConstruction.ContributorsModificationData)
+                // LibSubmission.updateContributors(LibConstruction.SubmissionData storage,LibConstruction.ContributorsAndReferences storage,LibSubmission.RewardData storage,LibSubmission.FileDownloadTracking storage,LibConstruction.ContributorsModificationData)
                 mstore(ptr, mul(0x852972b2, offset))
                 mstore(add(ptr, 0x04), data_slot)
                 mstore(add(ptr, 0x24), contribsAndRefs_slot)
@@ -572,7 +572,7 @@ contract JMatryxSubmission {
             function myReward(offset) {
                 let ptr := mload(0x40)
 
-                // LibSubmisison.getTransferAmount(address,LibSubmission.RewardData storage,LibSubmission.TrustData storage)
+                // LibSubmission.getTransferAmount(address,LibSubmission.RewardData storage,LibSubmission.TrustData storage)
                 mstore(ptr, mul(0x223c8136, offset))
                 mstore(add(ptr, 0x04), sload(platform_slot))
                 mstore(add(ptr, 0x24), rewardData_slot)
@@ -581,7 +581,7 @@ contract JMatryxSubmission {
                 require(delegatecall(gas(), LibSubmission, ptr, 0x64, 0, 0x20))
                 let amount := mload(0)
 
-                // LibSubmisison._myReward(LibConstruction.ContributorsAndReferences storage,LibSubmission.RewardData storage,address,uint256)
+                // LibSubmission._myReward(LibConstruction.ContributorsAndReferences storage,LibSubmission.RewardData storage,address,uint256)
                 mstore(ptr, mul(0xbf1053e2, offset))
                 mstore(add(ptr, 0x04), contribsAndRefs_slot)
                 mstore(add(ptr, 0x24), rewardData_slot)

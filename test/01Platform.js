@@ -130,7 +130,7 @@ contract('Platform Testing', function(accounts) {
         assert.isTrue(tourCat == t.address, "Unable to get tournaments by category.");
     });
 
-    it("My submisisons should be empty", async function () {
+    it("My submissions should be empty", async function () {
         let mySubmissions = await platform.mySubmissions()
         assert.equal(mySubmissions.length, 0, "Tournament count should be 0 and tournaments array should be empty.");
     });

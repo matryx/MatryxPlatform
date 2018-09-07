@@ -141,7 +141,7 @@ contract('Submission Testing with No Contributors and References', function(acco
   let t; //tournament
   let r; //round
   let s; //submission
-  let stime; //time at submisison creation
+  let stime; //time at submission creation
   let utime; //time at submission updating
 
   it("Able to create a Submission", async function () {
@@ -183,7 +183,7 @@ contract('Submission Testing with No Contributors and References', function(acco
     assert.isTrue(allTrue && permitted.length == 2, "Permissions are not correct")
   });
 
-  it("Submisison has no References", async function () {
+  it("Submission has no References", async function () {
     let ref = await s.getReferences();
     assert.equal(ref.length, 0,"References are not correct")
   });
@@ -323,7 +323,7 @@ contract('Submission Testing with Contributors', function(accounts) {
     let tOwner = await t.getOwner()
     let allTrue = permitted.some(x => x == tOwner)
 
-    //check submission owner has download permisisons
+    //check submission owner has download permissions
     let sOwner = await s.getOwner()
     allTrue = permitted.some(x => x == sOwner)
 
@@ -337,7 +337,7 @@ contract('Submission Testing with Contributors', function(accounts) {
     assert.isTrue(allTrue && (permitted.length == contribs.length + 2), "Download permissions are not correct")
   });
 
-  it("Submisison has References", async function () {
+  it("Submission has References", async function () {
     let ref = await s.getReferences();
     assert.equal(ref.length, 10, "References are not correct")
   });
