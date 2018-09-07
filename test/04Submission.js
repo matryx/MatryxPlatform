@@ -168,6 +168,16 @@ contract('Submission Testing with No Contributors and References', function(acco
       assert.ok(s.address, "Submission is not valid.");
   });
 
+  it("Submission should exist in round", async function () {
+    let exists = await r.submissionExists(s.address);
+    assert.isTrue(exists, "Submission does not exist in round")
+  });
+
+  it("Non-submission address does not exist as a submission in round", async function () {
+    let exists = await r.submissionExists(r.address);
+    assert.isFalse(exists, "This address should not exist as a submission in round")
+  });
+
   it("Submission is accessible to submission owner", async function () {
     let access = await s.isAccessible(web3.eth.accounts[1]);
     assert.isTrue(access, "Submission was not accessible to submission owner")

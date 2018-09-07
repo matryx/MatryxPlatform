@@ -276,6 +276,11 @@ contract('Multiple Winning Submissions with Contribs and Refs and Close Tourname
       assert.equal(state, 5, "Round is not Closed")
   });
 
+  it("Able to get winning submission addresses", async function () {
+      let wsubs = await r.getWinningSubmissionAddresses();
+      assert.equal(wsubs.length, 4, "Unable to get all winning submission addresses")
+  });
+
   it("Tournament and Round balance should now be 0", async function () {
         let tB = await t.getBalance()
         let rB = await r.getRoundBalance()

@@ -316,7 +316,7 @@ library LibSubmission
         uint256 transferAmount = getTransferAmount(platformAddress, rewardData, trustData);
         uint256 transferAmountLeft = _myReward(contributorsAndReferences, rewardData, msg.sender, transferAmount);
 
-        token.transfer(msg.sender, transferAmountLeft);
+        require(token.transfer(msg.sender, transferAmountLeft));
         rewardData.addressToAmountWithdrawn[msg.sender] = rewardData.addressToAmountWithdrawn[msg.sender].add(transferAmountLeft);
 
         if (IOwnable(this).isOwner(msg.sender))

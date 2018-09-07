@@ -205,6 +205,12 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
         assert.equal(fromWei(b), fromWei(tBounty), "Winnings should equal initial tournament bounty")
     });
 
+    it("Able to withdraw reward", async function () {
+        await s.withdrawReward();
+        let sb = await r.getBalance(s.address);
+        assert.equal(sb, 0, "Submission balance should now be 0")
+    });
+
 });
 
 
@@ -279,6 +285,12 @@ contract('Single Winning Submission with Contribs and Refs and Close Tournament'
     it("Winning submission balance should be 10", async function () {
         let b = await r.getBalance(s.address);
         assert.equal(fromWei(b), 10, "Incorrect submission balance")
+    });
+
+    it("Able to withdraw reward", async function () {
+        await s.withdrawReward();
+        let sb = await r.getBalance(s.address);
+        assert.equal(fromWei(sb), 5, "Submission balance should now be 5")
     });
 
 });
@@ -386,6 +398,12 @@ contract('Single Winning Submission with no Contribs or Refs and Start Next Roun
       s2 = Contract(s2.address, MatryxSubmission, 1)
       assert.ok(s2.address, "Submission is not valid.");
   });
+
+  it("Able to withdraw reward", async function () {
+    await s.withdrawReward();
+    let sb = await r.getBalance(s.address);
+    assert.equal(fromWei(sb), 0, "Submission balance should now be 0")
+});
 
 });
 
@@ -511,6 +529,12 @@ contract('Single Winning Submission with Contribs and Refs and Start Next Round'
       assert.ok(s2.address, "Submission is not valid.");
   });
 
+  it("Able to withdraw reward", async function () {
+    await s.withdrawReward();
+    let sb = await r.getBalance(s.address);
+    assert.equal(fromWei(sb), 5/2, "Submission balance should now be 5/2")
+});
+
 });
 
 
@@ -604,6 +628,12 @@ contract('Single Winning Submission with no Contribs or Refs and Do Nothing', fu
     it("Winning submission balance should be 5", async function () {
         let b = await r.getBalance(s.address);
         assert.equal(fromWei(b), 5, "Incorrect submission balance")
+    });
+
+    it("Able to withdraw reward", async function () {
+        await s.withdrawReward();
+        let sb = await r.getBalance(s.address);
+        assert.equal(fromWei(sb), 0, "Submission balance should now be 0")
     });
 
 });
@@ -719,6 +749,12 @@ contract('Single Winning Submission with Contribs and Refs and Do Nothing', func
   it("Winning submission balance should be 5", async function () {
         let b = await r.getBalance(s.address);
         assert.equal(fromWei(b), 5, "Incorrect submission balance")
+    });
+
+  it("Able to withdraw reward", async function () {
+        await s.withdrawReward();
+        let sb = await r.getBalance(s.address);
+        assert.equal(fromWei(sb), 5/2, "Submission balance should now be 5/2")
     });
 
 
