@@ -13,7 +13,8 @@ stringToBytes = utils.stringToBytes
 stringToBytes32 = utils.stringToBytes32
 contract = utils.Contract
 
-selector = signature => '0x' + ethUtil.keccak(signature).hexSlice(0, 4)
+keccak = str => '0x' + ethUtil.keccak(str).hexSlice(0)
+selector = signature => keccak(signature).substr(0, 10)
 getFileContents = path => fs.readFileSync(path).toString()
 
 getTx = hash => wallet.provider.getTransaction(hash)
@@ -28,6 +29,8 @@ toWei = eth => ethers.utils.parseEther(eth.toString())
 console.log('Setup to copy paste:\n')
 console.log('platform = contract(MatryxPlatform.address, MatryxPlatform);0')
 console.log('token = contract(network.tokenAddress, MatryxToken);0\n')
+
+network.setNetwork('develop')
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>

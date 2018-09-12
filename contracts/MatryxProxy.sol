@@ -10,19 +10,20 @@ contract MatryxProxy is Ownable {
         bytes32[] allContracts;
     }
 
+    struct FnData {
+        bytes32 modifiedSelector; // modified fn selector
+        uint256[] injectedParams; // what storage slots to insert
+        uint256[] dynamicParams;  // what params are dynamic
+    }
+
     // Platform, LibTournament...
     struct ContractData {
         address location;
-        bool isLibrary;
-        mapping(bytes32=>bytes32[]) fnInjectedParams; // fn selector => what storage slot to insert?
-        mapping(bytes32=>bytes32) fnModifiedSelector; // fn selector => modified fn selector
+        mapping(bytes32=>FnData) fnData;
     }
 
     // examples:
-    // Tournament.selectWinners(winnerData) => call to Platform => delegatecall to LibTournament.selectWinners(TournamentData storage, winnerData)
-
-    // Platform.Tournament_selectWinners(winnerData) => delegatecall to LibTournament.Tournament_selectWinners(TournamentData storage, winnerData)
-    // Tournament.addFunds(mtx) => Platform calls LibTournament.addFunds(tokenAddress, mtx)
+    // Tournament.selectWinners(winnerData) => call to Platform => proxy lookup => delegatecall to LibTournament.selectWinners(TournamentData storage, winnerData)
 
     // note to future self:
     // must manually set these!!!
@@ -36,11 +37,11 @@ contract MatryxProxy is Ownable {
         allVersions.push(_version);
     }
 
-    function setCurrentVersion(uint256 _version) public onlyOwner {
+    function setVersion(uint256 _version) public onlyOwner {
         currentVersion = _version;
     }
 
-    function getCurrentVersion() public view returns (uint256 _currentVersion) {
+    function getVersion() public view returns (uint256 _currentVersion) {
         return currentVersion;
     }
 
@@ -48,21 +49,32 @@ contract MatryxProxy is Ownable {
         return allVersions;
     }
 
-    function setContract(bytes32 _name, address _contractAddress, uint256 _version) public onlyOwner {
+    function setContract(uint256 _version, bytes32 _contractName, address _contractAddress) public onlyOwner {
         require(platformByVersion[_version].exists);
 
-        if (platformByVersion[_version].contracts[_name] == 0) {
-            platformByVersion[_version].allContracts.push(_name);
+        if (platformByVersion[_version].contracts[_contractName].location == 0x0) {
+            platformByVersion[_version].allContracts.push(_contractName);
         }
 
-        platformByVersion[_version].contracts[_name] = _contractAddress;
+        platformByVersion[_version].contracts[_contractName].location = _contractAddress;
     }
 
-    function getContract(bytes32 _name) public view returns (address) {
-        return platformByVersion[currentVersion].contracts[_name];
+    function getContract(uint256 _version, bytes32 _contractName) public view returns (address) {
+        // assembly {
+        //     let ptr := mload(0x40)
+        //     calldatacopy(ptr, 0, calldatasize)
+        //     log0(ptr, calldatasize)
+        // }
+        return platformByVersion[_version].contracts[_contractName].location;
     }
 
-    function getContractAtVersion(bytes32 _name, uint256 _version) public view returns (address) {
-        return platformByVersion[_version].contracts[_name];
+    function addContractMethod(uint256 _version, bytes32 _contractName, bytes32 _selector, FnData _fnData) public onlyOwner {
+        require(platformByVersion[_version].exists);
+        require(platformByVersion[_version].contracts[_contractName].location != 0x0);
+        platformByVersion[_version].contracts[_contractName].fnData[_selector] = _fnData;
+    }
+
+    function getContractMethod(uint256 _version, bytes32 _contractName, bytes32 _selector) public view returns (FnData) {
+        return platformByVersion[_version].contracts[_contractName].fnData[_selector];
     }
 }
