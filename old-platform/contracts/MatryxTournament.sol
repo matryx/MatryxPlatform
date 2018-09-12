@@ -1,0 +1,410 @@
+pragma solidity ^0.4.18;
+pragma experimental ABIEncoderV2;
+
+import "../libraries/strings/strings.sol";
+import "../libraries/math/SafeMath.sol";
+import "../libraries/LibConstruction.sol";
+import "../libraries/tournament/LibTournamentStateManagement.sol";
+import "../libraries/tournament/LibTournamentAdminMethods.sol";
+import "../libraries/tournament/LibTournamentEntrantMethods.sol";
+import "../libraries/LibEnums.sol";
+import "../interfaces/IMatryxPlatform.sol";
+import "../interfaces/IMatryxTournament.sol";
+import "../interfaces/IMatryxSubmission.sol";
+import "../interfaces/IMatryxRound.sol";
+import "../interfaces/IMatryxToken.sol";
+import "./Ownable.sol";
+
+/// @title Tournament - The Matryx tournament.
+/// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
+contract MatryxTournament is IMatryxTournament {
+    using SafeMath for uint256;
+    using strings for *;
+    using LibTournamentAdminMethods for LibConstruction.TournamentData;
+
+    // TODO: Create setter for this (resume here for upgrade system.)
+
+    address public owner;
+    address public platformAddress;
+    address public matryxRoundFactoryAddress;
+
+    LibConstruction.TournamentData data;
+    LibTournamentStateManagement.StateData stateData;
+    LibTournamentStateManagement.EntryData entryData;
+
+    constructor(address _owner, address _platformAddress, address _matryxRoundFactoryAddress, LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData)
+    {
+        //Clean inputs
+        require(_owner != 0x0);
+        require(tournamentData.title[0] != 0);
+        require(tournamentData.initialBounty > 0);
+        require(_matryxRoundFactoryAddress != 0x0);
+
+        owner = _owner;
+        platformAddress = _platformAddress;
+        matryxRoundFactoryAddress = _matryxRoundFactoryAddress;
+        data = tournamentData;
+
+        _createRound(roundData, true); // _automaticCreation
+    }
+
+    /*
+     * Structs
+     */
+
+    struct uint256_optional
+    {
+        bool exists;
+        uint256 value;
+    }
+
+    struct SubmissionLocation
+    {
+        uint256 roundIndex;
+        uint256 submissionIndex;
+    }
+
+    /*
+     * Events
+     */
+
+    event SubmissionCreated(uint256 _roundIndex, address _submissionAddress);
+    event RoundWinnersChosen(address[] _submissionAddresses);
+
+    /// @dev Allows rounds to invoke SubmissionCreated events on this tournament.
+    /// @param _submissionAddress Address of the submission.
+    function invokeSubmissionCreatedEvent(address _submissionAddress) public onlyRound
+    {
+        emit SubmissionCreated(stateData.rounds.length-1, _submissionAddress);
+    }
+
+    /// @dev Allows rounds to invoke SubmissionCreated events on this tournament.
+    /// @param _winningAddresses Addresses of the winning submissions.
+    function invokeRoundWinnersChosenEvent(address[] _winningAddresses) public onlyRound
+    {
+        emit RoundWinnersChosen(_winningAddresses);
+    }
+
+    /*
+     * Modifiers
+     */
+    modifier onlyOwner()
+    {
+        require(msg.sender == owner);
+        _;
+    }
+
+    /// @dev Requires the function caller to be the platform.
+    modifier onlyPlatform() {
+        require(msg.sender == platformAddress);
+        _;
+    }
+
+    modifier onlyRound() {
+        require(stateData.isRound[msg.sender]);
+        _;
+    }
+
+    modifier onlyPeerLinked(address _sender) {
+        IMatryxPlatform platform = IMatryxPlatform(platformAddress);
+        require(platform.hasEnteredMatryx(_sender));
+        _;
+    }
+
+    /// @dev Requires the function caller to be an entrant.
+    modifier onlyEntrant()
+    {
+        bool senderIsEntrant = entryData.addressToEntryFeePaid[msg.sender].exists;
+        require(senderIsEntrant);
+        _;
+    }
+
+    modifier whileTournamentOpen()
+    {
+        require(getState() == uint256(LibEnums.TournamentState.Open));
+        _;
+    }
+
+    modifier whileEnterable()
+    {
+        require(getState() <= uint256(LibEnums.TournamentState.Open));
+        _;
+    }
+
+    modifier ifRoundHasFunds()
+    {
+        address currentRoundAddress;
+        (,currentRoundAddress) = currentRound();
+        require(IMatryxRound(currentRoundAddress).getState() != uint256(LibEnums.RoundState.Unfunded));
+        _;
+    }
+
+    /*
+    * State Maintenance Methods
+    */
+
+    function removeSubmission(address _submissionAddress, address _author) public onlyPlatform
+    {
+        require(entryData.entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].exists);
+        entryData.numberOfSubmissions = entryData.numberOfSubmissions.sub(1);
+        delete entryData.entrantToSubmissions[_author][entryData.entrantToSubmissionToSubmissionIndex[_author][_submissionAddress].value];
+        delete entryData.entrantToSubmissionToSubmissionIndex[_author][_submissionAddress];
+    }
+
+    /*
+     * Access Control Methods
+     */
+
+    /// @dev Returns whether or not the sender is an entrant in this tournament
+    /// @param _sender Explicit sender address.
+    /// @return Whether or not the sender is an entrant in this tournament.
+    function isEntrant(address _sender) public view returns (bool)
+    {
+        return entryData.addressToEntryFeePaid[_sender].exists;
+    }
+
+    /// @dev Returns the state of the tournament. One of:
+    /// { NotYetOpen, OnHold, Open, Closed, Abandoned }
+    function getState() public view returns (uint256)
+    {
+        return LibTournamentStateManagement.getState(stateData);
+    }
+
+    /*
+     * Getter Methods
+     */
+
+    function getPlatform() public view returns (address _platformAddress)
+    {
+        return platformAddress;
+    }
+
+    function getTokenAddress() public view returns (address _matryxTokenAddress)
+    {
+        return IMatryxPlatform(platformAddress).getTokenAddress();
+    }
+
+    function getData() public view returns (LibConstruction.TournamentData _data)
+    {
+        return data;
+    }
+
+    /// @dev Returns bool indicating whether _address corresponds to an existing round or not
+    function isRound(address _roundAddress) public view returns (bool _isRound)
+    {
+        return stateData.isRound[_roundAddress];
+    }
+
+    /// @dev Returns list of round addresses in the tournament
+    function getRounds() public view returns (address[] _rounds)
+    {
+        return stateData.rounds;
+    }
+
+    function getCategory() public view returns (bytes32 _category)
+    {
+        return data.category;
+    }
+
+    function getTitle() public view returns (bytes32[3] _title)
+    {
+        return data.title;
+    }
+
+    // @dev Returns the external address of the tournament.
+    // @return _descriptionHash Off-chain content hash of tournament details (ipfs hash)
+    function getDescriptionHash() public view returns (bytes32[2] _descriptionHash)
+    {
+        return data.descriptionHash;
+    }
+
+    function getFileHash() public view returns (bytes32[2] _fileHash)
+    {
+        return data.fileHash;
+    }
+
+    /// @dev Returns the current round number and address.
+    /// @return (_currentRound, _currentRoundAddress) Number and address of the current round.
+    function currentRound() public view returns (uint256 _currentRound, address _currentRoundAddress)
+    {
+        return LibTournamentStateManagement.currentRound(stateData);
+    }
+
+    ///@dev Returns this tournament's bounty.
+    function getBounty() public view returns (uint256 _tournamentBounty)
+    {
+        IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
+        return token.balanceOf(address(this)).sub(stateData.entryFeesTotal).add(stateData.roundBountyAllocation);
+    }
+
+    // @dev Returns the remaining bounty this tournament is able to award.
+    function getBalance() public view returns (uint256 _tournamentBalance)
+    {
+        IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
+        return token.balanceOf(address(this)).sub(stateData.entryFeesTotal);
+    }
+
+    /// @dev Returns the fee in MTX to be payed by a prospective entrant.
+    /// @return Entry fee for this tournament.
+    function getEntryFee() public view returns (uint256)
+    {
+        return data.entryFee;
+    }
+
+    /// @dev Returns all of the sender's submissions to this tournament.
+    /// @return (_roundIndices[], _submissionIndices[]) Locations of the sender's submissions.
+    function mySubmissions() public view returns (address[])
+    {
+        return entryData.entrantToSubmissions[msg.sender];
+    }
+
+    /// @dev Returns the number of submissions made to this tournament.
+    /// @return _submissionCount Number of submissions made to this tournament.
+    function submissionCount() public view returns (uint256 _submissionCount)
+    {
+        return entryData.numberOfSubmissions;
+    }
+
+    function entrantCount() public view returns (uint256 _entrantCount)
+    {
+        return entryData.numberOfEntrants;
+    }
+
+    /*
+     * Setter Methods
+     */
+
+    function update(LibConstruction.TournamentModificationData modData) public onlyOwner
+    {
+        LibTournamentAdminMethods.update(data, modData, platformAddress);
+    }
+
+    /*
+     * Tournament Admin Methods
+     */
+
+    /// @dev Chooses the winner(s) of the current round.
+    /// @param _selectWinnersData Struct containing winning submission information including:
+    ///        winningSubmissions: Winning submission addresses
+    ///        rewardDistribution: Distribution indicating how to split the reward among the submissions
+    ///        selectWinnerAction: SelectWinnerAction (DoNothing, StartNextRound, CloseTournament) indicating what to do after winner selection
+    ///        rewardDistributionTotal: (Unused)
+    /// @param _roundData Struct containing data for the next round including:
+    ///        start: Start time (seconds since unix-epoch) for next round
+    ///        end: End time (seconds since unix-epoch) for next round
+    ///        reviewPeriodDuration: Number of seconds to allow for winning submissions to be selected in next round
+    ///        bounty: Bounty in MTX for next round
+    ///        closed: (Unused)
+    function selectWinners(LibRound.SelectWinnersData _selectWinnersData, LibConstruction.RoundData _roundData) public onlyOwner
+    {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
+        LibTournamentAdminMethods.selectWinners(stateData, platformAddress, matryxTokenAddress, _selectWinnersData, _roundData);
+    }
+
+    /// @dev modifies the future "Ghost" Round Information
+    function editGhostRound(LibConstruction.RoundData _roundData) public onlyOwner
+    {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
+        LibTournamentAdminMethods.editGhostRound(stateData, _roundData, matryxTokenAddress);
+    }
+
+    ///@dev Allocates some of this tournament's balance to the current round
+    function allocateMoreToRound(uint256 _mtxAllocation) public onlyOwner
+    {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
+        LibTournamentAdminMethods.allocateMoreToRound(stateData, _mtxAllocation, matryxTokenAddress);
+    }
+
+    /// @dev This function should be called after the user selects winners for their tournament and chooses the "Start Next Round" option
+    function jumpToNextRound() public onlyOwner
+    {
+        LibTournamentAdminMethods.jumpToNextRound(stateData);
+    }
+
+    /// @dev Creates a new round.
+    /// @return The new round's address.
+    function createRound(LibConstruction.RoundData roundData, bool _automaticCreation) public onlyRound returns (address _roundAddress)
+    {
+        return _createRound(roundData, _automaticCreation);
+    }
+
+    function _createRound(LibConstruction.RoundData roundData, bool _automaticCreation) private returns (address _roundAddress)
+    {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
+        return LibTournamentAdminMethods.createRound(stateData, platformAddress, matryxTokenAddress, matryxRoundFactoryAddress, roundData, _automaticCreation);
+    }
+
+    function sendBountyToRound(uint256 _roundIndex, uint256 _bountyMTX) public onlyPlatform
+    {
+        stateData.roundBountyAllocation = stateData.roundBountyAllocation.add(_bountyMTX);
+        IMatryxToken token = IMatryxToken(IMatryxPlatform(platformAddress).getTokenAddress());
+        require(token.transfer(stateData.rounds[_roundIndex], _bountyMTX));
+    }
+
+    /*
+     * Entrant Methods
+     */
+
+    /// @dev Enters the user into the tournament.
+    /// @param _entrantAddress Address of the user to enter.
+    /// @return success Whether or not the user was entered successfully.
+    function enterUserInTournament(address _entrantAddress) public onlyPlatform whileEnterable returns (bool _success)
+    {
+        return LibTournamentEntrantMethods.enterUserInTournament(data, stateData, entryData, _entrantAddress);
+    }
+
+    function collectMyEntryFee() public onlyEntrant
+    {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
+        LibTournamentEntrantMethods.collectMyEntryFee(stateData, entryData, matryxTokenAddress);
+    }
+
+    function createSubmission(LibConstruction.SubmissionData submissionData, LibConstruction.ContributorsAndReferences contribsAndRefs) public onlyEntrant onlyPeerLinked(msg.sender) ifRoundHasFunds whileTournamentOpen returns (address _submissionAddress)
+    {
+        address currentRoundAddress;
+        (, currentRoundAddress) = LibTournamentStateManagement.currentRound(stateData);
+        address newSubmission = LibTournamentEntrantMethods.createSubmission(platformAddress, currentRoundAddress, entryData, submissionData);
+
+        if (contribsAndRefs.contributors.length != 0 || contribsAndRefs.references.length != 0)
+        {
+            IMatryxSubmission(newSubmission).setContributorsAndReferences(contribsAndRefs);
+        }
+
+        return newSubmission;
+    }
+
+    function withdrawFromAbandoned() public onlyEntrant
+    {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
+        LibTournamentEntrantMethods.withdrawFromAbandoned(stateData, entryData, matryxTokenAddress);
+    }
+
+    function recoverFunds() public onlyOwner
+    {
+        address matryxTokenAddress = IMatryxPlatform(platformAddress).getTokenAddress();
+        LibTournamentAdminMethods.recoverFunds(stateData, matryxTokenAddress);
+    }
+
+    // Ownable stuff
+
+    function getOwner() public view returns (address _owner)
+    {
+        return owner;
+    }
+
+    function isOwner(address _sender) public view returns (bool _isOwner)
+    {
+        bool senderIsOwner = (owner == _sender);
+        return senderIsOwner;
+    }
+
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner
+    {
+        require(newOwner != address(0));
+        owner = newOwner;
+    }
+}
