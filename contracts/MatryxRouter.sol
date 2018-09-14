@@ -5,31 +5,35 @@ contract MatryxRouter {
     uint256 version;
     address proxy;
 
-    constructor(uint256 _version, address _proxy) {
+    constructor(uint256 _version, address _proxy) public {
         version = _version;
         proxy = _proxy;
     }
 
     function () public {
         assembly {
-            // prepare for lookup platform from MPC
             let ptr := mload(0x40)
-            mstore(ptr, 0xc53cfd9a)                                 // getContract(uint256,bytes32)
-            mstore(add(ptr, 0x04), sload(version_slot))             // uint256 _version: version of this router
-            mstore(add(ptr, 0x24), 0x4d6174727978506c6174666f726d)  // bytes32 _contractName: 'MatryxPlatform'
+            let offset := 0x100000000000000000000000000000000000000000000000000000000
+            let platform := 0x4d6174727978506c6174666f726d000000000000000000000000000000000000
+
+            // prepare for lookup platform from MPC
+            mstore(ptr, mul(0xc53cfd9a, offset))                                // getContract(uint256,bytes32)
+            mstore(add(ptr, 0x04), sload(version_slot))                         // arg 0 - version of this router
+            mstore(add(ptr, 0x24), platform)                                    // arg 1 - 'MatryxPlatform'
 
             // call getContract to get MatryxPlatform from MPC
-            let res := call(gas(), sload(proxy_slot), 0, ptr, 0x44, 0, 0x20)
-            if iszero(res) { revert(0, 0) }
-            let platform := mload(0)
+            let res := call(gas, sload(proxy_slot), 0, ptr, 0x44, 0, 0x20)      // call MatryxProxy.getContract
+            if iszero(res) { revert(0, 0) }                                     // safety check
+            platform := mload(0)                                                // load platform address into memory
 
-            calldatacopy(ptr, 0x0, calldatasize)
-            res := call(gas, platform, 0, ptr, calldatasize, ptr, 0)
-            if iszero(res) { revert(0, 0) }
+            // forward method to MatryxPlatform
+            calldatacopy(ptr, 0, calldatasize)                                  // copy calldata for forwarding
+            res := call(gas, platform, 0, ptr, calldatasize, 0, 0)              // forward method to MatryxPlatform
+            if iszero(res) { revert(0, 0) }                                     // safety check
 
-            let size := returndatasize
-            returndatacopy(ptr, ptr, size)
-            return(ptr, size)
+            // forward returndata to caller
+            returndatacopy(ptr, 0, returndatasize)                              // copy returndata into ptr
+            return(ptr, returndatasize)                                         // return returndata from forwarded call
         }
     }
 }

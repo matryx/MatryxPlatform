@@ -1,6 +1,6 @@
 const fs = require('fs')
 const sha3 = require('solidity-sha3').default
-const lib = fs.readFileSync('LibExample.sol', 'utf-8')
+const lib = fs.readFileSync('../contracts/MatryxSubmission.sol', 'utf-8')
 
 const libReg = /library (\w+)\s+\{(.+?)^\}/gms
 const structReg = /struct (.+?)\s+\{(.+?)\}/gs

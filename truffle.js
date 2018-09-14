@@ -9,6 +9,7 @@ network = require('./truffle/network')
 const utils = require('./truffle/utils')
 getMinedTx = utils.getMinedTx
 bytesToString = utils.bytesToString
+numberToBytes = utils.numberToBytes
 stringToBytes = utils.stringToBytes
 stringToBytes32 = utils.stringToBytes32
 contract = utils.Contract
@@ -17,8 +18,8 @@ keccak = str => '0x' + ethUtil.keccak(str).hexSlice(0)
 selector = signature => keccak(signature).substr(0, 10)
 getFileContents = path => fs.readFileSync(path).toString()
 
-getTx = hash => wallet.provider.getTransaction(hash)
-getTxR = hash => wallet.provider.getTransactionReceipt(hash)
+gt = getTx = hash => wallet.provider.getTransaction(hash)
+gtr = getTxR = hash => wallet.provider.getTransactionReceipt(hash)
 
 hex = dec => '0x' + dec.toString(16)
 dec = hex => parseInt(hex, 16)

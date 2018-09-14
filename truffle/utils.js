@@ -91,6 +91,11 @@ module.exports = {
     return ethers.utils.toUtf8String(utf8)
   },
 
+  numberToBytes(number) {
+    let bytes = ethers.utils.hexlify(number)
+    return '0x' + ('0'.repeat(64) + bytes.substr(2)).substr(-64)
+  },
+
   stringToBytes(text) {
     let bytes = ethers.utils.toUtf8Bytes(text)
     return ethers.utils.hexlify(bytes)

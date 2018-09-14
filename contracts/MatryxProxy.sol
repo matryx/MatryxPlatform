@@ -3,7 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "./Ownable.sol";
 
-contract MatryxProxy is Ownable {
+contract MatryxProxy is Ownable() {
     struct Platform {
         bool exists;
         mapping(bytes32=>ContractData) contracts; // 'LibTournament' => ContractData
@@ -28,11 +28,20 @@ contract MatryxProxy is Ownable {
     // note to future self:
     // must manually set these!!!
 
+    enum ContractType { Unknown, Platform, Tournament, Round, Submission }
+    mapping(address=>ContractType) contractType;
+
     mapping(uint256=>Platform) platformByVersion;
     uint256[] allVersions;
     uint256 currentVersion;
 
+    modifier onlyOwnerOrPlatform {
+        require(msg.sender == owner || contractType[msg.sender] == ContractType.Platform);
+        _;
+    }
+
     function createVersion(uint256 _version) public onlyOwner {
+        require(!platformByVersion[_version].exists);
         platformByVersion[_version].exists = true;
         allVersions.push(_version);
     }
@@ -56,15 +65,14 @@ contract MatryxProxy is Ownable {
             platformByVersion[_version].allContracts.push(_contractName);
         }
 
+        if (_contractName == "MatryxPlatform") {
+            contractType[_contractAddress] = ContractType.Platform;
+        }
+
         platformByVersion[_version].contracts[_contractName].location = _contractAddress;
     }
 
     function getContract(uint256 _version, bytes32 _contractName) public view returns (address) {
-        // assembly {
-        //     let ptr := mload(0x40)
-        //     calldatacopy(ptr, 0, calldatasize)
-        //     log0(ptr, calldatasize)
-        // }
         return platformByVersion[_version].contracts[_contractName].location;
     }
 
@@ -76,5 +84,13 @@ contract MatryxProxy is Ownable {
 
     function getContractMethod(uint256 _version, bytes32 _contractName, bytes32 _selector) public view returns (FnData) {
         return platformByVersion[_version].contracts[_contractName].fnData[_selector];
+    }
+
+    function setContractType(address _contractAddress, ContractType _type) public {//onlyOwnerOrPlatform {
+        contractType[_contractAddress] = _type;
+    }
+
+    function getContractType(address _contractAddress) public view returns (ContractType) {
+        return contractType[_contractAddress];
     }
 }
