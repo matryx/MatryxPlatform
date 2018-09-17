@@ -50,53 +50,52 @@ library LibTournament {
     }
 
     /// @dev Returns the owner of this Tournament
-    function getOwner(address self, address sender, MatryxPlatform.Data storage data) public view returns (address) {
+    function getOwner(address self, address, MatryxPlatform.Data storage data) public view returns (address) {
         return data.tournaments[self].owner;
     }
 
     /// @dev Returns the title of this Tournament
-    function getTitle(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32[3]) {
+    function getTitle(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[3]) {
         return data.tournaments[self].details.title;
     }
 
     /// @dev Returns the category of this Tournament
-    function getCategory(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32) {
+    function getCategory(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32) {
         return data.tournaments[self].details.category;
     }
 
     /// @dev Returns the description hash of this Tournament
-    function getDescriptionHash(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
+    function getDescriptionHash(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
         return data.tournaments[self].details.descHash;
     }
 
     /// @dev Returns the file hash of this Tournament
-    function getFileHash(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
+    function getFileHash(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
         return data.tournaments[self].details.fileHash;
     }
 
     /// @dev Returns the bounty of this Tournament
-    function getBounty(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
+    function getBounty(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.tournaments[self].details.bounty;
     }
 
     /// @dev Returns all round addresses of this Tournament
-    function getRounds(address self, address sender, MatryxPlatform.Data storage data) public view returns (address[]) {
+    function getRounds(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
         return data.tournaments[self].rounds;
     }
 
     /// @dev Returns the data struct of this Tournament
-    function getData(address self, address sender, MatryxPlatform.Data storage data) public view returns (LibTournament.TournamentData) {
+    function getData(address self, address, MatryxPlatform.Data storage data) public view returns (LibTournament.TournamentData) {
         return data.tournaments[self];
     }
 
     /// @dev Creates a new Round on this Tournament
     /// @param self      Address of this Tournament
-    /// @param sender    msg.sender to this Tournament
     /// @param info      Info struct on the Platform
     /// @param data      Data struct on the Platform
     /// @param rDetails  Details of the Round being created
     /// @return          Address of the created Round
-    function createRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
+    function createRound(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
         address rAddress = new MatryxRound(info.version, info.proxy);
         MatryxProxy(info.proxy).setContractType(rAddress, MatryxProxy.ContractType.Round);
         data.allRounds.push(rAddress);
@@ -114,12 +113,11 @@ library LibTournament {
 
     /// @dev Creates a new Submissions
     /// @param self      Address of this Tournament
-    /// @param sender    msg.sender to this Tournament
     /// @param info      Info struct on the Platform
     /// @param data      Data struct on the Platform
     /// @param sDetails  Submission details (title, descHash, fileHash)
     /// @return          Address of the created Submission
-    function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails sDetails) public returns (address) {
+    function createSubmission(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails sDetails) public returns (address) {
         address sAddress = new MatryxSubmission(info.version, info.proxy);
         MatryxProxy(info.proxy).setContractType(sAddress, MatryxProxy.ContractType.Submission);
         data.allSubmissions.push(sAddress);
