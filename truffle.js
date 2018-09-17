@@ -8,10 +8,9 @@ network = require('./truffle/network')
 // SETUP GLOBALS FOR CLI REPL
 const utils = require('./truffle/utils')
 getMinedTx = utils.getMinedTx
-bytesToString = utils.bytesToString
-numberToBytes = utils.numberToBytes
-stringToBytes = utils.stringToBytes
-stringToBytes32 = utils.stringToBytes32
+bts = bytesToString = utils.bytesToString
+ntb = numberToBytes = utils.numberToBytes
+stb = stringToBytes = utils.stringToBytes
 contract = utils.Contract
 
 keccak = str => '0x' + ethUtil.keccak(str).hexSlice(0)

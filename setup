@@ -1,0 +1,71 @@
+q = []
+fresh = typeof proxy == "undefined"
+
+if (fresh) q.push("proxy = contract(MatryxProxy.address, MatryxProxy)")
+if (fresh) q.push("proxy.createVersion(1)")
+if (fresh) q.push("proxy.setVersion(1)")
+
+q.push("proxy.setContract(1, stringToBytes('MatryxPlatform'), MatryxPlatform.address)")
+q.push("proxy.setContract(1, stringToBytes('LibPlatform'), LibPlatform.address)")
+q.push("proxy.setContract(1, stringToBytes('LibTournament'), LibTournament.address)")
+q.push("proxy.setContract(1, stringToBytes('LibRound'), LibRound.address)")
+q.push("proxy.setContract(1, stringToBytes('LibSubmission'), LibSubmission.address)")
+
+// MatryxPlatform.getTournaments
+q.push("proxy.addContractMethod(1, stringToBytes('LibPlatform'), '0xf7f20cb3', ['0x275111eb', [3], []])")
+// MatryxPlatform.createTournament
+q.push("proxy.addContractMethod(1, stringToBytes('LibPlatform'), '0x2d8a52bd', ['0x3a1f7ffd', [0,3], []])")
+
+// MatryxRound.getTournament
+q.push("proxy.addContractMethod(1, stringToBytes('LibRound'), '0xe76c293e', ['0x19820bce', [3], []])")
+// MatryxRound.getStart
+q.push("proxy.addContractMethod(1, stringToBytes('LibRound'), '0xc5292c67', ['0xaf8c54e5', [3], []])")
+// MatryxRound.getEnd
+q.push("proxy.addContractMethod(1, stringToBytes('LibRound'), '0x9f05a36d', ['0x6ff732f9', [3], []])")
+// MatryxRound.getReview
+q.push("proxy.addContractMethod(1, stringToBytes('LibRound'), '0xa73a4aaf', ['0xc73d4968', [3], []])")
+// MatryxRound.getBounty
+q.push("proxy.addContractMethod(1, stringToBytes('LibRound'), '0xf49bff7b', ['0x7cc0c3b9', [3], []])")
+// MatryxRound.getSubmissions
+q.push("proxy.addContractMethod(1, stringToBytes('LibRound'), '0x54f6aa20', ['0x40721539', [3], []])")
+// MatryxRound.getData
+q.push("proxy.addContractMethod(1, stringToBytes('LibRound'), '0x3bc5de30', ['0x412559e1', [3], []])")
+
+// MatryxSubmission.getTournament
+q.push("proxy.addContractMethod(1, stringToBytes('LibSubmission'), '0xe76c293e', ['0x19820bce', [3], []])")
+// MatryxSubmission.getRound
+q.push("proxy.addContractMethod(1, stringToBytes('LibSubmission'), '0x9f8743f7', ['0xece7bcc7', [3], []])")
+// MatryxSubmission.getTitle
+q.push("proxy.addContractMethod(1, stringToBytes('LibSubmission'), '0xff3c1a8f', ['0xa35d9e78', [3], []])")
+// MatryxSubmission.getDescriptionHash
+q.push("proxy.addContractMethod(1, stringToBytes('LibSubmission'), '0x245edf06', ['0x61f08a3d', [3], []])")
+// MatryxSubmission.getFileHash
+q.push("proxy.addContractMethod(1, stringToBytes('LibSubmission'), '0x8493f71f', ['0xeb292bf4', [3], []])")
+// MatryxSubmission.getData
+q.push("proxy.addContractMethod(1, stringToBytes('LibSubmission'), '0x3bc5de30', ['0x412559e1', [3], []])")
+
+// MatryxTournament.getOwner
+q.push("proxy.addContractMethod(1, stringToBytes('LibTournament'), '0x893d20e8', ['0xc40c4371', [3], []])")
+// MatryxTournament.getTitle
+q.push("proxy.addContractMethod(1, stringToBytes('LibTournament'), '0xff3c1a8f', ['0xa35d9e78', [3], []])")
+// MatryxTournament.getCategory
+q.push("proxy.addContractMethod(1, stringToBytes('LibTournament'), '0x80258e47', ['0x457914a8', [3], []])")
+// MatryxTournament.getDescriptionHash
+q.push("proxy.addContractMethod(1, stringToBytes('LibTournament'), '0x245edf06', ['0x61f08a3d', [3], []])")
+// MatryxTournament.getFileHash
+q.push("proxy.addContractMethod(1, stringToBytes('LibTournament'), '0x8493f71f', ['0xeb292bf4', [3], []])")
+// MatryxTournament.getBounty
+q.push("proxy.addContractMethod(1, stringToBytes('LibTournament'), '0xf49bff7b', ['0x7cc0c3b9', [3], []])")
+// MatryxTournament.getRounds
+q.push("proxy.addContractMethod(1, stringToBytes('LibTournament'), '0x6984d070', ['0x6852c33e', [3], []])")
+// MatryxTournament.getData
+q.push("proxy.addContractMethod(1, stringToBytes('LibTournament'), '0x3bc5de30', ['0x412559e1', [3], []])")
+// MatryxTournament.createRound
+q.push("proxy.addContractMethod(1, stringToBytes('LibTournament'), '0xe1226bb1', ['0xca0ba8b4', [0,3], []])")
+// MatryxTournament.createSubmission
+q.push("proxy.addContractMethod(1, stringToBytes('LibTournament'), '0xadcd7859', ['0x5670f808', [0,3], []])")
+
+
+q.push("p = contract(MatryxPlatform.address, IMatryxPlatform)")
+
+;(async () => { for (let cmd of q) await eval(cmd) })()

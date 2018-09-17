@@ -96,25 +96,24 @@ module.exports = {
     return '0x' + ('0'.repeat(64) + bytes.substr(2)).substr(-64)
   },
 
-  stringToBytes(text) {
-    let bytes = ethers.utils.toUtf8Bytes(text)
-    return ethers.utils.hexlify(bytes)
-  },
-
-  stringToBytes32(text, requiredLength) {
-    var data = ethers.utils.toUtf8Bytes(text)
-    var l = data.length
-    var pad_length = 64 - ((l * 2) % 64)
+  stringToBytes(text, len = 0) {
+    text = text || ""
+    let data = ethers.utils.toUtf8Bytes(text)
+    let padding = 64 - ((data.length * 2) % 64)
     data = ethers.utils.hexlify(data)
-    data = data + '0'.repeat(pad_length)
+    data = data + "0".repeat(padding)
+    if (len <= 0) return data
+
     data = data.substring(2)
     data = data.match(/.{1,64}/g)
-    data = data.map(v => '0x' + v)
-    while (data.length < requiredLength) {
-      data.push('0x0')
+    data = data.map(v => "0x" + v)
+    while (data.length < len) {
+      data.push("0x0")
     }
     return data
   },
+
+  stringToBytes32() { return this.stringToBytes.apply(this, arguments) },
 
   async setup(artifacts, web3, accountNum) {
     const MatryxPlatform = artifacts.require('MatryxPlatform')

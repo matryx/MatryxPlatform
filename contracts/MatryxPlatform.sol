@@ -29,10 +29,8 @@ contract MatryxPlatform {
     Info info; // slot 0
     Data data; // slot 3
 
-    mapping(uint256=>bytes32) contractTypeToLibraryName;                        // contract type => 'Lib_____' (hex)
-
-    // event TournamentCreated(address _tournamentAddress);
-    // event RoundCreated(address _roundAddress);
+    // Maps contract types from MatryxProxy to human-readable library names.
+    mapping(uint256=>bytes32) contractTypeToLibraryName;
 
     constructor(address _proxy, uint256 _version) public {
         info.proxy = _proxy;
@@ -44,11 +42,13 @@ contract MatryxPlatform {
         contractTypeToLibraryName[uint256(MatryxProxy.ContractType.Submission)] = "LibSubmission";
     }
 
-    modifier onlyOwner {
-        require(msg.sender == info.owner);
-        _;
-    }
-
+    /// @dev
+    /// 1) Uses msg.sender to ask MatryxProxy for the type of library this call should be forwarded to
+    /// 2) Uses this library type to lookup (in its own storage) the name of the library
+    /// 3) Uses this name to ask MatryxProxy for the address of the contract (under this platform's version)
+    /// 4) Uses name and signature to ask MatryxProxy for the data necessary to modify the incoming calldata
+    ///    so as to be appropriate for the associated library call
+    /// 5) Makes a delegatecall to the library address given by MatryxProxy with the library-appropriate calldata
     function () public {
         assembly {
             // constants
@@ -86,24 +86,32 @@ contract MatryxPlatform {
             if iszero(res) { revert(0, 0) }                                     // safety check
 
             returndatacopy(ptr, 0, returndatasize)                              // copy fnData into ptr
-            let ret := add(ptr, mload(ptr))                                     // ret is pointer to start of fnData
+            let ptr2 := add(ptr, mload(ptr))                                    // ptr2 is pointer to start of fnData
 
-            let m_injParams := add(ret, mload(add(ret, 0x20)))                  // mem loc injected params
+            let m_injParams := add(ptr2, mload(add(ptr2, 0x20)))                // mem loc injected params
             let injParams_len := mload(m_injParams)                             // num injected params
             m_injParams := add(m_injParams, 0x20)                               // first injected param
 
-            let m_dynParams := add(ret, mload(add(ret, 0x40)))                  // memory location of start of dynamic params
+            let m_dynParams := add(ptr2, mload(add(ptr2, 0x40)))                // memory location of start of dynamic params
             let dynParams_len := mload(m_dynParams)                             // num dynamic params
             m_dynParams := add(m_dynParams, 0x20)                               // first dynamic param
 
             // forward calldata to library
             ptr := add(ptr, returndatasize)                                     // shift ptr to new scratch space
-            mstore(ptr, mload(ret))                                             // forward call with modified selector
+            mstore(ptr, mload(ptr2))                                            // forward call with modified selector
 
-            let ptr2 := add(ptr, 0x04)                                          // copy of ptr for keeping track of injected params
+            ptr2 := add(ptr, 0x04)                                              // copy of ptr for keeping track of injected params
 
             mstore(ptr2, caller)                                                // inject msg.sender
-            ptr2 := add(ptr2, 0x20)                                             // shift ptr2
+            mstore(add(ptr2, 0x20), caller)                                     // inject msg.sender again if on platform
+
+            let cdOffset := 0x04                                                // calldata offset, after signature
+
+            if iszero(eq(libName, libPlatform)) {                               // if coming from forwarder:
+                calldatacopy(add(ptr2, 0x20), 0x04, 0x20)                       // overwrite injected msg.sender with address from forwarder
+                cdOffset := add(cdOffset, 0x20)                                 // shift calldata offset for injected address
+            }
+            ptr2 := add(ptr2, 0x40)                                             // shift ptr2
 
             for { let i := 0 } lt(i, injParams_len) { i := add(i, 1) } {        // loop through injected params and insert
                 let injParam := mload(add(m_injParams, mul(i, 0x20)))           // get injected param slot
@@ -111,17 +119,19 @@ contract MatryxPlatform {
                 ptr2 := add(ptr2, 0x20)                                         // shift ptr2
             }
 
-            calldatacopy(ptr2, 0x04, sub(calldatasize, 0x04))                   // copy calldata after injected data storage
+            calldatacopy(ptr2, cdOffset, sub(calldatasize, cdOffset))           // copy calldata after injected data storage
 
             // update dynamic params location
             for { let i := 0 } lt(i, dynParams_len) { i := add(i, 1) } {
                 let idx := mload(add(m_dynParams, mul(i, 0x20)))                // get dynParam index in parameters
                 let loc := add(ptr2, mul(idx, 0x20))                            // get location in memory of dynParam
-                mstore(loc, add(mload(loc), mul(add(injParams_len, 1), 0x20)))  // shift dynParam location by num injected
+                mstore(loc, add(mload(loc), mul(add(injParams_len, 2), 0x20)))  // shift dynParam location by num injected
             }
 
-            let size := add(calldatasize, mul(add(injParams_len, 1), 0x20))     // calculate size of forwarded call
-            // log0(ptr, size)
+            // calculate size of forwarded call
+            let size := add(0x04, sub(calldatasize, cdOffset))                  // calldatasize minus injected
+            size := add(size, mul(add(injParams_len, 2), 0x20))                 // add size of injected
+
             res := delegatecall(gas, libAddress, ptr, size, 0, 0)               // delegatecall to library
             if iszero(res) { revert(0, 0) }                                     // safety check
 
@@ -130,45 +140,80 @@ contract MatryxPlatform {
         }
     }
 
-    function setContractTypeLibrary(uint256 _contractType, bytes32 _libraryName) public { // onlyOwner!!!
+    /// @dev Sets the name of a library for a given contract type
+    /// @param _contractType The type of the contract, as given by MatryxProxy
+    /// @param _libraryName  The name of the library
+    function setContractTypeLibrary(uint256 _contractType, bytes32 _libraryName) public {
+        require(msg.sender == info.owner);
         contractTypeToLibraryName[_contractType] = _libraryName;
     }
 
+    /// @dev Gets the name of a library from a given contract type
+    /// @param _contractType The type of the contract, as given by MatryxProxy
+    /// @return              The name of the library as a bytes32
     function getContractTypeLibrary(uint256 _contractType) public view returns (bytes32) {
         return contractTypeToLibraryName[_contractType];
     }
 }
 
 interface IMatryxPlatform {
-    function setContractTypeLibrary(uint256, bytes32) public;
-    function getContractTypeLibrary(uint256) public view returns (bytes32);
+    function setContractTypeLibrary(uint256, bytes32) external;
+    function getContractTypeLibrary(uint256) external view returns (bytes32);
 
-    function getAllTournaments() public view returns (address[]);
-    function createTournament() public returns (address);
-    function enterTournament(address) public;
+    function getTournaments() external view returns (address[]);
+    function createTournament(LibTournament.TournamentDetails, LibRound.RoundDetails) external returns (address);
 }
 
 library LibPlatform {
     event TournamentCreated(address _tournamentAddress);
 
-    function getAllTournaments(address sender, MatryxPlatform.Data storage data) public view returns (address[]) {
+    /// @dev Return all tournaments
+    /// @param data  Platform storage containing all contract data
+    /// @return      Array of Tournament addresses
+    function getTournaments(address, address, MatryxPlatform.Data storage data) public view returns (address[]) {
         return data.allTournaments;
     }
 
-    function createTournament(address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public returns (address) {
-        address tournamentAddress = new MatryxTournament(info.version, info.proxy);
-        MatryxProxy(info.proxy).setContractType(tournamentAddress, MatryxProxy.ContractType.Tournament);
-        data.allTournaments.push(tournamentAddress);
-        emit TournamentCreated(tournamentAddress);
+    /// @dev Creates a tournament
+    /// @param sender    msg.sender to the Platform
+    /// @param info      Platform storage containing version number and proxy address
+    /// @param data      Platform storage containing all contract data
+    /// @param tDetails  Tournament details (title, category, descHash, fileHash, bounty, entryFee)
+    /// @param rDetails  Round details (start, end, review, bounty)
+    /// @return          Address of the created tournament
+    function createTournament(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails tDetails, LibRound.RoundDetails rDetails) public returns (address) {
+        address tAddress = new MatryxTournament(info.version, info.proxy);
+        MatryxProxy(info.proxy).setContractType(tAddress, MatryxProxy.ContractType.Tournament);
+        data.allTournaments.push(tAddress);
+        emit TournamentCreated(tAddress);
 
-        LibTournament.TournamentData storage tournament = data.tournaments[tournamentAddress];
-        tournament.owner = 0x7ac07ac0;
+        LibTournament.TournamentData storage tournament = data.tournaments[tAddress];
+        tournament.owner = sender;
+        tournament.details = tDetails;
 
-        return tournamentAddress;
-    }
+        // https://github.com/ethereum/solidity/issues/2469 - max I see you lol
+        // address libTournament = MatryxProxy(info.proxy).getContract(info.version, "LibTournament");
+        // LibTournament(libTournament).createRound(tAddress, sender, info, data, rDetails);
 
-    function enterTournament(address sender, MatryxPlatform.Data storage data, address _tournamentAddress) public {
-        // LibTournament.TournamentData storage tournamentData = data.tournaments[_tournamentAddress];
-        // do stuff to enter
+        // NOTE: if LibTournament is redeployed, relink and redeploy LibPlatform
+        LibTournament.createRound(tAddress, sender, info, data, rDetails);
+
+        return tAddress;
     }
 }
+
+/**
+
+p.createTournament([stb('title', 3), stb('category'), stb('descHash', 2), stb('fileHash', 2), 1000, 2], [1,2,3,4])
+p.getTournaments()
+
+t = contract('tAddress', IMatryxTournament);0
+t.createSubmission([stb('title', 3), stb('descHash', 2), stb('fileHash', 2)])
+t.getRounds()
+
+r = contract('rAddress', IMatryxRound);0
+r.getSubmissions()
+
+s = contract('sAddress', IMatryxSubmission);0
+
+ */
