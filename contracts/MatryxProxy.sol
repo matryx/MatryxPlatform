@@ -36,85 +36,90 @@ contract MatryxProxy is Ownable() {
     uint256 currentVersion;
 
     modifier onlyOwnerOrPlatform {
-        require(msg.sender == owner || contractType[msg.sender] == ContractType.Platform);
+        bool isOwner = msg.sender == owner;
+        bool isPlatform = contractType[msg.sender] == ContractType.Platform;
+        require(isOwner || isPlatform, "Must be owner or Platform");
         _;
     }
 
     /// @dev Create a new version of Platform
-    function createVersion(uint256 _version) public onlyOwner {
-        require(!platformByVersion[_version].exists);
-        platformByVersion[_version].exists = true;
-        allVersions.push(_version);
+    function createVersion(uint256 version) public onlyOwner {
+        require(!platformByVersion[version].exists, "No such version");
+        platformByVersion[version].exists = true;
+        allVersions.push(version);
     }
 
     /// @dev Set the current version of Platform
-    function setVersion(uint256 _version) public onlyOwner {
-        currentVersion = _version;
+    function setVersion(uint256 version) public onlyOwner {
+        currentVersion = version;
     }
 
     /// @dev Get the current version of Platform
-    function getVersion() public view returns (uint256 _currentVersion) {
+    function getVersion() public view returns (uint256) {
         return currentVersion;
     }
 
-    /// @dev Get all versions of the Platform
+    /// @dev Get all versions of Platform
     function getAllVersions() public view returns (uint256[]) {
         return allVersions;
     }
 
     /// @dev Set a contract address for a contract by a given name
-    /// @param _version          Version of the Platform this contract belongs to
-    /// @param _contractName     Name of the contract
-    /// @param _contractAddress  The name of the contract we want an address for.
-    function setContract(uint256 _version, bytes32 _contractName, address _contractAddress) public onlyOwner {
-        require(platformByVersion[_version].exists);
+    /// @param version   Version of Platform this contract belongs to
+    /// @param cName     Name of the contract we want to set an address for
+    /// @param cAddress  Address of the contract
+    function setContract(uint256 version, bytes32 cName, address cAddress) public onlyOwner {
+        require(platformByVersion[version].exists, "No such version");
 
-        if (platformByVersion[_version].contracts[_contractName].location == 0x0) {
-            platformByVersion[_version].allContracts.push(_contractName);
+        if (platformByVersion[version].contracts[cName].location == 0x0) {
+            platformByVersion[version].allContracts.push(cName);
         }
 
-        if (_contractName == "MatryxPlatform") {
-            contractType[_contractAddress] = ContractType.Platform;
+        if (cName == "MatryxPlatform") {
+            contractType[cAddress] = ContractType.Platform;
         }
 
-        platformByVersion[_version].contracts[_contractName].location = _contractAddress;
+        platformByVersion[version].contracts[cName].location = cAddress;
     }
 
-    /// @dev Returns the address of a contract given its name.
-    /// @param _version      The version of the platform to lookup the address on.
-    /// @param _contractName The name of the contract we want an address for.
-    /// @return              Address of the contract
-    function getContract(uint256 _version, bytes32 _contractName) public view returns (address) {
-        return platformByVersion[_version].contracts[_contractName].location;
+    /// @dev Returns the address of a contract given its name
+    /// @param version  Version of Platform to lookup the address on
+    /// @param cName    Name of the contract we want an address for
+    /// @return         Address of the contract
+    function getContract(uint256 version, bytes32 cName) public view returns (address) {
+        return platformByVersion[version].contracts[cName].location;
     }
 
     /// @dev Register a contract method for a contract by its name
-    /// @param _version       The version of The name of the contract we want an address for.
-    /// @param _contractName  The name of the contract we want an address for.
-    /// @param _selector      Hash of the method to register to the contract (keccak256)
-    /// @param _fnData        Calldata transformation information for library delegatecall
-    function addContractMethod(uint256 _version, bytes32 _contractName, bytes32 _selector, FnData _fnData) public onlyOwner {
-        require(platformByVersion[_version].exists);
-        require(platformByVersion[_version].contracts[_contractName].location != 0x0);
-        platformByVersion[_version].contracts[_contractName].fnData[_selector] = _fnData;
+    /// @param version   Version of Platform for contract method association
+    /// @param cName     Name of the contract we want an address for
+    /// @param selector  Hash of the method signature to register to the contract (keccak256)
+    /// @param fnData    Calldata transformation information for library delegatecall
+    function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, FnData fnData) public onlyOwner {
+        require(platformByVersion[version].exists, "No such version");
+        require(platformByVersion[version].contracts[cName].location != 0x0, "No such contract");
+        platformByVersion[version].contracts[cName].fnData[selector] = fnData;
     }
 
     /// @dev Gets calldata transformation information for a library name and function selector
-    /// @param _version       The version of The name of the contract we want an address for.
-    /// @param _contractName  The name of the contract we want an address for.
-    /// @param _selector      Hash of the method to register to the contract (keccak256)
-    /// @return               Calldata transformation information for library delegatecall
-    function getContractMethod(uint256 _version, bytes32 _contractName, bytes32 _selector) public view returns (FnData) {
-        return platformByVersion[_version].contracts[_contractName].fnData[_selector];
+    /// @param version   Version of Platform for the method request
+    /// @param cName     Name of the contract we want an address for
+    /// @param selector  Hash of the method signature to register to the contract (keccak256)
+    /// @return          Calldata transformation information for library delegatecall
+    function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) public view returns (FnData) {
+        return platformByVersion[version].contracts[cName].fnData[selector];
     }
 
     /// @dev Associates a contract address with a type
-    function setContractType(address _contractAddress, ContractType _type) public onlyOwnerOrPlatform {
-        contractType[_contractAddress] = _type;
+    /// @param cAddress  Address of the contract we want to set the type
+    /// @param cType     Type we want to associate the contract address with
+    function setContractType(address cAddress, ContractType cType) public onlyOwnerOrPlatform {
+        contractType[cAddress] = cType;
     }
 
     /// @dev Gets the associated type for a contract address
-    function getContractType(address _contractAddress) public view returns (ContractType) {
-        return contractType[_contractAddress];
+    /// @param cAddress  Address of the contract we want to get the type for
+    function getContractType(address cAddress) public view returns (ContractType) {
+        return contractType[cAddress];
     }
 }

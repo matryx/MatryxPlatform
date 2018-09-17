@@ -15,7 +15,7 @@ const fnReg = /function (\w+)\((.*?)\)/g
 
 const slots = {
   'info': 0,
-  'data': 3
+  'data': 4
 }
 const structs = {}
 const setup = []
@@ -48,6 +48,7 @@ libReg.lastIndex = 0
 
 while ((match = libReg.exec(source))) {
   const [, libName, libContent] = match
+  if (libName === "LibEntity") continue
 
   while ((match = fnReg.exec(libContent))) {
     if (!match[2]) match[2] = ''

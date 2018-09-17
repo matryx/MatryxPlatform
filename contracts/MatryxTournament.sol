@@ -1,20 +1,24 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
-import "./MatryxForwarder.sol";
+import "./MatryxEntity.sol";
+import "./IMatryxToken.sol";
 
 import "./MatryxProxy.sol";
 import "./MatryxPlatform.sol";
 import "./MatryxRound.sol";
 import "./MatryxSubmission.sol";
 
-contract MatryxTournament is MatryxForwarder {
-    constructor (uint256 _version, address _proxy) MatryxForwarder(_version, _proxy) public {}
+import "./LibGlobals.sol";
+
+contract MatryxTournament is MatryxEntity {
+    constructor (uint256 _version, address _proxy) MatryxEntity(_version, _proxy) public {}
 }
 
 interface IMatryxTournament {
-    function getOwner() external view returns (address);
+    function transferTo(address, address, uint256) external;
 
+    function getOwner() external view returns (address);
     function getTitle() external view returns (bytes32[3]);
     function getCategory() external view returns (bytes32);
     function getDescriptionHash() external view returns (bytes32[2]);
@@ -22,15 +26,17 @@ interface IMatryxTournament {
     function getBounty() external view returns (uint256);
 
     function getRounds() external view returns (address[]);
-    function getData() external view returns (LibTournament.TournamentData);
+    function getDetails() external view returns (LibTournament.TournamentDetails);
 
+    function enterTournament() external;
     function createRound(LibRound.RoundDetails) external returns (address);
     function createSubmission(LibSubmission.SubmissionDetails) external returns (address);
 }
 
+// dependents: LibPlatform
 library LibTournament {
-    event RoundCreated(address _roundAddress);
-    event SubmissionCreated(address _submissionAddress);
+    event RoundCreated(address roundAddress);
+    event SubmissionCreated(address submissionAddress);
 
     // All information needed for creation of Tournament
     struct TournamentDetails {
@@ -47,6 +53,8 @@ library LibTournament {
         address owner;
         TournamentDetails details;
         address[] rounds;
+        address[] entrants;
+        mapping(address=>LibGlobals.o_uint256) entryFeePaid;
     }
 
     /// @dev Returns the owner of this Tournament
@@ -79,29 +87,47 @@ library LibTournament {
         return data.tournaments[self].details.bounty;
     }
 
-    /// @dev Returns all round addresses of this Tournament
+    /// @dev Returns all Round addresses of this Tournament
     function getRounds(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
         return data.tournaments[self].rounds;
     }
 
     /// @dev Returns the data struct of this Tournament
-    function getData(address self, address, MatryxPlatform.Data storage data) public view returns (LibTournament.TournamentData) {
-        return data.tournaments[self];
+    function getDetails(address self, address, MatryxPlatform.Data storage data) public view returns (LibTournament.TournamentDetails) {
+        return data.tournaments[self].details;
+    }
+
+    /// @dev Enter Tournament
+    /// @param self    Address of this Tournament
+    /// @param sender  msg.sender to the Tournament
+    /// @param data    Data struct on Platform
+    function enterTournament(address self, address sender, MatryxPlatform.Data storage data) public {
+        require(data.users[sender].exists, "Must have entered Matryx");
+        require(sender != data.tournaments[self].owner, "Cannot enter own Tournament");
+        // TODO: actually transfer entry fee MTX
+        data.tournaments[self].entryFeePaid[sender].exists = true;
+        data.users[sender].tournamentsEntered.push(self);
     }
 
     /// @dev Creates a new Round on this Tournament
     /// @param self      Address of this Tournament
-    /// @param info      Info struct on the Platform
-    /// @param data      Data struct on the Platform
+    /// @param sender    msg.sender to the Tournament
+    /// @param info      Info struct on Platform
+    /// @param data      Data struct on Platform
     /// @param rDetails  Details of the Round being created
     /// @return          Address of the created Round
-    function createRound(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
+    function createRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(sender == tournament.owner, "Must be owner");
+        // require(MatryxToken(info.token).)
+
         address rAddress = new MatryxRound(info.version, info.proxy);
         MatryxProxy(info.proxy).setContractType(rAddress, MatryxProxy.ContractType.Round);
         data.allRounds.push(rAddress);
         emit RoundCreated(rAddress);
 
-        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        IMatryxTournament(self).transferTo(info.token, rAddress, rDetails.bounty);
+
         tournament.rounds.push(rAddress);
 
         LibRound.RoundData storage round = data.rounds[rAddress];
@@ -113,19 +139,22 @@ library LibTournament {
 
     /// @dev Creates a new Submissions
     /// @param self      Address of this Tournament
-    /// @param info      Info struct on the Platform
-    /// @param data      Data struct on the Platform
+    /// @param sender    msg.sender to the Tournament
+    /// @param info      Info struct on Platform
+    /// @param data      Data struct on Platform
     /// @param sDetails  Submission details (title, descHash, fileHash)
     /// @return          Address of the created Submission
-    function createSubmission(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails sDetails) public returns (address) {
+    function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails sDetails) public returns (address) {
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
+
         address sAddress = new MatryxSubmission(info.version, info.proxy);
         MatryxProxy(info.proxy).setContractType(sAddress, MatryxProxy.ContractType.Submission);
         data.allSubmissions.push(sAddress);
+        data.users[sender].submissions.push(sAddress);
         emit SubmissionCreated(sAddress);
 
-        LibTournament.TournamentData storage tournament = data.tournaments[self];
         address roundAddress = tournament.rounds[tournament.rounds.length - 1];
-
         LibRound.RoundData storage round = data.rounds[roundAddress];
         round.submissions.push(sAddress);
 

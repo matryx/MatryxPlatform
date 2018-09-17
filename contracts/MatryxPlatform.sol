@@ -2,15 +2,20 @@ pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "./MatryxProxy.sol";
+import "./IMatryxToken.sol";
+
 import "./MatryxTournament.sol";
 import "./MatryxRound.sol";
 import "./MatryxSubmission.sol";
+
+import "./LibGlobals.sol";
 import "./LibUser.sol";
 
 contract MatryxPlatform {
     struct Info {
         address proxy;
         uint256 version;
+        address token;
         address owner;
     }
 
@@ -27,14 +32,15 @@ contract MatryxPlatform {
     }
 
     Info info; // slot 0
-    Data data; // slot 3
+    Data data; // slot 4
 
     // Maps contract types from MatryxProxy to human-readable library names.
     mapping(uint256=>bytes32) contractTypeToLibraryName;
 
-    constructor(address _proxy, uint256 _version) public {
-        info.proxy = _proxy;
-        info.version = _version;
+    constructor(address proxy, uint256 version, address token) public {
+        info.proxy = proxy;
+        info.version = version;
+        info.token = token;
         info.owner = msg.sender;
 
         contractTypeToLibraryName[uint256(MatryxProxy.ContractType.Tournament)] = "LibTournament";
@@ -141,59 +147,82 @@ contract MatryxPlatform {
     }
 
     /// @dev Sets the name of a library for a given contract type
-    /// @param _contractType The type of the contract, as given by MatryxProxy
-    /// @param _libraryName  The name of the library
-    function setContractTypeLibrary(uint256 _contractType, bytes32 _libraryName) public {
-        require(msg.sender == info.owner);
-        contractTypeToLibraryName[_contractType] = _libraryName;
+    /// @param contractType The type of the contract, as given by MatryxProxy
+    /// @param libraryName  The name of the library
+    function setContractTypeLibrary(uint256 contractType, bytes32 libraryName) public {
+        require(msg.sender == info.owner, "Must be Platform owner");
+        contractTypeToLibraryName[contractType] = libraryName;
     }
 
     /// @dev Gets the name of a library from a given contract type
-    /// @param _contractType The type of the contract, as given by MatryxProxy
+    /// @param contractType The type of the contract, as given by MatryxProxy
     /// @return              The name of the library as a bytes32
-    function getContractTypeLibrary(uint256 _contractType) public view returns (bytes32) {
-        return contractTypeToLibraryName[_contractType];
+    function getContractTypeLibrary(uint256 contractType) public view returns (bytes32) {
+        return contractTypeToLibraryName[contractType];
+    }
+
+    function getInfo() public view returns (MatryxPlatform.Info) {
+        return info;
     }
 }
 
 interface IMatryxPlatform {
     function setContractTypeLibrary(uint256, bytes32) external;
     function getContractTypeLibrary(uint256) external view returns (bytes32);
+    function getInfo() external view returns (MatryxPlatform.Info);
 
     function getTournaments() external view returns (address[]);
+
+    function enterMatryx() external;
     function createTournament(LibTournament.TournamentDetails, LibRound.RoundDetails) external returns (address);
 }
 
+// dependencies: LibTournament
 library LibPlatform {
     event TournamentCreated(address _tournamentAddress);
 
-    /// @dev Return all tournaments
+    /// @dev Return all Tournaments
     /// @param data  Platform storage containing all contract data
     /// @return      Array of Tournament addresses
     function getTournaments(address, address, MatryxPlatform.Data storage data) public view returns (address[]) {
         return data.allTournaments;
     }
 
-    /// @dev Creates a tournament
-    /// @param sender    msg.sender to the Platform
+    /// @dev Enter Matryx
+    /// @param sender  msg.sender to Platform
+    /// @param info    Platform storage containing version number and proxy address
+    /// @param data    Platform storage containing all contract data and users
+    function enterMatryx(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+        require(!data.users[sender].exists, "Already entered Matryx");
+        require(IMatryxToken(info.token).balanceOf(sender) > 0, "Must have MTX");
+
+        data.users[sender].exists = true;
+        data.allUsers.push(sender);
+    }
+
+    /// @dev Creates a Tournament
+    /// @param sender    msg.sender to Platform
     /// @param info      Platform storage containing version number and proxy address
-    /// @param data      Platform storage containing all contract data
+    /// @param data      Platform storage containing all contract data and users
     /// @param tDetails  Tournament details (title, category, descHash, fileHash, bounty, entryFee)
     /// @param rDetails  Round details (start, end, review, bounty)
-    /// @return          Address of the created tournament
+    /// @return          Address of the created Tournament
     function createTournament(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails tDetails, LibRound.RoundDetails rDetails) public returns (address) {
+        require(data.users[sender].exists, "Must have entered Matryx");
+        require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
+        // require(IMatryxToken(info.token).allowance(sender, this) >= tDetails.bounty, "Insufficient MTX");
+
         address tAddress = new MatryxTournament(info.version, info.proxy);
         MatryxProxy(info.proxy).setContractType(tAddress, MatryxProxy.ContractType.Tournament);
         data.allTournaments.push(tAddress);
+        data.users[sender].tournaments.push(tAddress);
         emit TournamentCreated(tAddress);
 
         LibTournament.TournamentData storage tournament = data.tournaments[tAddress];
         tournament.owner = sender;
         tournament.details = tDetails;
 
-        // https://github.com/ethereum/solidity/issues/2469 - max I see you lol
-        // address libTournament = MatryxProxy(info.proxy).getContract(info.version, "LibTournament");
-        // LibTournament(libTournament).createRound(tAddress, sender, info, data, rDetails);
+        require(IMatryxToken(info.token).transferFrom(sender, tAddress, tDetails.bounty), "Transfer failed");
 
         // NOTE: if LibTournament is redeployed, relink and redeploy LibPlatform
         LibTournament.createRound(tAddress, sender, info, data, rDetails);
@@ -203,8 +232,12 @@ library LibPlatform {
 }
 
 /**
-
-p.createTournament([stb('title', 3), stb('category'), stb('descHash', 2), stb('fileHash', 2), 1000, 2], [1,2,3,4])
+token.setReleaseAgent(network.accounts[0])
+token.releaseTokenTransfer()
+token.mint(network.accounts[0], toWei(1e9))
+token.approve(p.address, toWei(1e6))
+p.enterMatryx()
+p.createTournament([stb('title', 3), stb('category'), stb('descHash', 2), stb('fileHash', 2), toWei(1000), 2], [1,2,3,4])
 p.getTournaments()
 
 t = contract('tAddress', IMatryxTournament);0

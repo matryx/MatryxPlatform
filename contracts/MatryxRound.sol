@@ -1,17 +1,18 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
-import "./MatryxForwarder.sol";
+import "./MatryxEntity.sol";
 
 import "./MatryxPlatform.sol";
 
-contract MatryxRound is MatryxForwarder {
-    constructor (uint256 _version, address _proxy) MatryxForwarder(_version, _proxy) public {}
+contract MatryxRound is MatryxEntity {
+    constructor (uint256 _version, address _proxy) MatryxEntity(_version, _proxy) public {}
 }
 
 interface IMatryxRound {
-    function getTournament() external view returns (address);
+    function transferTo(address, address, uint256) external;
 
+    function getTournament() external view returns (address);
     function getStart() external view returns (uint256);
     function getEnd() external view returns (uint256);
     function getReview() external view returns (uint256);

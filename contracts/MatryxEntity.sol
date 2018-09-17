@@ -1,7 +1,9 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
-contract MatryxForwarder {
+import "./IMatryxToken.sol";
+
+contract MatryxEntity {
     uint256 version;
     address proxy;
 
@@ -11,9 +13,9 @@ contract MatryxForwarder {
     }
 
     /// @dev
-    /// Gets the address of the current version of the platform and forwards
-    /// the received calldata to this address. Injects msg.sender at the front
-    /// so Platform and libraries can know calling address
+    /// Gets the address of the current version of Platform and forwards the
+    /// received calldata to this address. Injects msg.sender at the front so
+    /// Platform and libraries can know calling address
     function () public {
         assembly {
             let ptr := mload(0x40)
@@ -30,8 +32,17 @@ contract MatryxForwarder {
             if iszero(res) { revert(0, 0) }                                     // safety check
             platform := mload(0)                                                // load platform address
 
-            // forward method to MatryxPlatform, injecting msg.sender
             calldatacopy(ptr, 0, 0x04)                                          // copy signature
+            let sig := div(mload(ptr), offset)                                  // shrink signature to 4 relevant bytes
+            if eq(sig, 0xa5f2a152) {                                            // check if sig is transferTo(address,address,uint256)
+                if iszero(eq(caller, platform)) { revert(0, 0) }                // require caller is platform
+                calldatacopy(ptr, 0, calldatasize)                              // copy calldata for forwarding
+                res := delegatecall(gas, LibEntity, ptr, calldatasize, 0, 0)    // forward method to LibEntity
+                if iszero(res) { revert(0, 0) }                                 // safety check
+                return(0, 0)                                                    // return early (skip rest)
+            }
+
+            // forward method to MatryxPlatform, injecting msg.sender
             mstore(add(ptr, 0x04), caller)                                      // inject msg.sender
             calldatacopy(add(ptr, 0x24), 0x04, sub(calldatasize, 0x04))         // copy calldata for forwarding
             res := call(gas, platform, 0, ptr, add(calldatasize, 0x20), 0, 0)   // forward method to MatryxPlatform
@@ -41,5 +52,11 @@ contract MatryxForwarder {
             returndatacopy(ptr, 0, returndatasize)                              // copy returndata into ptr
             return(ptr, returndatasize)                                         // return returndata from forwarded call
         }
+    }
+}
+
+library LibEntity {
+    function transferTo(address token, address recipient, uint256 amount) public {
+        IMatryxToken(token).transfer(recipient, amount);
     }
 }
