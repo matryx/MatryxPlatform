@@ -1,4 +1,4 @@
-# Matryx Platform ![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
+![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
 
 ## Introduction
 
@@ -27,7 +27,10 @@ For every library method in **Matryx**, **MatryxSystem** stores function signatu
 
 An example of this logic:
 
-    call MatryxTournament.getTitle => call to MatryxPlatform => call to MatryxSystem for lookup => delegatecall to LibTournament.getTitle (inserting Platform `storage` data)
+    call MatryxTournament.getTitle
+    => call to MatryxPlatform
+    => call to MatryxSystem for lookup
+    => delegatecall to LibTournament.getTitle (inserting Platform `storage` data)
 
 ---
 
@@ -36,29 +39,24 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
 
 ## Testing Matryx locally with `truffle console`
 
-1. Install dependencies
+1. Install dependencies and start ganache
     ```
     npm i
-    ```
-
-2. Begin by removing the build folder and starting ganache
-    ```
-    rm -r build/
     ./ganache-local.sh
     ```
 
-3. Then in a new window, enter the truffle console
+2. Then in a new window, enter the truffle console
     ```
     truffle console
     ```
 
-4. The following commands are all executing inside truffle console
+3. The following commands are all executing inside truffle console
     ```
     migrate --reset
     .load setup
     ```
 
-5. Next, set up the token contract and mint the first 2 accounts some MTX tokens
+4. Next, set up the token contract and mint the first 2 accounts some MTX tokens
     ```
     token = contract(network.tokenAddress, MatryxToken);0
     token.setReleaseAgent(network.accounts[0])
@@ -67,7 +65,7 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     token.mint(network.accounts[1], toWei(1e6))
     ```
 
-6. Next, enter Matryx and create a Tournament.
+5. Next, enter Matryx and create a Tournament.
 
     **Note**: `stb` is a helper method to convert a string into `bytes32`, or `bytes32[n]`
 
@@ -81,7 +79,7 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     p.getTournaments().then(ts => t = contract(ts.pop(), IMatryxTournament));0
     ```
 
-7. Switch accounts, enter Matryx, approve the entry fee, and enter the Tournament
+6. Switch accounts, enter Matryx, approve the entry fee, and enter the Tournament
     ```
     token.accountNumber = 1
     p.accountNumber = 1
@@ -91,7 +89,7 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     t.enterTournament()
     ```
 
-8. Create a Submission on the Tournament
+7. Create a Submission on the Tournament
     ```
     sData = [stb('title', 3), stb('descHash', 2), stb('fileHash', 2)]
     t.createSubmission(sData)
@@ -99,7 +97,7 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     r.getSubmissions().then(ss => s = contract(ss.pop(), IMatryxSubmission));0
     ```
 
-9.  Switch back to the first account and select the Submission as a winner
+8.  Switch back to the first account and select the Submission as a winner
     ```
     t.accountNumber = 0
     t.selectWinners([[s.address], [1]], rData)
