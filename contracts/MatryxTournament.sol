@@ -31,6 +31,8 @@ interface IMatryxTournament {
     function enterTournament() external;
     function createRound(LibRound.RoundDetails) external returns (address);
     function createSubmission(LibSubmission.SubmissionDetails) external returns (address);
+
+    function selectWinners(LibRound.SelectWinnersData, LibRound.RoundDetails) external;
 }
 
 // dependents: LibPlatform
@@ -166,5 +168,11 @@ library LibTournament {
         submission.timeUpdated = now;
 
         return sAddress;
+    }
+
+    function selectWinners(MatryxPlatform.Data storage data, LibRound.SelectWinnersData winnerData, LibRound.RoundDetails rDetails) public {
+        // Flag the Winning Submissions
+        // Allocate the reward distribution to them 
+        // Maybe for POC just automatically start next round on choosing winners
     }
 }

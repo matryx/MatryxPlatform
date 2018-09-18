@@ -241,12 +241,26 @@ p.createTournament([stb('title', 3), stb('category'), stb('descHash', 2), stb('f
 p.getTournaments()
 
 t = contract('tAddress', IMatryxTournament);0
+
+network.account = 1;
+
+
+token.mint(network.accounts[1], toWei(1e9))
+
+p.accountNumber = 1 
+t.accountNumber = 1 
+
+p.enterMatryx()
+t.enterTournament()
+
 t.createSubmission([stb('title', 3), stb('descHash', 2), stb('fileHash', 2)])
-t.getRounds()
+rAddress = t.getRounds()[0]
 
 r = contract('rAddress', IMatryxRound);0
 r.getSubmissions()
 
 s = contract('sAddress', IMatryxSubmission);0
+
+t.selectWinners([[s.address], [10], 10], [1,2,3,4])
 
  */

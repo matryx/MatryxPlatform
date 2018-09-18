@@ -39,6 +39,15 @@ library LibRound {
         bool closed;
     }
 
+    // All information need to choose a winning submission 
+    struct SelectWinnersData
+    {
+        address[] winningSubmissions;
+        uint256[] rewardDistribution;
+        //uint256 selectWinnerAction;
+        uint256 rewardDistributionTotal;
+    }
+
     /// @dev Returns the Tournament address of this Round
     function getTournament(address self, address, MatryxPlatform.Data storage data) public view returns (address) {
         return data.rounds[self].tournament;
