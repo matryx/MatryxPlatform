@@ -39,9 +39,10 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
 
 ## Testing Matryx locally with `truffle console`
 
-1. Install dependencies and start ganache
+1. Install dependencies, remove the build folder, and start ganache
     ```
     npm i
+    rm -r build/
     ./ganache-local.sh
     ```
 
