@@ -1,15 +1,16 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
-import "./MatryxEntity.sol";
+import "./MatryxTrinity.sol";
 
 import "./MatryxPlatform.sol";
 
-contract MatryxRound is MatryxEntity {
-    constructor (uint256 _version, address _proxy) MatryxEntity(_version, _proxy) public {}
+contract MatryxRound is MatryxTrinity {
+    constructor (uint256 _version, address _system) MatryxTrinity(_version, _system) public {}
 }
 
 interface IMatryxRound {
+    function transferFrom(address, address, uint256) external;
     function transferTo(address, address, uint256) external;
 
     function getTournament() external view returns (address);
@@ -36,17 +37,17 @@ library LibRound {
         address tournament;
         RoundDetails details;
         address[] submissions;
+        address[] winners;
         bool closed;
     }
 
-    // All information need to choose a winning submission 
-    struct SelectWinnersData
-    {
-        address[] winningSubmissions;
-        uint256[] rewardDistribution;
-        //uint256 selectWinnerAction;
-        uint256 rewardDistributionTotal;
+    // All information needed to choose winning submissions
+    struct WinnersData {
+        address[] winners;
+        uint256[] distribution;
     }
+    // uint256 rewardDistributionTotal;
+    // uint256 selectWinnerAction;
 
     /// @dev Returns the Tournament address of this Round
     function getTournament(address self, address, MatryxPlatform.Data storage data) public view returns (address) {

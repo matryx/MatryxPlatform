@@ -3,30 +3,26 @@ pragma experimental ABIEncoderV2;
 
 import "./Ownable.sol";
 
-contract MatryxProxy is Ownable() {
+contract MatryxSystem is Ownable() {
+    // Contains info for a version of Platform
     struct Platform {
         bool exists;
-        mapping(bytes32=>ContractData) contracts; // 'LibTournament' => ContractData
+        mapping(bytes32=>ContractData) contracts;
         bytes32[] allContracts;
     }
 
+    // Used to transform calls on a MatryxTrinity to its relevant library
     struct FnData {
         bytes32 modifiedSelector; // modified fn selector
         uint256[] injectedParams; // what storage slots to insert
         uint256[] dynamicParams;  // what params are dynamic
     }
 
-    // Platform, LibTournament...
+    // Stores information about a currently deployed contract or library
     struct ContractData {
         address location;
         mapping(bytes32=>FnData) fnData;
     }
-
-    // examples:
-    // Tournament.selectWinners(winnerData) => call to Platform => proxy lookup => delegatecall to LibTournament.selectWinners(TournamentData storage, winnerData)
-
-    // note to future self:
-    // must manually set these!!!
 
     enum ContractType { Unknown, Platform, Tournament, Round, Submission }
     mapping(address=>ContractType) contractType;

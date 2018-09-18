@@ -1,21 +1,24 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
-import "./MatryxEntity.sol";
+import "./SafeMath.sol";
+
+import "./MatryxTrinity.sol";
 import "./IMatryxToken.sol";
 
-import "./MatryxProxy.sol";
+import "./MatryxSystem.sol";
 import "./MatryxPlatform.sol";
 import "./MatryxRound.sol";
 import "./MatryxSubmission.sol";
 
 import "./LibGlobals.sol";
 
-contract MatryxTournament is MatryxEntity {
-    constructor (uint256 _version, address _proxy) MatryxEntity(_version, _proxy) public {}
+contract MatryxTournament is MatryxTrinity {
+    constructor (uint256 _version, address _system) MatryxTrinity(_version, _system) public {}
 }
 
 interface IMatryxTournament {
+    function transferFrom(address, address, uint256) external;
     function transferTo(address, address, uint256) external;
 
     function getOwner() external view returns (address);
@@ -24,6 +27,7 @@ interface IMatryxTournament {
     function getDescriptionHash() external view returns (bytes32[2]);
     function getFileHash() external view returns (bytes32[2]);
     function getBounty() external view returns (uint256);
+    function getEntryFee() external view returns (uint256);
 
     function getRounds() external view returns (address[]);
     function getDetails() external view returns (LibTournament.TournamentDetails);
@@ -32,11 +36,13 @@ interface IMatryxTournament {
     function createRound(LibRound.RoundDetails) external returns (address);
     function createSubmission(LibSubmission.SubmissionDetails) external returns (address);
 
-    function selectWinners(LibRound.SelectWinnersData, LibRound.RoundDetails) external;
+    function selectWinners(LibRound.WinnersData, LibRound.RoundDetails) external;
 }
 
 // dependents: LibPlatform
 library LibTournament {
+    using SafeMath for uint256;
+
     event RoundCreated(address roundAddress);
     event SubmissionCreated(address submissionAddress);
 
@@ -57,6 +63,7 @@ library LibTournament {
         address[] rounds;
         address[] entrants;
         mapping(address=>LibGlobals.o_uint256) entryFeePaid;
+        uint256 totalEntryFees;
     }
 
     /// @dev Returns the owner of this Tournament
@@ -89,6 +96,10 @@ library LibTournament {
         return data.tournaments[self].details.bounty;
     }
 
+    function getEntryFee(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.tournaments[self].details.entryFee;
+    }
+
     /// @dev Returns all Round addresses of this Tournament
     function getRounds(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
         return data.tournaments[self].rounds;
@@ -103,11 +114,17 @@ library LibTournament {
     /// @param self    Address of this Tournament
     /// @param sender  msg.sender to the Tournament
     /// @param data    Data struct on Platform
-    function enterTournament(address self, address sender, MatryxPlatform.Data storage data) public {
+    function enterTournament(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        uint256 entryFee = tournament.details.entryFee;
+
         require(data.users[sender].exists, "Must have entered Matryx");
-        require(sender != data.tournaments[self].owner, "Cannot enter own Tournament");
-        // TODO: actually transfer entry fee MTX
-        data.tournaments[self].entryFeePaid[sender].exists = true;
+        require(sender != tournament.owner, "Cannot enter own Tournament");
+        IMatryxTournament(self).transferFrom(info.token, sender, entryFee);
+
+        tournament.entryFeePaid[sender].exists = true;
+        tournament.entryFeePaid[sender].value = entryFee;
+        tournament.totalEntryFees = tournament.totalEntryFees.add(entryFee);
         data.users[sender].tournamentsEntered.push(self);
     }
 
@@ -121,21 +138,21 @@ library LibTournament {
     function createRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.owner, "Must be owner");
-        // require(MatryxToken(info.token).)
+        require(IMatryxToken(info.token).balanceOf(self) >= rDetails.bounty, "Insufficient funds for Round");
 
-        address rAddress = new MatryxRound(info.version, info.proxy);
-        MatryxProxy(info.proxy).setContractType(rAddress, MatryxProxy.ContractType.Round);
+        address rAddress = new MatryxRound(info.version, info.system);
+
+        MatryxSystem(info.system).setContractType(rAddress, MatryxSystem.ContractType.Round);
+        tournament.rounds.push(rAddress);
         data.allRounds.push(rAddress);
-        emit RoundCreated(rAddress);
 
         IMatryxTournament(self).transferTo(info.token, rAddress, rDetails.bounty);
-
-        tournament.rounds.push(rAddress);
 
         LibRound.RoundData storage round = data.rounds[rAddress];
         round.tournament = self;
         round.details = rDetails;
 
+        emit RoundCreated(rAddress);
         return rAddress;
     }
 
@@ -150,29 +167,60 @@ library LibTournament {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
 
-        address sAddress = new MatryxSubmission(info.version, info.proxy);
-        MatryxProxy(info.proxy).setContractType(sAddress, MatryxProxy.ContractType.Submission);
+        address sAddress = new MatryxSubmission(info.version, info.system);
+
+        MatryxSystem(info.system).setContractType(sAddress, MatryxSystem.ContractType.Submission);
         data.allSubmissions.push(sAddress);
         data.users[sender].submissions.push(sAddress);
-        emit SubmissionCreated(sAddress);
 
         address roundAddress = tournament.rounds[tournament.rounds.length - 1];
         LibRound.RoundData storage round = data.rounds[roundAddress];
         round.submissions.push(sAddress);
 
         LibSubmission.SubmissionData storage submission = data.submissions[sAddress];
+        submission.owner = sender;
         submission.tournament = self;
         submission.round = roundAddress;
         submission.details = sDetails;
         submission.timeSubmitted = now;
         submission.timeUpdated = now;
 
+        emit SubmissionCreated(sAddress);
         return sAddress;
     }
 
-    function selectWinners(MatryxPlatform.Data storage data, LibRound.SelectWinnersData winnerData, LibRound.RoundDetails rDetails) public {
-        // Flag the Winning Submissions
-        // Allocate the reward distribution to them 
-        // Maybe for POC just automatically start next round on choosing winners
+    /// @dev Select winners of the current round
+    /// @param self      Address of this Tournament
+    /// @param sender    msg.sender to the Tournament
+    /// @param info      Info struct on Platform
+    /// @param data      Data struct on Platform
+    /// @param wData     Winners data struct
+    /// @param rDetails  New round details struct
+    function selectWinners(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.WinnersData wData, LibRound.RoundDetails rDetails) public {
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(sender == tournament.owner, "Must be owner");
+
+        address rAddress = tournament.rounds[tournament.rounds.length - 1];
+        LibRound.RoundData storage round = data.rounds[rAddress];
+
+        uint256 distTotal = 0;
+        for (uint256 i = 0; i < wData.winners.length; i++) {
+            distTotal = distTotal.add(wData.distribution[i]);
+        }
+
+        for (i = 0; i < wData.winners.length; i++) {
+            address winner = wData.winners[i];
+            uint256 reward = wData.distribution[i].mul(round.details.bounty).div(distTotal);
+
+            IMatryxRound(rAddress).transferTo(info.token, winner, reward);
+            data.submissions[winner].reward = reward;
+
+            address owner = data.submissions[winner].owner;
+            data.users[owner].totalWinnings = data.users[owner].totalWinnings.add(reward);
+        }
+
+        round.winners = wData.winners;
+
+        createRound(self, sender, info, data, rDetails);
     }
 }

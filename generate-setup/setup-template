@@ -1,15 +1,15 @@
 q = []
-fresh = typeof proxy == "undefined"
+fresh = typeof system == "undefined"
 
-if (fresh) q.push("proxy = contract(MatryxProxy.address, MatryxProxy)")
-if (fresh) q.push("proxy.createVersion(1)")
-if (fresh) q.push("proxy.setVersion(1)")
+if (fresh) q.push("system = contract(MatryxProxy.address, MatryxProxy)")
+if (fresh) q.push("system.createVersion(1)")
+if (fresh) q.push("system.setVersion(1)")
 
-q.push("proxy.setContract(1, stringToBytes('MatryxPlatform'), MatryxPlatform.address)")
-q.push("proxy.setContract(1, stringToBytes('LibPlatform'), LibPlatform.address)")
-q.push("proxy.setContract(1, stringToBytes('LibTournament'), LibTournament.address)")
-q.push("proxy.setContract(1, stringToBytes('LibRound'), LibRound.address)")
-q.push("proxy.setContract(1, stringToBytes('LibSubmission'), LibSubmission.address)")
+q.push("system.setContract(1, stringToBytes('MatryxPlatform'), MatryxPlatform.address)")
+q.push("system.setContract(1, stringToBytes('LibPlatform'), LibPlatform.address)")
+q.push("system.setContract(1, stringToBytes('LibTournament'), LibTournament.address)")
+q.push("system.setContract(1, stringToBytes('LibRound'), LibRound.address)")
+q.push("system.setContract(1, stringToBytes('LibSubmission'), LibSubmission.address)")
 
 $COMMANDS
 

@@ -48,7 +48,7 @@ libReg.lastIndex = 0
 
 while ((match = libReg.exec(source))) {
   const [, libName, libContent] = match
-  if (libName === "LibEntity") continue
+  if (libName === "LibTrinity") continue
 
   while ((match = fnReg.exec(libContent))) {
     if (!match[2]) match[2] = ''
@@ -98,7 +98,7 @@ while ((match = libReg.exec(source))) {
 
     const comment = `// ${libName.replace('Lib', 'Matryx')}.${name}`
     const fnData = `['${toSel}', [${injParams}], [${dynParams}]]`
-    const call = `proxy.addContractMethod(1, stringToBytes('${libName}'), '${fromSel}', ${fnData})`
+    const call = `system.addContractMethod(1, stringToBytes('${libName}'), '${fromSel}', ${fnData})`
 
     setup.push(comment)
     setup.push(call)

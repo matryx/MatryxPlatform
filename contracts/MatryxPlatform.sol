@@ -1,7 +1,9 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
-import "./MatryxProxy.sol";
+import "./SafeMath.sol";
+
+import "./MatryxSystem.sol";
 import "./IMatryxToken.sol";
 
 import "./MatryxTournament.sol";
@@ -13,7 +15,7 @@ import "./LibUser.sol";
 
 contract MatryxPlatform {
     struct Info {
-        address proxy;
+        address system;
         uint256 version;
         address token;
         address owner;
@@ -34,27 +36,27 @@ contract MatryxPlatform {
     Info info; // slot 0
     Data data; // slot 4
 
-    // Maps contract types from MatryxProxy to human-readable library names.
+    // Maps contract types from MatryxSystem to human-readable library names.
     mapping(uint256=>bytes32) contractTypeToLibraryName;
 
-    constructor(address proxy, uint256 version, address token) public {
-        info.proxy = proxy;
+    constructor(address system, uint256 version, address token) public {
+        info.system = system;
         info.version = version;
         info.token = token;
         info.owner = msg.sender;
 
-        contractTypeToLibraryName[uint256(MatryxProxy.ContractType.Tournament)] = "LibTournament";
-        contractTypeToLibraryName[uint256(MatryxProxy.ContractType.Round)] = "LibRound";
-        contractTypeToLibraryName[uint256(MatryxProxy.ContractType.Submission)] = "LibSubmission";
+        contractTypeToLibraryName[uint256(MatryxSystem.ContractType.Tournament)] = "LibTournament";
+        contractTypeToLibraryName[uint256(MatryxSystem.ContractType.Round)] = "LibRound";
+        contractTypeToLibraryName[uint256(MatryxSystem.ContractType.Submission)] = "LibSubmission";
     }
 
     /// @dev
-    /// 1) Uses msg.sender to ask MatryxProxy for the type of library this call should be forwarded to
+    /// 1) Uses msg.sender to ask MatryxSystem for the type of library this call should be forwarded to
     /// 2) Uses this library type to lookup (in its own storage) the name of the library
-    /// 3) Uses this name to ask MatryxProxy for the address of the contract (under this platform's version)
-    /// 4) Uses name and signature to ask MatryxProxy for the data necessary to modify the incoming calldata
+    /// 3) Uses this name to ask MatryxSystem for the address of the contract (under this platform's version)
+    /// 4) Uses name and signature to ask MatryxSystem for the data necessary to modify the incoming calldata
     ///    so as to be appropriate for the associated library call
-    /// 5) Makes a delegatecall to the library address given by MatryxProxy with the library-appropriate calldata
+    /// 5) Makes a delegatecall to the library address given by MatryxSystem with the library-appropriate calldata
     function () public {
         assembly {
             // constants
@@ -62,12 +64,12 @@ contract MatryxPlatform {
             let libPlatform := 0x4c6962506c6174666f726d000000000000000000000000000000000000000000
 
             let ptr := mload(0x40)                                              // scratch space for calldata
-            let proxy := sload(info_slot)                                       // load info.proxy address
+            let system := sload(info_slot)                                      // load info.system address
             let version := sload(add(info_slot, 1))                             // load info.version number
 
             mstore(0, mul(0xe11aa6a2, offset))                                  // getContractType(address)
             mstore(0x04, caller)                                                // arg 0 - contract
-            let res := call(gas, proxy, 0, 0, 0x24, 0, 0x20)                    // call proxy.getContractType
+            let res := call(gas, system, 0, 0, 0x24, 0, 0x20)                   // call system.getContractType
             if iszero(res) { revert(0, 0) }                                     // safety check
 
             // get library name for contract type                               // key - type (in 0x0) from getContractType
@@ -75,20 +77,20 @@ contract MatryxPlatform {
             let libName := sload(keccak256(0, 0x40))                            // get library name for contract type
             if iszero(libName) { libName := libPlatform }                       // default to LibPlatform
 
-            // call proxy and get library address
+            // call system and get library address
             mstore(ptr, mul(0xc53cfd9a, offset))                                // getContract(uint256,bytes32)
             mstore(add(ptr, 0x04), version)                                     // arg 0 - version
             mstore(add(ptr, 0x24), libName)                                     // arg 1 - library name
-            res := call(gas, proxy, 0, ptr, 0x44, 0, 0x20)                      // call proxy.getContract
+            res := call(gas, system, 0, ptr, 0x44, 0, 0x20)                     // call system.getContract
             if iszero(res) { revert(0, 0) }                                     // safety check
             let libAddress := mload(0)                                          // store libAddress from response
 
-            // get fnData from proxy
+            // get fnData from system
             mstore(ptr, mul(0x3b15aabf, offset))                                // getContractMethod(uint256,bytes32,bytes32)
             mstore(add(ptr, 0x04), version)                                     // arg 0 - version
             mstore(add(ptr, 0x24), libName)                                     // arg 1 - library name
             calldatacopy(add(ptr, 0x44), 0, 0x04)                               // arg 2 - fn selector
-            res := call(gas, proxy, 0, ptr, 0x64, 0, 0)                         // call proxy.getContractMethod
+            res := call(gas, system, 0, ptr, 0x64, 0, 0)                        // call system.getContractMethod
             if iszero(res) { revert(0, 0) }                                     // safety check
 
             returndatacopy(ptr, 0, returndatasize)                              // copy fnData into ptr
@@ -147,7 +149,7 @@ contract MatryxPlatform {
     }
 
     /// @dev Sets the name of a library for a given contract type
-    /// @param contractType The type of the contract, as given by MatryxProxy
+    /// @param contractType The type of the contract, as given by MatryxSystem
     /// @param libraryName  The name of the library
     function setContractTypeLibrary(uint256 contractType, bytes32 libraryName) public {
         require(msg.sender == info.owner, "Must be Platform owner");
@@ -155,12 +157,15 @@ contract MatryxPlatform {
     }
 
     /// @dev Gets the name of a library from a given contract type
-    /// @param contractType The type of the contract, as given by MatryxProxy
+    /// @param contractType The type of the contract, as given by MatryxSystem
     /// @return              The name of the library as a bytes32
     function getContractTypeLibrary(uint256 contractType) public view returns (bytes32) {
         return contractTypeToLibraryName[contractType];
     }
 
+
+    /// @dev    Gets Information about the Platform
+    /// @return Info Struct that contains system, version, token, and owner
     function getInfo() public view returns (MatryxPlatform.Info) {
         return info;
     }
@@ -179,6 +184,8 @@ interface IMatryxPlatform {
 
 // dependencies: LibTournament
 library LibPlatform {
+    using SafeMath for uint256;
+
     event TournamentCreated(address _tournamentAddress);
 
     /// @dev Return all Tournaments
@@ -190,7 +197,7 @@ library LibPlatform {
 
     /// @dev Enter Matryx
     /// @param sender  msg.sender to Platform
-    /// @param info    Platform storage containing version number and proxy address
+    /// @param info    Platform storage containing version number and system address
     /// @param data    Platform storage containing all contract data and users
     function enterMatryx(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         require(!data.users[sender].exists, "Already entered Matryx");
@@ -202,7 +209,7 @@ library LibPlatform {
 
     /// @dev Creates a Tournament
     /// @param sender    msg.sender to Platform
-    /// @param info      Platform storage containing version number and proxy address
+    /// @param info      Platform storage containing version number and system address
     /// @param data      Platform storage containing all contract data and users
     /// @param tDetails  Tournament details (title, category, descHash, fileHash, bounty, entryFee)
     /// @param rDetails  Round details (start, end, review, bounty)
@@ -210,13 +217,16 @@ library LibPlatform {
     function createTournament(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails tDetails, LibRound.RoundDetails rDetails) public returns (address) {
         require(data.users[sender].exists, "Must have entered Matryx");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
-        // require(IMatryxToken(info.token).allowance(sender, this) >= tDetails.bounty, "Insufficient MTX");
+        require(IMatryxToken(info.token).allowance(sender, this) >= tDetails.bounty, "Insufficient MTX");
 
-        address tAddress = new MatryxTournament(info.version, info.proxy);
-        MatryxProxy(info.proxy).setContractType(tAddress, MatryxProxy.ContractType.Tournament);
+        address tAddress = new MatryxTournament(info.version, info.system);
+
+        MatryxSystem(info.system).setContractType(tAddress, MatryxSystem.ContractType.Tournament);
         data.allTournaments.push(tAddress);
-        data.users[sender].tournaments.push(tAddress);
-        emit TournamentCreated(tAddress);
+
+        LibUser.UserData storage user = data.users[sender];
+        user.tournaments.push(tAddress);
+        user.totalSpent = user.totalSpent.add(tDetails.bounty);
 
         LibTournament.TournamentData storage tournament = data.tournaments[tAddress];
         tournament.owner = sender;
@@ -227,40 +237,7 @@ library LibPlatform {
         // NOTE: if LibTournament is redeployed, relink and redeploy LibPlatform
         LibTournament.createRound(tAddress, sender, info, data, rDetails);
 
+        emit TournamentCreated(tAddress);
         return tAddress;
     }
 }
-
-/**
-token.setReleaseAgent(network.accounts[0])
-token.releaseTokenTransfer()
-token.mint(network.accounts[0], toWei(1e9))
-token.approve(p.address, toWei(1e6))
-p.enterMatryx()
-p.createTournament([stb('title', 3), stb('category'), stb('descHash', 2), stb('fileHash', 2), toWei(1000), 2], [1,2,3,4])
-p.getTournaments()
-
-t = contract('tAddress', IMatryxTournament);0
-
-network.account = 1;
-
-
-token.mint(network.accounts[1], toWei(1e9))
-
-p.accountNumber = 1 
-t.accountNumber = 1 
-
-p.enterMatryx()
-t.enterTournament()
-
-t.createSubmission([stb('title', 3), stb('descHash', 2), stb('fileHash', 2)])
-rAddress = t.getRounds()[0]
-
-r = contract('rAddress', IMatryxRound);0
-r.getSubmissions()
-
-s = contract('sAddress', IMatryxSubmission);0
-
-t.selectWinners([[s.address], [10], 10], [1,2,3,4])
-
- */

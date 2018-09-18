@@ -10,6 +10,9 @@ const setNetwork = id => {
     if (network === id) return
 
     network = id
+    // ganache mnemonic below, ropsten mnemonic loaded from <project_root>/../keys/ropsten_mnemonic.txt
+    let mnemonic = "fix tired congress gold type flight access jeans payment echo chef host"
+
     if (network === 'ganache') {
         provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
         tokenAddress = '0x0c484097e2f000aadaef0450ab35aa00652481a1'
@@ -18,18 +21,17 @@ const setNetwork = id => {
         provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:9545')
         tokenAddress = '0x0c484097e2f000aadaef0450ab35aa00652481a1'
     }
-    else if (network === 'ropsten') {
-        provider = new ethers.providers.InfuraProvider('ropsten', 'metamask')
-        tokenAddress = '0xf35a0f92848bdfdb2250b60344e87b176b499a8f'
-    }
     else if (network == 'coverage') {
         provider = new ethers.providers.JsonRpcProvider('')
         tokenAddress = '0x0c484097e2f000aadaef0450ab35aa00652481a1'
     }
+    else if (network === 'ropsten') {
+        provider = new ethers.providers.InfuraProvider('ropsten', 'metamask')
+        tokenAddress = '0xf35a0f92848bdfdb2250b60344e87b176b499a8f'
+        const mnemonicPath = path.join(__dirname, '../../keys/ropsten_mnemonic.txt')
+        mnemonic = fs.readFileSync(mnemonicPath, 'utf8').trim().replace(/(\n|\r|\t|\u2028|\u2029|)/gm, '')
+    }
     else console.log('bro check yo network')
-
-    mnemonicPath = path.join(__dirname, '../../keys', network + '_mnemonic.txt')
-    const mnemonic = fs.readFileSync(mnemonicPath, 'utf8').trim().replace(/(\n|\r|\t|\u2028|\u2029|)/gm, '')
 
     const accs = mnemonicHelper.getAccounts(mnemonic, 0, 10)
     accounts = accs.map(acc => acc[0])

@@ -1,15 +1,16 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
-import "./MatryxEntity.sol";
+import "./MatryxTrinity.sol";
 
 import "./MatryxPlatform.sol";
 
-contract MatryxSubmission is MatryxEntity {
-    constructor (uint256 _version, address _proxy) MatryxEntity(_version, _proxy) public {}
+contract MatryxSubmission is MatryxTrinity {
+    constructor (uint256 _version, address _system) MatryxTrinity(_version, _system) public {}
 }
 
 interface IMatryxSubmission {
+    function transferFrom(address, address, uint256) external;
     function transferTo(address, address, uint256) external;
 
     function getTournament() external view returns (address);
@@ -32,11 +33,13 @@ library LibSubmission {
 
     // All state data and details of Submission
     struct SubmissionData {
+        address owner;
         address tournament;
         address round;
         SubmissionDetails details;
         uint256 timeSubmitted;
         uint256 timeUpdated;
+        uint256 reward;
     }
 
     /// @dev Returns the Tournament address of this Submission

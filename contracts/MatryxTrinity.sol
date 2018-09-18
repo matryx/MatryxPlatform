@@ -3,13 +3,13 @@ pragma experimental ABIEncoderV2;
 
 import "./IMatryxToken.sol";
 
-contract MatryxEntity {
+contract MatryxTrinity {
     uint256 version;
-    address proxy;
+    address system;
 
-    constructor(uint256 _version, address _proxy) public {
+    constructor(uint256 _version, address _system) public {
         version = _version;
-        proxy = _proxy;
+        system = _system;
     }
 
     /// @dev
@@ -28,16 +28,16 @@ contract MatryxEntity {
             mstore(add(ptr, 0x24), platform)                                    // arg 1 - 'MatryxPlatform'
 
             // call getContract to get MatryxPlatform from MPC
-            let res := call(gas, sload(proxy_slot), 0, ptr, 0x44, 0, 0x20)      // call MatryxProxy.getContract
+            let res := call(gas, sload(system_slot), 0, ptr, 0x44, 0, 0x20)     // call MatryxSystem.getContract
             if iszero(res) { revert(0, 0) }                                     // safety check
             platform := mload(0)                                                // load platform address
 
             calldatacopy(ptr, 0, 0x04)                                          // copy signature
             let sig := div(mload(ptr), offset)                                  // shrink signature to 4 relevant bytes
-            if eq(sig, 0xa5f2a152) {                                            // check if sig is transferTo(address,address,uint256)
+            if or(eq(sig, 0x23b872dd), eq(sig, 0xa5f2a152)) {                   // transferFrom or transferTo
                 if iszero(eq(caller, platform)) { revert(0, 0) }                // require caller is platform
                 calldatacopy(ptr, 0, calldatasize)                              // copy calldata for forwarding
-                res := delegatecall(gas, LibEntity, ptr, calldatasize, 0, 0)    // forward method to LibEntity
+                res := delegatecall(gas, LibTrinity, ptr, calldatasize, 0, 0)   // forward method to LibTrinity
                 if iszero(res) { revert(0, 0) }                                 // safety check
                 return(0, 0)                                                    // return early (skip rest)
             }
@@ -55,8 +55,20 @@ contract MatryxEntity {
     }
 }
 
-library LibEntity {
+library LibTrinity {
+    /// @dev Transfers MTX from sender to MatryxTrinity
+    /// @param token   Token address
+    /// @param sender  Sender of tokens
+    /// @param amount  Amount of tokens
+    function transferFrom(address token, address sender, uint256 amount) public {
+        require(IMatryxToken(token).transferFrom(sender, this, amount), "Transfer failed");
+    }
+
+    /// @dev Transfers MTX from MatryxTrinity to recipient
+    /// @param token      Token address
+    /// @param recipient  Recipient of tokens
+    /// @param amount     Amount of tokens
     function transferTo(address token, address recipient, uint256 amount) public {
-        IMatryxToken(token).transfer(recipient, amount);
+        require(IMatryxToken(token).transfer(recipient, amount), "Transfer failed");
     }
 }
