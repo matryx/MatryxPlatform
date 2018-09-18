@@ -8,22 +8,28 @@
 
 Matryx consists of 3 major contracts: MatryxSystem, MatryxPlatform, and MatryxTrinity.
 
-MatryxSystem keeps track of:
+**MatryxSystem**
 - All released versions of the Platform
 - All used libraries addresses
 - All relevant data needed to transform function signatures for forwarding calls
 
-MatryxPlatform:
+**MatryxPlatform**
 - Contains all data for Tournament, Rounds, Submission, and Users
 - Forwards calls from MatryxTrinity contracts to the relevant libraries
 
-MatryxTrinity
+**MatryxTrinity**
 - Encompasses MatryxTournament, MatryxRound, and MatryxSubmission
 - Forwards calls to MatryxPlatform
 
-When a call is made on a MatryxTrinity contract, such as MatryxTournament, MatryxTrinity forwards the call to MatryxPlatform, inserting `msg.sender` into the calldata so the original caller doesn't get lost. MatryxPlatform then looks up information from MatryxSystem to get the current library for that function and version of the Platform. It then uses this information to transform the calldata again, inserting state data from the Platform so that the library has access to Tournament, Round, Submission, and User data.
+When a call is made on a **MatryxTrinity** contract, such as **MatryxTournament**, **MatryxTrinity** forwards the call to **MatryxPlatform**, inserting `msg.sender` into the calldata so the original caller doesn't get lost. **MatryxPlatform** then looks up information from **MatryxSystem** to get the current library for that function and version of the Platform. It then uses this information to transform the calldata again, inserting state data from the Platform so that the library has access to Tournament, Round, Submission, and User data.
 
-For every library method in Matryx, MatryxSystem stores function signature transformation data to modify forwarded calls and be able to insert MatryxPlatform `storage` slots into calldata. This enables the libraries to modify MatryxPlatform's state while keeping the outwardly facing contract method signatures simple.
+For every library method in **Matryx**, **MatryxSystem** stores function signature transformation data to modify forwarded calls and be able to insert **MatryxPlatform** `storage` slots into calldata. This enables the libraries to modify **MatryxPlatform**'s state while keeping the outwardly facing contract method signatures simple.
+
+An example of this logic:
+
+    call MatryxTournament.getTitle => call to MatryxPlatform => call to MatryxSystem for lookup => delegatecall to LibTournament.getTitle (inserting Platform `storage` data)
+
+---
 
 We set up the Matryx system like this to enable upgradeability, as well as to minimize gas costs of creating Tournaments, Rounds, and Submissions.
 
@@ -98,8 +104,6 @@ We set up the Matryx system like this to enable upgradeability, as well as to mi
     t.accountNumber = 0
     t.selectWinners([[s.address], [1]], rData)
     ```
-
-Tournament.selectWinners(winnerData) => call to Platform => proxy lookup => delegatecall to LibTournament.selectWinners(TournamentData storage, winnerData)
 
 
 -The Matryx Team
