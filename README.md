@@ -14,11 +14,11 @@
 - All relevant data needed to transform function signatures for forwarding calls
 
 **MatryxPlatform**
-- Contains all data for Tournament, Rounds, Submission, and Users
+- Contains all data for Tournaments, Rounds, Submissions, and Users
 - Forwards calls from MatryxTrinity contracts to the relevant libraries
 
 **MatryxTrinity**
-- Encompasses MatryxTournament, MatryxRound, and MatryxSubmission
+- Base contract for MatryxTournament, MatryxRound, and MatryxSubmission
 - Forwards calls to MatryxPlatform
 
 When a call is made on a **MatryxTrinity** contract, such as **MatryxTournament**, **MatryxTrinity** forwards the call to **MatryxPlatform**, inserting `msg.sender` into the calldata so the original caller doesn't get lost. **MatryxPlatform** then looks up information from **MatryxSystem** to get the current library for that function and version of the Platform. It then uses this information to transform the calldata again, inserting state data from the Platform so that the library has access to Tournament, Round, Submission, and User data.
