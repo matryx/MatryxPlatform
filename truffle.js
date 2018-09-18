@@ -26,10 +26,6 @@ dec = hex => parseInt(hex, 16)
 fromWei = wei => +ethers.utils.formatEther(wei.toString())
 toWei = eth => ethers.utils.parseEther(eth.toString())
 
-console.log('Setup to copy paste:\n')
-console.log('platform = contract(MatryxPlatform.address, MatryxPlatform);0')
-console.log('token = contract(network.tokenAddress, MatryxToken);0\n')
-
 network.setNetwork('develop')
 
 module.exports = {

@@ -27,7 +27,7 @@ For every library method in **Matryx**, **MatryxSystem** stores function signatu
 
 An example of this logic:
 
-    call MatryxTournament.getTitle
+    call to MatryxTournament.getTitle
     => call to MatryxPlatform
     => call to MatryxSystem for lookup
     => delegatecall to LibTournament.getTitle (inserting Platform `storage` data)
@@ -97,11 +97,15 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     r.getSubmissions().then(ss => s = contract(ss.pop(), IMatryxSubmission));0
     ```
 
-8.  Switch back to the first account and select the Submission as a winner
+8. Switch back to the first account and select the Submission as a winner
     ```
     t.accountNumber = 0
     t.selectWinners([[s.address], [1]], rData)
     ```
 
+9. Finally, check the balance of your Submission. You should see it was rewarded 10 MTX
+    ```
+    token.balanceOf(s.address).then(fromWei)
+    ```
 ---
 -The Matryx Team
