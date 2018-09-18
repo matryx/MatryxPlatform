@@ -6,7 +6,7 @@
 
 ## Platform Logic
 
-Matryx consists of 3 major contracts: MatryxSystem, MatryxPlatform, and MatryxTrinity.
+**Matryx** consists of 3 major contracts: **MatryxSystem**, **MatryxPlatform**, and **MatryxTrinity**.
 
 **MatryxSystem**
 - All released versions of the Platform
@@ -31,7 +31,7 @@ An example of this logic:
 
 ---
 
-We set up the Matryx system like this to enable upgradeability, as well as to minimize gas costs of creating Tournaments, Rounds, and Submissions.
+We set up the **Matryx** system like this to enable upgradeability, as well as to minimize gas costs of creating Tournaments, Rounds, and Submissions.
 
 
 ## Testing Matryx locally with `truffle console`
@@ -105,5 +105,5 @@ We set up the Matryx system like this to enable upgradeability, as well as to mi
     t.selectWinners([[s.address], [1]], rData)
     ```
 
-
+---
 -The Matryx Team
