@@ -57,16 +57,7 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     .load setup
     ```
 
-4. Next, set up the token contract and mint the first 2 accounts some MTX tokens
-    ```
-    token = contract(network.tokenAddress, MatryxToken);0
-    token.setReleaseAgent(network.accounts[0])
-    token.releaseTokenTransfer()
-    token.mint(network.accounts[0], toWei(1e6))
-    token.mint(network.accounts[1], toWei(1e6))
-    ```
-
-5. Next, enter Matryx and create a Tournament.
+4. Next, enter Matryx and create a Tournament.
 
     **Note**: `stb` is a helper method to convert a string into `bytes32`, or `bytes32[n]`
 
@@ -80,7 +71,7 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     p.getTournaments().then(ts => t = contract(ts.pop(), IMatryxTournament));0
     ```
 
-6. Switch accounts, enter Matryx, approve the entry fee, and enter the Tournament
+5. Switch accounts, enter Matryx, approve the entry fee, and enter the Tournament
     ```
     token.accountNumber = 1
     p.accountNumber = 1
@@ -90,7 +81,7 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     t.enterTournament()
     ```
 
-7. Create a Submission on the Tournament
+6. Create a Submission on the Tournament
     ```
     sData = [stb('title', 3), stb('descHash', 2), stb('fileHash', 2)]
     t.createSubmission(sData)
@@ -98,13 +89,13 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     r.getSubmissions().then(ss => s = contract(ss.pop(), IMatryxSubmission));0
     ```
 
-8. Switch back to the first account and select the Submission as a winner
+7. Switch back to the first account and select the Submission as a winner
     ```
     t.accountNumber = 0
     t.selectWinners([[s.address], [1]], rData)
     ```
 
-9. Finally, check the balance of your Submission. You should see it was rewarded 10 MTX
+8. Finally, check the balance of your Submission. You should see it was rewarded 10 MTX
     ```
     token.balanceOf(s.address).then(fromWei)
     ```

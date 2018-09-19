@@ -1,9 +1,8 @@
 q = []
-fresh = typeof system == "undefined"
 
-if (fresh) q.push("system = contract(MatryxSystem.address, MatryxSystem)")
-if (fresh) q.push("system.createVersion(1)")
-if (fresh) q.push("system.setVersion(1)")
+q.push("system = contract(MatryxSystem.address, MatryxSystem)")
+q.push("system.createVersion(1)")
+q.push("system.setVersion(1)")
 
 q.push("system.setContract(1, stringToBytes('MatryxPlatform'), MatryxPlatform.address)")
 q.push("system.setContract(1, stringToBytes('LibPlatform'), LibPlatform.address)")
@@ -15,4 +14,10 @@ $COMMANDS
 
 q.push("p = contract(MatryxPlatform.address, IMatryxPlatform)")
 
-;(async () => { for (let cmd of q) await eval(cmd) })()
+q.push("token = contract(network.tokenAddress, MatryxToken)")
+q.push("token.setReleaseAgent(network.accounts[0])")
+q.push("token.releaseTokenTransfer()")
+q.push("token.mint(network.accounts[0], toWei(1e4))")
+q.push("token.mint(network.accounts[1], toWei(1e4))")
+
+;(async () => { for (let cmd of q) try { await eval(cmd) } catch (err) {} })()
