@@ -9,9 +9,9 @@
 **Matryx** consists of 3 major contracts: **MatryxSystem**, **MatryxPlatform**, and **MatryxTrinity**.
 
 **MatryxSystem**
-- All released versions of the Platform
-- All used libraries addresses
-- All relevant data needed to transform function signatures for forwarding calls
+- Contains all released versions of the Platform
+- Contains all used libraries addresses
+- Contains all relevant data needed to transform function signatures for forwarding calls
 
 **MatryxPlatform**
 - Contains all data for Tournaments, Rounds, Submissions, and Users
@@ -20,17 +20,25 @@
 **MatryxTrinity**
 - Base contract for MatryxTournament, MatryxRound, and MatryxSubmission
 - Forwards calls to MatryxPlatform
+- Stores and transfers MTX for Tournaments, Rounds, and Submissions
 
 When a call is made on a **MatryxTrinity** contract, such as **MatryxTournament**, **MatryxTrinity** forwards the call to **MatryxPlatform**, inserting `msg.sender` into the calldata so the original caller doesn't get lost. **MatryxPlatform** then looks up information from **MatryxSystem** to get the current library for that function and version of the Platform. It then uses this information to transform the calldata again, inserting state data from the Platform so that the library has access to Tournament, Round, Submission, and User data.
 
-For every library method in **Matryx**, **MatryxSystem** stores function signature transformation data to modify forwarded calls and be able to insert **MatryxPlatform** `storage` slots into calldata. This enables the libraries to modify **MatryxPlatform**'s state while keeping the outwardly facing contract method signatures simple.
+For every library method in **Matryx**, **MatryxSystem** stores function signature transformation data used to modify calldata by inserting **MatryxPlatform** `storage` slots for the delegatecall to the library method. This enables the libraries to modify **MatryxPlatform**'s state while keeping the outwardly facing contract method signatures simple.
 
 An example of this logic:
 
-    call to MatryxTournament.getTitle
-    => call to MatryxPlatform
-    => call to MatryxSystem for lookup
+    call to MatryxTournament.getTitle 
+    => call to MatryxSystem to lookup Platform address
+    => call to MatryxPlatform (inserting User address)
+    => call to MatryxSystem to lookup forwarding info
     => delegatecall to LibTournament.getTitle (inserting Platform `storage` data)
+
+An example of a MTX transfer between MatryxTrinity contracts:
+  
+    call to MatryxTournament.transferTo
+    => delegatecall to LibTrinity.transferTo
+    => call to MatryxToken.transfer
 
 ---
 
