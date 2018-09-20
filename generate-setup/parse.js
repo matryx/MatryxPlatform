@@ -11,7 +11,7 @@ const libReg = /library (\w+)\s+\{(.+?)^\}/gms
 const structReg = /struct (.+?)\s+\{(.+?)\}/gs
 const membersReg = /([^\s]+)\s\w+;/g
 const dynTypesReg = /.*\[\].*|^(?!address|bool|bytes[\d]+|u?int[\d]*)/
-const fnReg = /function (\w+)\((.*?)\)/g
+const fnReg = /function (\w+)\((.*?)\).*/g
 
 const slots = {
   'info': 0,
@@ -48,9 +48,11 @@ libReg.lastIndex = 0
 
 while ((match = libReg.exec(source))) {
   const [, libName, libContent] = match
-  if (libName === "LibTrinity") continue
+  if (["LibUtils", "LibTrinity"].includes(libName)) continue
 
   while ((match = fnReg.exec(libContent))) {
+    if (match[0].includes('internal')) continue
+
     if (!match[2]) match[2] = ''
 
     const name = match[1]

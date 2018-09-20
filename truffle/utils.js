@@ -117,14 +117,18 @@ module.exports = {
 
   async setup(artifacts, web3, accountNum) {
     const MatryxPlatform = artifacts.require('MatryxPlatform')
+    const IMatryxPlatform = artifacts.require('IMatryxPlatform')
     const MatryxToken = artifacts.require('MatryxToken')
     const MatryxTournament = artifacts.require('MatryxTournament')
+    const IMatryxTournament = artifacts.require('IMatryxTournament')
     const MatryxRound = artifacts.require('MatryxRound')
+    const IMatryxRound = artifacts.require('IMatryxRound')
     const MatryxSubmission = artifacts.require('MatryxSubmission')
+    const IMatryxSubmission = artifacts.require('IMatryxSubmission')
 
     const account = network.accounts[accountNum]
 
-    const platform = Contract(MatryxPlatform.address, MatryxPlatform, accountNum)
+    const platform = Contract(MatryxPlatform.address, IMatryxPlatform, accountNum)
     const token = Contract(network.tokenAddress, MatryxToken, 0)
 
     console.log(chalk`\nSetup {yellow ${account}}`)
@@ -164,8 +168,11 @@ module.exports = {
       MatryxPlatform,
       MatryxToken,
       MatryxTournament,
+      IMatryxTournament,
       MatryxRound,
+      IMatryxRound,
       MatryxSubmission,
+      IMatryxSubmission,
       platform,
       token
     }

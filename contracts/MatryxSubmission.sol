@@ -21,6 +21,8 @@ interface IMatryxSubmission {
     function getFileHash() external view returns (bytes32[2]);
 
     function getData() external view returns (LibSubmission.SubmissionData);
+
+    function getBalance() external view returns (uint256);
 }
 
 library LibSubmission {
@@ -30,6 +32,8 @@ library LibSubmission {
         bytes32[2] descHash;
         bytes32[2] fileHash;
     }
+    // bytes32[2] publicKey;
+    // bytes32    privateKey;
 
     // All state data and details of Submission
     struct SubmissionData {
@@ -71,5 +75,10 @@ library LibSubmission {
     /// @dev Returns the data struct of this Submission
     function getData(address self, address, MatryxPlatform.Data storage data) public view returns (LibSubmission.SubmissionData) {
         return data.submissions[self];
+    }
+
+    /// @dev Returns the MTX balance of this Submission
+    function getBalance(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return IMatryxToken(info.token).balanceOf(self);
     }
 }
