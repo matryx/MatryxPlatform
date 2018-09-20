@@ -28,14 +28,14 @@ For every library method in **Matryx**, **MatryxSystem** stores function signatu
 
 An example of this logic:
 
-    call to MatryxTournament.getTitle 
+    call to MatryxTournament.getTitle
     => call to MatryxSystem to lookup Platform address
     => call to MatryxPlatform (inserting User address)
     => call to MatryxSystem to lookup forwarding info
     => delegatecall to LibTournament.getTitle (inserting Platform `storage` data)
 
 An example of a MTX transfer between MatryxTrinity contracts:
-  
+
     call to MatryxTournament.transferTo
     => delegatecall to LibTrinity.transferTo
     => call to MatryxToken.transfer
@@ -109,6 +109,8 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     ```
 
 ## Architecture Diagram
+
+![architecture diagram](https://github.com/matryx/MatryxPlatform/blob/audit/assets/ArchitectureDiagram.svg)
 
 [draw.io diagram](https://www.draw.io/?lightbox=1&highlight=0000ff&layers=1&nav=1&page=0&title=Matryx%20Architecture#Uhttps%3A%2F%2Fdrive.google.com%2Fuc%3Fid%3D1KormLKjy1W3FZkiSdEpGdmwwvE9uNYSp%26export%3Ddownload)
 ---
