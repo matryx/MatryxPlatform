@@ -33,7 +33,6 @@ interface IMatryxTournament {
     function getDetails() external view returns (LibTournament.TournamentDetails);
 
     function enterTournament() external;
-    function createRound(LibRound.RoundDetails) external returns (address);
     function createSubmission(LibSubmission.SubmissionDetails) external returns (address);
 
     function selectWinners(LibRound.WinnersData, LibRound.RoundDetails) external;
@@ -135,7 +134,7 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param rDetails  Details of the Round being created
     /// @return          Address of the created Round
-    function createRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
+    function createRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) internal returns (address) {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.owner, "Must be owner");
         require(IMatryxToken(info.token).balanceOf(self) >= rDetails.bounty, "Insufficient funds for Round");
