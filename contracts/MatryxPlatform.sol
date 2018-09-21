@@ -363,7 +363,7 @@ library LibPlatform {
         user.totalSpent = user.totalSpent.add(tDetails.bounty);
 
         LibTournament.TournamentData storage tournament = data.tournaments[tAddress];
-        tournament.owner = sender;
+        tournament.info.owner = sender;
         tournament.details = tDetails;
 
         require(IMatryxToken(info.token).transferFrom(sender, tAddress, tDetails.bounty), "Transfer failed");

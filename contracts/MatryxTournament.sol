@@ -2,16 +2,15 @@ pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
-
-import "./MatryxTrinity.sol";
+import "./LibGlobals.sol";
 import "./IMatryxToken.sol";
 
 import "./MatryxSystem.sol";
 import "./MatryxPlatform.sol";
+import "./MatryxTrinity.sol";
 import "./MatryxRound.sol";
 import "./MatryxSubmission.sol";
 
-import "./LibGlobals.sol";
 
 contract MatryxTournament is MatryxTrinity {
     constructor (uint256 _version, address _system) MatryxTrinity(_version, _system) public {}
@@ -49,6 +48,12 @@ library LibTournament {
     event RoundCreated(address roundAddress);
     event SubmissionCreated(address submissionAddress);
 
+    struct TournamentInfo {
+        address owner;
+        address[] rounds;
+        address[] entrants;
+    }
+
     // All information needed for creation of Tournament
     struct TournamentDetails {
         bytes32[3] title;
@@ -63,17 +68,15 @@ library LibTournament {
 
     // All state data and details of Tournament
     struct TournamentData {
-        address owner;
+        TournamentInfo info;
         TournamentDetails details;
-        address[] rounds;
-        address[] entrants;
         mapping(address=>LibGlobals.o_uint256) entryFeePaid;
         uint256 totalEntryFees;
     }
 
     /// @dev Returns the owner of this Tournament
     function getOwner(address self, address, MatryxPlatform.Data storage data) public view returns (address) {
-        return data.tournaments[self].owner;
+        return data.tournaments[self].info.owner;
     }
 
     /// @dev Returns the title of this Tournament
@@ -112,7 +115,7 @@ library LibTournament {
 
     /// @dev Returns all Round addresses of this Tournament
     function getRounds(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
-        return data.tournaments[self].rounds;
+        return data.tournaments[self].info.rounds;
     }
 
     /// @dev Returns the data struct of this Tournament
@@ -146,15 +149,16 @@ library LibTournament {
     /// @dev Returns the current round number and address of this Tournament
     function getCurrentRound(address self, address, MatryxPlatform.Data storage data) public view returns (uint256, address) {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
-        uint256 numRounds = tournament.rounds.length;
+        address[] storage rounds = tournament.info.rounds;
+        uint256 numRounds = rounds.length;
 
         if (numRounds > 1 &&
-           IMatryxRound(tournament.rounds[numRounds-2]).getState() == uint256(LibGlobals.RoundState.HasWinners) &&
-           IMatryxRound(tournament.rounds[numRounds-1]).getState() == uint256(LibGlobals.RoundState.NotYetOpen)
+           IMatryxRound(rounds[numRounds-2]).getState() == uint256(LibGlobals.RoundState.HasWinners) &&
+           IMatryxRound(rounds[numRounds-1]).getState() == uint256(LibGlobals.RoundState.NotYetOpen)
         ) {
-            return (numRounds-1, tournament.rounds[numRounds-2]);
+            return (numRounds-1, rounds[numRounds-2]);
         } else {
-            return (numRounds, tournament.rounds[numRounds-1]);
+            return (numRounds, rounds[numRounds-1]);
         }
     }
 
@@ -172,7 +176,7 @@ library LibTournament {
         uint256 entryFee = tournament.details.entryFee;
 
         require(data.users[sender].exists, "Must have entered Matryx");
-        require(sender != tournament.owner, "Cannot enter own Tournament");
+        require(sender != tournament.info.owner, "Cannot enter own Tournament");
         IMatryxTournament(self).transferFrom(info.token, sender, entryFee);
 
         tournament.entryFeePaid[sender].exists = true;
@@ -190,13 +194,13 @@ library LibTournament {
     /// @return          Address of the created Round
     function createRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) internal returns (address) {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
-        require(sender == tournament.owner, "Must be owner");
+        require(sender == tournament.info.owner, "Must be owner");
         require(IMatryxToken(info.token).balanceOf(self) >= rDetails.bounty, "Insufficient funds for Round");
 
         address rAddress = new MatryxRound(info.version, info.system);
 
         MatryxSystem(info.system).setContractType(rAddress, MatryxSystem.ContractType.Round);
-        tournament.rounds.push(rAddress);
+        tournament.info.rounds.push(rAddress);
         data.allRounds.push(rAddress);
 
         IMatryxTournament(self).transferTo(info.token, rAddress, rDetails.bounty);
@@ -217,6 +221,8 @@ library LibTournament {
     /// @param sDetails  Submission details (title, descHash, fileHash)
     /// @return          Address of the created Submission
     function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails sDetails) public returns (address) {
+        require(sDetails.contributors.length == sDetails.contributorDistribution.length, "Must include distribution for each contributor");
+
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
 
@@ -226,17 +232,17 @@ library LibTournament {
         data.allSubmissions.push(sAddress);
         data.users[sender].submissions.push(sAddress);
 
-        address roundAddress = tournament.rounds[tournament.rounds.length - 1];
+        address roundAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
         LibRound.RoundData storage round = data.rounds[roundAddress];
         round.submissions.push(sAddress);
 
         LibSubmission.SubmissionData storage submission = data.submissions[sAddress];
-        submission.owner = sender;
-        submission.tournament = self;
-        submission.round = roundAddress;
+        submission.info.owner = sender;
+        submission.info.tournament = self;
+        submission.info.round = roundAddress;
+        submission.info.timeSubmitted = now;
+        submission.info.timeUpdated = now;
         submission.details = sDetails;
-        submission.timeSubmitted = now;
-        submission.timeUpdated = now;
 
         emit SubmissionCreated(sAddress);
         return sAddress;
@@ -250,12 +256,13 @@ library LibTournament {
     /// @param wData     Winners data struct
     /// @param rDetails  New round details struct
     function selectWinners(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.WinnersData wData, LibRound.RoundDetails rDetails) public {
-        LibTournament.TournamentData storage tournament = data.tournaments[self];
-        require(sender == tournament.owner, "Must be owner");
         require(wData.winners.length > 0, "Must specify winners");
         require(wData.winners.length == wData.distribution.length, "Must include distribution for each winner");
 
-        address rAddress = tournament.rounds[tournament.rounds.length - 1];
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(sender == tournament.info.owner, "Must be owner");
+
+        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.InReview), "Must be in review");
 
         LibRound.RoundData storage round = data.rounds[rAddress];
@@ -310,9 +317,9 @@ library LibTournament {
             uint256 reward = wData.distribution[i].mul(bounty).div(distTotal);
 
             IMatryxRound(rAddress).transferTo(info.token, wData.winners[i], reward);
-            data.submissions[wData.winners[i]].reward = reward;
+            data.submissions[wData.winners[i]].info.reward = reward;
 
-            address owner = data.submissions[wData.winners[i]].owner;
+            address owner = data.submissions[wData.winners[i]].info.owner;
             data.users[owner].totalWinnings = data.users[owner].totalWinnings.add(reward);
         }
     }
