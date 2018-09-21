@@ -26,17 +26,23 @@ interface IMatryxTournament {
     function getDescriptionHash() external view returns (bytes32[2]);
     function getFileHash() external view returns (bytes32[2]);
     function getBounty() external view returns (uint256);
-    function getBalance() external view returns (uint256);
     function getEntryFee() external view returns (uint256);
     function getRounds() external view returns (address[]);
     function getDetails() external view returns (LibTournament.TournamentDetails);
-    function getCurrentRound() external view returns (uint256, address);
-    function getState() external view returns (uint256);
 
+    function getBalance() external view returns (uint256);
+    function getState() external view returns (uint256);
+    function getCurrentRound() external view returns (uint256, address);
+
+    function getSubmissionCount() external view returns (uint256);
+    function getMySubmissions() external view returns (address[]);
+
+    function getEntrantCount() external view returns (uint256);
     function isEntrant(address) external view returns (bool);
 
     function enterTournament() external;
     function createSubmission(LibSubmission.SubmissionDetails) external returns (address);
+    function recoverEntryFee() external;
 
     function selectWinners(LibRound.WinnersData, LibRound.RoundDetails) external;
 }
@@ -71,6 +77,7 @@ library LibTournament {
         TournamentInfo info;
         TournamentDetails details;
         mapping(address=>LibGlobals.o_uint256) entryFeePaid;
+        address[] allEntrants;
         uint256 totalEntryFees;
     }
 
@@ -104,11 +111,6 @@ library LibTournament {
         return data.tournaments[self].details.bounty;
     }
 
-    /// @dev Returns the MTX balance of the Tournament
-    function getBalance(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return IMatryxToken(info.token).balanceOf(self).sub(data.tournaments[self].totalEntryFees);
-    }
-
     function getEntryFee(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.tournaments[self].details.entryFee;
     }
@@ -121,6 +123,11 @@ library LibTournament {
     /// @dev Returns the data struct of this Tournament
     function getDetails(address self, address, MatryxPlatform.Data storage data) public view returns (LibTournament.TournamentDetails) {
         return data.tournaments[self].details;
+    }
+
+    /// @dev Returns the MTX balance of the Tournament
+    function getBalance(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return IMatryxToken(info.token).balanceOf(self).sub(data.tournaments[self].totalEntryFees);
     }
 
     /// @dev Returns the state of this Tournament
@@ -162,6 +169,52 @@ library LibTournament {
         }
     }
 
+    function getSubmissionCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        address[] storage rounds = data.tournaments[self].info.rounds;
+        uint256 count = 0;
+
+        for (uint256 i = 0; i < rounds.length; i++) {
+            count += data.rounds[rounds[i]].info.submissions.length;
+        }
+
+        return count;
+    }
+
+    function getMySubmissions(address self, address sender, MatryxPlatform.Data storage data) public view returns (address[]) {
+        address[] storage submissions = data.users[sender].submissions;
+        uint256 length = submissions.length;
+
+        assembly {
+            let offset := 0x100000000000000000000000000000000000000000000000000000000
+            let ptr := mload(0x40)
+            let size := 0
+
+            mstore(0, submissions_slot)                                         // store submissions slot
+            let s_subs := keccak256(0, 0x20)                                    // get start of submissions array
+
+            mstore(ptr, 0x20)                                                   // store sizeof address
+
+            mstore(0, mul(0xe76c293e, offset))                                  // getTournament()
+            for { let i := 0 } lt(i, length) { i := add(i, 1) } {
+                let subm := sload(add(s_subs, i))                               // get Submission address
+                let ret := call(gas, subm, 0, 0, 0x04, 0x20, 0x20)              // call Submission.getTournament
+                if iszero(ret) { revert(0, 0) }                                 // safety check
+
+                if eq(mload(0x20), self) {                                      // if tournament == this tournament
+                    size := add(size, 1)                                        // increment array size
+                    mstore(add(ptr, mul(add(size, 1), 0x20)), subm)             // add Submission to array
+                }
+            }
+
+            mstore(add(ptr, 0x20), size)                                        // store array size
+            return(ptr, add(0x40, mul(size, 0x20)))                             // return array
+        }
+    }
+
+    function getEntrantCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.tournaments[self].allEntrants.length;
+    }
+
     /// @dev Returns true if the sender has entered the Tournament
     function isEntrant(address self, address, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
         return data.tournaments[self].entryFeePaid[uAddress].exists;
@@ -181,6 +234,7 @@ library LibTournament {
 
         tournament.entryFeePaid[sender].exists = true;
         tournament.entryFeePaid[sender].value = entryFee;
+        tournament.allEntrants.push(sender);
         tournament.totalEntryFees = tournament.totalEntryFees.add(entryFee);
         data.users[sender].tournamentsEntered.push(self);
     }
@@ -246,6 +300,16 @@ library LibTournament {
 
         emit SubmissionCreated(sAddress);
         return sAddress;
+    }
+
+    function recoverEntryFee(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        uint256 entryFeePaid = tournament.entryFeePaid[sender].value;
+        require(entryFeePaid > 0, "No entry fee to recover");
+
+        IMatryxTournament(self).transferTo(info.token, sender, entryFeePaid);
+        tournament.entryFeePaid[sender].exists = false;
+        tournament.totalEntryFees = tournament.totalEntryFees.sub(entryFeePaid);
     }
 
     /// @dev Select winners of the current round

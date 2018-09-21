@@ -109,7 +109,7 @@ const createSubmission = async (tournament, accountNumber) => {
     title,
     descHash,
     fileHash,
-    distribution: new Array(11).fill(1),
+    distribution: new Array(11).fill(0).map((_, i) => i),
     contributors: new Array(10).fill(0).map(r => genAddress()),
     references: new Array(10).fill(0).map(r => genAddress())
   }
@@ -138,10 +138,11 @@ const updateSubmission = async submission => {
   tx = await submission.updateDetails(modData)
   await getMinedTx('Submission.updateDetails', tx.hash)
 
-  const contribs = new Array(3).fill(0).map(() => genAddress())
+  // const contribs = new Array(3).fill(0).map(() => genAddress())
+  const contribs = new Array(3).fill('0x' + '0'.repeat(40))
   const contribsDist = new Array(3).fill(1)
-  const indices = []
-  
+  const indices = [1, 2, 3]
+
   const refs = new Array(3).fill(0).map(() => genAddress())
 
   tx = await submission.setContributorsAndReferences([indices, contribs], contribsDist, [indices, refs])
@@ -152,7 +153,7 @@ const removeContribsAndRefs = async submission => {
   const contribs = new Array(2).fill(0).map(() => "0x0")
   const contribsDist = new Array(2).fill(0)
   const indices = [1, 2]
-  
+
   const refs = new Array(2).fill(0).map(() => "0x0")
 
   tx = await submission.setContributorsAndReferences([indices, contribs], contribsDist, [indices, refs])
@@ -219,7 +220,15 @@ module.exports = async exit => {
     const tournamentCreator = 0
     const tournament = await createTournament(web3.toWei(10), roundData, tournamentCreator)
     const submission = await createSubmission(tournament, 1)
+    let c = await submission.getContributors()
+    console.log(c)
     await updateSubmission(submission)
+    c = await submission.getContributors()
+    console.log(c)
+    await createSubmission(tournament, 1)
+    await createSubmission(tournament, 1)
+    await createSubmission(tournament, 1)
+    await createSubmission(tournament, 1)
     // await createSubmission(tournament, 2)
     // await createSubmission(tournament, 3)
 

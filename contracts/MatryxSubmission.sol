@@ -27,9 +27,9 @@ interface IMatryxSubmission {
     function getReferences() external view returns (address[]);
     function getTimeSubmitted() external view returns (uint256);
     function getTimeUpdated() external view returns (uint256);
-    function getDetails() external view returns (LibSubmission.SubmissionDetails);
     function getPermittedDownloaders() external view returns (address[]);
     function getBalance() external view returns (uint256);
+    function getData() external view returns (LibSubmission.SubmissionReturnData);
 
     function unlockFile() external;
     function updateDetails(LibSubmission.DetailsUpdates) external;
@@ -76,15 +76,21 @@ library LibSubmission {
         mapping(address=>RelationType) relationType;
     }
 
-    function onlyCanView(address self, address sender, MatryxPlatform.Data storage data) internal {
+    // everything but the mappings
+    struct SubmissionReturnData {
+        SubmissionInfo info;
+        SubmissionDetails details;
+    }
+
+    function onlyCanView(address self, address sender, MatryxPlatform.Data storage data) internal view {
         require(data.submissions[self].permittedToView[sender], "Must be permitted to view");
     }
 
-    function onlyOwner(address self, address sender, MatryxPlatform.Data storage data) internal {
+    function onlyOwner(address self, address sender, MatryxPlatform.Data storage data) internal view {
         require(data.submissions[self].info.owner == sender, "Must be owner");
     }
 
-    function duringOpenSubmission(address self, MatryxPlatform.Data storage data) internal {
+    function duringOpenSubmission(address self, MatryxPlatform.Data storage data) internal view {
         address round = data.submissions[self].info.round;
         require(IMatryxRound(round).getState() == uint256(LibGlobals.RoundState.Open), "Must be open Round");
     }
@@ -146,17 +152,32 @@ library LibSubmission {
         return data.submissions[self].allPermittedToView;
     }
 
-    /// @dev Returns the data struct of this Submission
-    // function getDetails(address self, address, MatryxPlatform.Data storage data) public view returns (LibSubmission.SubmissionDetails) {
-    //     return data.submissions[self];
-    // }
-
     /// @dev Returns the MTX balance of this Submission
     function getBalance(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
         return IMatryxToken(info.token).balanceOf(self);
     }
 
-    
+    // /// @dev Returns the data struct of this Submission
+    // function getDetails(address self, address, MatryxPlatform.Data storage data) public view returns (LibSubmission.SubmissionDetails) {
+    //     return data.submissions[self].details;
+    // }
+
+    /// @dev Returns all information of this Submission
+    function getData(address self, address sender, MatryxPlatform.Data storage data) public view returns (LibSubmission.SubmissionReturnData) {
+        SubmissionReturnData memory sub;
+        sub.info = data.submissions[self].info;
+        sub.details = data.submissions[self].details;
+
+        if (!data.submissions[self].permittedToView[sender]) {
+            sub.details.descHash[0] = 0x0;
+            sub.details.descHash[1] = 0x0;
+            sub.details.fileHash[0] = 0x0;
+            sub.details.fileHash[1] = 0x0;
+        }
+
+        return sub;
+    }
+
     /// @dev Updates the details of this Submission
     /// @param self    Address of this Submission
     /// @param sender  Address of this Submission
@@ -190,7 +211,7 @@ library LibSubmission {
     /// @param data          Data struct on Platform
     /// @param contribs      Contributor addresses and indices for modifying Submission's contributors
     /// @param distribution  Distribution of credit to Submission's contributors
-    /// @param refs          Reference address and indices for modifying Submission's references    
+    /// @param refs          Reference address and indices for modifying Submission's references
     function setContributorsAndReferences(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibGlobals.IndexedAddresses contribs, uint256[] distribution, LibGlobals.IndexedAddresses refs) public {
         onlyOwner(self, sender, data);
 
@@ -201,7 +222,7 @@ library LibSubmission {
 
         for (uint256 i = 0; i < contribs.indices.length; i++) {
             uint256 index = contribs.indices[i];
-                        
+
             if (contribs.addresses[i] != 0x0) {
                 details.contributors[index] = contribs.addresses[i];
                 details.distribution[index + 1] = distribution[i];
@@ -212,16 +233,15 @@ library LibSubmission {
                     let offset := 0x100000000000000000000000000000000000000000000000000000000
                     let ptr := mload(0x40)
 
-                    mstore(ptr, mul(0xba7e2c24, offset))                        // removeArrayElement(address[] storage,uint256)
-                    mstore(add(ptr, 0x04), add(details_slot, 8))                // details.contributors
-                    mstore(add(ptr, 0x24), index)                               // index
+                    mstore(ptr, mul(0x4a71ede8, offset))                        // removeArrayElement(bytes32[] storage,uint256)
+                    mstore(add(ptr, 0x04), add(details_slot, 8))                // arg 0 - details.contributors
+                    mstore(add(ptr, 0x24), index)                               // arg 1 - index
 
                     let res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
                     if iszero(res) { revert(0, 0) }                             // safety check
 
-                    mstore(ptr, mul(0x4a18702c, offset))                        // removeArrayElement(uint256[] storage,uint256)
-                    mstore(add(ptr, 0x04), add(details_slot, 7))                // details.distribution
-                    mstore(add(ptr, 0x24), add(index, 1))                       // index
+                    mstore(add(ptr, 0x04), add(details_slot, 7))                // arg 0 - details.distribution
+                    mstore(add(ptr, 0x24), add(index, 1))                       // arg 1 - index
 
                     res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)         // call LibUtils.removeArrayElement
                     if iszero(res) { revert(0, 0) }                             // safety check
@@ -238,7 +258,7 @@ library LibSubmission {
 
         for (i = 0; i < refs.indices.length; i++) {
             index = refs.indices[i];
-                        
+
             if (refs.addresses[i] != 0x0) {
                 details.references[index] = refs.addresses[i];
             }
@@ -248,9 +268,9 @@ library LibSubmission {
                     let offset := 0x100000000000000000000000000000000000000000000000000000000
                     let ptr := mload(0x40)
 
-                    mstore(ptr, mul(0xba7e2c24, offset))                        // removeArrayElement(address[] storage,uint256)
-                    mstore(add(ptr, 0x04), add(details_slot, 9))                // details.references
-                    mstore(add(ptr, 0x24), index)                               // index
+                    mstore(ptr, mul(0x4a71ede8, offset))                        // removeArrayElement(bytes32[] storage,uint256)
+                    mstore(add(ptr, 0x04), add(details_slot, 9))                // arg 0 - details.references
+                    mstore(add(ptr, 0x24), index)                               // arg 1 - index
 
                     let res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
                     if iszero(res) { revert(0, 0) }                             // safety check
@@ -262,13 +282,13 @@ library LibSubmission {
             for (i = refs.indices.length; i < refs.addresses.length; i++) {
                 details.references.push(refs.addresses[i]);
             }
-        }        
+        }
     }
 
     // /// @dev Allows the owner and contributors to this Submission to withdraw from this Submission
     // /// @param self          Address of this Submission
     // /// @param sender        msg.sender to this Submission
-    // /// @param data          Data struct on Platform    
+    // /// @param data          Data struct on Platform
     // function withdrawReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
     //     LibSubmission.SubmissionData storage sub = data.submissions[self].info;
     //     //determine who the sender is (contributor or reference owner)
@@ -276,11 +296,11 @@ library LibSubmission {
 
     //     }
     //     else if (sub.details.isReference[sender]) {
-            
+
     //     }
 
-                
-    //     //get their distribution 
+
+    //     //get their distribution
     //     //calculate the amount they should get on withrdawal
     //     // transfer the mtx to the sender of the call
 

@@ -387,5 +387,7 @@ start = Math.floor(Date.now() / 1000) + 30
 rData = [start, start + 30, 30, toWei(10)]
 p.createTournament(tData, rData)
 p.getTournaments(0,0).then(ts => t = contract(ts.pop(), IMatryxTournament));0
+t.getRounds().then(rs => r = contract(rs.pop(), IMatryxRound));0
+r.getSubmissions().then(ss => s = contract(ss.pop(), IMatryxSubmission));0
 
  */

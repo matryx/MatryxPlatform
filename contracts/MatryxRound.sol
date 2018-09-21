@@ -23,10 +23,14 @@ interface IMatryxRound {
     function getReview() external view returns (uint256);
     function getBounty() external view returns (uint256);
     function getBalance() external view returns (uint256);
-    function getSubmissions() external view returns (address[]);
+    function getSubmissions() external view returns (address[]); // TODO: paginate?
     function getData() external view returns (LibRound.RoundData);
 
+    function getSubmissionCount() external view returns (uint256);
+    function getWinningSubmissions() external view returns (address[]);
+
     function getState() external view returns (uint256);
+    function addBounty(uint256 amount) external;
 }
 
 library LibRound {
@@ -99,6 +103,14 @@ library LibRound {
         return data.rounds[self];
     }
 
+    function getSubmissionCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.rounds[self].info.submissions.length;
+    }
+
+    function getWinningSubmissions(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
+        return data.rounds[self].info.winners;
+    }
+
     /// @dev Returns the state of this Round
     function getState(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public returns (uint256) {
         LibRound.RoundData storage round = data.rounds[self];
@@ -128,5 +140,14 @@ library LibRound {
             return uint256(LibGlobals.RoundState.Closed);
         }
         return uint256(LibGlobals.RoundState.Abandoned);
+    }
+
+    function addBounty(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 amount) public {
+        address tournament = data.rounds[self].info.tournament;
+        address owner = data.tournaments[tournament].info.owner;
+        require(sender == owner, "Must be owner");
+
+        IMatryxTournament(tournament).transferTo(info.token, self, amount);
+        // round bounty allocation
     }
 }

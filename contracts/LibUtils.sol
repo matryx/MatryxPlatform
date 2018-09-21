@@ -32,20 +32,7 @@ library LibUtils {
     /// @dev Removes array element and replaces with last element
     /// @param array  Array to remove from
     /// @param index  Element to remove
-    function removeArrayElement(address[] storage array, uint256 index) public {
-        require(index < array.length, "Index out of bounds");
-
-        if (index < array.length - 1) {
-            array[index] = array[array.length - 1];
-        }
-
-        array.length = array.length - 1;
-    }
-
-    /// @dev Removes array element and replaces with last element
-    /// @param array  Array to remove from
-    /// @param index  Element to remove
-    function removeArrayElement(uint256[] storage array, uint256 index) public {
+    function removeArrayElement(bytes32[] storage array, uint256 index) public {
         require(index < array.length, "Index out of bounds");
 
         if (index < array.length - 1) {

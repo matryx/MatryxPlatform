@@ -3,7 +3,7 @@ const sha3 = require('solidity-sha3').default
 
 const files = fs.readdirSync('../contracts')
 const contracts = files
-  .filter(f => f.includes('.sol') && f.includes('Matryx'))
+  .filter(f => f.includes('.sol') && (f.includes('Matryx') || f.includes('Lib')))
   .map(f => fs.readFileSync(`../contracts/${f}`, 'utf-8'))
 const source = contracts.join('\n')
 
