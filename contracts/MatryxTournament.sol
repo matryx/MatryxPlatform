@@ -206,7 +206,7 @@ library LibTournament {
         IMatryxTournament(self).transferTo(info.token, rAddress, rDetails.bounty);
 
         LibRound.RoundData storage round = data.rounds[rAddress];
-        round.tournament = self;
+        round.info.tournament = self;
         round.details = rDetails;
 
         emit RoundCreated(rAddress);
@@ -221,7 +221,7 @@ library LibTournament {
     /// @param sDetails  Submission details (title, descHash, fileHash)
     /// @return          Address of the created Submission
     function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails sDetails) public returns (address) {
-        require(sDetails.contributors.length == sDetails.contributorDistribution.length, "Must include distribution for each contributor");
+        require(sDetails.distribution.length == sDetails.contributors.length + 1, "Must include distribution for each contributor and the owner");
 
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
@@ -234,7 +234,7 @@ library LibTournament {
 
         address roundAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
         LibRound.RoundData storage round = data.rounds[roundAddress];
-        round.submissions.push(sAddress);
+        round.info.submissions.push(sAddress);
 
         LibSubmission.SubmissionData storage submission = data.submissions[sAddress];
         submission.info.owner = sender;
@@ -268,7 +268,7 @@ library LibTournament {
         LibRound.RoundData storage round = data.rounds[rAddress];
         LibRound.RoundDetails memory newRound;
 
-        round.winners = wData.winners;
+        round.info.winners = wData.winners;
 
         uint256 bounty = getBalance(self, sender, info, data);
 
@@ -286,7 +286,7 @@ library LibTournament {
 
         else if (wData.action == uint256(LibGlobals.SelectWinnerAction.StartNextRound)) {
             // create new round and start immediately
-            round.closed = true;
+            round.info.closed = true;
 
             newRound.start = now;
             newRound.end = rDetails.end;
@@ -298,7 +298,7 @@ library LibTournament {
 
         else if (wData.action == uint256(LibGlobals.SelectWinnerAction.CloseTournament)) {
             // transfer rest of tournament balance to round and close tournament
-            round.closed = true;
+            round.info.closed = true;
 
             IMatryxTournament(self).transferTo(info.token, rAddress, bounty);
         }
@@ -315,7 +315,6 @@ library LibTournament {
         uint256 bounty = IMatryxRound(rAddress).getBalance();
         for (i = 0; i < wData.winners.length; i++) {
             uint256 reward = wData.distribution[i].mul(bounty).div(distTotal);
-
             IMatryxRound(rAddress).transferTo(info.token, wData.winners[i], reward);
             data.submissions[wData.winners[i]].info.reward = reward;
 

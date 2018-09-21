@@ -32,6 +32,12 @@ interface IMatryxRound {
 library LibRound {
     using SafeMath for uint256;
 
+    struct RoundInfo {
+        address tournament;
+        address[] submissions;
+        address[] winners;
+        bool closed;
+    }
     // All information needed for creation of Round
     struct RoundDetails {
         uint256 start;
@@ -42,11 +48,8 @@ library LibRound {
 
     // All state data and details of Round
     struct RoundData {
-        address tournament;
         RoundDetails details;
-        address[] submissions;
-        address[] winners;
-        bool closed;
+        RoundInfo info;
     }
 
     // All information needed to choose winning submissions
@@ -58,7 +61,7 @@ library LibRound {
 
     /// @dev Returns the Tournament address of this Round
     function getTournament(address self, address, MatryxPlatform.Data storage data) public view returns (address) {
-        return data.rounds[self].tournament;
+        return data.rounds[self].info.tournament;
     }
 
     /// @dev Returns the start time of this Round (unix epoch time in seconds)
@@ -88,7 +91,7 @@ library LibRound {
 
     /// @dev Returns all Submissions of this Round
     function getSubmissions(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
-        return data.rounds[self].submissions;
+        return data.rounds[self].info.submissions;
     }
 
     /// @dev Returns the data struct of this Round
@@ -110,18 +113,18 @@ library LibRound {
             return uint256(LibGlobals.RoundState.Open);
         }
         else if (now < round.details.end.add(round.details.review)) {
-            if (round.closed) {
+            if (round.info.closed) {
                 return uint256(LibGlobals.RoundState.Closed);
             }
-            else if (round.submissions.length == 0) {
+            else if (round.info.submissions.length == 0) {
                 return uint256(LibGlobals.RoundState.Abandoned);
             }
-            else if (round.winners.length > 0) {
+            else if (round.info.winners.length > 0) {
                 return uint256(LibGlobals.RoundState.HasWinners);
             }
             return uint256(LibGlobals.RoundState.InReview);
         }
-        else if (round.winners.length > 0) {
+        else if (round.info.winners.length > 0) {
             return uint256(LibGlobals.RoundState.Closed);
         }
         return uint256(LibGlobals.RoundState.Abandoned);
