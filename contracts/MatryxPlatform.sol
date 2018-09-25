@@ -27,6 +27,7 @@ contract MatryxPlatform {
         mapping(address=>LibSubmission.SubmissionData) submissions;
         mapping(address=>LibUser.UserData) users;
         mapping(bytes32=>address[]) categories;
+        mapping(bytes32=>bool) categoryExists;
 
         address[] allTournaments;
         address[] allRounds;
@@ -113,12 +114,12 @@ contract MatryxPlatform {
             ptr2 := add(ptr, 0x04)                                              // copy of ptr for keeping track of injected params
 
             mstore(ptr2, caller)                                                // inject msg.sender
-            mstore(add(ptr2, 0x20), caller)                                     // inject msg.sender again if on platform
+            mstore(add(ptr2, 0x20), address)                                    // inject platform
 
             let cdOffset := 0x04                                                // calldata offset, after signature
 
             if iszero(eq(libName, libPlatform)) {                               // if coming from forwarder:
-                calldatacopy(add(ptr2, 0x20), 0x04, 0x20)                       // overwrite injected msg.sender with address from forwarder
+                calldatacopy(add(ptr2, 0x20), 0x04, 0x20)                       // overwrite injected platform with address from forwarder
                 cdOffset := add(cdOffset, 0x20)                                 // shift calldata offset for injected address
             }
             ptr2 := add(ptr2, 0x40)                                             // shift ptr2
@@ -194,8 +195,11 @@ interface IMatryxPlatform {
     function getTournamentsByUser(address) external view returns (address[]);
     function getSubmissionsByUser(address) external view returns (address[]);
 
+    function createCategory(bytes32) external;
+
     function enterMatryx() external;
     function addTournamentToCategory(address, bytes32) external;
+    function removeTournamentFromCategory(address) external;
     function createTournament(LibTournament.TournamentDetails, LibRound.RoundDetails) external returns (address);
 }
 
@@ -227,15 +231,16 @@ library LibPlatform {
     /// @return            Array of Tournament addresses
     function getTournaments(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
         address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address[] storage tournaments = data.allTournaments;
 
         assembly {
             let offset := 0x100000000000000000000000000000000000000000000000000000000
             let ptr := mload(0x40)
 
             mstore(ptr, mul(0xe79eda2c, offset))                                // getSubArray(bytes32[] storage,uint256,uint256)
-            mstore(add(ptr, 0x04), add(data_slot, 5))                           // data.allTournaments
-            mstore(add(ptr, 0x24), startIndex)                                  // startIndex
-            mstore(add(ptr, 0x44), count)                                       // count
+            mstore(add(ptr, 0x04), tournaments_slot)                            // data.allTournaments
+            mstore(add(ptr, 0x24), startIndex)                                  // arg 0 - startIndex
+            mstore(add(ptr, 0x44), count)                                       // arg 1 - count
 
             let res := delegatecall(gas, LibUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
             if iszero(res) { revert(0, 0) }                                     // safety check
@@ -262,8 +267,8 @@ library LibPlatform {
 
             mstore(ptr, mul(0xe79eda2c, offset))                                // getSubArray(bytes32[] storage,uint256,uint256)
             mstore(add(ptr, 0x04), s_category)                                  // data.categories[category]
-            mstore(add(ptr, 0x24), startIndex)                                  // startIndex
-            mstore(add(ptr, 0x44), count)                                       // count
+            mstore(add(ptr, 0x24), startIndex)                                  // arg 0 - startIndex
+            mstore(add(ptr, 0x44), count)                                       // arg 1 - count
 
             let res := delegatecall(gas, LibUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
             if iszero(res) { revert(0, 0) }                                     // safety check
@@ -278,15 +283,16 @@ library LibPlatform {
     /// @return      Array of all category names
     function getCategories(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (bytes32[]) {
         address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        bytes32[] storage allCategories = data.allCategories;
 
         assembly {
             let offset := 0x100000000000000000000000000000000000000000000000000000000
             let ptr := mload(0x40)
 
             mstore(ptr, mul(0xe79eda2c, offset))                                // getSubArray(bytes32[] storage,uint256,uint256)
-            mstore(add(ptr, 0x04), add(data_slot, 9))                           // data.allCategories
-            mstore(add(ptr, 0x24), startIndex)                                  // startIndex
-            mstore(add(ptr, 0x44), count)                                       // count
+            mstore(add(ptr, 0x04), allCategories_slot)                          // data.allCategories
+            mstore(add(ptr, 0x24), startIndex)                                  // arg 0 - startIndex
+            mstore(add(ptr, 0x44), count)                                       // arg 1 - count
 
             let res := delegatecall(gas, LibUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
             if iszero(res) { revert(0, 0) }                                     // safety check
@@ -312,6 +318,19 @@ library LibPlatform {
         data.users[uAddress].submissions;
     }
 
+    /// @dev Creates a category
+    /// @param sender    msg.sender to Platform
+    /// @param info      Platform storage containing version number and system address
+    /// @param data      Platform storage containing all contract data and users
+    /// @param category  Category to create
+    function createCategory(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category) public {
+        require(sender == info.owner, "Must be Platform owner");
+        require(!data.categoryExists[category], "Category already exists");
+
+        data.allCategories.push(category);
+        data.categoryExists[category] = true;
+    }
+
     /// @dev Enter Matryx
     /// @param sender  msg.sender to Platform
     /// @param info    Platform storage containing version number and system address
@@ -328,17 +347,40 @@ library LibPlatform {
     /// @param data      Platform storage containing all contract data
     /// @param tAddress  Tournament address
     /// @param category  Category name
-    function addTournamentToCategory(address, address, MatryxPlatform.Data storage data, address tAddress, bytes32 category) public {
-        if (data.categories[category].length == 0) {
-            data.allCategories.push(category);
-        }
+    function addTournamentToCategory(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress, bytes32 category) public {
+        require(sender == platform || MatryxSystem(info.system).getContractType(sender) == MatryxSystem.ContractType.Tournament, "Must come from Platform or Tournament");
+        require(data.categoryExists[category], "Category does not exist");
 
         data.categories[category].push(tAddress);
     }
 
-    // function removeTournamentFromCategory(address, address, MatryxPlatform.Data storage data, address tAddress, bytes32 category) public {
-    //     // TODO
-    // }
+    /// @dev Removes a Tournament from its current category
+    /// @param data      Platform storage containing all contract data
+    /// @param tAddress  Tournament address
+    function removeTournamentFromCategory(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress) public {
+        require(sender == platform || MatryxSystem(info.system).getContractType(sender) == MatryxSystem.ContractType.Tournament, "Must come from Platform or Tournament");
+
+        address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        bytes32 category = data.tournaments[tAddress].details.category;
+        address[] storage categoryList = data.categories[category];
+        uint256 index;
+
+        for (index = 0; index < categoryList.length; index++) {
+            if (categoryList[index] == tAddress) break;
+        }
+
+        assembly {
+            let offset := 0x100000000000000000000000000000000000000000000000000000000
+            let ptr := mload(0x40)
+
+            mstore(ptr, mul(0x4a71ede8, offset))                        // removeArrayElement(bytes32[] storage,uint256)
+            mstore(add(ptr, 0x04), categoryList_slot)                   // arg 0 - data.categories[tournament.category]
+            mstore(add(ptr, 0x24), index)                               // arg 1 - index
+
+            let res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
+            if iszero(res) { revert(0, 0) }                             // safety check
+        }
+    }
 
     /// @dev Creates a Tournament
     /// @param sender    msg.sender to Platform
@@ -347,7 +389,7 @@ library LibPlatform {
     /// @param tDetails  Tournament details (title, category, descHash, fileHash, bounty, entryFee)
     /// @param rDetails  Round details (start, end, review, bounty)
     /// @return          Address of the created Tournament
-    function createTournament(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails tDetails, LibRound.RoundDetails rDetails) public returns (address) {
+    function createTournament(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails tDetails, LibRound.RoundDetails rDetails) public returns (address) {
         require(data.users[sender].exists, "Must have entered Matryx");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
         require(IMatryxToken(info.token).allowance(sender, this) >= tDetails.bounty, "Insufficient MTX");
@@ -356,7 +398,7 @@ library LibPlatform {
 
         MatryxSystem(info.system).setContractType(tAddress, MatryxSystem.ContractType.Tournament);
         data.allTournaments.push(tAddress);
-        addTournamentToCategory(sender, sender, data, tAddress, tDetails.category);
+        addTournamentToCategory(address(this), platform, info, data, tAddress, tDetails.category);
 
         LibUser.UserData storage user = data.users[sender];
         user.tournaments.push(tAddress);

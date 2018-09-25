@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
+import "./SafeMath.sol";
 import "./LibGlobals.sol";
 
 import "./MatryxSystem.sol";
@@ -27,16 +28,19 @@ interface IMatryxSubmission {
     function getReferences() external view returns (address[]);
     function getTimeSubmitted() external view returns (uint256);
     function getTimeUpdated() external view returns (uint256);
-    function getPermittedDownloaders() external view returns (address[]);
+    function getViewers() external view returns (address[]);
     function getBalance() external view returns (uint256);
     function getData() external view returns (LibSubmission.SubmissionReturnData);
 
     function unlockFile() external;
     function updateDetails(LibSubmission.DetailsUpdates) external;
     function setContributorsAndReferences(LibGlobals.IndexedAddresses, uint256[], LibGlobals.IndexedAddresses) external;
+
+    function withdrawReward() external;
 }
 
 library LibSubmission {
+    using SafeMath for uint256;
 
     struct SubmissionInfo {
         address owner;
@@ -65,15 +69,13 @@ library LibSubmission {
         bytes32[2] fileHash;
     }
 
-    enum RelationType { Unknown, Contributor, Reference }
-
     // All state data and details of Submission
     struct SubmissionData {
         SubmissionInfo info;
         SubmissionDetails details;
         address[] allPermittedToView;
         mapping(address=>bool) permittedToView;
-        mapping(address=>RelationType) relationType;
+        mapping(address=>uint256) amountWithdrawn;
     }
 
     // everything but the mappings
@@ -113,14 +115,18 @@ library LibSubmission {
 
     /// @dev Returns the description hash of this Submission
     function getDescriptionHash(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
-        onlyCanView(self, sender, data);
-        return data.submissions[self].details.descHash;
+        bool canView = data.submissions[self].permittedToView[sender];
+        bytes32[2] memory empty;
+
+        return canView ? data.submissions[self].details.descHash : empty;
     }
 
     /// @dev Returns the file hash of this Submission
     function getFileHash(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
-        onlyCanView(self, sender, data);
-        return data.submissions[self].details.fileHash;
+        bool canView = data.submissions[self].permittedToView[sender];
+        bytes32[2] memory empty;
+
+        return canView ? data.submissions[self].details.fileHash : empty;
     }
 
     /// @dev Returns the reward distribution of this Submission
@@ -148,7 +154,7 @@ library LibSubmission {
         return data.submissions[self].info.timeUpdated;
     }
 
-    function getPermittedDownloaders(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
+    function getViewers(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
         return data.submissions[self].allPermittedToView;
     }
 
@@ -285,24 +291,49 @@ library LibSubmission {
         }
     }
 
-    // /// @dev Allows the owner and contributors to this Submission to withdraw from this Submission
-    // /// @param self          Address of this Submission
-    // /// @param sender        msg.sender to this Submission
-    // /// @param data          Data struct on Platform
-    // function withdrawReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-    //     LibSubmission.SubmissionData storage sub = data.submissions[self].info;
-    //     //determine who the sender is (contributor or reference owner)
-    //     if (sub.details.isContributor[sender]) {
+    /// @dev Allows the owner and contributors to this Submission to withdraw from this Submission
+    /// @param self    Address of this Submission
+    /// @param sender  msg.sender to this Submission
+    /// @param info    Info struct on Platform
+    /// @param data    Data struct on Platform
+    function withdrawReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+        LibSubmission.SubmissionData storage submission = data.submissions[self];
+        uint256[] storage distribution = submission.details.distribution;
 
-    //     }
-    //     else if (sub.details.isReference[sender]) {
+        uint256 contributorIndex = 0;
+        uint256 share;
 
-    //     }
+        uint256 distTotal = distribution[0];
+        for (uint256 i = 1; i < distribution.length; i++) {
+            distTotal = distTotal.add(distribution[i]);
 
+            if (submission.details.contributors[i - 1] == sender) {
+                contributorIndex = i;
+            }
+        }
 
-    //     //get their distribution
-    //     //calculate the amount they should get on withrdawal
-    //     // transfer the mtx to the sender of the call
+        // if owner, transfer 10% to references
+        if (contributorIndex == 0) {
+            require(sender == submission.info.owner, "Must be owner or contributor");
 
-    // }
+            uint256 totalRefShare = submission.info.reward.mul(10**18).div(10**19); // 10%
+
+            for (i = 0; i < submission.details.references.length; i++) {
+                address ref = submission.details.references[i];
+                share = totalRefShare.mul(10**18).div(submission.details.references.length).div(10**18);
+                share = share.sub(submission.amountWithdrawn[ref]);
+
+                IMatryxSubmission(self).transferTo(info.token, ref, share);
+                submission.amountWithdrawn[ref] = submission.amountWithdrawn[ref].add(share);
+                data.submissions[ref].info.reward = data.submissions[ref].info.reward.add(share);
+            }
+        }
+
+        share = submission.info.reward.mul(10**18).mul(distribution[contributorIndex]).div(distTotal).div(10**18);
+        share = share.sub(submission.amountWithdrawn[sender]);
+        require(share > 0, "Already withdrawn full amount");
+
+        IMatryxSubmission(self).transferTo(info.token, sender, share);
+        submission.amountWithdrawn[sender] = submission.amountWithdrawn[sender].add(share);
+    }
 }

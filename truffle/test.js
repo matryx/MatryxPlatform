@@ -81,6 +81,7 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   return tournament
 }
 
+let refs = []
 const createSubmission = async (tournament, accountNumber) => {
   await setup(artifacts, web3, accountNumber)
 
@@ -97,8 +98,8 @@ const createSubmission = async (tournament, accountNumber) => {
       let { hash } = await token.approve(tournament.address, entryFee)
       await getMinedTx('Token.approve', hash)
     }
-    let { hash } = await tournament.enterTournament({ gasLimit: 5e6 })
-    await getMinedTx('Platform.enterTournament', hash)
+    let { hash } = await tournament.enter({ gasLimit: 5e6 })
+    await getMinedTx('Tournament.enter', hash)
   }
 
   const title = stringToBytes32('A submission ' + genId(6), 3)
@@ -109,9 +110,11 @@ const createSubmission = async (tournament, accountNumber) => {
     title,
     descHash,
     fileHash,
-    distribution: new Array(11).fill(0).map((_, i) => i),
-    contributors: new Array(10).fill(0).map(r => genAddress()),
-    references: new Array(10).fill(0).map(r => genAddress())
+    distribution: [1],
+    contributors: [],
+    // distribution: new Array(11).fill(0).map((_, i) => 1),
+    // contributors: new Array(10).fill(0).map(r => genAddress()),
+    references: refs//new Array(10).fill(0).map(r => genAddress())
   }
 
   // let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
@@ -120,7 +123,8 @@ const createSubmission = async (tournament, accountNumber) => {
 
   const [_, roundAddress] = await tournament.getCurrentRound()
   const round = Contract(roundAddress, IMatryxRound)
-  const submissionAddress = (await round.getSubmissions()).pop()
+  const submissionAddress = (await round.getSubmissions(0,0)).pop()
+  refs.push(submissionAddress)
   const submission = Contract(submissionAddress, IMatryxSubmission, accountNumber)
 
   console.log(chalk`Submission created: {green ${submission.address}}\n`)
@@ -164,7 +168,7 @@ const logSubmissions = async tournament => {
   const [_, roundAddress] = await tournament.getCurrentRound();
   console.log(chalk`Current round: {green ${roundAddress}}`)
   const round = Contract(roundAddress, IMatryxRound)
-  const submissions = await round.getSubmissions()
+  const submissions = await round.getSubmissions(0, 0)
   submissions.forEach((s, i) => {
     console.log(chalk`Submission ${i + 1}: {green ${s}}`)
   })
@@ -178,9 +182,15 @@ const logSubmissionMtx = async submissions => {
   }))
 }
 
+const logRoundState = async tournament => {
+  const [_, roundAddress] = await tournament.getCurrentRound();
+  const round = Contract(roundAddress, IMatryxRound)
+  console.log(chalk`Current Round: {green ${roundAddress}} ${await round.getState()}`)
+}
+
 const waitUntilClose = async (tournament) => {
   const [_, roundAddress] = await tournament.getCurrentRound();
-  const round = Contract(roundAddress, IMatryxRound,)
+  const round = Contract(roundAddress, IMatryxRound)
   const roundEndTime = +await round.getEnd()
   const review = +await round.getReview()
   const timeTilClose = Math.max(0, roundEndTime + review - Date.now() / 1000)
@@ -214,23 +224,19 @@ module.exports = async exit => {
     let roundData = {
       start: Math.floor(Date.now() / 1000),
       end: Math.floor(Date.now() / 1000) + 15,
-      review: 20,
+      review: 1000,
       bounty: web3.toWei(3)
     }
     const tournamentCreator = 0
     const tournament = await createTournament(web3.toWei(10), roundData, tournamentCreator)
     const submission = await createSubmission(tournament, 1)
-    let c = await submission.getContributors()
-    console.log(c)
-    await updateSubmission(submission)
-    c = await submission.getContributors()
-    console.log(c)
-    await createSubmission(tournament, 1)
-    await createSubmission(tournament, 1)
-    await createSubmission(tournament, 1)
-    await createSubmission(tournament, 1)
-    // await createSubmission(tournament, 2)
-    // await createSubmission(tournament, 3)
+    // let c = await submission.getContributors()
+    // console.log(c)
+    // await updateSubmission(submission)
+    // c = await submission.getContributors()
+    // console.log(c)
+    await createSubmission(tournament, 2)
+    await createSubmission(tournament, 3)
 
     // roundData = {
     //   start: Math.floor(Date.now() / 1000),
@@ -245,8 +251,16 @@ module.exports = async exit => {
     // await createSubmission(tournament, 1)
     // await createSubmission(tournament, 2)
 
-    // submissions = await logSubmissions(tournament)
-    // await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
+    submissions = await logSubmissions(tournament)
+
+    // await logRoundState(tournament)
+    await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
+    // await logRoundState(tournament)
+    // await tournament.closeTournament()
+    // console.log(chalk`{grey calling closeTournament}`)
+    // await logRoundState(tournament)
+    // await logSubmissionMtx(submissions)
+
     // await waitUntilClose(tournament)
     // timeouts.forEach(t => clearTimeout(t))
     // await createSubmission(tournament, 1)
