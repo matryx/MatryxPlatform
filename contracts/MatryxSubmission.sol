@@ -36,6 +36,7 @@ interface IMatryxSubmission {
     function updateDetails(LibSubmission.DetailsUpdates) external;
     function setContributorsAndReferences(LibGlobals.IndexedAddresses, uint256[], LibGlobals.IndexedAddresses) external;
 
+    function getAvailableReward() external view returns (uint256);
     function withdrawReward() external;
 }
 
@@ -291,16 +292,18 @@ library LibSubmission {
         }
     }
 
-    /// @dev Allows the owner and contributors to this Submission to withdraw from this Submission
+    /// @dev Get the reward available to the caller on this Submissions
     /// @param self    Address of this Submission
     /// @param sender  msg.sender to this Submission
     /// @param info    Info struct on Platform
     /// @param data    Data struct on Platform
-    function withdrawReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+    /// @return        Amount of MTX available to msg.sender
+    function getAvailableReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
         uint256[] storage distribution = submission.details.distribution;
 
         uint256 contributorIndex = 0;
+        uint256 totalRefShare;
         uint256 share;
 
         uint256 distTotal = distribution[0];
@@ -312,16 +315,46 @@ library LibSubmission {
             }
         }
 
-        // if owner, transfer 10% to references
-        if (contributorIndex == 0) {
-            require(sender == submission.info.owner, "Must be owner or contributor");
-
-            uint256 totalRefShare = submission.info.reward.mul(10**18).div(10**19); // 10%
+        uint256 reward = submission.info.reward;
+        if (submission.details.references.length > 0) {
+            totalRefShare = reward.mul(10**18).div(10**19); // 10%
+            reward = reward - totalRefShare;
 
             for (i = 0; i < submission.details.references.length; i++) {
                 address ref = submission.details.references[i];
+                if (sender != ref) continue;
+
                 share = totalRefShare.mul(10**18).div(submission.details.references.length).div(10**18);
                 share = share.sub(submission.amountWithdrawn[ref]);
+
+                return share;
+            }
+        }
+
+        if (contributorIndex == 0) {
+            if (sender != submission.info.owner) return 0;
+        }
+
+        share = reward.mul(10**18).mul(distribution[contributorIndex]).div(distTotal).div(10**18);
+        share = share.sub(submission.amountWithdrawn[sender]);
+
+        return share;
+    }
+
+    /// @dev Allows the owner and contributors to this Submission to withdraw from this Submission
+    /// @param self    Address of this Submission
+    /// @param sender  msg.sender to this Submission
+    /// @param info    Info struct on Platform
+    /// @param data    Data struct on Platform
+    function withdrawReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+        LibSubmission.SubmissionData storage submission = data.submissions[self];
+        uint256 share;
+
+        // if owner, transfer 10% to references
+        if (sender == submission.info.owner) {
+            for (uint256 i = 0; i < submission.details.references.length; i++) {
+                address ref = submission.details.references[i];
+                share = getAvailableReward(self, ref, info, data);
 
                 IMatryxSubmission(self).transferTo(info.token, ref, share);
                 submission.amountWithdrawn[ref] = submission.amountWithdrawn[ref].add(share);
@@ -329,8 +362,7 @@ library LibSubmission {
             }
         }
 
-        share = submission.info.reward.mul(10**18).mul(distribution[contributorIndex]).div(distTotal).div(10**18);
-        share = share.sub(submission.amountWithdrawn[sender]);
+        share = getAvailableReward(self, sender, info, data);
         require(share > 0, "Already withdrawn full amount");
 
         IMatryxSubmission(self).transferTo(info.token, sender, share);

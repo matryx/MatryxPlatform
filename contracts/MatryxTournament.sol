@@ -407,6 +407,7 @@ library LibTournament {
             uint256 reward = wData.distribution[i].mul(bounty).div(distTotal);
             IMatryxRound(rAddress).transferTo(info.token, wData.submissions[i], reward);
 
+            // TODO: revisit - do contributors get totalWinnings updated?
             address owner = data.submissions[wData.submissions[i]].info.owner;
             data.users[owner].totalWinnings = data.users[owner].totalWinnings.add(reward);
 
@@ -491,7 +492,7 @@ library LibTournament {
         if (rDetails.start > 0) {
             details.start = rDetails.start;
         }
-        if (rDetails.end.sub(details.start) >= 1 seconds) { // TODO: change to hours
+        if (rDetails.end > 0 && rDetails.end.sub(details.start) >= 1 seconds) { // TODO: change to hours
             details.end = rDetails.end;
         }
         if (rDetails.review > 0) { // TODO: review length restriction
