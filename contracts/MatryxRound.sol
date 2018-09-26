@@ -23,7 +23,7 @@ interface IMatryxRound {
     function getReview() external view returns (uint256);
     function getBounty() external view returns (uint256);
     function getBalance() external view returns (uint256);
-    function getSubmissions(uint256 startIndex, uint256 count) external view returns (address[]); // TODO: paginate?
+    function getSubmissions(uint256, uint256) external view returns (address[]);
     function getData() external view returns (LibRound.RoundData);
 
     function getSubmissionCount() external view returns (uint256);
@@ -52,8 +52,8 @@ library LibRound {
 
     // All state data and details of Round
     struct RoundData {
-        RoundDetails details;
         RoundInfo info;
+        RoundDetails details;
     }
 
     // All information needed to choose winning submissions
@@ -95,8 +95,6 @@ library LibRound {
 
     /// @dev Returns all Submissions of this Round
     function getSubmissions(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
-        // return data.rounds[self].info.submissions;
-
         address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
         address[] storage submissions = data.rounds[self].info.submissions;
 

@@ -241,6 +241,7 @@ library LibTournament {
 
         require(data.users[sender].exists, "Must have entered Matryx");
         require(sender != tournament.info.owner, "Cannot enter own Tournament");
+        require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Cannot enter closed or abandoned Tournament");
         IMatryxTournament(self).transferFrom(info.token, sender, entryFee);
 
         tournament.entryFeePaid[sender].exists = true;
@@ -319,20 +320,23 @@ library LibTournament {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
 
+        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
+        require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Open));
+
+        LibRound.RoundData storage round = data.rounds[rAddress];
+
         address sAddress = new MatryxSubmission(info.version, info.system);
 
         MatryxSystem(info.system).setContractType(sAddress, MatryxSystem.ContractType.Submission);
         data.allSubmissions.push(sAddress);
         data.users[sender].submissions.push(sAddress);
 
-        address roundAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
-        LibRound.RoundData storage round = data.rounds[roundAddress];
         round.info.submissions.push(sAddress);
 
         LibSubmission.SubmissionData storage submission = data.submissions[sAddress];
         submission.info.owner = sender;
         submission.info.tournament = self;
-        submission.info.round = roundAddress;
+        submission.info.round = rAddress;
         submission.info.timeSubmitted = now;
         submission.info.timeUpdated = now;
         submission.details = sDetails;
@@ -392,6 +396,7 @@ library LibTournament {
         require(amount <= balance, "Tournament does not have the funds");
 
         IMatryxTournament(self).transferTo(info.token, rAddress, amount);
+        data.rounds[rAddress].details.bounty = data.rounds[rAddress].details.bounty.add(amount);
     }
 
     function transferToWinners(MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address rAddress) internal {
@@ -574,6 +579,7 @@ library LibTournament {
             uint256 rBalance = IMatryxToken(info.token).balanceOf(rAddress);
             IMatryxRound(rAddress).transferTo(info.token, self, rBalance);
             tournament.hasBeenWithdrawnFrom = true;
+            data.rounds[rAddress].info.closed = true;
         }
 
         uint256 tBalance = getBalance(self, sender, info, data);

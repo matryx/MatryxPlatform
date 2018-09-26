@@ -4,6 +4,10 @@ const network = require('./network')
 var _ = require("lodash");
 var Promise = require("bluebird");
 const sleep = ms => new Promise(done => setTimeout(done, ms))
+let log = () => { }
+
+const genId = length => new Array(length).fill(0).map(() => Math.floor(36 * Math.random()).toString(36)).join('')
+const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * Math.random()).toString(16)).join('')
 
 function Contract(address, { abi }, accountNum = 0) {
   let data = {
@@ -41,6 +45,8 @@ function Contract(address, { abi }, accountNum = 0) {
 
 module.exports = {
   Contract,
+  genId,
+  genAddress,
 
   assertEvent: function(contract, filter) {
     return new Promise((resolve, reject) => {
@@ -56,7 +62,7 @@ module.exports = {
         });
         event.stopWatching();
     });
-},
+  },
 
   getMinedTx(msg, hash) {
     if (arguments.length == 1) {
@@ -64,7 +70,7 @@ module.exports = {
       msg = 'transaction'
     }
 
-    console.log(chalk`{grey Waiting for {yellow ${msg}} ({cyan ${hash}})...}`)
+    log(chalk`{grey Waiting for {yellow ${msg}} ({cyan ${hash}})...}`)
     return new Promise((resolve, reject) => {
       (async function checkTx() {
         let res = await network.provider.getTransactionReceipt(hash)
@@ -72,7 +78,7 @@ module.exports = {
           if (!res.status) return reject({ message: 'revert' })
           let gas = +res.gasUsed
           let color = gas < 1e6 ? 'green' : gas < 2e6 ? 'yellow' : 'red'
-          console.log(chalk`{grey   used {${color} ${+res.gasUsed}} gas}`)
+          log(chalk`{grey   used {${color} ${+res.gasUsed}} gas}`)
           resolve(res)
         }
         else setTimeout(checkTx, 1000)
@@ -115,7 +121,7 @@ module.exports = {
 
   stringToBytes32() { return this.stringToBytes.apply(this, arguments) },
 
-  async setup(artifacts, web3, accountNum) {
+  async setup(artifacts, web3, accountNum, silent) {
     const MatryxPlatform = artifacts.require('MatryxPlatform')
     const IMatryxPlatform = artifacts.require('IMatryxPlatform')
     const MatryxToken = artifacts.require('MatryxToken')
@@ -129,25 +135,21 @@ module.exports = {
     const account = network.accounts[accountNum]
 
     const platform = Contract(MatryxPlatform.address, IMatryxPlatform, accountNum)
-    const token = Contract(network.tokenAddress, MatryxToken, 0)
+    const token = Contract(network.tokenAddress, MatryxToken)
 
-    console.log(chalk`\nSetup {yellow ${account}}`)
-    const hasEnteredMatryx = await platform.hasEnteredMatryx(account)
-    if (!hasEnteredMatryx) {
-      let { hash } = await platform.enterMatryx({ gasLimit: 4.5e6 })
-      await this.getMinedTx('Platform.enterMatryx', hash)
-    }
+    if (!silent) log = console.log
 
+    log(chalk`\nSetup {yellow ${account}}`)
     const tokenReleaseAgent = await token.releaseAgent()
     if (tokenReleaseAgent === '0x0000000000000000000000000000000000000000') {
       let { hash } = await token.setReleaseAgent(account)
       await this.getMinedTx('Token.setReleaseAgent', hash)
       await token.releaseTokenTransfer({ gasLimit: 1e6 })
-      console.log('Token release agent set to: ' + account)
+      log('Token release agent set to: ' + account)
     }
 
     const balance = await token.balanceOf(account) / 1e18 | 0
-    console.log('Balance: ' + balance + ' MTX')
+    log('Balance: ' + balance + ' MTX')
     let tokens = web3.toWei(1e5)
     if (balance == 0) {
       let { hash } = await token.mint(account, tokens)
@@ -155,14 +157,20 @@ module.exports = {
     }
 
     const allowance = await token.allowance(account, platform.address) / 1e18 | 0
-    console.log('Allowance: ' + allowance + ' MTX')
+    log('Allowance: ' + allowance + ' MTX')
     if (allowance == 0) {
       token.accountNumber = accountNum
       let { hash } = await token.approve(MatryxPlatform.address, tokens, { gasPrice: 25 })
       await this.getMinedTx('Token.approve', hash)
     }
 
-    console.log(`Account ${accountNum} setup complete!\n`)
+    const hasEnteredMatryx = await platform.hasEnteredMatryx(account)
+    if (!hasEnteredMatryx) {
+      let { hash } = await platform.enterMatryx({ gasLimit: 4.5e6 })
+      await this.getMinedTx('Platform.enterMatryx', hash)
+    }
+
+    log(`Account ${accountNum} setup complete!\n`)
 
     return {
       MatryxPlatform,

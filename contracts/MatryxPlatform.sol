@@ -78,7 +78,7 @@ contract MatryxPlatform {
             // get library name for contract type                               // key - type (in 0x0) from getContractType
             mstore(0x20, contractTypeToLibraryName_slot)                        // map - contract type to library name
             let libName := sload(keccak256(0, 0x40))                            // get library name for contract type
-            if iszero(libName) { libName := libPlatform }                       // default to LibPlatform
+            if iszero(libName) { libName := libPlatform }                       // default to "LibPlatform"
 
             // call system and get library address
             mstore(ptr, mul(0xc53cfd9a, offset))                                // getContract(uint256,bytes32)
@@ -118,7 +118,7 @@ contract MatryxPlatform {
 
             let cdOffset := 0x04                                                // calldata offset, after signature
 
-            if iszero(eq(libName, libPlatform)) {                               // if coming from forwarder:
+            if iszero(eq(libName, libPlatform)) {                               // if coming from MatryxTrinity
                 calldatacopy(add(ptr2, 0x20), 0x04, 0x20)                       // overwrite injected platform with address from forwarder
                 cdOffset := add(cdOffset, 0x20)                                 // shift calldata offset for injected address
             }
@@ -307,7 +307,7 @@ library LibPlatform {
     /// @param uAddress  User address
     /// @return          Array of all Tournaments for given user
     function getTournamentsByUser(address, address, MatryxPlatform.Data storage data, address uAddress) public view returns (address[]) {
-        data.users[uAddress].tournaments;
+        return data.users[uAddress].tournaments;
     }
 
     /// @dev Return all Submissions for a user address
@@ -315,7 +315,7 @@ library LibPlatform {
     /// @param uAddress  User address
     /// @return          Array of all Submissions for given user
     function getSubmissionsByUser(address, address, MatryxPlatform.Data storage data, address uAddress) public view returns (address[]) {
-        data.users[uAddress].submissions;
+        return data.users[uAddress].submissions;
     }
 
     /// @dev Creates a category
@@ -391,6 +391,7 @@ library LibPlatform {
     /// @return          Address of the created Tournament
     function createTournament(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails tDetails, LibRound.RoundDetails rDetails) public returns (address) {
         require(data.users[sender].exists, "Must have entered Matryx");
+        require(tDetails.bounty > 0, "Tournament bounty must be greater than 0");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
         require(IMatryxToken(info.token).allowance(sender, this) >= tDetails.bounty, "Insufficient MTX");
 

@@ -74,6 +74,7 @@ library LibSubmission {
     struct SubmissionData {
         SubmissionInfo info;
         SubmissionDetails details;
+
         address[] allPermittedToView;
         mapping(address=>bool) permittedToView;
         mapping(address=>uint256) amountWithdrawn;
@@ -187,7 +188,7 @@ library LibSubmission {
 
     /// @dev Updates the details of this Submission
     /// @param self    Address of this Submission
-    /// @param sender  Address of this Submission
+    /// @param sender  msg.sender to this Submission
     /// @param data    Data struct on Platform
     function unlockFile(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         require(!data.submissions[self].permittedToView[sender], "Already permitted to view");
@@ -215,6 +216,7 @@ library LibSubmission {
     /// @dev Adds and removes contributors and references on this Submission
     /// @param self          Address of this Submission
     /// @param sender        msg.sender to this Submission
+    /// @param info          Info struct on Platform
     /// @param data          Data struct on Platform
     /// @param contribs      Contributor addresses and indices for modifying Submission's contributors
     /// @param distribution  Distribution of credit to Submission's contributors

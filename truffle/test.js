@@ -1,13 +1,10 @@
 const chalk = require('chalk')
 
-const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('./utils')
+const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('./utils')
 
 let MatryxTournament, MatryxRound, MatryxSubmission, platform, token, wallet
 let IMatryxTournament, IMatryxRound, IMatryxSubmission
 let timeouts = []
-
-const genId = length => new Array(length).fill(0).map(() => Math.floor(36 * Math.random()).toString(36)).join('')
-const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * Math.random()).toString(16)).join('')
 
 const init = async () => {
   const data = await setup(artifacts, web3, 0)
@@ -110,8 +107,8 @@ const createSubmission = async (tournament, accountNumber) => {
     title,
     descHash,
     fileHash,
-    distribution: [1],
-    contributors: [],
+    distribution: [3, 1],
+    contributors: ['0xdaa0e2ef627bfb864ed19efd546542f47e5ad6a7'],
     // distribution: new Array(11).fill(0).map((_, i) => 1),
     // contributors: new Array(10).fill(0).map(r => genAddress()),
     references: refs//new Array(10).fill(0).map(r => genAddress())
@@ -223,20 +220,20 @@ module.exports = async exit => {
     await init()
     let roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 15,
+      end: Math.floor(Date.now() / 1000) + 1500,
       review: 1000,
       bounty: web3.toWei(3)
     }
     const tournamentCreator = 0
     const tournament = await createTournament(web3.toWei(10), roundData, tournamentCreator)
-    const submission = await createSubmission(tournament, 1)
+    // const submission = await createSubmission(tournament, 1)
     // let c = await submission.getContributors()
     // console.log(c)
     // await updateSubmission(submission)
     // c = await submission.getContributors()
     // console.log(c)
-    await createSubmission(tournament, 2)
-    await createSubmission(tournament, 3)
+    // await createSubmission(tournament, 2)
+    // await createSubmission(tournament, 3)
 
     // roundData = {
     //   start: Math.floor(Date.now() / 1000),
@@ -251,10 +248,10 @@ module.exports = async exit => {
     // await createSubmission(tournament, 1)
     // await createSubmission(tournament, 2)
 
-    submissions = await logSubmissions(tournament)
+    // submissions = await logSubmissions(tournament)
 
     // await logRoundState(tournament)
-    await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
+    // await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
     // await logRoundState(tournament)
     // await tournament.closeTournament()
     // console.log(chalk`{grey calling closeTournament}`)
