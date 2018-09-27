@@ -24,7 +24,7 @@ module.exports = function (artifacts, web3) {
       await eval(command)
     }
 
-    console.log("token:", network.tokenAddress)
+    // console.log("token:", network.tokenAddress)
     const data = await setup(artifacts, web3, 0, true)
     platform = data.platform
     token = data.token
@@ -140,6 +140,33 @@ module.exports = function (artifacts, web3) {
     return submission
   }
 
+  async function updateSubmission(submission) {
+    const modData = {
+      title: stringToBytes32('AAAAAA', 3),
+      descHash: stringToBytes32('BBBBBB', 2),
+      fileHash: stringToBytes32('CCCCCC', 2)
+    }
+    let tx
+
+    tx = await submission.updateDetails(modData)
+    await getMinedTx('Submission.updateDetails', tx.hash)
+
+    const contribs = {
+      indices:[],
+      addresses: new Array(3).fill(0).map(() => genAddress())
+    }
+
+    const distribution = new Array(3).fill(1)
+
+    const references = {
+      indices: [],
+      addresses: new Array(3).fill(0).map(() => genAddress())
+    }
+
+    tx = await submission.setContributorsAndReferences(contribs, distribution, references)
+    await getMinedTx('Submission.setContributorsAndReferences', tx.hash)
+  }
+
   async function selectWinnersWhenInReview(tournament, winners, rewardDistribution, roundData, selectWinnerAction) {
     const [_, roundAddress] = await tournament.getCurrentRound()
     const round = Contract(roundAddress, IMatryxRound, tournament.accountNumber)
@@ -193,6 +220,7 @@ module.exports = function (artifacts, web3) {
     waitUntilOpen,
     waitUntilInReview,
     createSubmission,
+    updateSubmission,
     selectWinnersWhenInReview,
     enterTournament
   }

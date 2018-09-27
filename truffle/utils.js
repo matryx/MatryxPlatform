@@ -9,7 +9,7 @@ let log = () => { }
 const genId = length => new Array(length).fill(0).map(() => Math.floor(36 * Math.random()).toString(36)).join('')
 const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * Math.random()).toString(16)).join('')
 
-function Contract(address, { abi }, accountNum = 0) {
+function Contract(address, artifact, accountNum = 0) {
   let data = {
     accountNumber: accountNum,
     contract: {},
@@ -21,20 +21,33 @@ function Contract(address, { abi }, accountNum = 0) {
       if (prop === 'accountNumber') {
         obj.accountNumber = val
         obj.wallet = new ethers.Wallet(network.privateKeys[obj.accountNumber], network.provider)
-        obj.contract = new ethers.Contract(address, abi, obj.wallet)
+        obj.contract = new ethers.Contract(address, artifact.abi, obj.wallet)
         obj.c = obj.contract
       }
       else if (prop === 'wallet') {
         obj.accountNumber = -1
         obj.wallet = val
-        obj.contract = new ethers.Contract(address, abi, obj.wallet)
+        obj.contract = new ethers.Contract(address, artifact.abi, obj.wallet)
         obj.c = obj.contract
       }
     },
     get(obj, prop) {
       if (obj.hasOwnProperty(prop))
         return obj[prop]
-      else return data.contract[prop]
+      else {
+        if (typeof data.contract[prop] === 'function') {
+          return function () {
+            return data.contract[prop].apply(null, arguments).catch(err => {
+              if (err.message.includes('revert')) {
+                console.log(chalk`      * {red ${artifact.contractName}.{yellow ${prop}} reverted}`)
+              }
+              throw err
+            })
+          }
+        } else {
+          return data.contract[prop]
+        }
+      }
     }
   })
 

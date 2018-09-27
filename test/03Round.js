@@ -646,6 +646,8 @@ contract('Ghost Round Testing', function(accounts) {
   })
 })
 
+//TODO - add timing restrictions
+/*
 contract('Round Timing Restrictions Testing', function(accounts) {
   let t //tournament
   let r //round
@@ -732,3 +734,4 @@ contract('Round Timing Restrictions Testing', function(accounts) {
     }
   })
 })
+*/

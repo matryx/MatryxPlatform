@@ -20,6 +20,7 @@ interface IMatryxSubmission {
     function getTournament() external view returns (address);
     function getRound() external view returns (address);
 
+    function getOwner() external view returns (address);
     function getTitle() external view returns (bytes32[3]);
     function getDescriptionHash() external view returns (bytes32[2]);
     function getFileHash() external view returns (bytes32[2]);
@@ -30,6 +31,7 @@ interface IMatryxSubmission {
     function getTimeUpdated() external view returns (uint256);
     function getViewers() external view returns (address[]);
     function getBalance() external view returns (uint256);
+    function getTotalWinnings() external view returns (uint256);
     function getData() external view returns (LibSubmission.SubmissionReturnData);
 
     function unlockFile() external;
@@ -110,6 +112,11 @@ library LibSubmission {
         return data.submissions[self].info.round;
     }
 
+    /// @dev Returns the owner of this Submission
+    function getOwner(address self, address, MatryxPlatform.Data storage data) public view returns (address) {
+        return data.submissions[self].info.owner;
+    }
+
     /// @dev Returns the title of this Submission
     function getTitle(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[3]) {
         return data.submissions[self].details.title;
@@ -165,6 +172,11 @@ library LibSubmission {
         return IMatryxToken(info.token).balanceOf(self);
     }
 
+    /// @dev Returns the total winnings of this Submission
+    function getTotalWinnings(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.submissions[self].info.reward;
+    }
+
     // /// @dev Returns the data struct of this Submission
     // function getDetails(address self, address, MatryxPlatform.Data storage data) public view returns (LibSubmission.SubmissionDetails) {
     //     return data.submissions[self].details;
@@ -186,14 +198,29 @@ library LibSubmission {
         return sub;
     }
 
-    /// @dev Updates the details of this Submission
+    /// @dev Unlocks the descHash and fileHash for sender
     /// @param self    Address of this Submission
     /// @param sender  msg.sender to this Submission
     /// @param data    Data struct on Platform
-    function unlockFile(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-        require(!data.submissions[self].permittedToView[sender], "Already permitted to view");
-        data.submissions[self].permittedToView[sender] = true;
-        data.submissions[self].allPermittedToView.push(sender);
+    function unlockFile(address self, address sender, MatryxPlatform.Data storage data) public {
+        require(data.users[sender].exists, "Must have entered Matryx");
+        LibSubmission.SubmissionData storage submission = data.submissions[self];
+
+        require(!submission.permittedToView[sender], "Already permitted to view");
+
+        if (IMatryxRound(submission.info.round).getState() < uint256(LibGlobals.RoundState.InReview)) {
+            bool isContributor = false;
+            for (uint256 i = 0; i < submission.details.contributors.length; i++) {
+                if (submission.details.contributors[i] == sender) {
+                    isContributor = true;
+                    break;
+                }
+            }
+            require(isContributor, "Must be contributor to unlock before review");
+        }
+
+        submission.permittedToView[sender] = true;
+        submission.allPermittedToView.push(sender);
     }
 
     /// @dev Updates the details of this Submission

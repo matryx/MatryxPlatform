@@ -283,9 +283,11 @@ library LibTournament {
         require(sender == tournament.info.owner, "Must be owner");
         require(IMatryxToken(info.token).balanceOf(self) >= rDetails.bounty, "Insufficient funds for Round");
 
-        // min and max round duration
+        // TODO: enable min and max round duration
         // uint256 duration = rDetails.end.sub(rDetails.start);
         // require(duration >= 1 hours && duration <= 365 days, "Round must be at least 1 hour and at most 1 year");
+
+        // TODO: add review time restrictions or auto review?
 
         address rAddress = new MatryxRound(info.version, info.system);
 
