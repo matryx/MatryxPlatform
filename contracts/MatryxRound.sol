@@ -6,8 +6,8 @@ import "./LibGlobals.sol";
 
 import "./MatryxSystem.sol";
 import "./MatryxPlatform.sol";
-import "./MatryxTournament.sol";
 import "./MatryxTrinity.sol";
+import "./MatryxTournament.sol";
 
 contract MatryxRound is MatryxTrinity {
     constructor (uint256 _version, address _system) MatryxTrinity(_version, _system) public {}

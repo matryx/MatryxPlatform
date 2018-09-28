@@ -2,16 +2,14 @@ pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
+import "./IMatryxToken.sol";
+import "./LibGlobals.sol";
+import "./LibUser.sol";
 
 import "./MatryxSystem.sol";
-import "./IMatryxToken.sol";
-
 import "./MatryxTournament.sol";
 import "./MatryxRound.sol";
 import "./MatryxSubmission.sol";
-
-import "./LibGlobals.sol";
-import "./LibUser.sol";
 
 contract MatryxPlatform {
     struct Info {

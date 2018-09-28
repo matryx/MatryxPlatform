@@ -2,15 +2,14 @@ pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
-import "./LibGlobals.sol";
 import "./IMatryxToken.sol";
+import "./LibGlobals.sol";
 
 import "./MatryxSystem.sol";
 import "./MatryxPlatform.sol";
 import "./MatryxTrinity.sol";
 import "./MatryxRound.sol";
 import "./MatryxSubmission.sol";
-
 
 contract MatryxTournament is MatryxTrinity {
     constructor (uint256 _version, address _system) MatryxTrinity(_version, _system) public {}
