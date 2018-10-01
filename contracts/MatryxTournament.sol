@@ -450,6 +450,7 @@ library LibTournament {
             // create new round but don't start
             bounty = bounty < round.details.bounty ? bounty : round.details.bounty;
 
+            newRound.pKHash = rDetails.pKHash;
             newRound.start = round.details.end.add(round.details.review);
             newRound.end = newRound.start.add(round.details.end.sub(round.details.start));
             newRound.review = round.details.review;
@@ -462,6 +463,7 @@ library LibTournament {
             // create new round and start immediately
             round.info.closed = true;
 
+            newRound.pKHash = rDetails.pKHash;
             newRound.start = now;
             newRound.end = rDetails.end;
             newRound.review = rDetails.review;
