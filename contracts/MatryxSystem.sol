@@ -40,7 +40,7 @@ contract MatryxSystem is Ownable() {
 
     /// @dev Create a new version of Platform
     function createVersion(uint256 version) public onlyOwner {
-        require(!platformByVersion[version].exists, "No such version");
+        require(!platformByVersion[version].exists, "Version already exists");
         platformByVersion[version].exists = true;
         allVersions.push(version);
     }
