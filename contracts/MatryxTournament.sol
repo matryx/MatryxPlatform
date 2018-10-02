@@ -49,8 +49,8 @@ interface IMatryxTournament {
     function selectWinners(LibRound.WinnersData, LibRound.RoundDetails) external;
     function updateNextRound(LibRound.RoundDetails) external;
     function startNextRound() external;
-    function closeTournament() external;
     function withdrawFromAbandoned() external;
+    function recoverFunds() external;
 }
 
 // dependents: LibPlatform
@@ -221,7 +221,6 @@ library LibTournament {
     }
 
     function getEntrantCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        // return data.tournaments[self].allEntrants.length;
         return data.tournaments[self].info.entrantCount;
     }
 
@@ -541,31 +540,6 @@ library LibTournament {
         data.rounds[rAddress].details.start = now;
     }
 
-    /// @dev Closes Tournament after a SelectWinnersAction.DoNothing and transfers all funds to winners
-    /// @param self    Address of this Tournament
-    /// @param sender  msg.sender to the Tournament
-    /// @param data    Data struct on Platform
-    function closeTournament(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-        LibTournament.TournamentData storage tournament = data.tournaments[self];
-        require(sender == tournament.info.owner, "Must be owner");
-        require(tournament.info.rounds.length > 1, "Must be in Round limbo");
-
-        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 2];
-        require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.HasWinners), "Must have selected winners");
-
-        // transfer from ghost into HasWinners Round
-        address ghost = tournament.info.rounds[tournament.info.rounds.length - 1];
-        uint256 ghostBalance = IMatryxToken(info.token).balanceOf(ghost);
-        IMatryxRound(ghost).transferTo(info.token, rAddress, ghostBalance);
-
-        // transfer remaining Tournament balance into HasWinners Round
-        uint256 tBalance = getBalance(self, sender, info, data);
-        IMatryxTournament(self).transferTo(info.token, rAddress, tBalance);
-
-        // then transfer all to winners of that Round
-        transferToWinners(info, data, rAddress);
-    }
-
     /// @dev Entrant can withdraw an even share of remaining balance from abandoned Tournament
     /// @param self    Address of this Tournament
     /// @param sender  msg.sender to the Tournament
@@ -591,6 +565,38 @@ library LibTournament {
         uint256 share = tBalance.mul(10**18).div(entrantCount).div(10**18);
 
         IMatryxTournament(self).transferTo(info.token, sender, share);
+
+        tournament.hasWithdrawn[sender] = true;
+        data.users[sender].totalWinnings = data.users[sender].totalWinnings.add(share);
+
         exit(self, sender, info, data);
+    }
+
+    /// @dev Tournament owner can recover tournament funds if the round ends with no submissions
+    /// @param self    Address of this Tournament
+    /// @param sender  msg.sender to the Tournament
+    /// @param info    Info struct on Platform
+    /// @param data    Data struct on Platform
+    function recoverFunds(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+        require(sender == data.tournaments[self].info.owner);
+
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
+        require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Abandoned), "Must be abandoned");
+        require(data.rounds[rAddress].info.submissions.length == 0);
+        require(!tournament.hasWithdrawn[sender], "Already withdrawn");
+
+        uint256 tBounty = getBalance(self, sender, info, data);
+        uint256 rBounty = IMatryxRound(rAddress).getBalance();
+
+        // recover remaining tournament and round funds
+        IMatryxTournament(self).transferTo(info.token, sender, tBounty);
+        IMatryxRound(rAddress).transferTo(info.token, sender, rBounty);
+
+        // close round
+        data.rounds[rAddress].info.closed = true;
+        // update data
+        tournament.hasWithdrawn[sender] = true;
+        data.users[sender].totalSpent = data.users[sender].totalSpent.sub(tBounty).sub(rBounty);
     }
 }
