@@ -107,7 +107,7 @@ contract('Tournament Testing', function(accounts) {
   it('Able to edit the tournament data', async function() {
     modData = {
       title: stringToBytes32('new', 3),
-      category: stringToBytes32(''), //TODO: test changing the category
+      category: stringToBytes(''),
       descHash: stringToBytes32('new', 2),
       fileHash: stringToBytes32('new', 2),
       bounty: 0,
@@ -116,7 +116,6 @@ contract('Tournament Testing', function(accounts) {
 
     await t.updateDetails(modData)
     let title = await t.getTitle()
-    let cat = await t.getCategory()
     let desc = await t.getDescriptionHash()
     let file = await t.getFileHash()
     let fee = await t.getEntryFee()
@@ -124,9 +123,28 @@ contract('Tournament Testing', function(accounts) {
     let n = stringToBytes32('new', 2)
 
     let allNew = [title[0], desc[0], file[0]].every(x => x === n[0])
-    let catUnchanged = cat == stringToBytes32('math')
 
-    assert.isTrue(allNew && catUnchanged && fee == web3.toWei(1), 'Tournament data not updated correctly.')
+    assert.isTrue(allNew && fee == web3.toWei(1), 'Tournament data not updated correctly.')
+  })
+
+  it('Able to change the tournament category', async function() {
+    //create new category
+    await platform.createCategory(stringToBytes32('science'))
+    let allCat = await platform.getCategories(1, 1)
+
+    modData = {
+      title: stringToBytes32('new', 3),
+      category: stringToBytes32('science'),
+      descHash: stringToBytes32('new', 2),
+      fileHash: stringToBytes32('new', 2),
+      bounty: 0,
+      entryFee: web3.toWei(1)
+    }
+
+    await t.updateDetails(modData)
+    let cat = await t.getCategory()
+
+    assert.equal(cat, stringToBytes32('science'), 'Tournament category not updated correctly.')
   })
 
   it('Unable to create a tournament with 0 bounty', async function() {
@@ -154,6 +172,7 @@ contract('Tournament Testing', function(accounts) {
     }
   })
 })
+
 
 contract('On Hold Tournament Testing', function(accounts) {
   let t //tournament

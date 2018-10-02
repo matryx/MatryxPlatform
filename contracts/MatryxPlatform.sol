@@ -350,6 +350,7 @@ library LibPlatform {
         require(data.categoryExists[category], "Category does not exist");
 
         data.categories[category].push(tAddress);
+        data.tournaments[tAddress].details.category = category;
     }
 
     /// @dev Removes a Tournament from its current category
