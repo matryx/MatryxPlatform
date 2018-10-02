@@ -221,6 +221,7 @@ library LibSubmission {
 
         submission.permittedToView[sender] = true;
         submission.allPermittedToView.push(sender);
+        data.users[sender].viewedFiles.push(self);
     }
 
     /// @dev Updates the details of this Submission
@@ -396,5 +397,6 @@ library LibSubmission {
 
         IMatryxSubmission(self).transferTo(info.token, sender, share);
         submission.amountWithdrawn[sender] = submission.amountWithdrawn[sender].add(share);
+        data.users[sender].totalWinnings = data.users[sender].totalWinnings.add(share);
     }
 }
