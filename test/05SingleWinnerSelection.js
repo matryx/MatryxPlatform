@@ -111,6 +111,7 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
   })
 })
 
+
 //
 // Case 2
 //
@@ -518,9 +519,9 @@ contract('Single Winning Submission with no Contribs or Refs and Do Nothing', fu
   })
 })
 
-/*
- * Case 6
- */
+//
+// Case 6
+//
 contract('Single Winning Submission with Contribs and Refs and Do Nothing', function(accounts) {
   let t //tournament
   let r //round

@@ -1,22 +1,16 @@
-let fs = require('fs')
-const MatryxSystem = artifacts.require('MatryxSystem')
 const MatryxPlatform = artifacts.require('MatryxPlatform')
-const IMatryxPlatform = artifacts.require('IMatryxPlatform')
-const IMatryxTournament = artifacts.require('IMatryxTournament')
-const IMatryxRound = artifacts.require('IMatryxRound')
-const IMatryxSubmission = artifacts.require('IMatryxSubmission')
-const MatryxToken = artifacts.require('MatryxToken')
-const LibUtils = artifacts.require('LibUtils')
-const LibPlatform = artifacts.require('LibPlatform')
-const LibTournament = artifacts.require('LibTournament')
-const LibRound = artifacts.require('LibRound')
-const LibSubmission = artifacts.require('LibSubmission')
 
 const { init, createTournament } = require('./helpers')(artifacts, web3)
 let platform
 
 contract('Platform Testing', function(accounts) {
   let t
+  let roundData = {
+    start: Math.floor(Date.now() / 1000) + 60,
+    end: Math.floor(Date.now() / 1000) + 120,
+    review: 60,
+    bounty: web3.toWei(5)
+  }
 
   it('Platform initialized correctly', async function() {
     platform = (await init()).platform
@@ -35,14 +29,6 @@ contract('Platform Testing', function(accounts) {
   })
 
   it('Able to create a tournament', async function() {
-    roundData = {
-      start: Math.floor(Date.now() / 1000) + 60,
-      end: Math.floor(Date.now() / 1000) + 120,
-      review: 60,
-      bounty: web3.toWei(5),
-      closed: false
-    }
-
     t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
     let count = +(await platform.getTournamentCount())
     assert.isTrue(count == 1, 'Tournament count should be 1.')
@@ -81,42 +67,18 @@ contract('Platform Testing', function(accounts) {
   })
 
   it('Able to create second tournament in first category', async function() {
-    roundData = {
-      start: Math.floor(Date.now() / 1000) + 60,
-      end: Math.floor(Date.now() / 1000) + 120,
-      review: 60,
-      bounty: web3.toWei(5),
-      closed: false
-    }
-
     t = await createTournament('second tournament', 'math', web3.toWei(10), roundData, 0)
     let count = +(await platform.getTournamentCount())
     assert.isTrue(count == 2, 'Tournament count should be 2.')
   })
 
   it('Able to create first tournament in second category', async function() {
-    roundData = {
-      start: Math.floor(Date.now() / 1000) + 60,
-      end: Math.floor(Date.now() / 1000) + 120,
-      review: 60,
-      bounty: web3.toWei(5),
-      closed: false
-    }
-
     t = await createTournament('third tournament', 'science', web3.toWei(10), roundData, 0)
     let count = +(await platform.getTournamentCount())
     assert.isTrue(count == 3, 'Tournament count should be 3.')
   })
 
   it('Unable to create tournament in nonexistent category', async function() {
-    roundData = {
-      start: Math.floor(Date.now() / 1000) + 60,
-      end: Math.floor(Date.now() / 1000) + 120,
-      review: 60,
-      bounty: web3.toWei(5),
-      closed: false
-    }
-
     try {
       await createTournament('tournament', 'not a category', web3.toWei(10), roundData, 0)
       assert.fail('I should not be able to create a tournament in nonexistent category')

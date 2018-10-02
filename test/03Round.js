@@ -415,6 +415,63 @@ contract('Abandoned Round Testing', function(accounts) {
   })
 })
 
+contract('Abandoned Round with No Submissions Testing', function(accounts) {
+  let t //tournament
+  let r //round
+
+  it('Able to create an Abandoned round', async function() {
+    await init()
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 5,
+      review: 1,
+      bounty: web3.toWei(5)
+    }
+
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
+
+    // Wait for the round to become Abandoned
+    await waitUntilClose(r)
+
+    assert.ok(r.address, 'Round is not valid.')
+  })
+
+  it('Round state is Abandoned', async function() {
+    let state = await r.getState()
+    assert.equal(state, 6, 'Round State should be Abandoned')
+  })
+
+  it('Able to recover funds from an abandoned round with 0 submissions', async function() {
+    await t.recoverFunds()
+    let data = await r.getData()
+    assert.isTrue(data.info.closed, 'Round should be closed after 1st reward withdrawal')
+  })
+
+  it('Unable to withdraw from tournament multiple times from the same account', async function() {
+    try {
+      await t.recoverFunds()
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to add bounty to Abandoned round')
+    }
+  })
+
+  it('Tournament balance is 0', async function() {
+    let tB = await t.getBalance()
+    assert.isTrue(tB == 0, 'Tournament balance should be 0')
+  })
+
+  it('Round balance is 0', async function() {
+    let rB = await r.getBalance()
+    assert.isTrue(rB == 0, 'Tournament balance should be 0')
+  })
+
+})
+
 contract('Unfunded Round Testing', function(accounts) {
   let t //tournament
   let r //round
