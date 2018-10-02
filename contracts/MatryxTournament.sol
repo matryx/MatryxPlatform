@@ -363,9 +363,10 @@ library LibTournament {
             tournament.details.title = tDetails.title;
         }
         if (tDetails.category != 0x0) {
-            // msg.sender is Platform ¯\_(ツ)_/¯
-            IMatryxPlatform(msg.sender).removeTournamentFromCategory(self);
-            IMatryxPlatform(msg.sender).addTournamentToCategory(self, tDetails.category);
+            // get platform address
+            address platform = MatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
+            IMatryxPlatform(platform).removeTournamentFromCategory(self);
+            IMatryxPlatform(platform).addTournamentToCategory(self, tDetails.category);
         }
         if (tDetails.descHash[0] != 0x0) {
             tournament.details.descHash = tDetails.descHash;
