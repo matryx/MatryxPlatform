@@ -24,8 +24,8 @@ interface IMatryxSubmission {
     function getTitle() external view returns (bytes32[3]);
     function getDescriptionHash() external view returns (bytes32[2]);
     function getFileHash() external view returns (bytes32[2]);
-    function getContributors() external view returns (address[]);
     function getDistribution() external view returns(uint256[]);
+    function getContributors() external view returns (address[]);
     function getReferences() external view returns (address[]);
     function getTimeSubmitted() external view returns (uint256);
     function getTimeUpdated() external view returns (uint256);
