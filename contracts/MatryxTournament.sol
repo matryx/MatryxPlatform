@@ -49,6 +49,8 @@ interface IMatryxTournament {
     function selectWinners(LibRound.WinnersData, LibRound.RoundDetails) external;
     function updateNextRound(LibRound.RoundDetails) external;
     function startNextRound() external;
+    function closeTournament() external;
+
     function withdrawFromAbandoned() external;
     function recoverFunds() external;
 }
@@ -570,6 +572,31 @@ library LibTournament {
         data.users[sender].totalWinnings = data.users[sender].totalWinnings.add(share);
 
         exit(self, sender, info, data);
+    }
+
+    /// @dev Closes Tournament after a SelectWinnersAction.DoNothing and transfers all funds to winners
+    /// @param self    Address of this Tournament
+    /// @param sender  msg.sender to the Tournament
+    /// @param data    Data struct on Platform
+    function closeTournament(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(sender == tournament.info.owner, "Must be owner");
+        require(tournament.info.rounds.length > 1, "Must be in Round limbo");
+
+        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 2];
+        require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.HasWinners), "Must have selected winners");
+
+        // transfer from ghost into HasWinners Round
+        address ghost = tournament.info.rounds[tournament.info.rounds.length - 1];
+        uint256 ghostBalance = IMatryxToken(info.token).balanceOf(ghost);
+        IMatryxRound(ghost).transferTo(info.token, rAddress, ghostBalance);
+
+        // transfer remaining Tournament balance into HasWinners Round
+        uint256 tBalance = getBalance(self, sender, info, data);
+        IMatryxTournament(self).transferTo(info.token, rAddress, tBalance);
+
+        // then transfer all to winners of that Round
+        transferToWinners(info, data, rAddress);
     }
 
     /// @dev Tournament owner can recover tournament funds if the round ends with no submissions
