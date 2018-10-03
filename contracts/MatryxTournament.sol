@@ -605,12 +605,12 @@ library LibTournament {
     /// @param info    Info struct on Platform
     /// @param data    Data struct on Platform
     function recoverFunds(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-        require(sender == data.tournaments[self].info.owner);
+        require(sender == data.tournaments[self].info.owner, "Must be owner");
 
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
-        require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Abandoned), "Must be abandoned");
-        require(data.rounds[rAddress].info.submissions.length == 0);
+        require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Abandoned), "Tournament must be abandoned");
+        require(data.rounds[rAddress].info.submissions.length == 0, "Must have 0 submissions");
         require(!tournament.hasWithdrawn[sender], "Already withdrawn");
 
         uint256 tBounty = getBalance(self, sender, info, data);
