@@ -1,18 +1,8 @@
-let fs = require('fs')
-const MatryxSystem = artifacts.require('MatryxSystem')
-const MatryxPlatform = artifacts.require('MatryxPlatform')
-const IMatryxPlatform = artifacts.require('IMatryxPlatform')
-const IMatryxTournament = artifacts.require('IMatryxTournament')
+
 const IMatryxRound = artifacts.require('IMatryxRound')
 const IMatryxSubmission = artifacts.require('IMatryxSubmission')
-const MatryxToken = artifacts.require('MatryxToken')
-const LibUtils = artifacts.require('LibUtils')
-const LibPlatform = artifacts.require('LibPlatform')
-const LibTournament = artifacts.require('LibTournament')
-const LibRound = artifacts.require('LibRound')
-const LibSubmission = artifacts.require('LibSubmission')
 
-const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('../truffle/utils')
+const { Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
 
 let platform
@@ -404,7 +394,7 @@ contract('Multiple Winning Submissions with Contribs and Refs and Start Next Rou
     assert.equal(fromWei(tB), 5, 'Tournament and round balance should both be 0')
   })
 
-  it('Rew Round balance should be 5', async function() {
+  it('New Round balance should be 5', async function() {
     let nrB = await nr.getBalance()
     assert.equal(fromWei(nrB), 5, 'Tournament and round balance should both be 0')
   })
@@ -553,7 +543,7 @@ contract('Multiple Winning Submissions with Contribs and Refs and Do Nothing', f
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 15,
+      end: Math.floor(Date.now() / 1000) + 20,
       review: 60,
       bounty: web3.toWei(5)
     }

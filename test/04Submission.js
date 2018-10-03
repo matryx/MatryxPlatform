@@ -1,18 +1,7 @@
-let fs = require('fs')
-const MatryxSystem = artifacts.require('MatryxSystem')
-const MatryxPlatform = artifacts.require('MatryxPlatform')
-const IMatryxPlatform = artifacts.require('IMatryxPlatform')
-const IMatryxTournament = artifacts.require('IMatryxTournament')
 const IMatryxRound = artifacts.require('IMatryxRound')
 const IMatryxSubmission = artifacts.require('IMatryxSubmission')
-const MatryxToken = artifacts.require('MatryxToken')
-const LibUtils = artifacts.require('LibUtils')
-const LibPlatform = artifacts.require('LibPlatform')
-const LibTournament = artifacts.require('LibTournament')
-const LibRound = artifacts.require('LibRound')
-const LibSubmission = artifacts.require('LibSubmission')
 
-const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('../truffle/utils')
+const { setup, bytesToString, Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, updateSubmission, waitUntilInReview } = require('./helpers')(artifacts, web3)
 
 let platform
@@ -54,11 +43,6 @@ contract('Submission Testing with No Contributors and References', function(acco
   // it("Non-submission address does not exist as a submission in round", async function () {
   //   let exists = await r.submissionExists(r.address)
   //   assert.isFalse(exists, "This address should not exist as a submission in round")
-  // })
-
-  // it("Submission is accessible to submission owner", async function () {
-  //   let access = await s.isAccessible(web3.eth.accounts[1])
-  //   assert.isTrue(access, "Submission was not accessible to submission owner")
   // })
 
   it('Only Submission Owner and Tournament Owner have Download Permissions', async function() {

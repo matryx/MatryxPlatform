@@ -1,18 +1,7 @@
-let fs = require('fs')
-const MatryxSystem = artifacts.require('MatryxSystem')
-const MatryxPlatform = artifacts.require('MatryxPlatform')
-const IMatryxPlatform = artifacts.require('IMatryxPlatform')
-const IMatryxTournament = artifacts.require('IMatryxTournament')
 const IMatryxRound = artifacts.require('IMatryxRound')
 const IMatryxSubmission = artifacts.require('IMatryxSubmission')
-const MatryxToken = artifacts.require('MatryxToken')
-const LibUtils = artifacts.require('LibUtils')
-const LibPlatform = artifacts.require('LibPlatform')
-const LibTournament = artifacts.require('LibTournament')
-const LibRound = artifacts.require('LibRound')
-const LibSubmission = artifacts.require('LibSubmission')
 
-const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('../truffle/utils')
+const { sleep, Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
 
 let platform
@@ -27,7 +16,7 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
   let tBounty //Initial Tournament Bounty
 
   it('Able to create a Submission without Contributors and References', async function() {
-    await init()
+    platform = (await init()).platform
     roundData = {
       start: Math.floor(Date.now() / 1000),
       end: Math.floor(Date.now() / 1000) + 10,
@@ -108,6 +97,12 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
     await s.withdrawReward()
     let sb = await s.getBalance()
     assert.equal(sb, 0, 'Submission balance should now be 0')
+  })
+
+  it('Able to get my total winnings', async function() {
+    platform.accountNumber = 1
+    let w = await platform.getMyTotalWinnings()
+    assert.equal(fromWei(w), 10, 'My total winnings should now be 10')
   })
 })
 
@@ -295,6 +290,12 @@ contract('Single Winning Submission with no Contribs or Refs and Start Next Roun
     await s.withdrawReward()
     let sb = await s.getBalance()
     assert.equal(fromWei(sb), 0, 'Submission balance should now be 0')
+  })
+
+  it('Able to get my total winnings', async function() {
+    platform.accountNumber = 1
+    let w = await platform.getMyTotalWinnings()
+    assert.equal(fromWei(w), 5, 'My total winnings should now be 5')
   })
 })
 
@@ -516,6 +517,12 @@ contract('Single Winning Submission with no Contribs or Refs and Do Nothing', fu
     await s.withdrawReward()
     let sb = await s.getBalance()
     assert.equal(fromWei(sb), 0, 'Submission balance should now be 0')
+  })
+
+  it('Able to get my total winnings', async function() {
+    platform.accountNumber = 1
+    let w = await platform.getMyTotalWinnings()
+    assert.equal(fromWei(w), 5, 'My total winnings should now be 5')
   })
 })
 

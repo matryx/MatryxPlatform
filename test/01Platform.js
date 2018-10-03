@@ -1,13 +1,13 @@
 const MatryxPlatform = artifacts.require('MatryxPlatform')
 
-const { init, createTournament } = require('./helpers')(artifacts, web3)
+const { init, createTournament, enterTournament } = require('./helpers')(artifacts, web3)
 let platform
 
 contract('Platform Testing', function(accounts) {
   let t
   let roundData = {
-    start: Math.floor(Date.now() / 1000) + 60,
-    end: Math.floor(Date.now() / 1000) + 120,
+    start: Math.floor(Date.now() / 1000),
+    end: Math.floor(Date.now() / 1000) + 200,
     review: 60,
     bounty: web3.toWei(5)
   }
@@ -39,6 +39,11 @@ contract('Platform Testing', function(accounts) {
     assert.isTrue(t.address == myTournaments[0] && myTournaments.length == 1, 'Unable to get all my tournaments correctly.')
   })
 
+  it('Able to get my total spent', async function() {
+    let spent = await platform.getMyTotalSpent()
+    assert.equal(fromWei(spent), 10, 'Total amount spent incorrect.')
+  })
+
   it('I cannot enter my own tournament', async function() {
     try {
       await t.enter()
@@ -58,6 +63,11 @@ contract('Platform Testing', function(accounts) {
   it('My submissions should be empty', async function() {
     let mySubmissions = await platform.getSubmissionsByUser(platform.wallet.address)
     assert.equal(mySubmissions.length, 0, 'Tournament count should be 0 and tournaments array should be empty.')
+  })
+
+  it('My reputation should be 0', async function() {
+    let rep = await platform.getUserReputation(accounts[0])
+    assert.equal(rep, 0, 'My reputation should be 0.')
   })
 
   it('Able to create a new category', async function() {
@@ -86,6 +96,17 @@ contract('Platform Testing', function(accounts) {
       const revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Successfully unable to create tournament in nonexistent category')
     }
+  })
+
+  it('Able to enter first tournament from another account', async function() {
+    await enterTournament(t, 1)
+    let ent = await t.getEntrantCount()
+    assert.equal(ent, 1, 'Tournament should have 1 entrant')
+  })
+
+  it('User should be in 1 tournament', async function() {
+    let tAddress = await platform.getTournamentsEnteredByUser(accounts[1])
+    assert.equal(tAddress, t.address, 'User should be in first tournament')
   })
 
 })
