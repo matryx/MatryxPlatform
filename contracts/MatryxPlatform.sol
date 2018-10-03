@@ -191,7 +191,12 @@ interface IMatryxPlatform {
     function getTournamentsByCategory(bytes32, uint256, uint256) external view returns (address[]);
     function getCategories(uint256, uint256) external view returns (bytes32[]);
     function getTournamentsByUser(address) external view returns (address[]);
+    function getTournamentsEnteredByUser(address) external view returns (address[]);
     function getSubmissionsByUser(address) external view returns (address[]);
+    function getSubmissionsViewedByUser(address) external view returns (address[]);
+    function getUserReputation(address) external view returns (uint256);
+    function getMyTotalSpent() external view returns (uint256);
+    function getMyTotalWinnings() external view returns (uint256);
 
     function createCategory(bytes32) external;
 
@@ -300,20 +305,58 @@ library LibPlatform {
         }
     }
 
-    /// @dev Return all Tournaments for a user address
+    /// @dev Return all Tournaments created by a user address
     /// @param data      Platform storage containing all contract data
     /// @param uAddress  User address
-    /// @return          Array of all Tournaments for given user
+    /// @return          Array of all Tournaments created by a given user
     function getTournamentsByUser(address, address, MatryxPlatform.Data storage data, address uAddress) public view returns (address[]) {
         return data.users[uAddress].tournaments;
     }
 
-    /// @dev Return all Submissions for a user address
+    /// @dev Return all Tournaments entered by a user address
     /// @param data      Platform storage containing all contract data
     /// @param uAddress  User address
-    /// @return          Array of all Submissions for given user
+    /// @return          Array of all Tournaments entered by a given user
+    function getTournamentsEnteredByUser(address, address, MatryxPlatform.Data storage data, address uAddress) public view returns (address[]) {
+        return data.users[uAddress].tournamentsEntered;
+    }
+
+    /// @dev Return all Submissions made by a user address
+    /// @param data      Platform storage containing all contract data
+    /// @param uAddress  User address
+    /// @return          Array of all Submissions made by a given user
     function getSubmissionsByUser(address, address, MatryxPlatform.Data storage data, address uAddress) public view returns (address[]) {
         return data.users[uAddress].submissions;
+    }
+
+    /// @dev Return all submissions viewed by a user address
+    /// @param data      Platform storage containing all contract data
+    /// @param uAddress  User address
+    /// @return          Array of all submissions viewed by a given user
+    function getSubmissionsViewedByUser(address, address, MatryxPlatform.Data storage data, address uAddress) public view returns (address[]) {
+        return data.users[uAddress].viewedFiles;
+    }
+
+    /// @dev Return the reputation value of a given user address
+    /// @param data      Platform storage containing all contract data
+    /// @param uAddress  User address
+    /// @return          Array of all submissions viewed by a given user
+    function getUserReputation(address, address, MatryxPlatform.Data storage data, address uAddress) public view returns (uint256) {
+        return data.users[uAddress].reputation;
+    }
+
+    /// @dev Return the total amount spent on the Matryx platform of the calling user
+    /// @param data      Platform storage containing all contract data
+    /// @return          Total amount spent on the Matryx platform of the calling user
+    function getMyTotalSpent(address sender, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.users[sender].totalSpent;
+    }
+
+    /// @dev Return the total amount won on the Matryx platform by the calling user
+    /// @param data      Platform storage containing all contract data
+    /// @return          Total amount won on the Matryx platform by the calling user
+    function getMyTotalWinnings(address sender, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.users[sender].totalWinnings;
     }
 
     /// @dev Creates a category
