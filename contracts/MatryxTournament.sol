@@ -123,6 +123,7 @@ library LibTournament {
         return data.tournaments[self].details.bounty;
     }
 
+    /// @dev Returns the current entry fee of this Tournament
     function getEntryFee(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.tournaments[self].details.entryFee;
     }
@@ -180,6 +181,7 @@ library LibTournament {
         }
     }
 
+    /// @dev Returns the total number of submissions made in all rounds of this tournament
     function getSubmissionCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         address[] storage rounds = data.tournaments[self].info.rounds;
         uint256 count = 0;
@@ -191,6 +193,7 @@ library LibTournament {
         return count;
     }
 
+    /// @dev Returns the addresses of all the submissions the caller made in this tournament
     function getMySubmissions(address self, address sender, MatryxPlatform.Data storage data) public view returns (address[]) {
         address[] storage submissions = data.users[sender].submissions;
         uint256 length = submissions.length;
@@ -226,7 +229,8 @@ library LibTournament {
         return data.tournaments[self].info.entrantCount;
     }
 
-    /// @dev Returns true if the sender has entered the Tournament
+    /// @dev Returns true if address passed has entered the Tournament
+    /// @param uAddress    Address of some user
     function isEntrant(address self, address, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
         return data.tournaments[self].entryFeePaid[uAddress].exists;
     }
@@ -309,7 +313,7 @@ library LibTournament {
         return rAddress;
     }
 
-    /// @dev Creates a new Submissions
+    /// @dev Creates a new Submission
     /// @param self      Address of this Tournament
     /// @param sender    msg.sender to the Tournament
     /// @param info      Info struct on Platform
@@ -356,6 +360,12 @@ library LibTournament {
         return sAddress;
     }
 
+    /// @dev Updates the details of this tournament
+    /// @param self      Address of this Tournament
+    /// @param sender    msg.sender to the Tournament
+    /// @param info      Info struct on Platform
+    /// @param data      Data struct on Platform
+    /// @param tDetails  New tournament details
     function updateDetails(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails tDetails) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
@@ -402,6 +412,10 @@ library LibTournament {
         data.rounds[rAddress].details.bounty = data.rounds[rAddress].details.bounty.add(amount);
     }
 
+    /// @dev Transfers the round reward to its winning submissions during the winner selection process
+    /// @param info      Info struct on Platform
+    /// @param data      Data struct on Platform
+    /// @param rAddress  Address of the current round
     function transferToWinners(MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address rAddress) internal {
         LibRound.WinnersData storage wData = data.rounds[rAddress].info.winners;
 
@@ -417,7 +431,6 @@ library LibTournament {
 
             // TODO: revisit - do contributors get totalWinnings updated?
             address owner = data.submissions[wData.submissions[i]].info.owner;
-            data.users[owner].totalWinnings = data.users[owner].totalWinnings.add(reward);
 
             reward = reward.add(data.submissions[wData.submissions[i]].info.reward);
             data.submissions[wData.submissions[i]].info.reward = reward;
@@ -484,6 +497,12 @@ library LibTournament {
         transferToWinners(info, data, rAddress);
     }
 
+    /// @dev Updates the details of an upcoming round that has not yet started
+    /// @param self      Address of this Tournament
+    /// @param sender    msg.sender to the Tournament
+    /// @param info      Info struct on Platform
+    /// @param data      Data struct on Platform
+    /// @param rDetails  New round details
     function updateNextRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
