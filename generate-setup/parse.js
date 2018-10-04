@@ -8,8 +8,8 @@ const contracts = files
 const source = contracts.join('\n')
 
 const libReg = /library (\w+)\s+\{(.+?)^\}/gms
-const structReg = /struct (.+?)\s+\{(.+?)\}/gs
-const membersReg = /([^\s]+)\s\w+;/g
+const structReg = /struct (\w+?)\s+\{(.+?)\}/gs
+const membersReg = /^\s+([^\s]+)\s\w+;/gm
 const dynTypesReg = /.*\[\].*|^(?!address|bool|bytes[\d]+|u?int[\d]*)/
 const fnReg = /function (\w+)\((.*?)\).*/g
 
@@ -42,8 +42,8 @@ while ((match = libReg.exec(source))) {
   }
 }
 
-// console.log(JSON.stringify(structs, 0, 2))
-// console.log(' ')
+console.log(JSON.stringify(structs, 0, 2))
+console.log(' ')
 libReg.lastIndex = 0
 
 while ((match = libReg.exec(source))) {
