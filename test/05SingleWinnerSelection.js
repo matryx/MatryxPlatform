@@ -99,11 +99,6 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
     assert.equal(sb, 0, 'Submission balance should now be 0')
   })
 
-  it('Able to get my total winnings', async function() {
-    platform.accountNumber = 1
-    let w = await platform.getMyTotalWinnings()
-    assert.equal(fromWei(w), 10, 'My total winnings should now be 10')
-  })
 })
 
 
@@ -292,11 +287,6 @@ contract('Single Winning Submission with no Contribs or Refs and Start Next Roun
     assert.equal(fromWei(sb), 0, 'Submission balance should now be 0')
   })
 
-  it('Able to get my total winnings', async function() {
-    platform.accountNumber = 1
-    let w = await platform.getMyTotalWinnings()
-    assert.equal(fromWei(w), 5, 'My total winnings should now be 5')
-  })
 })
 
 // Case 4
@@ -519,11 +509,6 @@ contract('Single Winning Submission with no Contribs or Refs and Do Nothing', fu
     assert.equal(fromWei(sb), 0, 'Submission balance should now be 0')
   })
 
-  it('Able to get my total winnings', async function() {
-    platform.accountNumber = 1
-    let w = await platform.getMyTotalWinnings()
-    assert.equal(fromWei(w), 5, 'My total winnings should now be 5')
-  })
 })
 
 //

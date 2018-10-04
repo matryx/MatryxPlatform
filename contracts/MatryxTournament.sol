@@ -18,6 +18,7 @@ contract MatryxTournament is MatryxTrinity {
 interface IMatryxTournament {
     function transferFrom(address, address, uint256) external;
     function transferTo(address, address, uint256) external;
+    function setInfo(MatryxTrinity.Info) external;
 
     function getOwner() external view returns (address);
     function getTitle() external view returns (bytes32[3]);
@@ -295,7 +296,7 @@ library LibTournament {
 
         address rAddress = new MatryxRound(info.version, info.system);
 
-        MatryxSystem(info.system).setContractType(rAddress, MatryxSystem.ContractType.Round);
+        MatryxSystem(info.system).setContractType(rAddress, uint256(LibSystem.ContractType.Round));
         tournament.info.rounds.push(rAddress);
         data.allRounds.push(rAddress);
 
@@ -333,7 +334,7 @@ library LibTournament {
 
         address sAddress = new MatryxSubmission(info.version, info.system);
 
-        MatryxSystem(info.system).setContractType(sAddress, MatryxSystem.ContractType.Submission);
+        MatryxSystem(info.system).setContractType(sAddress, uint256(LibSystem.ContractType.Submission));
         data.allSubmissions.push(sAddress);
         data.users[sender].submissions.push(sAddress);
 
@@ -375,7 +376,8 @@ library LibTournament {
         }
         if (tDetails.category != 0x0) {
             // get platform address
-            address platform = MatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
+            bytes32 name = MatryxSystem(info.system).getLibraryName(0);
+            address platform = MatryxSystem(info.system).getContract(info.version, name);
             IMatryxPlatform(platform).removeTournamentFromCategory(self);
             IMatryxPlatform(platform).addTournamentToCategory(self, tDetails.category);
         }
@@ -465,7 +467,7 @@ library LibTournament {
             // create new round but don't start
             bounty = bounty < round.details.bounty ? bounty : round.details.bounty;
 
-            newRound.pKHash = rDetails.pKHash;
+            // newRound.pKHash = rDetails.pKHash;
             newRound.start = round.details.end.add(round.details.review);
             newRound.end = newRound.start.add(round.details.end.sub(round.details.start));
             newRound.review = round.details.review;
@@ -478,7 +480,7 @@ library LibTournament {
             // create new round and start immediately
             round.info.closed = true;
 
-            newRound.pKHash = rDetails.pKHash;
+            // newRound.pKHash = rDetails.pKHash;
             newRound.start = now;
             newRound.end = rDetails.end;
             newRound.review = rDetails.review;

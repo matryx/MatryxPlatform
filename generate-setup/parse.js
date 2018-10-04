@@ -1,6 +1,7 @@
 const fs = require('fs')
 const sha3 = require('solidity-sha3').default
 
+const st = Date.now()
 const files = fs.readdirSync('../contracts')
 const contracts = files
   .filter(f => f.includes('.sol') && (f.includes('Matryx') || f.includes('Lib')))
@@ -109,3 +110,4 @@ while ((match = libReg.exec(source))) {
 }
 
 fs.writeFileSync('./setup-commands', setup.join('\n'))
+console.log(`completed in ${Date.now() - st} ms`)

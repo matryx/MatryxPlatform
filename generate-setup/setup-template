@@ -4,12 +4,24 @@ q.push("system = contract(MatryxSystem.address, MatryxSystem)")
 q.push("system.createVersion(1)")
 q.push("system.setVersion(1)")
 
-q.push("system.setContract(1, stringToBytes('MatryxPlatform'), MatryxPlatform.address)")
-q.push("system.setContract(1, stringToBytes('LibUtils'), LibUtils.address)")
-q.push("system.setContract(1, stringToBytes('LibPlatform'), LibPlatform.address)")
-q.push("system.setContract(1, stringToBytes('LibTournament'), LibTournament.address)")
-q.push("system.setContract(1, stringToBytes('LibRound'), LibRound.address)")
-q.push("system.setContract(1, stringToBytes('LibSubmission'), LibSubmission.address)")
+q.push("system.setContract(1, stb('MatryxPlatform'), MatryxPlatform.address)")
+q.push("system.setContractType(MatryxPlatform.address, 1)")
+
+q.push("system.setContract(1, stb('MatryxUser'), MatryxUser.address)")
+q.push("system.setContractType(MatryxUser.address, 2)")
+
+q.push("system.setContract(1, stb('LibUtils'), LibUtils.address)")
+q.push("system.setContract(1, stb('LibPlatform'), LibPlatform.address)")
+q.push("system.setContract(1, stb('LibUser'), LibUser.address)")
+q.push("system.setContract(1, stb('LibTournament'), LibTournament.address)")
+q.push("system.setContract(1, stb('LibRound'), LibRound.address)")
+q.push("system.setContract(1, stb('LibSubmission'), LibSubmission.address)")
+
+q.push("system.setLibraryName(0, stb('LibPlatform'))")
+q.push("system.setLibraryName(2, stb('LibUser'))")
+q.push("system.setLibraryName(3, stb('LibTournament'))")
+q.push("system.setLibraryName(4, stb('LibRound'))")
+q.push("system.setLibraryName(5, stb('LibSubmission'))")
 
 $COMMANDS
 

@@ -16,6 +16,7 @@ contract MatryxSubmission is MatryxTrinity {
 interface IMatryxSubmission {
     function transferFrom(address, address, uint256) external;
     function transferTo(address, address, uint256) external;
+    function setInfo(MatryxTrinity.Info) external;
 
     function getTournament() external view returns (address);
     function getRound() external view returns (address);
@@ -63,6 +64,7 @@ library LibSubmission {
         address[] contributors;
         address[] references;
     }
+
     // bytes32[2] publicKey;
     // bytes32    privateKey;
 
@@ -80,16 +82,13 @@ library LibSubmission {
         address[] allPermittedToView;
         mapping(address=>bool) permittedToView;
         mapping(address=>uint256) amountWithdrawn;
+        address[] referencedIn;
     }
 
     // everything but the mappings
     struct SubmissionReturnData {
         SubmissionInfo info;
         SubmissionDetails details;
-    }
-
-    function onlyCanView(address self, address sender, MatryxPlatform.Data storage data) internal view {
-        require(data.submissions[self].permittedToView[sender], "Must be permitted to view");
     }
 
     function onlyOwner(address self, address sender, MatryxPlatform.Data storage data) internal view {
@@ -124,10 +123,7 @@ library LibSubmission {
 
     /// @dev Returns the description hash of this Submission
     function getDescriptionHash(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
-        bool canView = data.submissions[self].permittedToView[sender];
-        bytes32[2] memory empty;
-
-        return canView ? data.submissions[self].details.descHash : empty;
+        return data.submissions[self].details.descHash;
     }
 
     /// @dev Returns the file hash of this Submission
@@ -189,8 +185,6 @@ library LibSubmission {
         sub.details = data.submissions[self].details;
 
         if (!data.submissions[self].permittedToView[sender]) {
-            sub.details.descHash[0] = 0x0;
-            sub.details.descHash[1] = 0x0;
             sub.details.fileHash[0] = 0x0;
             sub.details.fileHash[1] = 0x0;
         }
@@ -221,7 +215,7 @@ library LibSubmission {
 
         submission.permittedToView[sender] = true;
         submission.allPermittedToView.push(sender);
-        data.users[sender].viewedFiles.push(self);
+        data.users[sender].unlockedFiles.push(self);
     }
 
     /// @dev Updates the details of this Submission

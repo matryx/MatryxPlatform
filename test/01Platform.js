@@ -34,16 +34,6 @@ contract('Platform Testing', function(accounts) {
     assert.isTrue(count == 1, 'Tournament count should be 1.')
   })
 
-  it('Able to get all my tournaments', async function() {
-    let myTournaments = await platform.getTournamentsByUser(platform.wallet.address)
-    assert.isTrue(t.address == myTournaments[0] && myTournaments.length == 1, 'Unable to get all my tournaments correctly.')
-  })
-
-  it('Able to get my total spent', async function() {
-    let spent = await platform.getMyTotalSpent()
-    assert.equal(fromWei(spent), 10, 'Total amount spent incorrect.')
-  })
-
   it('I cannot enter my own tournament', async function() {
     try {
       await t.enter()
@@ -58,16 +48,6 @@ contract('Platform Testing', function(accounts) {
     let cat = await t.getCategory()
     let tourCat = await platform.getTournamentsByCategory(cat, 0, 0)
     assert.isTrue(tourCat == t.address, 'Unable to get tournaments by category.')
-  })
-
-  it('My submissions should be empty', async function() {
-    let mySubmissions = await platform.getSubmissionsByUser(platform.wallet.address)
-    assert.equal(mySubmissions.length, 0, 'Tournament count should be 0 and tournaments array should be empty.')
-  })
-
-  it('My reputation should be 0', async function() {
-    let rep = await platform.getUserReputation(accounts[0])
-    assert.equal(rep, 0, 'My reputation should be 0.')
   })
 
   it('Able to create a new category', async function() {
@@ -102,11 +82,6 @@ contract('Platform Testing', function(accounts) {
     await enterTournament(t, 1)
     let ent = await t.getEntrantCount()
     assert.equal(ent, 1, 'Tournament should have 1 entrant')
-  })
-
-  it('User should be in 1 tournament', async function() {
-    let tAddress = await platform.getTournamentsEnteredByUser(accounts[1])
-    assert.equal(tAddress, t.address, 'User should be in first tournament')
   })
 
 })

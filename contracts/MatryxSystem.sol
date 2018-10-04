@@ -24,8 +24,8 @@ contract MatryxSystem is Ownable() {
         mapping(bytes32=>FnData) fnData;
     }
 
-    enum ContractType { Unknown, Platform, Tournament, Round, Submission }
-    mapping(address=>ContractType) contractType;
+    mapping(address=>uint256) contractType;
+    mapping(uint256=>bytes32) contractTypeToLibraryName;
 
     mapping(uint256=>Platform) platformByVersion;
     uint256[] allVersions;
@@ -33,7 +33,7 @@ contract MatryxSystem is Ownable() {
 
     modifier onlyOwnerOrPlatform {
         bool isOwner = msg.sender == owner;
-        bool isPlatform = contractType[msg.sender] == ContractType.Platform;
+        bool isPlatform = contractType[msg.sender] == uint256(LibSystem.ContractType.Platform);
         require(isOwner || isPlatform, "Must be owner or Platform");
         _;
     }
@@ -71,10 +71,6 @@ contract MatryxSystem is Ownable() {
             platformByVersion[version].allContracts.push(cName);
         }
 
-        if (cName == "MatryxPlatform") {
-            contractType[cAddress] = ContractType.Platform;
-        }
-
         platformByVersion[version].contracts[cName].location = cAddress;
     }
 
@@ -109,13 +105,31 @@ contract MatryxSystem is Ownable() {
     /// @dev Associates a contract address with a type
     /// @param cAddress  Address of the contract we want to set the type
     /// @param cType     Type we want to associate the contract address with
-    function setContractType(address cAddress, ContractType cType) public onlyOwnerOrPlatform {
+    function setContractType(address cAddress, uint256 cType) public onlyOwnerOrPlatform {
         contractType[cAddress] = cType;
     }
 
     /// @dev Gets the associated type for a contract address
     /// @param cAddress  Address of the contract we want to get the type for
-    function getContractType(address cAddress) public view returns (ContractType) {
+    function getContractType(address cAddress) public view returns (uint256) {
         return contractType[cAddress];
     }
+
+    /// @dev Associates a contract type with a library name
+    /// @param cType  Contract type
+    /// @param lName  Library name
+    function setLibraryName(uint256 cType, bytes32 lName) public onlyOwnerOrPlatform {
+        contractTypeToLibraryName[cType] = lName;
+    }
+
+    /// @dev Returns the library name for a given contract type
+    /// @param cType  Contract type
+    /// @return       Library name
+    function getLibraryName(uint256 cType) public view returns (bytes32) {
+        return contractTypeToLibraryName[cType];
+    }
+}
+
+library LibSystem {
+    enum ContractType { Unknown, Platform, User, Tournament, Round, Submission }
 }

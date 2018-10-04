@@ -16,6 +16,7 @@ contract MatryxRound is MatryxTrinity {
 interface IMatryxRound {
     function transferFrom(address, address, uint256) external;
     function transferTo(address, address, uint256) external;
+    function setInfo(MatryxTrinity.Info) external;
 
     function getTournament() external view returns (address);
     function getStart() external view returns (uint256);
@@ -44,7 +45,7 @@ library LibRound {
 
     // All information needed for creation of Round
     struct RoundDetails {
-        bytes32[2] pKHash;
+        // bytes32[2] pKHash;
         uint256 start;
         uint256 end;
         uint256 review;
@@ -59,7 +60,7 @@ library LibRound {
 
     // All information needed to choose winning submissions
     struct WinnersData {
-        bytes32[2] sKHash;
+        // bytes32[2] sKHash;
         address[] submissions;
         uint256[] distribution;
         uint256 action;
