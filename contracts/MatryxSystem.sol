@@ -38,6 +38,13 @@ contract MatryxSystem is Ownable() {
         _;
     }
 
+    /// @dev Checks the validity of a contract address
+    function isContract(address _address) private view returns(bool) {
+        uint256 _size;
+        assembly { _size := extcodesize(_address) }
+        return _size > 0;
+    }
+
     /// @dev Create a new version of Platform
     function createVersion(uint256 version) public onlyOwner {
         require(!platformByVersion[version].exists, "Version already exists");
@@ -66,6 +73,7 @@ contract MatryxSystem is Ownable() {
     /// @param cAddress  Address of the contract
     function setContract(uint256 version, bytes32 cName, address cAddress) public onlyOwner {
         require(platformByVersion[version].exists, "No such version");
+        require(isContract(cAddress), "Invalid contract address");
 
         if (platformByVersion[version].contracts[cName].location == 0x0) {
             platformByVersion[version].allContracts.push(cName);
@@ -79,7 +87,10 @@ contract MatryxSystem is Ownable() {
     /// @param cName    Name of the contract we want an address for
     /// @return         Address of the contract
     function getContract(uint256 version, bytes32 cName) public view returns (address) {
-        return platformByVersion[version].contracts[cName].location;
+        address cAddress = platformByVersion[version].contracts[cName].location;
+        require(isContract(cAddress), "Invalid contract address");
+
+        return cAddress;
     }
 
     /// @dev Register a contract method for a contract by its name
@@ -89,7 +100,9 @@ contract MatryxSystem is Ownable() {
     /// @param fnData    Calldata transformation information for library delegatecall
     function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, FnData fnData) public onlyOwner {
         require(platformByVersion[version].exists, "No such version");
-        require(platformByVersion[version].contracts[cName].location != 0x0, "No such contract");
+        address cAddress = platformByVersion[version].contracts[cName].location;
+        require(isContract(cAddress), "Invalid contract address");
+
         platformByVersion[version].contracts[cName].fnData[selector] = fnData;
     }
 
@@ -99,6 +112,9 @@ contract MatryxSystem is Ownable() {
     /// @param selector  Hash of the method signature to register to the contract (keccak256)
     /// @return          Calldata transformation information for library delegatecall
     function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) public view returns (FnData) {
+        address cAddress = platformByVersion[version].contracts[cName].location;
+        require(isContract(cAddress), "Invalid contract address");
+
         return platformByVersion[version].contracts[cName].fnData[selector];
     }
 
@@ -106,6 +122,7 @@ contract MatryxSystem is Ownable() {
     /// @param cAddress  Address of the contract we want to set the type
     /// @param cType     Type we want to associate the contract address with
     function setContractType(address cAddress, uint256 cType) public onlyOwnerOrPlatform {
+        require(isContract(cAddress), "Invalid contract address");
         contractType[cAddress] = cType;
     }
 
