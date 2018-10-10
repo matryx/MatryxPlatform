@@ -100,10 +100,23 @@ contract MatryxSystem is Ownable() {
     /// @param fnData    Calldata transformation information for library delegatecall
     function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, FnData fnData) public onlyOwner {
         require(platformByVersion[version].exists, "No such version");
-        address cAddress = platformByVersion[version].contracts[cName].location;
-        require(isContract(cAddress), "Invalid contract address");
-
         platformByVersion[version].contracts[cName].fnData[selector] = fnData;
+    }
+
+    /// @dev Batch register contract methods for a contract by its name, that share the same injected and dynamic params
+    /// @param version            Version of Platform for contract method association
+    /// @param cName              Name of the contract we want an address for
+    /// @param selectors          Hashes of the method signatures to register to the contract (keccak256)
+    /// @param modifiedSelectors  Hashes of the library-specific method signatures to register to the contract (keccak256)
+    /// @param fnData             Calldata transformation information for library delegatecall
+    function addContractMethods(uint256 version, bytes32 cName, bytes32[] selectors, bytes32[] modifiedSelectors, FnData fnData) public onlyOwner {
+        require(platformByVersion[version].exists, "No such version");
+        require(selectors.length == modifiedSelectors.length, "List of selectors must match in length");
+
+        for (uint256 i = 0; i < selectors.length; i++) {
+            platformByVersion[version].contracts[cName].fnData[selectors[i]] = fnData;
+            platformByVersion[version].contracts[cName].fnData[selectors[i]].modifiedSelector = modifiedSelectors[i];
+        }
     }
 
     /// @dev Gets calldata transformation information for a library name and function selector
