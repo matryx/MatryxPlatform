@@ -2,6 +2,7 @@ pragma solidity ^0.4.23;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
+import "./MatryxPlatform.sol";
 
 library LibTrust
 {
@@ -58,7 +59,7 @@ library LibTrust
     /// @param trustData The data to modify on the platform. Stores user trust information.
     /// @param judgee The peer to give trust to
     /// @param _value The amount of trust to give to judgee
-    function trust(TrustData storage trustData, address judger, address judgee, uint256 _value) public
+    function trust(MatryxPlatform.Data storage data, TrustData storage trustData, address judger, address judgee, uint256 _value) public
     {
         require(judger != judgee, "Peer must not judge self");
         // Recompute s_ij
@@ -71,13 +72,16 @@ library LibTrust
         for(uint256 i = 0; i < judgingPeers.length; i++) {
             updateReputation(trustData, judgingPeers[i], judgee);
         }
+
+        // Update user's reputation elsewhere
+        data.users[judgee].reputation = trustData.t_ij[judgee];
     }
     
     /// @dev Gives some amount of distrust to a peer from msg.sender's peer account.
     /// @param trustData The data to modify on the platform. Stores user trust information.
     /// @param judgee The peer to distrust
     /// @param _value The amount of distrust to give to judgee
-    function distrust(TrustData storage trustData, address judger, address judgee, uint256 _value) public
+    function distrust(MatryxPlatform.Data storage data, TrustData storage trustData, address judger, address judgee, uint256 _value) public
     {
         require(judger != judgee, "Peer must not judge self");
         // Recompute s_ij
@@ -89,6 +93,9 @@ library LibTrust
         for(uint256 i = 0; i < judgingPeers.length; i++) {
             updateReputation(trustData, judgingPeers[i], judgee);
         }
+        
+        // Update user's reputation elsewhere
+        data.users[judgee].reputation = trustData.t_ij[judgee];
     }
 
     function updateReputation(TrustData storage trustData, address judger, address judgee) internal {

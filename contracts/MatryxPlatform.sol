@@ -387,16 +387,16 @@ library LibPlatform {
     /// @param sender     msg.sender to Platform
     /// @param trustData  Platform storage containing trust data on all users
     /// @param user       User to give trust to
-    function trustUser(address, address sender, LibTrust.TrustData storage trustData, address user) public {
-        LibTrust.trust(trustData, msg.sender, user, 1);
+    function trustUser(address, address sender, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address user) public {
+        LibTrust.trust(data, trustData, msg.sender, user, 1);
     }
 
     /// @dev Remove a point of trust from a user
     /// @param sender     msg.sender to Platform
     /// @param trustData  Platform storage containing trust data on all users
     /// @param user       User to remove trust from
-    function distrustUser(address, address sender, LibTrust.TrustData storage trustData, address user) public {
-        LibTrust.distrust(trustData, msg.sender, user, 1);
+    function distrustUser(address, address sender, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address user) public {
+        LibTrust.distrust(data, trustData, msg.sender, user, 1);
     }
 }
 
