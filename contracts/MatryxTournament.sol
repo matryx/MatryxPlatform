@@ -376,8 +376,7 @@ library LibTournament {
         }
         if (tDetails.category != 0x0) {
             // get platform address
-            bytes32 name = MatryxSystem(info.system).getLibraryName(0);
-            address platform = MatryxSystem(info.system).getContract(info.version, name);
+            address platform = MatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
             IMatryxPlatform(platform).removeTournamentFromCategory(self);
             IMatryxPlatform(platform).addTournamentToCategory(self, tDetails.category);
         }
