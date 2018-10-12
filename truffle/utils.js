@@ -138,6 +138,8 @@ module.exports = {
     const MatryxPlatform = artifacts.require('MatryxPlatform')
     const IMatryxPlatform = artifacts.require('IMatryxPlatform')
     const MatryxToken = artifacts.require('MatryxToken')
+    const MatryxUser = artifacts.require('MatryxUser')
+    const IMatryxUser = artifacts.require('IMatryxUser')
     const MatryxTournament = artifacts.require('MatryxTournament')
     const IMatryxTournament = artifacts.require('IMatryxTournament')
     const MatryxRound = artifacts.require('MatryxRound')
@@ -188,6 +190,8 @@ module.exports = {
     return {
       MatryxPlatform,
       MatryxToken,
+      MatryxUser,
+      IMatryxUser,
       MatryxTournament,
       IMatryxTournament,
       MatryxRound,
