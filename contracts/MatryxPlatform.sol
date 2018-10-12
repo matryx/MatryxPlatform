@@ -165,8 +165,10 @@ interface IMatryxPlatform {
     function hasEnteredMatryx(address) external view returns (bool);
 
     function getTournamentCount() external view returns (uint256);
+    function getUserCount() external view returns (uint256);
     function getTournaments(uint256, uint256) external view returns (address[]);
     function getTournamentsByCategory(bytes32, uint256, uint256) external view returns (address[]);
+    function getUsers(uint256, uint256) external view returns (address[]);
     function getCategories(uint256, uint256) external view returns (bytes32[]);
 
     function createCategory(bytes32) external;
@@ -201,6 +203,13 @@ library LibPlatform {
         return data.allTournaments.length;
     }
 
+    /// @dev Return total number of Users
+    /// @param data  Platform storage containing all contract data
+    /// @return      Number of Users on Platform
+    function getUserCount(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.allUsers.length;
+    }
+
     /// @dev Return count Tournaments starting at startIndex
     /// @param info        Platform storage containing version number and system address
     /// @param data        Platform storage containing all contract data
@@ -229,8 +238,11 @@ library LibPlatform {
     }
 
     /// @dev Return all Tournaments for a category
+    /// @param info      Platform storage containing version number and system address
     /// @param data      Platform storage containing all contract data
     /// @param category  Category name to get
+    /// @param startIndex  Index of first User to return
+    /// @param count       Number of User to return. If 0, all
     /// @return          Array of Tournament addresses for given category
     function getTournamentsByCategory(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category, uint256 startIndex, uint256 count) public view returns (address[]) {
         address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
@@ -256,9 +268,39 @@ library LibPlatform {
         }
     }
 
-    /// @dev Return all categories
-    /// @param data  Platform storage containing all contract data
-    /// @return      Array of all category names
+    /// @dev Return count Users starting at startIndex
+    /// @param info        Platform storage containing version number and system address
+    /// @param data        Platform storage containing all contract data
+    /// @param startIndex  Index of first User to return
+    /// @param count       Number of User to return. If 0, all
+    /// @return            Array of User addresses
+    function getUsers(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
+        address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address[] storage users = data.allUsers;
+
+        assembly {
+            let offset := 0x100000000000000000000000000000000000000000000000000000000
+            let ptr := mload(0x40)
+
+            mstore(ptr, mul(0xe79eda2c, offset))                                // getSubArray(bytes32[] storage,uint256,uint256)
+            mstore(add(ptr, 0x04), users_slot)                                  // data.allUsers
+            mstore(add(ptr, 0x24), startIndex)                                  // arg 0 - startIndex
+            mstore(add(ptr, 0x44), count)                                       // arg 1 - count
+
+            let res := delegatecall(gas, LibUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
+            if iszero(res) { revert(0, 0) }                                     // safety check
+
+            returndatacopy(ptr, 0, returndatasize)                              // copy result into mem
+            return(ptr, returndatasize)                                         // return result
+        }
+    }
+
+    /// @dev Return Categories in platform by index
+    /// @param info        Platform storage containing version number and system address
+    /// @param data        Platform storage containing all contract data
+    /// @param startIndex  Index of first Category to return
+    /// @param count       Number of Category to return. If 0, all
+    /// @return            Array of Categories
     function getCategories(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (bytes32[]) {
         address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
         bytes32[] storage allCategories = data.allCategories;
@@ -297,7 +339,7 @@ library LibPlatform {
     /// @param sender  msg.sender to Platform
     /// @param info    Platform storage containing version number and system address
     /// @param data    Platform storage containing all contract data and users
-    function enterMatryx(address sender, address, MatryxPlatform.Info storage info, LibTrust.TrustData storage trustData, MatryxPlatform.Data storage data) public {
+    function enterMatryx(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData) public {
         require(!data.users[sender].exists, "Already entered Matryx");
         require(IMatryxToken(info.token).balanceOf(sender) > 0, "Must have MTX");
 
