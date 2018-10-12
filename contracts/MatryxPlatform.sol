@@ -175,7 +175,7 @@ interface IMatryxPlatform {
     function addTournamentToCategory(address, bytes32) external;
     function removeTournamentFromCategory(address) external;
     function createTournament(LibTournament.TournamentDetails, LibRound.RoundDetails) external returns (address);
-    
+
     function trustUser(address user) public;
     function distrustUser(address user) public;
 }
@@ -303,7 +303,7 @@ library LibPlatform {
 
         data.users[sender].exists = true;
         data.allUsers.push(sender);
-        trustData.giveInitialTrust(sender);
+        LibTrust.giveInitialTrust(data, trustData, sender);
     }
 
     /// @dev Adds a Tournament to a category
@@ -388,7 +388,9 @@ library LibPlatform {
     /// @param trustData  Platform storage containing trust data on all users
     /// @param user       User to give trust to
     function trustUser(address, address sender, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address user) public {
-        LibTrust.trust(data, trustData, msg.sender, user, 1);
+        require(data.users[sender].exists, "Sender must have entered Matryx");
+        require(data.users[user].exists, "User must exist");
+        LibTrust.trust(data, trustData, msg.sender, user);
     }
 
     /// @dev Remove a point of trust from a user
@@ -396,7 +398,9 @@ library LibPlatform {
     /// @param trustData  Platform storage containing trust data on all users
     /// @param user       User to remove trust from
     function distrustUser(address, address sender, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address user) public {
-        LibTrust.distrust(data, trustData, msg.sender, user, 1);
+        require(data.users[sender].exists, "Sender must have entered Matryx");
+        require(data.users[user].exists, "User must exist");
+        LibTrust.distrust(data, trustData, msg.sender, user);
     }
 }
 
