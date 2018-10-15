@@ -429,20 +429,20 @@ library LibPlatform {
     /// @param sender     msg.sender to Platform
     /// @param trustData  Platform storage containing trust data on all users
     /// @param user       User to give trust to
-    function trustUser(address, address sender, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address user) public {
+    function trustUser(address sender, address, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address user) public {
         require(data.users[sender].exists, "Sender must have entered Matryx");
         require(data.users[user].exists, "User must exist");
-        LibTrust.trust(data, trustData, msg.sender, user);
+        LibTrust.trust(data, trustData, sender, user);
     }
 
     /// @dev Remove a point of trust from a user
     /// @param sender     msg.sender to Platform
     /// @param trustData  Platform storage containing trust data on all users
     /// @param user       User to remove trust from
-    function distrustUser(address, address sender, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address user) public {
+    function distrustUser(address sender, address, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address user) public {
         require(data.users[sender].exists, "Sender must have entered Matryx");
         require(data.users[user].exists, "User must exist");
-        LibTrust.distrust(data, trustData, msg.sender, user);
+        LibTrust.distrust(data, trustData, sender, user);
     }
 }
 

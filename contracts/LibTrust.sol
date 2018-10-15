@@ -45,7 +45,7 @@ library LibTrust
     /// @param data Data struct on platform.
     /// @param trustData User trust information.
     /// @param _peer The peer receiving initial trust
-    function giveInitialTrust(MatryxPlatform.Data storage data, TrustData storage trustData, address _peer) public
+    function giveInitialTrust(MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address _peer) public
     {
         data.users[_peer].reputation = getReputationForNewPeer(data.allUsers.length);
     }
@@ -55,7 +55,7 @@ library LibTrust
     /// @param trustData User trust information.
     /// @param judger The peer giving trust
     /// @param judgee The peer to give trust to
-    function trust(MatryxPlatform.Data storage data, TrustData storage trustData, address judger, address judgee) public
+    function trust(MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address judger, address judgee) public
     {
         require(judger != judgee, "Peer must not judge self");
         // Recompute s_ij
@@ -75,7 +75,7 @@ library LibTrust
     /// @param trustData User trust information.
     /// @param judger The peer giving distrust
     /// @param judgee The peer to give distrust to
-    function distrust(MatryxPlatform.Data storage data, TrustData storage trustData, address judger, address judgee) public
+    function distrust(MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address judger, address judgee) public
     {
         require(judger != judgee, "Peer must not judge self");
         // Recompute s_ij
@@ -94,7 +94,7 @@ library LibTrust
     /// @param trustData User trust information.
     /// @param judger The peer giving trust or distrust
     /// @param judgee The peer receiving trust or distrust
-    function updateReputation(MatryxPlatform.Data storage data, TrustData storage trustData, address judger, address judgee) internal {
+    function updateReputation(MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address judger, address judgee) internal {
         uint256 judgerRep = data.users[judger].reputation;
         uint256 judgeeRep = data.users[judgee].reputation;
         uint256 prvInfluence_ij = trustData.infl_ij[judger][judgee];

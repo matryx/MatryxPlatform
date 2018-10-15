@@ -36,10 +36,24 @@ contract('Platform Testing', function(accounts) {
   })
 
   it('All users should have an initial reputation > 0', async function() {
-    let r1 = await users.getReputation(u0)
-    // console.log(r1)
+    let r0 = await users.getReputation(u0)
+    let r1 = await users.getReputation(u1)
+    let r2 = await users.getReputation(u2)
+    assert.isTrue(r0 > r1 && r1 > r2 && r2 > 0, "All users should have an initial reputation > 0")
+  })
 
-    assert.isTrue(r1 > 0, "All users should have an initial reputation > 0")
+  it('Able to trust another peer', async function() {
+    let rBefore = await users.getReputation(u1)
+    await platform.trustUser(u1)
+    let rAfter = await users.getReputation(u1)
+    assert.isTrue(rBefore < rAfter, "Unable to give trust correctly")
+  })
+
+  it('Able to distrust another peer', async function() {
+    let rBefore = await users.getReputation(u1)
+    await platform.distrustUser(u1)
+    let rAfter = await users.getReputation(u1)
+    assert.isTrue(rBefore > rAfter, "Unable to give distrust correctly")
   })
 
 
