@@ -343,9 +343,9 @@ library LibPlatform {
         require(!data.users[sender].exists, "Already entered Matryx");
         require(IMatryxToken(info.token).balanceOf(sender) > 0, "Must have MTX");
 
+        LibTrust.giveInitialTrust(data, trustData, sender);
         data.users[sender].exists = true;
         data.allUsers.push(sender);
-        LibTrust.giveInitialTrust(data, trustData, sender);
     }
 
     /// @dev Adds a Tournament to a category
