@@ -9,6 +9,7 @@ module.exports = function (artifacts, web3) {
   const IMatryxRound = artifacts.require("IMatryxRound")
   const IMatryxSubmission = artifacts.require("IMatryxSubmission")
   const MatryxToken = artifacts.require("MatryxToken")
+  const MatryxUser = artifacts.require("MatryxUser")
   const LibUtils = artifacts.require('LibUtils')
   const LibUser = artifacts.require('LibUser')
   const LibPlatform = artifacts.require('LibPlatform')
