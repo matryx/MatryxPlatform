@@ -20,7 +20,7 @@ library LibTrust
 
     /// @dev Gets the starting reputation for a new peer given the current number of peers
     /// @return The reputation of the peer (less than one, eighteen decimal representation)
-    function getReputationForNewPeer(uint256 _peerCount) internal view returns (uint256)
+    function getReputationForNewPeer(uint256 _peerCount) public view returns (uint256)
     {
         uint256 integralTopValue = fastSigmoid(_peerCount+2);
         uint256 integralBottomValue = fastSigmoid(_peerCount+1);

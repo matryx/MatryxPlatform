@@ -13,7 +13,7 @@ let u2
 contract('Platform Testing', function(accounts) {
   it('Platform initialized correctly', async function() {
     platform = (await init()).platform
-    users = Contract(MatryxUser.address, IMatryxUser, 0)
+    users = Contract(MatryxUser.address, IMatryxUser)
     assert.equal(platform.address, MatryxPlatform.address, 'Platform address was not set correctly.')
   })
 
