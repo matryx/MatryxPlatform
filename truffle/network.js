@@ -3,7 +3,7 @@ const path = require('path')
 const ethers = require('ethers')
 
 const mnemonicHelper = require('mnemonichelper')
-let accounts, privateKeys, mnemonicPath, provider, tokenAddress, network
+let accounts, privateKeys, mnemonic, provider, tokenAddress, network
 
 const setNetwork = id => {
     // if network already set, short circuit
@@ -11,7 +11,7 @@ const setNetwork = id => {
 
     network = id
     // ganache mnemonic below, ropsten mnemonic loaded from <project_root>/../keys/ropsten_mnemonic.txt
-    let mnemonic = "fix tired congress gold type flight access jeans payment echo chef host"
+    mnemonic = "fix tired congress gold type flight access jeans payment echo chef host"
 
     if (network === 'ganache') {
         provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
@@ -45,5 +45,5 @@ module.exports = {
     get privateKeys() { return privateKeys },
     get provider() { return provider },
     get tokenAddress() { return tokenAddress },
-    get mnemonicPath() { return mnemonicPath }
+    get mnemonic() { return mnemonic }
 }
