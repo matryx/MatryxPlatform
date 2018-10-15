@@ -5,10 +5,12 @@ var LibTournament = artifacts.require('LibTournament')
 var LibRound = artifacts.require('LibRound')
 var LibSubmission = artifacts.require('LibSubmission')
 var LibTrinity = artifacts.require('LibTrinity')
+var LibTrust = artifacts.require('LibTrust')
 
 module.exports = function (deployer) {
   deployer.deploy(LibUtils, { overwrite: false })
   deployer.deploy(LibUser, { overwrite: false })
+  deployer.deploy(LibTrust, {overwrite: false})
 
   deployer.deploy(LibTrinity, { overwrite: false })
   deployer.link(LibTrinity, LibPlatform)
@@ -20,6 +22,7 @@ module.exports = function (deployer) {
   deployer.deploy(LibRound, { overwrite: false })
   deployer.deploy(LibSubmission, { overwrite: false })
 
+  deployer.link(LibTrust, LibPlatform)
   deployer.link(LibTournament, LibPlatform)
   deployer.deploy(LibPlatform, { overwrite: false })
 }
