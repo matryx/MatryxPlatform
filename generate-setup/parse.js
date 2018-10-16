@@ -19,9 +19,9 @@ const fnReg = /function (\w+)\((.*?)\).*/g
 
 const slots = {
   info: 0,
-  data: 4,
-  trustData: 15
+  data: 4
 }
+
 const structs = {}
 const setup = []
 const methods = []

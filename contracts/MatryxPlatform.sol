@@ -4,7 +4,6 @@ pragma experimental ABIEncoderV2;
 import "./SafeMath.sol";
 import "./IMatryxToken.sol";
 import "./LibGlobals.sol";
-import "./LibTrust.sol";
 
 import "./MatryxSystem.sol";
 import "./MatryxUser.sol";
@@ -37,7 +36,6 @@ contract MatryxPlatform {
 
     Info info; // slot 0
     Data data; // slot 4
-    LibTrust.TrustData trustData; // slot 15
 
     constructor(address system, uint256 version, address token) public {
         info.system = system;
@@ -177,15 +175,11 @@ interface IMatryxPlatform {
     function addTournamentToCategory(address, bytes32) external;
     function removeTournamentFromCategory(address) external;
     function createTournament(LibTournament.TournamentDetails, LibRound.RoundDetails) external returns (address);
-
-    function trustUser(address user) public;
-    function distrustUser(address user) public;
 }
 
 // dependencies: LibTournament
 library LibPlatform {
     using SafeMath for uint256;
-    using LibTrust for LibTrust.TrustData;
 
     event TournamentCreated(address _tournamentAddress);
 
@@ -339,11 +333,10 @@ library LibPlatform {
     /// @param sender  msg.sender to Platform
     /// @param info    Platform storage containing version number and system address
     /// @param data    Platform storage containing all contract data and users
-    function enterMatryx(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData) public {
+    function enterMatryx(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         require(!data.users[sender].exists, "Already entered Matryx");
         require(IMatryxToken(info.token).balanceOf(sender) > 0, "Must have MTX");
 
-        LibTrust.giveInitialTrust(data, trustData, sender);
         data.users[sender].exists = true;
         data.allUsers.push(sender);
     }
@@ -423,26 +416,6 @@ library LibPlatform {
 
         emit TournamentCreated(tAddress);
         return tAddress;
-    }
-
-    /// @dev Give a point of trust to a user
-    /// @param sender     msg.sender to Platform
-    /// @param trustData  Platform storage containing trust data on all users
-    /// @param user       User to give trust to
-    function trustUser(address sender, address, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address user) public {
-        require(data.users[sender].exists, "Sender must have entered Matryx");
-        require(data.users[user].exists, "User must exist");
-        LibTrust.trust(data, trustData, sender, user);
-    }
-
-    /// @dev Remove a point of trust from a user
-    /// @param sender     msg.sender to Platform
-    /// @param trustData  Platform storage containing trust data on all users
-    /// @param user       User to remove trust from
-    function distrustUser(address sender, address, MatryxPlatform.Data storage data, LibTrust.TrustData storage trustData, address user) public {
-        require(data.users[sender].exists, "Sender must have entered Matryx");
-        require(data.users[user].exists, "User must exist");
-        LibTrust.distrust(data, trustData, sender, user);
     }
 }
 
