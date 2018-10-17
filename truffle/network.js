@@ -25,8 +25,8 @@ const setNetwork = id => {
         provider = new ethers.providers.JsonRpcProvider('')
         tokenAddress = '0x0c484097e2f000aadaef0450ab35aa00652481a1'
     }
-    else if (network === 'ropsten') {
-        provider = new ethers.providers.InfuraProvider('ropsten', 'metamask')
+    else if (['kovan', 'ropsten'].includes(network)) {
+        provider = new ethers.providers.InfuraProvider(network, 'metamask')
         tokenAddress = '0xf35a0f92848bdfdb2250b60344e87b176b499a8f'
         const mnemonicPath = path.join(__dirname, '../../keys/ropsten_mnemonic.txt')
         mnemonic = fs.readFileSync(mnemonicPath, 'utf8').trim().replace(/(\n|\r|\t|\u2028|\u2029|)/gm, '')

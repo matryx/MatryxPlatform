@@ -52,6 +52,16 @@ module.exports = {
       network_id: 3,
       gas: 4500000
     },
+    kovan: {
+      provider: function () {
+        network.setNetwork('kovan')
+        wallet = new ethers.Wallet(network.privateKeys[0], network.provider)
+        return new HDWalletProvider(network.mnemonic, "https://kovan.infura.io/metamask")
+      },
+      network_id: 42,
+      gas: 6e6,
+      gasPrice: 5e9 // 5 gwei
+    },
     testing: {
       host: "localhost",
       port: 8545,
