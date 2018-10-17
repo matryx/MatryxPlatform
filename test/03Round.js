@@ -86,6 +86,7 @@ contract('NotYetOpen Round Testing', function(accounts) {
 contract('Open Round Testing', function(accounts) {
   let t //tournament
   let r //round
+  let s //submission
 
   it('Able to create a tournament with a Open round', async function() {
     await init()
@@ -113,11 +114,10 @@ contract('Open Round Testing', function(accounts) {
     assert.equal(sub.length, 0, 'Round should not have submissions')
   })
 
-  // TODO add this
-  // it('Number of submissions should be zero', async function() {
-  //   let no_sub = await r.getNumberOfSubmissions()
-  //   assert.equal(no_sub.toNumber(), 0, 'Number of Submissions should be Zero')
-  // })
+  it('Number of submissions should be zero', async function() {
+    let num = await r.getSubmissionCount()
+    assert.equal(num, 0, 'Number of Submissions should be Zero')
+  })
 
   it('Add bounty to a round', async function() {
     await t.transferToRound(web3.toWei(1))
@@ -130,6 +130,16 @@ contract('Open Round Testing', function(accounts) {
     s = await createSubmission(t, false, 1)
     s2 = await createSubmission(t, false, 2)
     assert.ok(s && s2, 'Unable to make submissions')
+  })
+
+  it('Unable to judge submissions while the round is still open', async function() {
+    try {
+      await t.voteSubmission(s.address, true)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
   })
 
   it('Able to exit the tournament and collect my entry fee', async function() {
@@ -173,7 +183,7 @@ contract('In Review Round Testing', function(accounts) {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      end: Math.floor(Date.now() / 1000) + 30,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -206,33 +216,6 @@ contract('In Review Round Testing', function(accounts) {
     assert.isTrue(isEnt, 'Could not enter tournament')
   })
 
-//   it('Unable to make submissions while the round is in review', async function() {
-//     const title = stringToBytes32('A submission ', 3)
-//     const descHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
-//     const fileHash = stringToBytes32('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g', 2)
-
-//     const submissionData = {
-//       title,
-//       descHash,
-//       fileHash,
-//       contributors: [],
-//       distribution: [1],
-//       references: []
-//     }
-
-//     //switch to accounts[1]
-//     t.accountNumber = 1
-//     try {
-//       await t.createSubmission(submissionData)
-//       assert.fail('Expected revert not received')
-//     } catch (error) {
-//       t.accountNumber = 0
-//       let revertFound = error.message.search('revert') >= 0
-//       assert(revertFound, 'Should not have been able to make a submission while In Review')
-//     }
-//   })
-// })
-
   it('Unable to make submissions while the round is in review', async function() {
     try {
       await createSubmission(t, false, 1)
@@ -253,7 +236,7 @@ contract('Closed Round Testing', function(accounts) {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      end: Math.floor(Date.now() / 1000) + 20,
       review: 60,
       bounty: web3.toWei(5)
     }

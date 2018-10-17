@@ -3,7 +3,7 @@ const IMatryxRound = artifacts.require('IMatryxRound')
 const IMatryxSubmission = artifacts.require('IMatryxSubmission')
 
 const { Contract } = require('../truffle/utils')
-const { init, createTournament, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
+const { init, createTournament, waitUntilInReview, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
 
 let platform
 
@@ -39,6 +39,18 @@ contract('Multiple Winning Submissions with No Contribs or Refs and Close Tourna
     assert.ok(s2.address, 'Submission 2 is not valid.')
     assert.ok(s3.address, 'Submission 3 is not valid.')
     assert.ok(s4.address, 'Submission 4 is not valid.')
+  })
+
+  it('Unable to choose any nonexisting submissions to win the round', async function() {
+    await waitUntilInReview(r)
+    let submissions = [accounts[3], accounts[1], t.address, s2.address]
+    try {
+      await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to choose nonexisting submissions')
+    }
   })
 
   it('Able to choose multiple winners and close tournament', async function() {
@@ -95,7 +107,7 @@ contract('Multiple Winning Submissions with Contribs and Refs and Close Tourname
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 20,
+      end: Math.floor(Date.now() / 1000) + 30,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -194,7 +206,7 @@ contract('Multiple Winning Submissions with no Contribs or Refs and Start Next R
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 20,
+      end: Math.floor(Date.now() / 1000) + 30,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -307,7 +319,7 @@ contract('Multiple Winning Submissions with Contribs and Refs and Start Next Rou
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 20,
+      end: Math.floor(Date.now() / 1000) + 30,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -436,7 +448,7 @@ contract('Multiple Winning Submissions with no Contribs or Refs and Do Nothing',
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 20,
+      end: Math.floor(Date.now() / 1000) + 30,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -543,7 +555,7 @@ contract('Multiple Winning Submissions with Contribs and Refs and Do Nothing', f
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 20,
+      end: Math.floor(Date.now() / 1000) + 30,
       review: 60,
       bounty: web3.toWei(5)
     }

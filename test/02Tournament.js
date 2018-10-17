@@ -255,6 +255,71 @@ contract('On Hold Tournament Testing', function(accounts) {
   })
 })
 
+contract('Tournament Submission Review Testing', function(accounts) {
+  let t //tournament
+  let r //round
+  let s //submission
+
+  it('Able to create the tournament and select submissions', async function() {
+    await init()
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 30,
+      review: 50,
+      bounty: web3.toWei(5)
+    }
+
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
+
+    // Wait until open
+    await waitUntilOpen(r)
+
+    // Create submission
+    s = await createSubmission(t, false, 1)
+    let submissions = await r.getSubmissions(0, 0)
+
+    // Select winners
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
+    assert.ok(r, 'Unable to create tournament and select submissions')
+  })
+
+  it('Positive & negative votes for the submission should be 0', async function() {
+    let pV = await s.getPositiveVotes()
+    let nV = await s.getNegativeVotes()
+    assert.isTrue((pV + nV) == 0, 'Submission should not have any votes')
+  })
+
+  it('Unable to judge a submission from another account', async function() {
+    try {
+      t.accountNumber = 1
+      await t.voteSubmission(s.address, true)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      t.accountNumber = 0
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
+
+  it('Able to give the submission a positive vote', async function() {
+    await t.voteSubmission(s.address, true)
+    let pV = await s.getPositiveVotes()
+    assert.isTrue(pV == 1, 'Submission should have 1 positive vote')
+  })
+
+  it('Unable to judge the submission again', async function() {
+    try {
+      await t.voteSubmission(s.address, false)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
+})
+
 contract('Abandoned Tournament due to No Submissions Testing', function(accounts) {
   let t //tournament
   let r //round

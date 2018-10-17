@@ -2,7 +2,7 @@ const IMatryxRound = artifacts.require('IMatryxRound')
 const IMatryxSubmission = artifacts.require('IMatryxSubmission')
 
 const { sleep, Contract } = require('../truffle/utils')
-const { init, createTournament, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
+const { init, createTournament, waitUntilInReview, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
 
 let platform
 
@@ -39,11 +39,7 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
 
   it('Only the tournament owner can choose winning submissions', async function() {
     let submissions = await r.getSubmissions(0, 0)
-    const roundEndTime = await r.getEnd()
-    let timeTilRoundInReview = roundEndTime - Date.now() / 1000
-    timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
-
-    await sleep(timeTilRoundInReview * 1000)
+    waitUntilInReview(r)
 
     try {
       //make the call from accounts[1]
@@ -55,6 +51,17 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
       //set account back to tournament owner
       t.accountNumber = 0
       assert(revertFound, 'This account should not have been able to choose winners')
+    }
+  })
+
+  it('Unable to choose nonexisting submission to win the round', async function() {
+    let submissions = [t.address]
+    try {
+      await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to choose nonexisting submission')
     }
   })
 

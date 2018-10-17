@@ -50,6 +50,8 @@ interface IMatryxTournament {
     function startNextRound() external;
     function closeTournament() external;
 
+    function voteSubmission(address, bool) external;
+
     function withdrawFromAbandoned() external;
     function recoverFunds() external;
 }
@@ -293,7 +295,7 @@ library LibTournament {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
 
-        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
+        (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Open));
 
         LibRound.RoundData storage round = data.rounds[rAddress];
@@ -305,6 +307,7 @@ library LibTournament {
         data.users[sender].submissions.push(sAddress);
 
         round.info.submissions.push(sAddress);
+        round.isSubmission[sAddress] = true;
 
         LibSubmission.SubmissionData storage submission = data.submissions[sAddress];
         submission.info.owner = sender;
@@ -393,6 +396,7 @@ library LibTournament {
 
         uint256 bounty = IMatryxRound(rAddress).getBalance();
         for (i = 0; i < wData.submissions.length; i++) {
+            require(data.rounds[rAddress].isSubmission[wData.submissions[i]], "Must select valid submission address in current round");
             uint256 reward = wData.distribution[i].mul(bounty).div(distTotal);
             IMatryxRound(rAddress).transferTo(info.token, wData.submissions[i], reward);
 
@@ -418,7 +422,7 @@ library LibTournament {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
 
-        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
+        (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.InReview), "Must be in review");
 
         LibRound.RoundData storage round = data.rounds[rAddress];
@@ -541,7 +545,7 @@ library LibTournament {
         require(!tournament.hasWithdrawn[sender], "Already withdrawn");
 
         if (!tournament.hasBeenWithdrawnFrom) {
-            address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
+            (,address rAddress) = getCurrentRound(self, sender, data);
             uint256 rBalance = IMatryxToken(info.token).balanceOf(rAddress);
             IMatryxRound(rAddress).transferTo(info.token, self, rBalance);
             tournament.hasBeenWithdrawnFrom = true;
@@ -585,6 +589,25 @@ library LibTournament {
         transferToWinners(info, data, rAddress);
     }
 
+    function voteSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address submission, bool positive) public {
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(sender == tournament.info.owner, "Must be owner");
+
+        (,address rAddress) = getCurrentRound(self, sender, data);
+        uint256 state = IMatryxRound(rAddress).getState();
+        require(state == uint256(LibGlobals.RoundState.InReview) || state == uint256(LibGlobals.RoundState.HasWinners), "Round must be In Review or Has Winners");
+        require(data.rounds[rAddress].isSubmission[submission], "Submission address must be valid");
+        require(!data.rounds[rAddress].judgedSubmission[submission], "Submission must not have already been judged");
+
+        if (positive)
+            data.submissions[submission].info.positiveVotes = data.submissions[submission].info.positiveVotes.add(1);
+        else
+            data.submissions[submission].info.negativeVotes = data.submissions[submission].info.negativeVotes.add(1);
+
+        data.rounds[rAddress].judgedSubmissions.push(submission);
+        data.rounds[rAddress].judgedSubmission[submission] = true;
+    }
+
     /// @dev Tournament owner can recover tournament funds if the round ends with no submissions
     /// @param self    Address of this Tournament
     /// @param sender  msg.sender to the Tournament
@@ -594,7 +617,7 @@ library LibTournament {
         require(sender == data.tournaments[self].info.owner, "Must be owner");
 
         LibTournament.TournamentData storage tournament = data.tournaments[self];
-        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
+        (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Abandoned), "Tournament must be abandoned");
         require(data.rounds[rAddress].info.submissions.length == 0, "Must have 0 submissions");
         require(!tournament.hasWithdrawn[sender], "Already withdrawn");
