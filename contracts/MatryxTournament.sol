@@ -35,8 +35,6 @@ interface IMatryxTournament {
     function getCurrentRound() external view returns (uint256, address);
 
     function getSubmissionCount() external view returns (uint256);
-    function getMySubmissions() external view returns (address[]);
-
     function getEntrantCount() external view returns (uint256);
     function isEntrant(address) external view returns (bool);
 
@@ -192,38 +190,6 @@ library LibTournament {
         }
 
         return count;
-    }
-
-    /// @dev Returns the addresses of all the submissions the caller made in this tournament
-    function getMySubmissions(address self, address sender, MatryxPlatform.Data storage data) public view returns (address[]) {
-        address[] storage submissions = data.users[sender].submissions;
-        uint256 length = submissions.length;
-
-        assembly {
-            let offset := 0x100000000000000000000000000000000000000000000000000000000
-            let ptr := mload(0x40)
-            let size := 0
-
-            mstore(0, submissions_slot)                                         // store submissions slot
-            let s_subs := keccak256(0, 0x20)                                    // get start of submissions array
-
-            mstore(ptr, 0x20)                                                   // store sizeof address
-
-            mstore(0, mul(0xe76c293e, offset))                                  // getTournament()
-            for { let i := 0 } lt(i, length) { i := add(i, 1) } {
-                let subm := sload(add(s_subs, i))                               // get Submission address
-                let ret := call(gas, subm, 0, 0, 0x04, 0x20, 0x20)              // call Submission.getTournament
-                if iszero(ret) { revert(0, 0) }                                 // safety check
-
-                if eq(mload(0x20), self) {                                      // if tournament == this tournament
-                    size := add(size, 1)                                        // increment array size
-                    mstore(add(ptr, mul(add(size, 1), 0x20)), subm)             // add Submission to array
-                }
-            }
-
-            mstore(add(ptr, 0x20), size)                                        // store array size
-            return(ptr, add(0x40, mul(size, 0x20)))                             // return array
-        }
     }
 
     function getEntrantCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
