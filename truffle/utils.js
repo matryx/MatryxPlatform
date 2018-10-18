@@ -1,57 +1,127 @@
 const ethers = require('ethers')
 const chalk = require('chalk')
 const network = require('./network')
-var _ = require("lodash");
-var Promise = require("bluebird");
-const sleep = ms => new Promise(done => setTimeout(done, ms))
-let log = () => { }
 
 const genId = length => new Array(length).fill(0).map(() => Math.floor(36 * Math.random()).toString(36)).join('')
 const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * Math.random()).toString(16)).join('')
 
-function Contract(address, artifact, accountNum = 0) {
+function getMinedTx(hash) {
+  return new Promise((resolve, reject) => {
+    ;(async function checkTx() {
+      const txr = await network.provider.getTransactionReceipt(hash)
+      if (txr) {
+        if (!txr.status) return reject({ message: 'revert' })
+        resolve(txr)
+      } else setTimeout(checkTx, 1000)
+    })()
+  })
+}
+
+const nonces = {}
+
+function Contract(address, artifact, accountNumber = 0) {
+  const name = artifact.contractName.replace(/I?Matryx/g, '')
+
   let data = {
-    accountNumber: accountNum,
+    name,
+    accountNumber,
     contract: {},
-    wallet: {}
+    logLevel: 2, // 0 none, 1 reverts, 2 completion, 3 verbose
+    wallet: {},
+    resetNonce,
+  }
+
+  let noncePromise = Promise.resolve()
+
+  function resetNonce() {
+    noncePromise = new Promise(async resolve => {
+      const nonce = await data.wallet.getTransactionCount()
+      nonces[data.accountNumber] = nonce
+      resolve()
+    })
+  }
+
+  const fnWrapper = fnName => async function () {
+    // wait for nonce reset, if not done yet
+    await noncePromise
+
+    const fn = data.contract[fnName]
+    const constant = artifact.abi.find(fn => fn.name === fnName).constant
+    const prefix = chalk`{grey       * }`
+
+    let nonce
+    if (!constant && nonces[data.accountNumber] !== undefined) {
+      const realNonce = await data.wallet.getTransactionCount()
+
+      if (realNonce > nonces[data.accountNumber]) {
+        // if nonce on chain is higher, replace saved nonce
+        nonces[data.accountNumber] = realNonce
+      }
+
+      nonce = nonces[data.accountNumber]
+      nonces[data.accountNumber]++
+    }
+
+    try {
+      const res = await fn.apply(null, [...arguments], { nonce })
+
+      if (data.logLevel >= 3 && !constant) {
+        console.log(chalk`${prefix}{grey Waiting for {cyan ${name}}.{yellow ${fnName}} ({cyan ${res.hash}})...}`)
+      }
+
+      if (data.logLevel >= 2 && !constant) {
+        getMinedTx(res.hash).then(txr => {
+          const status = chalk`{${txr.status ? 'green completed' : 'red failed'}}`
+          const gas = +txr.gasUsed
+          const color = gas < 1e6 ? 'green' : gas < 2e6 ? 'yellow' : 'red'
+          const gasUsed = chalk`{grey (used {${color} ${gas}} gas)}`
+          console.log(chalk`${prefix}{cyan ${name}}.{yellow ${fnName}} ${status} ${gasUsed}`)
+        })
+      }
+
+      return res
+    } catch (err) {
+      if (data.logLevel >= 1 && err.message.includes('revert')) {
+        console.log(chalk`${prefix}{cyan ${name}}.{yellow ${fnName}} {red reverted}`)
+      }
+      else if (!err.message.includes('VM') && !constant) {
+        // if error before even firing tx, decrement nonce
+        nonces[data.accountNumber]--
+      }
+      throw err
+    }
   }
 
   let proxy = new Proxy(data, {
     set(obj, prop, val) {
-      if (prop === 'accountNumber') {
+      if (['acc', 'accountNumber'].includes(prop)) {
         obj.accountNumber = val
         obj.wallet = new ethers.Wallet(network.privateKeys[obj.accountNumber], network.provider)
         obj.contract = new ethers.Contract(address, artifact.abi, obj.wallet)
         obj.c = obj.contract
-      }
-      else if (prop === 'wallet') {
+        resetNonce()
+      } else if (prop === 'wallet') {
         obj.accountNumber = -1
         obj.wallet = val
         obj.contract = new ethers.Contract(address, artifact.abi, obj.wallet)
         obj.c = obj.contract
+        resetNonce()
+      } else if (prop === 'logLevel') {
+        obj.logLevel = val
       }
     },
     get(obj, prop) {
-      if (obj.hasOwnProperty(prop))
-        return obj[prop]
-      else {
-        if (typeof data.contract[prop] === 'function') {
-          return function () {
-            return data.contract[prop].apply(null, arguments).catch(err => {
-              if (err.message.includes('revert')) {
-                console.log(chalk`      * {red ${artifact.contractName}.{yellow ${prop}} reverted}`)
-              }
-              throw err
-            })
-          }
-        } else {
-          return data.contract[prop]
-        }
+      if (obj.hasOwnProperty(prop)) return obj[prop]
+      else if (prop === 'nonce') {
+        return nonces[obj.accountNumber]
+      } else {
+        if (typeof obj.contract[prop] === 'function') return fnWrapper(prop)
+        else return obj.contract[prop]
       }
     }
   })
 
-  proxy.accountNumber = accountNum
+  proxy.accountNumber = accountNumber
 
   return proxy
 }
@@ -60,44 +130,7 @@ module.exports = {
   Contract,
   genId,
   genAddress,
-
-  assertEvent: function(contract, filter) {
-    return new Promise((resolve, reject) => {
-        var event = contract[filter.event]();
-        event.watch();
-        event.get((error, logs) => {
-            var log = _.filter(logs, filter);
-            if (log) {
-                resolve(log);
-            } else {
-                throw Error("Failed to find filtered event for " + filter.event);
-            }
-        });
-        event.stopWatching();
-    });
-  },
-
-  getMinedTx(msg, hash) {
-    if (arguments.length == 1) {
-      hash = msg
-      msg = 'transaction'
-    }
-
-    log(chalk`{grey Waiting for {yellow ${msg}} ({cyan ${hash}})...}`)
-    return new Promise((resolve, reject) => {
-      (async function checkTx() {
-        let res = await network.provider.getTransactionReceipt(hash)
-        if (res) {
-          if (!res.status) return reject({ message: 'revert' })
-          let gas = +res.gasUsed
-          let color = gas < 1e6 ? 'green' : gas < 2e6 ? 'yellow' : 'red'
-          log(chalk`{grey   used {${color} ${+res.gasUsed}} gas}`)
-          resolve(res)
-        }
-        else setTimeout(checkTx, 1000)
-      })()
-    })
-  },
+  getMinedTx,
 
   sleep(ms) {
     return new Promise(done => setTimeout(done, ms))
@@ -116,23 +149,25 @@ module.exports = {
   },
 
   stringToBytes(text, len = 0) {
-    text = text || ""
+    text = text || ''
     let data = ethers.utils.toUtf8Bytes(text)
     let padding = 64 - ((data.length * 2) % 64)
     data = ethers.utils.hexlify(data)
-    data = data + "0".repeat(padding)
+    data = data + '0'.repeat(padding)
     if (len <= 0) return data
 
     data = data.substring(2)
     data = data.match(/.{1,64}/g)
-    data = data.map(v => "0x" + v)
+    data = data.map(v => '0x' + v)
     while (data.length < len) {
-      data.push("0x0")
+      data.push('0x00')
     }
     return data
   },
 
-  stringToBytes32() { return this.stringToBytes.apply(this, arguments) },
+  stringToBytes32() {
+    return this.stringToBytes.apply(this, arguments)
+  },
 
   async setup(artifacts, web3, accountNum, silent) {
     const MatryxPlatform = artifacts.require('MatryxPlatform')
@@ -152,13 +187,13 @@ module.exports = {
     const platform = Contract(MatryxPlatform.address, IMatryxPlatform, accountNum)
     const token = Contract(network.tokenAddress, MatryxToken)
 
-    if (!silent) log = console.log
+    const log = silent ? () => { } : console.log
 
     log(chalk`\nSetup {yellow ${account}}`)
     const tokenReleaseAgent = await token.releaseAgent()
     if (tokenReleaseAgent === '0x0000000000000000000000000000000000000000') {
       let { hash } = await token.setReleaseAgent(account)
-      await this.getMinedTx('Token.setReleaseAgent', hash)
+      await this.getMinedTx(hash)
       await token.releaseTokenTransfer({ gasLimit: 1e6 })
       log('Token release agent set to: ' + account)
     }
@@ -168,21 +203,21 @@ module.exports = {
     let tokens = web3.toWei(1e5)
     if (balance == 0) {
       let { hash } = await token.mint(account, tokens)
-      await this.getMinedTx('Token.mint', hash)
+      await this.getMinedTx(hash)
     }
 
     const allowance = await token.allowance(account, platform.address) / 1e18 | 0
     log('Allowance: ' + allowance + ' MTX')
     if (allowance == 0) {
       token.accountNumber = accountNum
-      let { hash } = await token.approve(MatryxPlatform.address, tokens, { gasPrice: 25 })
-      await this.getMinedTx('Token.approve', hash)
+      let { hash } = await token.approve(MatryxPlatform.address, tokens)
+      await this.getMinedTx(hash)
     }
 
     const hasEnteredMatryx = await platform.hasEnteredMatryx(account)
     if (!hasEnteredMatryx) {
       let { hash } = await platform.enterMatryx({ gasLimit: 4.5e6 })
-      await this.getMinedTx('Platform.enterMatryx', hash)
+      await this.getMinedTx(hash)
     }
 
     log(`Account ${accountNum} setup complete!\n`)

@@ -51,7 +51,7 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   // }
 
   let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 6e6, gasPrice: 25 })
-  await getMinedTx('Platform.createTournament', tx.hash)
+  await getMinedTx(tx.hash)
 
   const address = (await platform.getTournaments(0,0)).pop()
   const tournament = Contract(address, IMatryxTournament, accountNumber)
@@ -93,10 +93,10 @@ const createSubmission = async (tournament, accountNumber) => {
       let entryFee = await tournament.getEntryFee()
       token.accountNumber = accountNumber
       let { hash } = await token.approve(tournament.address, entryFee)
-      await getMinedTx('Token.approve', hash)
+      await getMinedTx(hash)
     }
     let { hash } = await tournament.enter({ gasLimit: 5e6 })
-    await getMinedTx('Tournament.enter', hash)
+    await getMinedTx(hash)
   }
 
   const title = stringToBytes32('A submission ' + genId(6), 3)
@@ -116,7 +116,7 @@ const createSubmission = async (tournament, accountNumber) => {
 
   // let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 8e6 })
   let tx = await tournament.createSubmission(submissionData, { gasLimit: 8e6 })
-  await getMinedTx('Tournament.createSubmission', tx.hash)
+  await getMinedTx(tx.hash)
 
   const [_, roundAddress] = await tournament.getCurrentRound()
   const round = Contract(roundAddress, IMatryxRound)
@@ -137,7 +137,7 @@ const updateSubmission = async submission => {
   let tx
 
   tx = await submission.updateDetails(modData)
-  await getMinedTx('Submission.updateDetails', tx.hash)
+  await getMinedTx(tx.hash)
 
   // const contribs = new Array(3).fill(0).map(() => genAddress())
   const contribs = new Array(3).fill('0x' + '0'.repeat(40))
@@ -147,18 +147,18 @@ const updateSubmission = async submission => {
   const refs = new Array(3).fill(0).map(() => genAddress())
 
   tx = await submission.setContributorsAndReferences([indices, contribs], contribsDist, [indices, refs])
-  await getMinedTx('Submission.setContributorsAndReferences', tx.hash)
+  await getMinedTx(tx.hash)
 }
 
 const removeContribsAndRefs = async submission => {
-  const contribs = new Array(2).fill(0).map(() => "0x0")
+  const contribs = new Array(2).fill(0).map(() => "0x00")
   const contribsDist = new Array(2).fill(0)
   const indices = [1, 2]
 
-  const refs = new Array(2).fill(0).map(() => "0x0")
+  const refs = new Array(2).fill(0).map(() => "0x00")
 
   tx = await submission.setContributorsAndReferences([indices, contribs], contribsDist, [indices, refs])
-  await getMinedTx('Submission.setContributorsAndReferences', tx.hash)
+  await getMinedTx(tx.hash)
 }
 
 const logSubmissions = async tournament => {
@@ -210,7 +210,7 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
   await sleep(timeTilRoundInReview * 1000)
 
   const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction], roundData, { gasLimit: 5000000 })
-  await getMinedTx('Tournament.selectWinners', tx.hash)
+  await getMinedTx(tx.hash)
 
   logSubmissionMtx(winners)
 }

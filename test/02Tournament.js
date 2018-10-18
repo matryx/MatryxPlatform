@@ -152,7 +152,7 @@ contract('Tournament Testing', function(accounts) {
     }
 
     try {
-      await platform.createTournament(tData, rData, { gasLimit: 8e6, gasPrice: 25 })
+      await platform.createTournament(tData, rData)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0

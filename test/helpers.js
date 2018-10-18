@@ -50,7 +50,7 @@ module.exports = function (artifacts, web3) {
     }
 
     let tx = await platform.createTournament(tournamentData, roundData)
-    await getMinedTx('Platform.createTournament', tx.hash)
+    await getMinedTx(tx.hash)
 
     const address = (await platform.getTournaments(0, 0)).pop()
     const tournament = Contract(address, IMatryxTournament, accountNumber)
@@ -119,10 +119,10 @@ module.exports = function (artifacts, web3) {
 
     if (contribs) {
       let tx = await tournament.createSubmission({ ...submissionData, ...contribsAndRefs })
-      await getMinedTx('Tournament.createSubmission', tx.hash)
+      await getMinedTx(tx.hash)
     } else {
       let tx = await tournament.createSubmission({ ...submissionData, ...noContribsAndRefs })
-      await getMinedTx('Tournament.createSubmission', tx.hash)
+      await getMinedTx(tx.hash)
     }
 
     const [_, roundAddress] = await tournament.getCurrentRound()
@@ -151,7 +151,7 @@ module.exports = function (artifacts, web3) {
     let tx
 
     tx = await submission.updateDetails(modData)
-    await getMinedTx('Submission.updateDetails', tx.hash)
+    await getMinedTx(tx.hash)
 
     const contribs = {
       indices:[],
@@ -166,7 +166,7 @@ module.exports = function (artifacts, web3) {
     }
 
     tx = await submission.setContributorsAndReferences(contribs, distribution, references)
-    await getMinedTx('Submission.setContributorsAndReferences', tx.hash)
+    await getMinedTx(tx.hash)
   }
 
   async function selectWinnersWhenInReview(tournament, winners, rewardDistribution, roundData, selectWinnerAction) {
@@ -180,7 +180,7 @@ module.exports = function (artifacts, web3) {
     await sleep(timeTilRoundInReview * 1000)
 
     const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction], roundData)
-    await getMinedTx('Tournament.selectWinners', tx.hash)
+    await getMinedTx(tx.hash)
   }
 
   async function enterTournament(tournament, accountNumber) {
@@ -201,10 +201,10 @@ module.exports = function (artifacts, web3) {
       if (!allowance) {
         let entryFee = await tournament.getEntryFee()
         let { hash } = await token.approve(tournament.address, entryFee)
-        await getMinedTx('Token.approve', hash)
+        await getMinedTx(hash)
       }
-      let { hash } = await tournament.enter({ gasLimit: 5e6 })
-      await getMinedTx('Tournament.enter', hash)
+      let { hash } = await tournament.enter()
+      await getMinedTx(hash)
     }
 
     tournament.accountNumber = tAccount
