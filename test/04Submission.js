@@ -17,7 +17,7 @@ contract('Submission Testing with No Contributors and References', function(acco
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      end: Math.floor(Date.now() / 1000) + 20,
       review: 60,
       bounty: web3.toWei(5)
     }

@@ -35,8 +35,6 @@ interface IMatryxTournament {
     function getCurrentRound() external view returns (uint256, address);
 
     function getSubmissionCount() external view returns (uint256);
-    function getMySubmissions() external view returns (address[]);
-
     function getEntrantCount() external view returns (uint256);
     function isEntrant(address) external view returns (bool);
 
@@ -51,6 +49,8 @@ interface IMatryxTournament {
     function updateNextRound(LibRound.RoundDetails) external;
     function startNextRound() external;
     function closeTournament() external;
+
+    function voteSubmission(address, bool) external;
 
     function withdrawFromAbandoned() external;
     function recoverFunds() external;
@@ -194,38 +194,6 @@ library LibTournament {
         return count;
     }
 
-    /// @dev Returns the addresses of all the submissions the caller made in this tournament
-    function getMySubmissions(address self, address sender, MatryxPlatform.Data storage data) public view returns (address[]) {
-        address[] storage submissions = data.users[sender].submissions;
-        uint256 length = submissions.length;
-
-        assembly {
-            let offset := 0x100000000000000000000000000000000000000000000000000000000
-            let ptr := mload(0x40)
-            let size := 0
-
-            mstore(0, submissions_slot)                                         // store submissions slot
-            let s_subs := keccak256(0, 0x20)                                    // get start of submissions array
-
-            mstore(ptr, 0x20)                                                   // store sizeof address
-
-            mstore(0, mul(0xe76c293e, offset))                                  // getTournament()
-            for { let i := 0 } lt(i, length) { i := add(i, 1) } {
-                let subm := sload(add(s_subs, i))                               // get Submission address
-                let ret := call(gas, subm, 0, 0, 0x04, 0x20, 0x20)              // call Submission.getTournament
-                if iszero(ret) { revert(0, 0) }                                 // safety check
-
-                if eq(mload(0x20), self) {                                      // if tournament == this tournament
-                    size := add(size, 1)                                        // increment array size
-                    mstore(add(ptr, mul(add(size, 1), 0x20)), subm)             // add Submission to array
-                }
-            }
-
-            mstore(add(ptr, 0x20), size)                                        // store array size
-            return(ptr, add(0x40, mul(size, 0x20)))                             // return array
-        }
-    }
-
     function getEntrantCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.tournaments[self].info.entrantCount;
     }
@@ -327,7 +295,7 @@ library LibTournament {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
 
-        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
+        (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Open));
 
         LibRound.RoundData storage round = data.rounds[rAddress];
@@ -339,6 +307,7 @@ library LibTournament {
         data.users[sender].submissions.push(sAddress);
 
         round.info.submissions.push(sAddress);
+        round.isSubmission[sAddress] = true;
 
         LibSubmission.SubmissionData storage submission = data.submissions[sAddress];
         submission.info.owner = sender;
@@ -427,6 +396,7 @@ library LibTournament {
 
         uint256 bounty = IMatryxRound(rAddress).getBalance();
         for (i = 0; i < wData.submissions.length; i++) {
+            require(data.rounds[rAddress].isSubmission[wData.submissions[i]], "Must select valid submission address in current round");
             uint256 reward = wData.distribution[i].mul(bounty).div(distTotal);
             IMatryxRound(rAddress).transferTo(info.token, wData.submissions[i], reward);
 
@@ -452,7 +422,7 @@ library LibTournament {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
 
-        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
+        (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.InReview), "Must be in review");
 
         LibRound.RoundData storage round = data.rounds[rAddress];
@@ -575,7 +545,7 @@ library LibTournament {
         require(!tournament.hasWithdrawn[sender], "Already withdrawn");
 
         if (!tournament.hasBeenWithdrawnFrom) {
-            address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
+            (,address rAddress) = getCurrentRound(self, sender, data);
             uint256 rBalance = IMatryxToken(info.token).balanceOf(rAddress);
             IMatryxRound(rAddress).transferTo(info.token, self, rBalance);
             tournament.hasBeenWithdrawnFrom = true;
@@ -619,6 +589,25 @@ library LibTournament {
         transferToWinners(info, data, rAddress);
     }
 
+    function voteSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address submission, bool positive) public {
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(sender == tournament.info.owner, "Must be owner");
+
+        (,address rAddress) = getCurrentRound(self, sender, data);
+        uint256 state = IMatryxRound(rAddress).getState();
+        require(state == uint256(LibGlobals.RoundState.InReview) || state == uint256(LibGlobals.RoundState.HasWinners), "Round must be In Review or Has Winners");
+        require(data.rounds[rAddress].isSubmission[submission], "Submission address must be valid");
+        require(!data.rounds[rAddress].judgedSubmission[submission], "Submission must not have already been judged");
+
+        if (positive)
+            data.submissions[submission].info.positiveVotes = data.submissions[submission].info.positiveVotes.add(1);
+        else
+            data.submissions[submission].info.negativeVotes = data.submissions[submission].info.negativeVotes.add(1);
+
+        data.rounds[rAddress].judgedSubmissions.push(submission);
+        data.rounds[rAddress].judgedSubmission[submission] = true;
+    }
+
     /// @dev Tournament owner can recover tournament funds if the round ends with no submissions
     /// @param self    Address of this Tournament
     /// @param sender  msg.sender to the Tournament
@@ -628,7 +617,7 @@ library LibTournament {
         require(sender == data.tournaments[self].info.owner, "Must be owner");
 
         LibTournament.TournamentData storage tournament = data.tournaments[self];
-        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
+        (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Abandoned), "Tournament must be abandoned");
         require(data.rounds[rAddress].info.submissions.length == 0, "Must have 0 submissions");
         require(!tournament.hasWithdrawn[sender], "Already withdrawn");

@@ -25,7 +25,7 @@ interface IMatryxRound {
     function getBounty() external view returns (uint256);
     function getBalance() external view returns (uint256);
     function getSubmissions(uint256, uint256) external view returns (address[]);
-    function getData() external view returns (LibRound.RoundData);
+    function getData() external view returns (LibRound.RoundReturnData);
 
     function getSubmissionCount() external view returns (uint256);
     function getWinningSubmissions() external view returns (address[]);
@@ -52,18 +52,27 @@ library LibRound {
         uint256 bounty;
     }
 
-    // All state data and details of Round
-    struct RoundData {
-        RoundInfo info;
-        RoundDetails details;
-    }
-
     // All information needed to choose winning submissions
     struct WinnersData {
         // bytes32[2] sKHash;
         address[] submissions;
         uint256[] distribution;
         uint256 action;
+    }
+
+    struct RoundData {
+        RoundInfo info;
+        RoundDetails details;
+
+        mapping(address=>bool) isSubmission;
+        address[] judgedSubmissions;
+        mapping(address=>bool) judgedSubmission;
+    }
+
+    // All state data and details of Round
+    struct RoundReturnData {
+        RoundInfo info;
+        RoundDetails details;
     }
 
     /// @dev Returns the Tournament address of this Round
@@ -119,8 +128,11 @@ library LibRound {
     }
 
     /// @dev Returns the data struct of this Round
-    function getData(address self, address, MatryxPlatform.Data storage data) public view returns (LibRound.RoundData) {
-        return data.rounds[self];
+    function getData(address self, address, MatryxPlatform.Data storage data) public view returns (LibRound.RoundReturnData) {
+        RoundReturnData memory round;
+        round.info = data.rounds[self].info;
+        round.details = data.rounds[self].details;
+        return round;
     }
 
     function getSubmissionCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
