@@ -21,6 +21,9 @@ interface IMatryxTournament {
     function setInfo(MatryxTrinity.Info) external;
 
     function getOwner() external view returns (address);
+    function getPositiveVotes() external view returns (uint256);
+    function getNegativeVotes() external view returns (uint256);
+
     function getTitle() external view returns (bytes32[3]);
     function getCategory() external view returns (bytes32);
     function getDescriptionHash() external view returns (bytes32[2]);
@@ -51,6 +54,7 @@ interface IMatryxTournament {
     function closeTournament() external;
 
     function voteSubmission(address, bool) external;
+    function voteRound(address, bool) external;
 
     function withdrawFromAbandoned() external;
     function recoverFunds() external;
@@ -67,6 +71,8 @@ library LibTournament {
         address owner;
         address[] rounds;
         uint256 entrantCount;
+        uint256 positiveVotes;
+        uint256 negativeVotes;
     }
 
     // All information needed for creation of Tournament
@@ -97,6 +103,16 @@ library LibTournament {
     /// @dev Returns the owner of this Tournament
     function getOwner(address self, address, MatryxPlatform.Data storage data) public view returns (address) {
         return data.tournaments[self].info.owner;
+    }
+
+    /// @dev Returns the number of positive votes for this Tournament
+    function getPositiveVotes(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.tournaments[self].info.positiveVotes;
+    }
+
+    /// @dev Returns the number of negative votes for this Tournament
+    function getNegativeVotes(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.tournaments[self].info.negativeVotes;
     }
 
     /// @dev Returns the title of this Tournament
@@ -194,19 +210,27 @@ library LibTournament {
         return count;
     }
 
-    function getEntrantCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+    /// @dev Returns the number of entrants in this Tournament
+    /// @param self    Address of this Tournament
+    /// @param sender  msg.sender to the Tournament
+    /// @param data    Data struct on Platform
+    function getEntrantCount(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.tournaments[self].info.entrantCount;
     }
 
     /// @dev Returns true if address passed has entered the Tournament
+    /// @param self    Address of this Tournament
+    /// @param sender  msg.sender to the Tournament
+    /// @param data    Data struct on Platform
     /// @param uAddress    Address of some user
-    function isEntrant(address self, address, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
+    function isEntrant(address self, address sender, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
         return data.tournaments[self].entryFeePaid[uAddress].exists;
     }
 
     /// @dev Enter Tournament and pay entry fee
     /// @param self    Address of this Tournament
     /// @param sender  msg.sender to the Tournament
+    /// @param info    Info struct on Platform
     /// @param data    Data struct on Platform
     function enter(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
@@ -296,7 +320,7 @@ library LibTournament {
         require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
 
         (,address rAddress) = getCurrentRound(self, sender, data);
-        require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Open));
+        require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Open), "Round must be Open");
 
         LibRound.RoundData storage round = data.rounds[rAddress];
 
@@ -401,7 +425,7 @@ library LibTournament {
             IMatryxRound(rAddress).transferTo(info.token, wData.submissions[i], reward);
 
             // TODO: revisit - do contributors get totalWinnings updated?
-            address owner = data.submissions[wData.submissions[i]].info.owner;
+            // address owner = data.submissions[wData.submissions[i]].info.owner;
 
             reward = reward.add(data.submissions[wData.submissions[i]].info.reward);
             data.submissions[wData.submissions[i]].info.reward = reward;
@@ -567,6 +591,7 @@ library LibTournament {
     /// @dev Closes Tournament after a SelectWinnersAction.DoNothing and transfers all funds to winners
     /// @param self    Address of this Tournament
     /// @param sender  msg.sender to the Tournament
+    /// @param info    Info struct on Platform
     /// @param data    Data struct on Platform
     function closeTournament(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
@@ -589,6 +614,13 @@ library LibTournament {
         transferToWinners(info, data, rAddress);
     }
 
+    /// @dev Give a positive or negative vote to a submission of the current round
+    /// @param self        Address of this Tournament
+    /// @param sender      msg.sender to the Tournament
+    /// @param info        Info struct on Platform
+    /// @param data        Data struct on Platform
+    /// @param submission  Address of the submission to vote
+    /// @param positive    True if the vote is positive; false otherwise
     function voteSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address submission, bool positive) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
@@ -606,6 +638,29 @@ library LibTournament {
 
         data.rounds[rAddress].judgedSubmissions.push(submission);
         data.rounds[rAddress].judgedSubmission[submission] = true;
+    }
+
+    /// @dev Give a positive or negative vote to this tournament for current round
+    /// @param self        Address of this Tournament
+    /// @param sender      msg.sender to the Tournament
+    /// @param info        Info struct on Platform
+    /// @param data        Data struct on Platform
+    /// @param round       Address of the round to judge
+    /// @param positive    True if the vote is positive; false otherwise
+    function voteRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address round, bool positive) public {
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+
+        uint256 state = IMatryxRound(round).getState();
+        require(state == uint256(LibGlobals.RoundState.HasWinners) || state == uint256(LibGlobals.RoundState.Closed), "Round must have Winners or be Closed");
+        require(isEntrant(self, sender, data, sender), "Sender must be an entrant of the tournament");
+        require(!data.rounds[round].judgedRound[sender], "Sender must not have judged this round before");
+
+        if (positive)
+            tournament.info.positiveVotes = tournament.info.positiveVotes.add(1);
+        else
+            tournament.info.negativeVotes = tournament.info.negativeVotes.add(1);
+
+        data.rounds[round].judgedRound[sender] = true;
     }
 
     /// @dev Tournament owner can recover tournament funds if the round ends with no submissions

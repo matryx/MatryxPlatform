@@ -142,6 +142,20 @@ contract('Open Round Testing', function(accounts) {
     }
   })
 
+  it('Entrants unable to vote open round', async function() {
+    try {
+      //switch account
+      t.accountNumber = 1
+      await t.voteRound(r.address, true)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      //switch back
+      t.accountNumber = 0
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
+
   it('Able to exit the tournament and collect my entry fee', async function() {
     // Switch to accounts[1]
     t.accountNumber = 1
@@ -225,6 +239,20 @@ contract('In Review Round Testing', function(accounts) {
       assert(revertFound, 'Should not have been able to make a submission while In Review')
     }
   })
+
+  it('Entrants unable to vote round while in review', async function() {
+    try {
+      //switch account
+      t.accountNumber = 1
+      await t.voteRound(r.address, false)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      //switch back
+      t.accountNumber = 0
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
 })
 
 contract('Closed Round Testing', function(accounts) {
@@ -291,6 +319,60 @@ contract('Closed Round Testing', function(accounts) {
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to make a submission while In Review')
+    }
+  })
+
+  it('Tournament entrant able to vote on last closed round', async function() {
+    try {
+      await createSubmission(t, false, 1)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to make a submission while In Review')
+    }
+  })
+
+  it('Tournament entrant able to vote on last closed round', async function() {
+    //switch accounts
+    t.accountNumber = 1
+    await t.voteRound(r.address, true)
+    //switch back
+    t.accountNumber = 0
+    let pV = await t.getPositiveVotes()
+    assert.equal(pV, 1, "Tournament should have 1 positive vote")
+  })
+
+  it('Tournament entrant cannot vote twice', async function() {
+    try {
+      await t.voteRound(r.address, false)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
+
+  it('Tournament owner cannot vote on their own tournament', async function() {
+    try {
+      await t.voteRound(r.address, true)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
+
+  it('Non-entrant should not be able to vote', async function() {
+    try {
+      //switch accounts
+      t.accountNumber = 2
+      await t.voteRound(r.address, true)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      //switch back
+      t.accountNumber = 0
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
     }
   })
 })
@@ -454,8 +536,8 @@ contract('Unfunded Round Testing', function(accounts) {
     token = (await init()).token
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
-      review: 60,
+      end: Math.floor(Date.now() / 1000) + 30,
+      review: 80,
       bounty: web3.toWei(10)
     }
 
@@ -527,6 +609,24 @@ contract('Unfunded Round Testing', function(accounts) {
     let state = await ur.getState()
     assert.equal(state, 2, 'Round is not Open')
   })
+
+  it('Entrants able to vote newest round as well as past rounds', async function() {
+    // Create submission & winner selection
+    await createSubmission(t, false, 1)
+    let submissions = await ur.getSubmissions(0, 0)
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
+
+    // switch accounts to vote
+    t.accountNumber = 1
+    await t.voteRound(r.address, true)
+    await t.voteRound(ur.address, false)
+    // switch back
+    t.accountNumber = 0
+
+    let pV = await t.getPositiveVotes()
+    let nV = await t.getNegativeVotes()
+    assert.isTrue(pV == 1 && nV == 1, "Tournament should have 1 positive & 1 negative vote")
+  })
 })
 
 contract('Ghost Round Testing', function(accounts) {
@@ -539,7 +639,7 @@ contract('Ghost Round Testing', function(accounts) {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      end: Math.floor(Date.now() / 1000) + 30,
       review: 20,
       bounty: web3.toWei(5)
     }

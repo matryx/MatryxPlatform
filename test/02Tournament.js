@@ -82,6 +82,12 @@ contract('Tournament Testing', function(accounts) {
     assert.equal(count, 0, 'Number of entrants should be 0.')
   })
 
+  it('Number of positive and negative votes is 0', async function() {
+    let pV = await t.getPositiveVotes()
+    let nV = await t.getNegativeVotes()
+    assert.equal(pV + nV, 0, 'Number of total votes should be 0.')
+  })
+
   // it("Number of submissions is 0", async function () {
   //   let count = await t.getSubmissionCount()
   //   assert.equal(count, 0, "Number of entrants should be 0.")
