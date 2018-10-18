@@ -204,7 +204,7 @@ library LibTournament {
         return data.tournaments[self].entryFeePaid[uAddress].exists;
     }
 
-    /// @dev Enter Tournament
+    /// @dev Enter Tournament and pay entry fee
     /// @param self    Address of this Tournament
     /// @param sender  msg.sender to the Tournament
     /// @param data    Data struct on Platform
