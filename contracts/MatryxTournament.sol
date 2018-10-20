@@ -506,7 +506,7 @@ library LibTournament {
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.NotYetOpen), "Cannot edit open Round");
 
         if (tournament.info.rounds.length > 1 && rDetails.start > 0) {
-            address currentRound = tournament.info.rounds[tournament.info.rounds.length - 2];
+            (,address currentRound) = getCurrentRound(self, sender, data);
             LibRound.RoundDetails storage currentDetails = data.rounds[currentRound].details;
             require(rDetails.start >= currentDetails.end.add(currentDetails.review), "Round cannot start before end of review");
         }
@@ -547,7 +547,7 @@ library LibTournament {
         require(sender == tournament.info.owner, "Must be owner");
         require(tournament.info.rounds.length > 1, "No round to start");
 
-        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 2];
+        (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.HasWinners), "Must have selected winners");
 
         data.rounds[rAddress].info.closed = true;
@@ -598,7 +598,7 @@ library LibTournament {
         require(sender == tournament.info.owner, "Must be owner");
         require(tournament.info.rounds.length > 1, "Must be in Round limbo");
 
-        address rAddress = tournament.info.rounds[tournament.info.rounds.length - 2];
+        (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.HasWinners), "Must have selected winners");
 
         // transfer from ghost into HasWinners Round
@@ -612,6 +612,10 @@ library LibTournament {
 
         // then transfer all to winners of that Round
         transferToWinners(info, data, rAddress);
+
+        // close round and remove ghost round
+        data.rounds[rAddress].info.closed = true;
+        tournament.info.rounds.length = tournament.info.rounds.length - 1;
     }
 
     /// @dev Give a positive or negative vote to a submission of the current round
