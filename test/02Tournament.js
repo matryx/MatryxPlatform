@@ -178,7 +178,7 @@ contract('On Hold Tournament Testing', function(accounts) {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      end: Math.floor(Date.now() / 1000) + 30,
       review: 5,
       bounty: web3.toWei(5)
     }
