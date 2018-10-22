@@ -635,10 +635,15 @@ library LibTournament {
         require(data.rounds[rAddress].isSubmission[submission], "Submission address must be valid");
         require(!data.rounds[rAddress].judgedSubmission[submission], "Submission must not have already been judged");
 
-        if (positive)
+        address owner = data.submissions[submission].info.owner;
+        if (positive) {
             data.submissions[submission].info.positiveVotes = data.submissions[submission].info.positiveVotes.add(1);
-        else
+            data.users[owner].positiveVotes = data.users[owner].positiveVotes.add(1);
+        }
+        else {
             data.submissions[submission].info.negativeVotes = data.submissions[submission].info.negativeVotes.add(1);
+            data.users[owner].negativeVotes = data.users[owner].negativeVotes.add(1);
+        }
 
         data.rounds[rAddress].judgedSubmissions.push(submission);
         data.rounds[rAddress].judgedSubmission[submission] = true;
@@ -659,10 +664,14 @@ library LibTournament {
         require(isEntrant(self, sender, data, sender), "Sender must be an entrant of the tournament");
         require(!data.rounds[round].judgedRound[sender], "Sender must not have judged this round before");
 
-        if (positive)
+        if (positive) {
             tournament.info.positiveVotes = tournament.info.positiveVotes.add(1);
-        else
+            data.users[tournament.info.owner].positiveVotes = data.users[tournament.info.owner].positiveVotes.add(1);
+        }
+        else {
             tournament.info.negativeVotes = tournament.info.negativeVotes.add(1);
+            data.users[tournament.info.owner].negativeVotes = data.users[tournament.info.owner].negativeVotes.add(1);
+        }
 
         data.rounds[round].judgedRound[sender] = true;
     }

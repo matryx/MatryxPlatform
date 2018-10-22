@@ -338,6 +338,7 @@ library LibPlatform {
         require(IMatryxToken(info.token).balanceOf(sender) > 0, "Must have MTX");
 
         data.users[sender].exists = true;
+        data.users[sender].timeEntered = now;
         data.allUsers.push(sender);
     }
 

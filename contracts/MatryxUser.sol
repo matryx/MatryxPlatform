@@ -48,7 +48,9 @@ contract MatryxUser {
 
 interface IMatryxUser {
     function getData(address user) external view returns (LibUser.UserData);
-    function getReputation(address user) external view returns (uint256);
+    function getTimeInMatryx(address user) external view returns (uint256);
+    function getPositiveVotes(address user) external view returns (uint256);
+    function getNegativeVotes(address user) external view returns (uint256);
     function getTotalSpent(address user) external view returns (uint256);
     function getTotalWinnings(address user) external view returns (uint256);
     function getTournaments(address user) external view returns (address[]);
@@ -62,7 +64,9 @@ interface IMatryxUser {
 library LibUser {
     struct UserData {
         bool      exists;
-        uint256   reputation;
+        uint256   timeEntered;
+        uint256   positiveVotes;
+        uint256   negativeVotes;
         uint256   totalSpent;
         uint256   totalWinnings;
         address[] tournaments;
@@ -77,8 +81,16 @@ library LibUser {
         return data.users[user];
     }
 
-    function getReputation(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
-        return data.users[user].reputation;
+    function getTimeInMatryx(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
+        return now - data.users[user].timeEntered;
+    }
+
+    function getPositiveVotes(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
+        return data.users[user].positiveVotes;
+    }
+
+    function getNegativeVotes(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
+        return data.users[user].negativeVotes;
     }
 
     function getTotalSpent(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
