@@ -235,6 +235,7 @@ library LibSubmission {
 
     /// @dev Updates the details of this Submission
     /// @param self     Address of this Submission
+    /// @param sender  msg.sender to this Submission
     /// @param data     Data struct on Platform
     /// @param updates  Details updates (title, descHash, fileHash)
     function updateDetails(address self, address sender, MatryxPlatform.Data storage data, LibSubmission.DetailsUpdates updates) public {

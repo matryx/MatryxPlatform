@@ -82,6 +82,12 @@ contract('Tournament Testing', function(accounts) {
     assert.equal(count, 0, 'Number of entrants should be 0.')
   })
 
+  it('Number of positive and negative votes is 0', async function() {
+    let pV = await t.getPositiveVotes()
+    let nV = await t.getNegativeVotes()
+    assert.equal(pV + nV, 0, 'Number of total votes should be 0.')
+  })
+
   // it("Number of submissions is 0", async function () {
   //   let count = await t.getSubmissionCount()
   //   assert.equal(count, 0, "Number of entrants should be 0.")
@@ -172,7 +178,7 @@ contract('On Hold Tournament Testing', function(accounts) {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      end: Math.floor(Date.now() / 1000) + 30,
       review: 5,
       bounty: web3.toWei(5)
     }

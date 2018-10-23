@@ -67,6 +67,7 @@ library LibRound {
         mapping(address=>bool) isSubmission;
         address[] judgedSubmissions;
         mapping(address=>bool) judgedSubmission;
+        mapping(address=>bool) judgedRound;
     }
 
     // All state data and details of Round
