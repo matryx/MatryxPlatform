@@ -235,7 +235,7 @@ library LibPlatform {
     /// @param count       Number of Tournaments to return. If 0, all
     /// @return            Array of Tournament addresses
     function getTournaments(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
-        address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address libUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
         address[] storage tournaments = data.allTournaments;
 
         assembly {
@@ -247,7 +247,7 @@ library LibPlatform {
             mstore(add(ptr, 0x24), startIndex)                                  // arg 0 - startIndex
             mstore(add(ptr, 0x44), count)                                       // arg 1 - count
 
-            let res := delegatecall(gas, LibUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
+            let res := delegatecall(gas, libUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
             if iszero(res) { revert(0, 0) }                                     // safety check
 
             returndatacopy(ptr, 0, returndatasize)                              // copy result into mem
@@ -263,7 +263,7 @@ library LibPlatform {
     /// @param count       Number of User to return. If 0, all
     /// @return          Array of Tournament addresses for given category
     function getTournamentsByCategory(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category, uint256 startIndex, uint256 count) public view returns (address[]) {
-        address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address libUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
 
         assembly {
             let offset := 0x100000000000000000000000000000000000000000000000000000000
@@ -278,7 +278,7 @@ library LibPlatform {
             mstore(add(ptr, 0x24), startIndex)                                  // arg 0 - startIndex
             mstore(add(ptr, 0x44), count)                                       // arg 1 - count
 
-            let res := delegatecall(gas, LibUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
+            let res := delegatecall(gas, libUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
             if iszero(res) { revert(0, 0) }                                     // safety check
 
             returndatacopy(ptr, 0, returndatasize)                              // copy result into mem
@@ -293,7 +293,7 @@ library LibPlatform {
     /// @param count       Number of User to return. If 0, all
     /// @return            Array of User addresses
     function getUsers(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
-        address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address libUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
         address[] storage users = data.allUsers;
 
         assembly {
@@ -305,7 +305,7 @@ library LibPlatform {
             mstore(add(ptr, 0x24), startIndex)                                  // arg 0 - startIndex
             mstore(add(ptr, 0x44), count)                                       // arg 1 - count
 
-            let res := delegatecall(gas, LibUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
+            let res := delegatecall(gas, libUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
             if iszero(res) { revert(0, 0) }                                     // safety check
 
             returndatacopy(ptr, 0, returndatasize)                              // copy result into mem
@@ -320,7 +320,7 @@ library LibPlatform {
     /// @param count       Number of Category to return. If 0, all
     /// @return            Array of Categories
     function getCategories(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (bytes32[]) {
-        address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address libUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
         bytes32[] storage allCategories = data.allCategories;
 
         assembly {
@@ -332,7 +332,7 @@ library LibPlatform {
             mstore(add(ptr, 0x24), startIndex)                                  // arg 0 - startIndex
             mstore(add(ptr, 0x44), count)                                       // arg 1 - count
 
-            let res := delegatecall(gas, LibUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
+            let res := delegatecall(gas, libUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
             if iszero(res) { revert(0, 0) }                                     // safety check
 
             returndatacopy(ptr, 0, returndatasize)                              // copy result into mem
@@ -384,7 +384,7 @@ library LibPlatform {
     function removeTournamentFromCategory(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress) public {
         require(sender == platform || MatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
 
-        address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address libUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
         bytes32 category = data.tournaments[tAddress].details.category;
         address[] storage categoryList = data.categories[category];
         uint256 index;
@@ -401,7 +401,7 @@ library LibPlatform {
             mstore(add(ptr, 0x04), categoryList_slot)                   // arg 0 - data.categories[tournament.category]
             mstore(add(ptr, 0x24), index)                               // arg 1 - index
 
-            let res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
+            let res := delegatecall(gas, libUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
             if iszero(res) { revert(0, 0) }                             // safety check
         }
     }
