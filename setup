@@ -4,11 +4,11 @@ q.push("system = contract(MatryxSystem.address, MatryxSystem)")
 q.push("system.createVersion(1)")
 q.push("system.setVersion(1)")
 
-q.push("system.setContract(1, stb('MatryxPlatform'), MatryxPlatform.address)")
-q.push("system.setContractType(MatryxPlatform.address, 1)")
-
 q.push("system.setContract(1, stb('MatryxUser'), MatryxUser.address)")
-q.push("system.setContractType(MatryxUser.address, 2)")
+q.push("system.setContractType(MatryxUser.address, 1)")
+
+q.push("system.setContract(1, stb('MatryxPlatform'), MatryxPlatform.address)")
+q.push("system.setContractType(MatryxPlatform.address, 2)")
 
 q.push("system.setContract(1, stb('LibUtils'), LibUtils.address)")
 q.push("system.setContract(1, stb('LibPlatform'), LibPlatform.address)")
@@ -190,8 +190,12 @@ q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xb79550be'
 
 // MatryxUser.getData
 q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x38266b22', ['0xc7ef5c16', [4], []])")
-// MatryxUser.getReputation
-q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x9c89a0e2', ['0x6acb51f0', [4], []])")
+// MatryxUser.getTimeInMatryx
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x83ec507e', ['0x923c77e7', [4], []])")
+// MatryxUser.getPositiveVotes
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0xc9635d5e', ['0x5c96c934', [4], []])")
+// MatryxUser.getNegativeVotes
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x3c9921dd', ['0x41076e0d', [4], []])")
 // MatryxUser.getTotalSpent
 q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x02c81f82', ['0xd0509905', [4], []])")
 // MatryxUser.getTotalWinnings

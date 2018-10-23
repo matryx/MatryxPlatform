@@ -161,5 +161,5 @@ contract MatryxSystem is Ownable() {
 }
 
 library LibSystem {
-    enum ContractType { Unknown, Platform, User, Tournament, Round, Submission }
+    enum ContractType { Unknown, User, Platform, Tournament, Round, Submission }
 }
