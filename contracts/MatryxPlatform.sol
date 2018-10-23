@@ -160,6 +160,9 @@ interface IMatryxPlatform {
     function getInfo() external view returns (MatryxPlatform.Info);
     function setTokenAddress(address) external;
 
+    function isTournament(address) external view returns (bool);
+    function isRound(address) external view returns (bool);
+    function isSubmission(address) external view returns (bool);
     function hasEnteredMatryx(address) external view returns (bool);
 
     function getTournamentCount() external view returns (uint256);
@@ -182,6 +185,27 @@ library LibPlatform {
     using SafeMath for uint256;
 
     event TournamentCreated(address _tournamentAddress);
+
+    /// @dev Return if a Tournament exists
+    /// @param tAddress  Tournament address
+    /// @return          true if Tournament exists
+    function isTournament(address, address, MatryxPlatform.Data storage data, address tAddress) public view returns (bool) {
+        return data.tournaments[tAddress].info.owner != 0x0;
+    }
+
+    /// @dev Return if a Round exists
+    /// @param rAddress  Round address
+    /// @return          true if Round exists
+    function isRound(address, address, MatryxPlatform.Data storage data, address rAddress) public view returns (bool) {
+        return data.rounds[rAddress].info.tournament != 0x0;
+    }
+
+    /// @dev Return if a Submission exists
+    /// @param sAddress  Submission address
+    /// @return          true if Submission exists
+    function isSubmission(address, address, MatryxPlatform.Data storage data, address sAddress) public view returns (bool) {
+        return data.submissions[sAddress].info.owner != 0x0;
+    }
 
     /// @dev Return if user has entered Matryx
     /// @param data  Platform storage containing all contract data
@@ -418,17 +442,3 @@ library LibPlatform {
         return tAddress;
     }
 }
-
-/**
-
-p.enterMatryx()
-token.approve(p.address, toWei(100))
-tData = [stb('title', 3), stb('category'), stb('descHash', 2), stb('fileHash', 2), toWei(100), toWei(2)]
-start = Math.floor(Date.now() / 1000) + 30
-rData = [start, start + 30, 30, toWei(10)]
-p.createTournament(tData, rData)
-p.getTournaments(0,0).then(ts => t = contract(ts.pop(), IMatryxTournament));0
-t.getRounds().then(rs => r = contract(rs.pop(), IMatryxRound));0
-r.getSubmissions().then(ss => s = contract(ss.pop(), IMatryxSubmission));0
-
- */

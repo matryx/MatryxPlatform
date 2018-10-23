@@ -13,7 +13,7 @@ const source = contracts.join('\n')
 
 const libReg = /library (\w+)\s+\{(.+?)^\}/gms
 const structReg = /struct (\w+?)\s+\{(.+?)\}/gs
-const membersReg = /^\s+([^\s]+)\s\w+;/gm
+const membersReg = /^\s+([^\s]+)\s+\w+;/gm
 const dynTypesReg = /.*\[\].*|^(?!address|bool|bytes[\d]+|u?int[\d]*)/
 const fnReg = /function (\w+)\((.*?)\).*/g
 
