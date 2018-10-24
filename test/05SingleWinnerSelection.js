@@ -13,7 +13,6 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
   let t //tournament
   let r //round
   let s //submission
-  let tBounty //Initial Tournament Bounty
 
   it('Able to create a Submission without Contributors and References', async function() {
     platform = (await init()).platform
@@ -30,8 +29,6 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
 
     //Create submission with no contributors
     s = await createSubmission(t, false, 1)
-    stime = Math.floor(Date.now() / 1000)
-    utime = Math.floor(Date.now() / 1000)
     s = Contract(s.address, IMatryxSubmission, 1)
 
     assert.ok(s.address, 'Submission is not valid.')
@@ -66,8 +63,6 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
   })
 
   it('Able to choose a winner and Close Tournament', async function() {
-    tBounty = await t.getBounty().then(fromWei)
-    rBounty = await r.getBounty().then(fromWei)
     let submissions = await r.getSubmissions(0, 0)
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
     let winnings = await s.getTotalWinnings().then(fromWei)
@@ -86,7 +81,7 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
 
   it('Total tournament + round bounty assigned to the winning submission', async function() {
     let winnings = await s.getTotalWinnings().then(fromWei)
-    assert.equal(winnings, fromWei(tBounty), 'Winnings should equal initial tournament bounty')
+    assert.equal(winnings, 10, 'Winnings should equal initial tournament bounty')
   })
 
   it('Tournament and Round balance should now be 0', async function() {
@@ -97,7 +92,7 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
 
   it('Submission balance should be initial tournament + round bounty', async function() {
     let b = await s.getBalance().then(fromWei)
-    assert.equal(b, fromWei(tBounty), 'Winnings should equal initial tournament bounty')
+    assert.equal(b, 10, 'Submission balance should be 10')
   })
 
   it('Unable to withdraw reward from some other account', async function() {
@@ -156,7 +151,6 @@ contract('Single Winning Submission with Contribs and Refs and Close Tournament'
 
     //Create submission with some contributors
     s = await createSubmission(t, false, 1)
-    stime = Math.floor(Date.now() / 1000)
     s = Contract(s.address, IMatryxSubmission, 1)
 
     //add accounts[3] as a new contributor
@@ -246,8 +240,6 @@ contract('Single Winning Submission with no Contribs or Refs and Start Next Roun
 
     //Create submission with no contributors
     s = await createSubmission(t, false, 1)
-    stime = Math.floor(Date.now() / 1000)
-    utime = Math.floor(Date.now() / 1000)
     s = Contract(s.address, IMatryxSubmission, 1)
 
     assert.ok(s.address, 'Submission is not valid.')
@@ -261,8 +253,6 @@ contract('Single Winning Submission with no Contribs or Refs and Start Next Roun
       bounty: web3.toWei(5)
     }
 
-    tBounty = await t.getBounty().then(fromWei)
-    rBounty = await r.getBounty().then(fromWei)
     let submissions = await r.getSubmissions(0, 0)
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), newRound, 1)
     let winnings = await s.getTotalWinnings().then(fromWei)
@@ -353,7 +343,6 @@ contract('Single Winning Submission with Contribs and Refs and Start Next Round'
 
     //Create submission with some contributors
     s = await createSubmission(t, false, 1)
-    stime = Math.floor(Date.now() / 1000)
     s = Contract(s.address, IMatryxSubmission, 1)
 
     //add accounts[3] as a new contributor
@@ -476,16 +465,12 @@ contract('Single Winning Submission with no Contribs or Refs and Do Nothing', fu
 
     //Create submission with no contributors
     s = await createSubmission(t, false, 1)
-    stime = Math.floor(Date.now() / 1000)
-    utime = Math.floor(Date.now() / 1000)
     s = Contract(s.address, IMatryxSubmission, 1)
 
     assert.ok(s.address, 'Submission is not valid.')
   })
 
   it('Able to choose a winner and DoNothing', async function() {
-    tBounty = await t.getBounty().then(fromWei)
-    rBounty = await r.getBounty().then(fromWei)
     let submissions = await r.getSubmissions(0, 0)
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
     let winnings = await s.getTotalWinnings().then(fromWei)
@@ -576,7 +561,6 @@ contract('Single Winning Submission with Contribs and Refs and Do Nothing', func
 
     //Create submission with some contributors
     s = await createSubmission(t, false, 1)
-    stime = Math.floor(Date.now() / 1000)
     s = Contract(s.address, IMatryxSubmission, 1)
 
     //add accounts[3] as a new contributor
@@ -708,7 +692,6 @@ contract('Single Winning Submission and Do Nothing, then Close Tournament', func
 
     //Create submission with some contributors
     s = await createSubmission(t, false, 1)
-    stime = Math.floor(Date.now() / 1000)
     s = Contract(s.address, IMatryxSubmission, 1)
 
     let submissions = await r.getSubmissions(0, 0)
@@ -765,7 +748,7 @@ contract('Single Winning Submission and Do Nothing, then Close Tournament', func
   })
 
   it('Winning submission available reward should be 10', async function() {
-    let b = await s.getBalance().then(fromWei)
+    let b = await s.getAvailableReward().then(fromWei)
     assert.equal(b, 10, 'Incorrect available reward')
   })
 
@@ -825,7 +808,6 @@ contract('Single Winning Submission and Do Nothing, then Start Next Round', func
 
     //Create submission with some contributors
     s = await createSubmission(t, false, 1)
-    stime = Math.floor(Date.now() / 1000)
     s = Contract(s.address, IMatryxSubmission, 1)
 
     let submissions = await r.getSubmissions(0, 0)
@@ -882,7 +864,7 @@ contract('Single Winning Submission and Do Nothing, then Start Next Round', func
   })
 
   it('Winning submission available reward should be 5', async function() {
-    let b = await s.getBalance().then(fromWei)
+    let b = await s.getAvailableReward().then(fromWei)
     assert.equal(b, 5, 'Incorrect available reward')
   })
 
@@ -914,6 +896,74 @@ contract('Single Winning Submission and Do Nothing, then Start Next Round', func
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to withdraw reward')
     }
+  })
+
+})
+
+//
+// Case 9 - References testing
+//
+contract('References Reward Distribution Testing', function(accounts) {
+  let t //tournament
+  let r //round
+  let s //submission
+  let ref //reference
+
+  it('Able to choose a winning submission and Do Nothing', async function() {
+    await init()
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 30,
+      review: 20,
+      bounty: web3.toWei(5)
+    }
+
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
+
+    // Create submissions
+    s = await createSubmission(t, false, 1)
+    s = Contract(s.address, IMatryxSubmission, 1)
+
+    ref = await createSubmission(t, false, 2)
+    ref = Contract(ref.address, IMatryxSubmission, 2)
+
+    //add accounts[3] as a new contributor
+    let refs = {
+      indices: [],
+      addresses: [ref.address]
+    }
+
+    // Add ref as a reference
+    await s.setContributorsAndReferences([[], []], [], refs)
+
+    let submissions = await r.getSubmissions(0, 1)
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
+
+    let winnings = await s.getTotalWinnings().then(fromWei)
+    assert.isTrue(winnings > 0, 'Winner was not chosen')
+  })
+
+  it('Winning submission balance should be 10', async function() {
+    let b = await s.getBalance().then(fromWei)
+    assert.equal(b, 10, 'Incorrect submission balance')
+  })
+
+  it('Winning submission available reward should be 9', async function() {
+    let b = await s.getAvailableReward().then(fromWei)
+    assert.equal(b, 9, 'Incorrect available reward')
+  })
+
+  it('Reference balance is correct after original owner withdraws tehir reward', async function() {
+    await s.withdrawReward()
+    let b = await ref.getBalance().then(fromWei)
+    assert.equal(b, 1, 'Incorrect reference balance')
+  })
+
+  it('Reference available reward should be 1', async function() {
+    let b = await ref.getAvailableReward().then(fromWei)
+    assert.equal(b, 1, 'Incorrect available reward')
   })
 
 })

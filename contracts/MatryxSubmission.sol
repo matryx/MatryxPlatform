@@ -308,6 +308,7 @@ library LibSubmission {
 
             if (refs.addresses[i] != 0x0) {
                 details.references[index] = refs.addresses[i];
+                data.submissions[refs.addresses[i]].info.referencedIn.push(self);
             }
 
             else {
@@ -328,6 +329,7 @@ library LibSubmission {
         if (refs.addresses.length > refs.indices.length) {
             for (i = refs.indices.length; i < refs.addresses.length; i++) {
                 details.references.push(refs.addresses[i]);
+                data.submissions[refs.addresses[i]].info.referencedIn.push(self);
             }
         }
     }

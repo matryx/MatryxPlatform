@@ -65,11 +65,10 @@ contract('NotYetOpen Round Testing', function(accounts) {
     assert.equal(sub.length, 0, 'Round should not have submissions')
   })
 
-  // TODO add this
-  // it('Number of submissions should be zero', async function() {
-  //   let no_sub = await r.numberOfSubmissions()
-  //   assert.equal(no_sub.toNumber(), 0, 'Number of Submissions should be Zero')
-  // })
+  it('Number of submissions should be zero', async function() {
+    let num = await r.getSubmissionCount()
+    assert.equal(num, 0, 'Number of Submissions should be Zero')
+  })
 
   it('Add bounty to a round', async function() {
     await t.transferToRound(web3.toWei(1))
@@ -181,11 +180,10 @@ contract('Open Round Testing', function(accounts) {
     assert.equal(ent, 1, 'Number of entrants should be 0')
   })
 
-  // TODO add this
-  // it('Number of submissions should still be two', async function() {
-  //   let n_sub = await r.numberOfSubmissions()
-  //   assert.equal(n_sub.toNumber(), 2, 'Number of Submissions should be 2')
-  // })
+  it('Number of submissions should still be 2', async function() {
+    let num = await r.getSubmissionCount()
+    assert.equal(num, 2, 'Number of Submissions should be 2')
+  })
 })
 
 contract('In Review Round Testing', function(accounts) {
