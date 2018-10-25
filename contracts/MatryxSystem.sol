@@ -39,7 +39,7 @@ contract MatryxSystem is Ownable() {
     }
 
     /// @dev Checks the validity of a contract address
-    function isContract(address _address) private view returns(bool) {
+    function isContract(address _address) private view returns (bool) {
         uint256 _size;
         assembly { _size := extcodesize(_address) }
         return _size > 0;
@@ -54,6 +54,7 @@ contract MatryxSystem is Ownable() {
 
     /// @dev Set the current version of Platform
     function setVersion(uint256 version) public onlyOwner {
+        require(platformByVersion[version].exists, "Version must exist");
         currentVersion = version;
     }
 
@@ -158,6 +159,22 @@ contract MatryxSystem is Ownable() {
     function getLibraryName(uint256 cType) public view returns (bytes32) {
         return contractTypeToLibraryName[cType];
     }
+}
+
+interface IMatryxSystem {
+    function createVersion(uint256 version) external;
+    function setVersion(uint256 version) external;
+    function getVersion() external view returns (uint256);
+    function getAllVersions() external view returns (uint256[]);
+    function setContract(uint256 version, bytes32 cName, address cAddress) external;
+    function getContract(uint256 version, bytes32 cName) external view returns (address);
+    function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, MatryxSystem.FnData fnData) external;
+    function addContractMethods(uint256 version, bytes32 cName, bytes32[] selectors, bytes32[] modifiedSelectors, MatryxSystem.FnData fnData) external;
+    function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) external view returns (MatryxSystem.FnData);
+    function setContractType(address cAddress, uint256 cType) external;
+    function getContractType(address cAddress) external view returns (uint256);
+    function setLibraryName(uint256 cType, bytes32 lName) external;
+    function getLibraryName(uint256 cType) external view returns (bytes32);
 }
 
 library LibSystem {

@@ -108,7 +108,7 @@ library LibRound {
 
     /// @dev Returns all Submissions of this Round
     function getSubmissions(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
-        address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address LibUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
         address[] storage submissions = data.rounds[self].info.submissions;
 
         assembly {

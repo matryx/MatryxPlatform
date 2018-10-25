@@ -234,7 +234,7 @@ library LibPlatform {
     /// @param count       Number of Tournaments to return. If 0, all
     /// @return            Array of Tournament addresses
     function getTournaments(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
-        address libUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
         address[] storage tournaments = data.allTournaments;
 
         assembly {
@@ -262,7 +262,7 @@ library LibPlatform {
     /// @param count       Number of User to return. If 0, all
     /// @return          Array of Tournament addresses for given category
     function getTournamentsByCategory(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category, uint256 startIndex, uint256 count) public view returns (address[]) {
-        address libUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
 
         assembly {
             let offset := 0x100000000000000000000000000000000000000000000000000000000
@@ -292,7 +292,7 @@ library LibPlatform {
     /// @param count       Number of User to return. If 0, all
     /// @return            Array of User addresses
     function getUsers(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
-        address libUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
         address[] storage users = data.allUsers;
 
         assembly {
@@ -319,7 +319,7 @@ library LibPlatform {
     /// @param count       Number of Category to return. If 0, all
     /// @return            Array of Categories
     function getCategories(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (bytes32[]) {
-        address libUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
         bytes32[] storage allCategories = data.allCategories;
 
         assembly {
@@ -370,7 +370,7 @@ library LibPlatform {
     /// @param tAddress  Tournament address
     /// @param category  Category name
     function addTournamentToCategory(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress, bytes32 category) public {
-        require(sender == platform || MatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
+        require(sender == platform || IMatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
         require(data.categoryExists[category], "Category does not exist");
 
         data.categories[category].push(tAddress);
@@ -381,9 +381,9 @@ library LibPlatform {
     /// @param data      Platform storage containing all contract data
     /// @param tAddress  Tournament address
     function removeTournamentFromCategory(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress) public {
-        require(sender == platform || MatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
+        require(sender == platform || IMatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
 
-        address libUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
         bytes32 category = data.tournaments[tAddress].details.category;
         address[] storage categoryList = data.categories[category];
         uint256 index;
@@ -420,7 +420,7 @@ library LibPlatform {
 
         address tAddress = new MatryxTournament(info.version, info.system);
 
-        MatryxSystem(info.system).setContractType(tAddress, uint256(LibSystem.ContractType.Tournament));
+        IMatryxSystem(info.system).setContractType(tAddress, uint256(LibSystem.ContractType.Tournament));
         data.allTournaments.push(tAddress);
         addTournamentToCategory(address(this), platform, info, data, tAddress, tDetails.category);
 
@@ -429,6 +429,7 @@ library LibPlatform {
         user.totalSpent = user.totalSpent.add(tDetails.bounty);
 
         LibTournament.TournamentData storage tournament = data.tournaments[tAddress];
+        tournament.info.version = info.version;
         tournament.info.owner = sender;
         tournament.details = tDetails;
 

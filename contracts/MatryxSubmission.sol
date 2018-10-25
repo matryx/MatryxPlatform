@@ -264,7 +264,7 @@ library LibSubmission {
 
         require(contribs.addresses.length == distribution.length, "Must include distribution for each contributor");
 
-        address LibUtils = MatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address LibUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
         LibSubmission.SubmissionDetails storage details = data.submissions[self].details;
 
         for (uint256 i = 0; i < contribs.indices.length; i++) {

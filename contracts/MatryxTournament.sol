@@ -275,9 +275,11 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param rDetails  Details of the Round being created
     /// @return          Address of the created Round
-    function createRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) internal returns (address) {
+    function createRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
-        require(sender == tournament.info.owner, "Must be owner");
+
+        address platform = IMatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
+        require(address(this) == platform, "Must be platform");
         require(IMatryxToken(info.token).balanceOf(self) >= rDetails.bounty, "Insufficient funds for Round");
 
         // TODO: enable min and max round duration
@@ -288,7 +290,7 @@ library LibTournament {
 
         address rAddress = new MatryxRound(info.version, info.system);
 
-        MatryxSystem(info.system).setContractType(rAddress, uint256(LibSystem.ContractType.Round));
+        IMatryxSystem(info.system).setContractType(rAddress, uint256(LibSystem.ContractType.Round));
         tournament.info.rounds.push(rAddress);
         data.allRounds.push(rAddress);
 
@@ -324,9 +326,9 @@ library LibTournament {
 
         LibRound.RoundData storage round = data.rounds[rAddress];
 
-        address sAddress = new MatryxSubmission(info.version, info.system);
+        address sAddress = new MatryxSubmission(tournament.info.version, info.system);
 
-        MatryxSystem(info.system).setContractType(sAddress, uint256(LibSystem.ContractType.Submission));
+        IMatryxSystem(info.system).setContractType(sAddress, uint256(LibSystem.ContractType.Submission));
         data.allSubmissions.push(sAddress);
         data.users[sender].submissions.push(sAddress);
 
@@ -369,7 +371,7 @@ library LibTournament {
         }
         if (tDetails.category != 0x0) {
             // get platform address
-            address platform = MatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
+            address platform = IMatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
             IMatryxPlatform(platform).removeTournamentFromCategory(self);
             IMatryxPlatform(platform).addTournamentToCategory(self, tDetails.category);
         }
