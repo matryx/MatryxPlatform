@@ -1,7 +1,9 @@
 const fs = require('fs')
 const sha3 = require('solidity-sha3').default
+const generate = require('./generate')
 
-const batch = !!process.argv[2]
+const version = process.argv[3] || 1
+const batch = process.argv[2] === 'true'
 
 const st = Date.now()
 const files = fs.readdirSync('../contracts')
@@ -103,7 +105,7 @@ while ((match = libReg.exec(source))) {
     if (!batch) {
       const comment = `// ${libName.replace('Lib', 'Matryx')}.${name}`
       const fnData = `['${toSel}', [${injParams}], [${dynParams}]]`
-      const call = `system.addContractMethod(1, stringToBytes('${libName}'), '${fromSel}', ${fnData})`
+      const call = `system.addContractMethod(${version}, stringToBytes('${libName}'), '${fromSel}', ${fnData})`
 
       setup.push(comment)
       setup.push(call)
@@ -143,10 +145,12 @@ if (batch) {
     const toSels = g.map(m => `'${m.toSel}'`)
     const m = g[0]
     const fnData = `['0x00', [${m.injParams}], [${m.dynParams}]]`
-    const command = `system.addContractMethods(1, stb('${m.libName}'), [${fromSels}], [${toSels}], ${fnData})`
+    const command = `system.addContractMethods(${version}, stb('${m.libName}'), [${fromSels}], [${toSels}], ${fnData})`
     setup.push(command)
   }
 }
 
 fs.writeFileSync('./setup-commands', setup.join('\n'))
 console.log(`completed in ${Date.now() - st} ms`)
+
+generate(version)
