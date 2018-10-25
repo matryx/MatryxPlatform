@@ -180,7 +180,6 @@ interface IMatryxPlatform {
     function createTournament(LibTournament.TournamentDetails, LibRound.RoundDetails) external returns (address);
 }
 
-// dependencies: LibTournament
 library LibPlatform {
     using SafeMath for uint256;
 
@@ -435,9 +434,23 @@ library LibPlatform {
 
         require(IMatryxToken(info.token).transferFrom(sender, tAddress, tDetails.bounty), "Transfer failed");
 
-        // TODO: lookup on system, and use assembly to delegatecall
-        // NOTE: if LibTournament is redeployed, relink and redeploy LibPlatform
-        LibTournament.createRound(tAddress, sender, info, data, rDetails);
+        bytes32 libName = IMatryxSystem(info.system).getLibraryName(uint256(LibSystem.ContractType.Tournament));
+        address libTournament = IMatryxSystem(info.system).getContract(info.version, libName);
+        assembly {
+            let offset := 0x100000000000000000000000000000000000000000000000000000000
+            let ptr := mload(0x40)
+
+            mstore(ptr, mul(0xca0ba8b4, offset))                            // createRound(address,address,MatryxPlatform.Info storage,MatryxPlatform.Data storage,LibRound.RoundDetails)
+            mstore(add(ptr, 0x04), tAddress)                                // arg 0 - self
+            mstore(add(ptr, 0x24), sender)                                  // arg 1 - sender
+            mstore(add(ptr, 0x44), info_slot)                               // arg 2 - info
+            mstore(add(ptr, 0x64), data_slot)                               // arg 3 - data
+            calldatacopy(add(ptr, 0x84), sub(calldatasize, 0x80), 0x80)     // arg 4 - rDetails
+
+            let res := delegatecall(gas, libTournament, ptr, 0x104, 0, 0)   // call LibTournament.createRound
+            if iszero(res) { revert(0, 0) }                                 // safety check
+        }
+        // LibTournament.createRound(tAddress, this, info, data, rDetails);
 
         emit TournamentCreated(tAddress);
         return tAddress;
