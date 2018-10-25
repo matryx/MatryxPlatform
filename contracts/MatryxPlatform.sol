@@ -16,6 +16,7 @@ contract MatryxPlatform {
         address system;
         uint256 version;
         address token;
+        // mapping(uint256=>address) tokens;
         address owner;
     }
 
@@ -71,6 +72,11 @@ contract MatryxPlatform {
             if iszero(res) { revert(0, 0) }                                     // safety check
             let libName := mload(0)                                             // store libName from response
 
+            if iszero(eq(libName, libPlatform)) {                               // if coming from MatryxTrinity or MatryxUser
+                calldatacopy(0, 0x24, 0x20)                                     // get injected version from calldata
+                version := mload(0)                                             // overwrite version var
+            }
+
             // call system and get library address
             mstore(ptr, mul(0xc53cfd9a, offset))                                // getContract(uint256,bytes32)
             mstore(add(ptr, 0x04), version)                                     // arg 0 - version
@@ -111,14 +117,14 @@ contract MatryxPlatform {
 
             if iszero(eq(libName, libPlatform)) {                               // if coming from MatryxTrinity or MatryxUser
                 calldatacopy(add(ptr2, 0x20), 0x04, 0x20)                       // overwrite injected platform with address from forwarder
-                cdOffset := add(cdOffset, 0x20)                                 // shift calldata offset for injected address
+                cdOffset := add(cdOffset, 0x40)                                 // shift calldata offset for injected address and version
             }
-            ptr2 := add(ptr2, 0x40)                                             // shift ptr2
+            ptr2 := add(ptr2, 0x40)                                             // shift ptr2 to account for injected addresses
 
             for { let i := 0 } lt(i, injParams_len) { i := add(i, 1) } {        // loop through injected params and insert
                 let injParam := mload(add(m_injParams, mul(i, 0x20)))           // get injected param slot
                 mstore(ptr2, injParam)                                          // store injected params into next slot
-                ptr2 := add(ptr2, 0x20)                                         // shift ptr2
+                ptr2 := add(ptr2, 0x20)                                         // shift ptr2 by a word for each injected
             }
 
             calldatacopy(ptr2, cdOffset, sub(calldatasize, cdOffset))           // copy calldata after injected data storage
@@ -142,10 +148,17 @@ contract MatryxPlatform {
         }
     }
 
-    /// @dev    Gets Information about the Platform
-    /// @return Info Struct that contains system, version, token, and owner
+    /// @dev Gets Information about the Platform
+    /// @return  Info Struct that contains directory, version, token, and owner
     function getInfo() public view returns (MatryxPlatform.Info) {
         return info;
+    }
+
+    /// @dev Sets the Version
+    /// @param version  New version
+    function setVersion(uint256 version) external {
+        require(msg.sender == info.owner, "Must be Platform owner");
+        info.version = version;
     }
 
     /// @dev Sets the Token address
@@ -158,6 +171,7 @@ contract MatryxPlatform {
 
 interface IMatryxPlatform {
     function getInfo() external view returns (MatryxPlatform.Info);
+    function setVersion(uint256) external;
     function setTokenAddress(address) external;
 
     function isTournament(address) external view returns (bool);

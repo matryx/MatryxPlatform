@@ -40,9 +40,8 @@ contract MatryxTrinity {
 
             calldatacopy(ptr, 0, 0x04)                                          // copy signature
             let sig := div(mload(ptr), offset)                                  // shrink signature to 4 relevant bytes
-            let isTransfer := or(eq(sig, 0x23b872dd), eq(sig, 0xa5f2a152))      // transferFrom or transferTo
 
-            if or(isTransfer, eq(sig, 0xafead9bd)) {                            // if transfer or setInfo
+            if or(eq(sig, 0x23b872dd), eq(sig, 0xa5f2a152)) {                   // if transferFrom or transferTo
                 if iszero(eq(caller, platform)) { revert(0, 0) }                // require caller is Platform
                 calldatacopy(ptr, 0, calldatasize)                              // copy calldata for forwarding
                 res := delegatecall(gas, LibTrinity, ptr, calldatasize, 0, 0)   // forward method to LibTrinity
@@ -52,8 +51,9 @@ contract MatryxTrinity {
 
             // forward method to MatryxPlatform, injecting msg.sender
             mstore(add(ptr, 0x04), caller)                                      // inject msg.sender
-            calldatacopy(add(ptr, 0x24), 0x04, sub(calldatasize, 0x04))         // copy calldata for forwarding
-            res := call(gas, platform, 0, ptr, add(calldatasize, 0x20), 0, 0)   // forward method to MatryxPlatform
+            mstore(add(ptr, 0x24), version)                                     // inject version
+            calldatacopy(add(ptr, 0x44), 0x04, sub(calldatasize, 0x04))         // copy calldata for forwarding
+            res := call(gas, platform, 0, ptr, add(calldatasize, 0x40), 0, 0)   // forward method to MatryxPlatform
             if iszero(res) { revert(0, 0) }                                     // safety check
 
             // forward returndata to caller
@@ -78,13 +78,5 @@ library LibTrinity {
     /// @param amount     Amount of tokens
     function transferTo(address token, address recipient, uint256 amount) public {
         require(IMatryxToken(token).transfer(recipient, amount), "Transfer failed");
-    }
-
-    /// @dev Sets the version and system info of this MatryxTrinity
-    /// @param info     MatryxTrinity version and system info
-    /// @param newInfo  New info to set
-    function setInfo(MatryxTrinity.Info storage info, MatryxTrinity.Info newInfo) public {
-        if (newInfo.version != 0) info.version = newInfo.version;
-        if (newInfo.system != 0x0) info.system = newInfo.system;
     }
 }

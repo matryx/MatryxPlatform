@@ -16,8 +16,8 @@ contract MatryxSubmission is MatryxTrinity {
 interface IMatryxSubmission {
     function transferFrom(address, address, uint256) external;
     function transferTo(address, address, uint256) external;
-    function setInfo(MatryxTrinity.Info) external;
 
+    function getVersion() external view returns (uint256);
     function getTournament() external view returns (address);
     function getRound() external view returns (address);
 
@@ -49,6 +49,7 @@ library LibSubmission {
     using SafeMath for uint256;
 
     struct SubmissionInfo {
+        uint256 version;
         address owner;
         address tournament;
         address round;
@@ -102,6 +103,11 @@ library LibSubmission {
     function duringOpenSubmission(address self, MatryxPlatform.Data storage data) internal view {
         address round = data.submissions[self].info.round;
         require(IMatryxRound(round).getState() == uint256(LibGlobals.RoundState.Open), "Must be open Round");
+    }
+
+    /// @dev Returns the version of this Submission
+    function getVersion(address self, address, MatryxPlatform.Data storage data) external view returns (uint256) {
+        return data.submissions[self].info.version;
     }
 
     /// @dev Returns the Tournament address of this Submission

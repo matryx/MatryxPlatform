@@ -18,8 +18,8 @@ contract MatryxTournament is MatryxTrinity {
 interface IMatryxTournament {
     function transferFrom(address, address, uint256) external;
     function transferTo(address, address, uint256) external;
-    function setInfo(MatryxTrinity.Info) external;
 
+    function getVersion() external view returns (uint256);
     function getOwner() external view returns (address);
     function getPositiveVotes() external view returns (uint256);
     function getNegativeVotes() external view returns (uint256);
@@ -68,6 +68,7 @@ library LibTournament {
     event SubmissionCreated(address submissionAddress);
 
     struct TournamentInfo {
+        uint256 version;
         address owner;
         address[] rounds;
         uint256 entrantCount;
@@ -98,6 +99,11 @@ library LibTournament {
 
         mapping(address=>bool) hasWithdrawn;
         bool hasBeenWithdrawnFrom;
+    }
+
+    /// @dev Returns the Version of this Tournament
+    function getVersion(address self, address, MatryxPlatform.Data storage data) external view returns (uint256) {
+        return data.tournaments[self].info.version;
     }
 
     /// @dev Returns the owner of this Tournament
@@ -288,7 +294,7 @@ library LibTournament {
 
         // TODO: add review time restrictions or auto review?
 
-        address rAddress = new MatryxRound(info.version, info.system);
+        address rAddress = new MatryxRound(tournament.info.version, info.system);
 
         IMatryxSystem(info.system).setContractType(rAddress, uint256(LibSystem.ContractType.Round));
         tournament.info.rounds.push(rAddress);
@@ -297,6 +303,7 @@ library LibTournament {
         IMatryxTournament(self).transferTo(info.token, rAddress, rDetails.bounty);
 
         LibRound.RoundData storage round = data.rounds[rAddress];
+        round.info.version = tournament.info.version;
         round.info.tournament = self;
         round.details = rDetails;
 
@@ -336,6 +343,7 @@ library LibTournament {
         round.isSubmission[sAddress] = true;
 
         LibSubmission.SubmissionData storage submission = data.submissions[sAddress];
+        submission.info.version = tournament.info.version;
         submission.info.owner = sender;
         submission.info.tournament = self;
         submission.info.round = rAddress;

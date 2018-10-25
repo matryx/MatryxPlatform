@@ -16,8 +16,8 @@ contract MatryxRound is MatryxTrinity {
 interface IMatryxRound {
     function transferFrom(address, address, uint256) external;
     function transferTo(address, address, uint256) external;
-    function setInfo(MatryxTrinity.Info) external;
 
+    function getVersion() external view returns (uint256);
     function getTournament() external view returns (address);
     function getStart() external view returns (uint256);
     function getEnd() external view returns (uint256);
@@ -37,6 +37,7 @@ library LibRound {
     using SafeMath for uint256;
 
     struct RoundInfo {
+        uint256 version;
         address tournament;
         address[] submissions;
         WinnersData winners;
@@ -74,6 +75,11 @@ library LibRound {
     struct RoundReturnData {
         RoundInfo info;
         RoundDetails details;
+    }
+
+    /// @dev Returns the version of this Round
+    function getVersion(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.rounds[self].info.version;
     }
 
     /// @dev Returns the Tournament address of this Round
