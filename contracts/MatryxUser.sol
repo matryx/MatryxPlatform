@@ -32,11 +32,12 @@ contract MatryxUser {
             if iszero(res) { revert(0, 0) }                                     // safety check
             platform := mload(0)                                                // load platform address
 
-            // forward method to MatryxPlatform, injecting msg.sender
+            // forward method to MatryxPlatform, injecting msg.sender and version
             calldatacopy(ptr, 0, 0x04)                                          // copy signature
             mstore(add(ptr, 0x04), caller)                                      // inject msg.sender
-            calldatacopy(add(ptr, 0x24), 0x04, sub(calldatasize, 0x04))         // copy calldata for forwarding
-            res := call(gas, platform, 0, ptr, add(calldatasize, 0x20), 0, 0)   // forward method to MatryxPlatform
+            mstore(add(ptr, 0x24), sload(version_slot))                         // inject version
+            calldatacopy(add(ptr, 0x44), 0x04, sub(calldatasize, 0x04))         // copy calldata for forwarding
+            res := call(gas, platform, 0, ptr, add(calldatasize, 0x40), 0, 0)   // forward method to MatryxPlatform
             if iszero(res) { revert(0, 0) }                                     // safety check
 
             // forward returndata to caller
