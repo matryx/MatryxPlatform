@@ -10,6 +10,7 @@ module.exports = function (artifacts, web3) {
   const IMatryxSubmission = artifacts.require("IMatryxSubmission")
   const MatryxToken = artifacts.require("MatryxToken")
   const MatryxUser = artifacts.require("MatryxUser")
+  const IMatryxUser = artifacts.require("IMatryxUser")
   const LibUtils = artifacts.require('LibUtils')
   const LibUser = artifacts.require('LibUser')
   const LibPlatform = artifacts.require('LibPlatform')
@@ -118,7 +119,7 @@ module.exports = function (artifacts, web3) {
     }
 
     if (contribs) {
-      let tx = await tournament.createSubmission({ ...submissionData, ...contribsAndRefs })
+      let tx = await tournament.createSubmission({ ...submissionData, ...contribsAndRefs }, {gasLimit: 3e6})
       await getMinedTx(tx.hash)
     } else {
       let tx = await tournament.createSubmission({ ...submissionData, ...noContribsAndRefs })

@@ -40,6 +40,7 @@ interface IMatryxSubmission {
     function unlockFile() external;
     function updateDetails(LibSubmission.DetailsUpdates) external;
     function setContributorsAndReferences(LibGlobals.IndexedAddresses, uint256[], LibGlobals.IndexedAddresses) external;
+    function flagMissingReference(address) external;
 
     function getAvailableReward() external view returns (uint256);
     function withdrawReward() external;
@@ -88,6 +89,7 @@ library LibSubmission {
         address[] allPermittedToView;
         mapping(address=>bool) permittedToView;
         mapping(address=>uint256) amountWithdrawn;
+        address[] missingReferences;
     }
 
     // everything but the mappings
@@ -338,6 +340,40 @@ library LibSubmission {
                 data.submissions[refs.addresses[i]].info.referencedIn.push(self);
             }
         }
+    }
+
+    /// @dev Flags this Submission as missing a reference
+    /// @param self    Address of this Submission
+    /// @param sender  msg.sender to this Submission
+    /// @param info    Info struct on Platform
+    /// @param data    Data struct on Platform
+    /// @param ref     Address of the missing reference
+    function flagMissingReference(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address ref) public {
+        address owner = data.submissions[self].info.owner;
+        require(sender == data.submissions[ref].info.owner, "Caller must own the reference");
+        require(data.submissions[ref].permittedToView[owner], "Submission owner must have seen the reference's files");
+
+        bool flag = false;
+        // Check all missing references
+        for (uint256 i = 0; i < data.submissions[self].missingReferences.length; i++) {
+            flag = flag || ref == data.submissions[self].missingReferences[i];
+            if (flag) break;
+        }
+        require(!flag, "Cannot flag for the same missing reference twice");
+
+        // Check all submissions already referenced
+        for (i = 0; i < data.submissions[self].details.references.length; i++) {
+            flag = flag || ref == data.submissions[self].details.references[i];
+            if (flag) break;
+        }
+        require(!flag, "Submission is already a reference");
+
+        // Flag the missing reference
+        data.submissions[self].missingReferences.push(ref);
+
+        // Update submission and user votes
+        data.submissions[self].info.negativeVotes = data.submissions[self].info.negativeVotes.add(1);
+        data.users[owner].negativeVotes = data.users[owner].negativeVotes.add(1);
     }
 
     /// @dev Get the reward available to the caller on this Submissions

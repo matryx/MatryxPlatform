@@ -1,20 +1,24 @@
 const IMatryxRound = artifacts.require('IMatryxRound')
 const IMatryxSubmission = artifacts.require('IMatryxSubmission')
+const MatryxUser = artifacts.require('MatryxUser')
+const IMatryxUser = artifacts.require('IMatryxUser')
 
 const { setup, bytesToString, Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, updateSubmission, waitUntilInReview } = require('./helpers')(artifacts, web3)
 
 let platform
+let users
 
 contract('Submission Testing with No Contributors and References', function(accounts) {
   let t //tournament
   let r //round
   let s //submission
+  let s2
   let stime //time at submission creation
   let utime //time at submission updating
 
   it('Able to create a Submission', async function() {
-    await init()
+    platform = (await init()).platform
     roundData = {
       start: Math.floor(Date.now() / 1000),
       end: Math.floor(Date.now() / 1000) + 20,
@@ -27,7 +31,7 @@ contract('Submission Testing with No Contributors and References', function(acco
     r = Contract(roundAddress, IMatryxRound, 0)
 
     //Create submission with no contributors
-    s = await createSubmission(t, false, 2)
+    s2 = await createSubmission(t, false, 2)
     s = await createSubmission(t, false, 1)
     stime = Math.floor(Date.now() / 1000)
     utime = Math.floor(Date.now() / 1000)
@@ -35,15 +39,15 @@ contract('Submission Testing with No Contributors and References', function(acco
     assert.ok(s.address, 'Submission is not valid.')
   })
 
-  // it("Submission should exist in round", async function () {
-  //   let exists = await r.submissionExists(s.address)
-  //   assert.isTrue(exists, "Submission does not exist in round")
-  // })
+  it("Submission should exist in round", async function () {
+    let exists = await platform.isSubmission(s.address)
+    assert.isTrue(exists, "Submission does not exist in round")
+  })
 
-  // it("Non-submission address does not exist as a submission in round", async function () {
-  //   let exists = await r.submissionExists(r.address)
-  //   assert.isFalse(exists, "This address should not exist as a submission in round")
-  // })
+  it("Non-submission address does not exist as a submission in round", async function () {
+    let exists = await platform.isSubmission(r.address)
+    assert.isFalse(exists, "This address should not exist as a submission in round")
+  })
 
   it('Only Submission Owner and Tournament Owner have Download Permissions', async function() {
     let permitted = await s.getViewers()
@@ -114,35 +118,73 @@ contract('Submission Testing with No Contributors and References', function(acco
   })
 
   it('Any Matryx entrant able to request download permissions', async function() {
-    //switch to accounts[2]
-    s.accountNumber = 2
+    //switch to accounts[1]
+    s2.accountNumber = 1
     await waitUntilInReview(r)
 
-    //unlock the files from accounts[2]
-    await s.unlockFile()
+    //unlock the files from accounts[1]
+    await s2.unlockFile()
 
-    let permitted = await s.getViewers()
-    let p2 = permitted.some(x => x.toLowerCase() == accounts[2])
+    let permitted = await s2.getViewers()
+    let p2 = permitted.some(x => x.toLowerCase() == accounts[1])
 
     assert.isTrue(p2, 'Permissions are not correct')
   })
 
   it('Non Matryx entrant unable to request download permissions', async function() {
-    //switch to accounts[3]
+    // switch to accounts[3]
     s.accountNumber = 3
 
-    //try to unlock the files from accounts[3]
+    // try to unlock the files from accounts[3]
     try {
       await s.unlockFile()
       assert.fail('Expected revert not received')
     } catch (error) {
+      // switch back
+      s.accountNumber = 1
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to view files')
     }
   })
+
+  it('Able to flag a submission for missing a reference', async function() {
+    // switch to accounts[2]
+    s.accountNumber = 2
+    await s.flagMissingReference(s2.address);
+
+    users = Contract(MatryxUser.address, IMatryxUser, 0)
+    let v = await users.getNegativeVotes(accounts[1])
+    assert.equal(v, 1, "Submission owner user should have 1 negative vote")
+  })
+
+  it('Unable to flag same missing reference twice', async function() {
+    try {
+      await s.flagMissingReference(s2.address)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to flag submission')
+    }
+  })
+
+  it('Unable to flag missing reference from another account', async function() {
+    try {
+      s.accountNumber = 3
+      await s.flagMissingReference(s2.address)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to flag submission')
+    }
+  })
+
 })
 
 contract('Submission Testing with Contributors', function(accounts) {
+  let t
+  let r
+  let s
+
   it('Able to create a Submission with Contributors and References', async function() {
     platform = (await init()).platform
     roundData = {
@@ -210,4 +252,5 @@ contract('Submission Testing with Contributors', function(accounts) {
     let crd = await s.getDistribution()
     assert.equal(crd.length, 12, 'Contributor reward distribution incorrect')
   })
+
 })

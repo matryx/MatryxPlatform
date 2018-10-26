@@ -206,7 +206,7 @@ module.exports = {
     if (tokenReleaseAgent === '0x0000000000000000000000000000000000000000') {
       let { hash } = await token.setReleaseAgent(account)
       await this.getMinedTx(hash)
-      await token.releaseTokenTransfer({ gasLimit: 1e6 })
+      await token.releaseTokenTransfer()
       log('Token release agent set to: ' + account)
     }
 
@@ -228,7 +228,7 @@ module.exports = {
 
     const hasEnteredMatryx = await platform.hasEnteredMatryx(account)
     if (!hasEnteredMatryx) {
-      let { hash } = await platform.enterMatryx({ gasLimit: 4.5e6 })
+      let { hash } = await platform.enterMatryx()
       await this.getMinedTx(hash)
     }
 
