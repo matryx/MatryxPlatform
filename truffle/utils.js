@@ -63,7 +63,19 @@ function Contract(address, artifact, accountNumber = 0) {
     }
 
     try {
-      const res = await fn.apply(null, [...arguments], { nonce })
+      let config = { nonce }
+      const args = [...arguments]
+      const last = args[args.length - 1]
+
+      const configKeys = ['gasLimit', 'gasPrice', 'from', 'gas']
+      if (typeof last === "object" && Object.keys(last).some(key => configKeys.includes(key))) {
+        args.pop()
+        config = { ...last, ...config }
+      }
+
+      console.log([...args, config])
+
+      const res = await fn.apply(null, [...args, config])
 
       if (data.logLevel >= 3 && !constant) {
         console.log(chalk`${prefix}{grey Waiting for {cyan ${name}}.{yellow ${fnName}} ({cyan ${res.hash}})...}`)
