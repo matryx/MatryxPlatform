@@ -73,8 +73,6 @@ function Contract(address, artifact, accountNumber = 0) {
         config = { ...last, ...config }
       }
 
-      console.log([...args, config])
-
       const res = await fn.apply(null, [...args, config])
 
       if (data.logLevel >= 3 && !constant) {
