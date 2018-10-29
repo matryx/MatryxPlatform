@@ -434,9 +434,6 @@ library LibTournament {
             uint256 reward = wData.distribution[i].mul(bounty).div(distTotal);
             IMatryxRound(rAddress).transferTo(info.token, wData.submissions[i], reward);
 
-            // TODO: revisit - do contributors get totalWinnings updated?
-            // address owner = data.submissions[wData.submissions[i]].info.owner;
-
             reward = reward.add(data.submissions[wData.submissions[i]].info.reward);
             data.submissions[wData.submissions[i]].info.reward = reward;
         }

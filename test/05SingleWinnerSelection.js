@@ -1,10 +1,13 @@
 const IMatryxRound = artifacts.require('IMatryxRound')
 const IMatryxSubmission = artifacts.require('IMatryxSubmission')
+const MatryxUser = artifacts.require('MatryxUser')
+const IMatryxUser = artifacts.require('IMatryxUser')
 
 const { Contract } = require('../truffle/utils')
 const { init, createTournament, waitUntilInReview, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
 
 let platform
+let users
 
 //
 // Case 1
@@ -158,7 +161,6 @@ contract('Single Winning Submission with Contribs and Refs and Close Tournament'
       indices: [],
       addresses: [accounts[3]]
     }
-
     await s.setContributorsAndReferences(contribs, [1], [[], []])
 
     assert.ok(s.address, 'Submission is not valid.')
@@ -181,9 +183,10 @@ contract('Single Winning Submission with Contribs and Refs and Close Tournament'
     contribs = await s.getContributors()
     c = contribs[contribs.length]
 
-    //switch to accounts[3]
+    // switch to accounts[3]
     s.accountNumber = 3
     let myReward = await s.getAvailableReward().then(fromWei)
+    // switch back
     s.accountNumber = 1
     assert.isTrue(myReward == 5 / contribs.length, 'Winnings should equal initial tournament bounty')
   })
@@ -205,6 +208,16 @@ contract('Single Winning Submission with Contribs and Refs and Close Tournament'
     assert.equal(sb, 5, 'Submission balance should now be 5')
   })
 
+  it('Submission contributor able to withdraw reward', async function() {
+    //switch to accounts[3]
+    s.accountNumber = 3
+    await s.withdrawReward()
+    // switch back
+    s.accountNumber = 1
+    let sb = await s.getBalance().then(fromWei)
+    assert.equal(sb, 0, 'Submission balance should now be 5')
+  })
+
   it('Unable to withdraw reward twice from the same account', async function() {
     try {
       await s.withdrawReward()
@@ -213,6 +226,17 @@ contract('Single Winning Submission with Contribs and Refs and Close Tournament'
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to withdraw reward')
     }
+  })
+
+  it('Submission owner total winnings should be 5', async function() {
+    users = Contract(MatryxUser.address, IMatryxUser, 0)
+    let w = await users.getTotalWinnings(accounts[1]).then(fromWei)
+    assert.equal(w, 5, 'Submission owner total winnings should be 5')
+  })
+
+  it('Contributor total winnings should be 5', async function() {
+    let w = await users.getTotalWinnings(accounts[3]).then(fromWei)
+    assert.equal(w, 5, 'Contributor total winnings should be 5')
   })
 })
 
@@ -568,7 +592,6 @@ contract('Single Winning Submission with Contribs and Refs and Do Nothing', func
       indices: [],
       addresses: [accounts[3]]
     }
-
     await s.setContributorsAndReferences(contribs, [1], [[], []])
 
     assert.ok(s.address, 'Submission is not valid.')
@@ -690,7 +713,7 @@ contract('Single Winning Submission and Do Nothing, then Close Tournament', func
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
-    //Create submission with some contributors
+    // Create submission with some contributors
     s = await createSubmission(t, false, 1)
     s = Contract(s.address, IMatryxSubmission, 1)
 
@@ -929,13 +952,11 @@ contract('References Reward Distribution Testing', function(accounts) {
     ref = await createSubmission(t, false, 2)
     ref = Contract(ref.address, IMatryxSubmission, 2)
 
-    //add accounts[3] as a new contributor
+    // add ref as a reference
     let refs = {
       indices: [],
       addresses: [ref.address]
     }
-
-    // Add ref as a reference
     await s.setContributorsAndReferences([[], []], [], refs)
 
     let submissions = await r.getSubmissions(0, 1)
@@ -955,7 +976,7 @@ contract('References Reward Distribution Testing', function(accounts) {
     assert.equal(b, 9, 'Incorrect available reward')
   })
 
-  it('Reference balance is correct after original owner withdraws tehir reward', async function() {
+  it('Reference balance is correct after original owner withdraws their reward', async function() {
     await s.withdrawReward()
     let b = await ref.getBalance().then(fromWei)
     assert.equal(b, 1, 'Incorrect reference balance')
@@ -964,6 +985,11 @@ contract('References Reward Distribution Testing', function(accounts) {
   it('Reference available reward should be 1', async function() {
     let b = await ref.getAvailableReward().then(fromWei)
     assert.equal(b, 1, 'Incorrect available reward')
+  })
+
+  it('Reference correctly stores the winning submissions it was referenced in', async function() {
+    let refIn = await ref.getReferencedIn()
+    assert.equal(refIn[0], s.address, 'Incorrect available reward')
   })
 
 })

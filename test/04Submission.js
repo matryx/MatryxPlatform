@@ -200,7 +200,6 @@ contract('Submission Testing with Contributors', function(accounts) {
 
     //Create submission with some contributors
     s = await createSubmission(t, true, 1)
-    stime = Math.floor(Date.now() / 1000)
     s = Contract(s.address, IMatryxSubmission, 1)
     assert.ok(s.address, 'Submission is not valid.')
   })

@@ -30,6 +30,8 @@ interface IMatryxSubmission {
     function getReferences() external view returns (address[]);
     function getTimeSubmitted() external view returns (uint256);
     function getTimeUpdated() external view returns (uint256);
+    function getReward() external view returns (uint256);
+    function getReferencedIn() external view returns (address[]);
     function getPositiveVotes() external view returns (uint256);
     function getNegativeVotes() external view returns (uint256);
     function getViewers() external view returns (address[]);
@@ -169,6 +171,16 @@ library LibSubmission {
     /// @dev Returns the time this Submission was last updated
     function getTimeUpdated(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.submissions[self].info.timeUpdated;
+    }
+
+    /// @dev Returns this Submission's reward
+    function getReward(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.submissions[self].info.reward;
+    }
+
+    /// @dev Returns the list of submissions that have added this Submission as a reference
+    function getReferencedIn(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
+        return data.submissions[self].info.referencedIn;
     }
 
     /// @dev Returns the number of positive votes for this submission
@@ -316,7 +328,6 @@ library LibSubmission {
 
             if (refs.addresses[i] != 0x0) {
                 details.references[index] = refs.addresses[i];
-                data.submissions[refs.addresses[i]].info.referencedIn.push(self);
             }
 
             else {
@@ -337,7 +348,6 @@ library LibSubmission {
         if (refs.addresses.length > refs.indices.length) {
             for (i = refs.indices.length; i < refs.addresses.length; i++) {
                 details.references.push(refs.addresses[i]);
-                data.submissions[refs.addresses[i]].info.referencedIn.push(self);
             }
         }
     }
@@ -443,6 +453,7 @@ library LibSubmission {
                 IMatryxSubmission(self).transferTo(info.token, ref, share);
                 submission.amountWithdrawn[ref] = submission.amountWithdrawn[ref].add(share);
                 data.submissions[ref].info.reward = data.submissions[ref].info.reward.add(share);
+                data.submissions[ref].info.referencedIn.push(self);
             }
         }
 
@@ -452,5 +463,10 @@ library LibSubmission {
         IMatryxSubmission(self).transferTo(info.token, sender, share);
         submission.amountWithdrawn[sender] = submission.amountWithdrawn[sender].add(share);
         data.users[sender].totalWinnings = data.users[sender].totalWinnings.add(share);
+
+        // Update user contributor data
+        if (sender != submission.info.owner) {
+            data.users[sender].contributedTo.push(self);
+        }
     }
 }

@@ -1,6 +1,10 @@
 const IMatryxRound = artifacts.require('IMatryxRound')
+const MatryxUser = artifacts.require('MatryxUser')
+const IMatryxUser = artifacts.require('IMatryxUser')
 
 let platform
+let users
+
 const { stringToBytes32, stringToBytes, bytesToString, Contract } = require('../truffle/utils')
 const { init, createTournament, waitUntilClose, waitUntilOpen, createSubmission, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
 
@@ -88,10 +92,16 @@ contract('Tournament Testing', function(accounts) {
     assert.equal(pV + nV, 0, 'Number of total votes should be 0.')
   })
 
-  // it("Number of submissions is 0", async function () {
-  //   let count = await t.getSubmissionCount()
-  //   assert.equal(count, 0, "Number of entrants should be 0.")
-  // })
+  it('Tournament owner total spent should be 10', async function() {
+    users = Contract(MatryxUser.address, IMatryxUser, 0)
+    let total = await users.getTotalSpent(accounts[0])
+    assert.equal(total, 10, 'Tournament owner total spent should be 10.')
+  })
+
+  it("Number of submissions is 0", async function () {
+    let count = await t.getSubmissionCount()
+    assert.equal(count, 0, "Number of submissions should be 0.")
+  })
 
   it('I am not an entrant of my tournament', async function() {
     let isEntrant = await t.isEntrant(accounts[0])
