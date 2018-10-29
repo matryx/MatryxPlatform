@@ -94,7 +94,7 @@ contract('Tournament Testing', function(accounts) {
 
   it('Tournament owner total spent should be 10', async function() {
     users = Contract(MatryxUser.address, IMatryxUser, 0)
-    let total = await users.getTotalSpent(accounts[0])
+    let total = await users.getTotalSpent(accounts[0]).then(fromWei)
     assert.equal(total, 10, 'Tournament owner total spent should be 10.')
   })
 
