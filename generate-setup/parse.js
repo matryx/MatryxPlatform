@@ -13,6 +13,8 @@ const contracts = files
   .map(f => fs.readFileSync(`../contracts/${f}`, 'utf-8'))
 const source = contracts.join('\n')
 
+const interfaceReg = /interface (\w+)\s+\{(.+?)^\}/gms
+const libAndContractReg = /(?:library|contract) (\w+).+?\{(.+?)^\}/gms
 const libReg = /library (\w+)\s+\{(.+?)^\}/gms
 const structReg = /struct (\w+?)\s+\{(.+?)\}/gs
 const membersReg = /^\s+([^\s]+)\s+\w+;/gm
@@ -25,11 +27,14 @@ const slots = {
 }
 
 const structs = {}
+const selectors = {}
 const setup = []
 const methods = []
 
 let match
-while ((match = libReg.exec(source))) {
+
+// parse all the structs in the libraries
+while ((match = libAndContractReg.exec(source))) {
   const [, libName, libContent] = match
 
   while ((match = structReg.exec(libContent))) {
@@ -52,8 +57,33 @@ while ((match = libReg.exec(source))) {
 
 console.log(JSON.stringify(structs, 0, 2))
 console.log(' ')
-libReg.lastIndex = 0
 
+// parse all interfaces to build selector->name lookup
+while ((match = interfaceReg.exec(source))) {
+  const [, interfaceName, interfaceContent] = match
+
+  while ((match = fnReg.exec(interfaceContent))) {
+    const [, fnName, fnArgs] = match
+
+    if (match[0].includes(' view ')) continue
+
+    const argTypes = (fnArgs || '')
+      .split(/, ?/)
+      .map(p => p.split(' ')[0])
+      .map(type => {
+        const s = structs[type]
+        return s !== undefined ? s.tuple : type
+      })
+
+    const contractCall = `${interfaceName.replace('IMatryx', '')}.${fnName}`
+    const call = `${fnName}(${argTypes.join(',')})`
+    const selector = sha3(call).substr(0, 10)
+
+    selectors[selector] = contractCall
+  }
+}
+
+libReg.lastIndex = 0
 while ((match = libReg.exec(source))) {
   const [, libName, libContent] = match
   if (['LibUtils', 'LibTrinity'].includes(libName)) continue
@@ -151,6 +181,7 @@ if (batch) {
 }
 
 fs.writeFileSync('./setup-commands', setup.join('\n'))
+fs.writeFileSync('./selectors.json', JSON.stringify(selectors, 0, 2))
 console.log(`completed in ${Date.now() - st} ms`)
 
 generate(version)
