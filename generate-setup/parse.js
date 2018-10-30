@@ -175,7 +175,7 @@ if (batch) {
     const toSels = g.map(m => `'${m.toSel}'`)
     const m = g[0]
     const fnData = `['0x00', [${m.injParams}], [${m.dynParams}]]`
-    const command = `system.addContractMethods(${version}, stb('${m.libName}'), [${fromSels}], [${toSels}], ${fnData})`
+    const command = `system.addContractMethods(${version}, stb('${m.libName}'), [${fromSels}], [${toSels}], ${fnData}, { gasLimit: 3e6 })`
     setup.push(command)
   }
 }

@@ -61,7 +61,6 @@ interface IMatryxTournament {
     function recoverFunds() external;
 }
 
-// dependents: LibPlatform
 library LibTournament {
     using SafeMath for uint256;
 
@@ -440,7 +439,6 @@ library LibTournament {
 
         uint256 bounty = IMatryxRound(rAddress).getBalance();
         for (i = 0; i < wData.submissions.length; i++) {
-            require(data.rounds[rAddress].isSubmission[wData.submissions[i]], "Must select valid submission address in current round");
             uint256 reward = wData.distribution[i].mul(bounty).div(distTotal);
             IMatryxRound(rAddress).transferTo(info.token, wData.submissions[i], reward);
 
@@ -465,6 +463,10 @@ library LibTournament {
 
         (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.InReview), "Must be in review");
+
+        for (uint256 i = 0; i < wData.submissions.length; i++) {
+            require(data.rounds[rAddress].isSubmission[wData.submissions[i]], "Must select winners from current round");
+        }
 
         LibRound.RoundData storage round = data.rounds[rAddress];
         LibRound.RoundDetails memory newRound;
