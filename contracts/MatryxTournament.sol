@@ -60,7 +60,6 @@ interface IMatryxTournament {
     function recoverFunds() external;
 }
 
-// dependents: LibPlatform
 library LibTournament {
     using SafeMath for uint256;
 
