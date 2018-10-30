@@ -10,12 +10,10 @@ let platform
 let users
 
 contract('Submission Testing with No Contributors and References', function(accounts) {
-  let t //tournament
-  let r //round
-  let s //submission
-  let s2
-  let stime //time at submission creation
-  let utime //time at submission updating
+  let t  // tournament
+  let r  // round
+  let s  // submission 1
+  let s2 // submission 2
 
   it('Able to create a Submission', async function() {
     platform = (await init()).platform
@@ -31,10 +29,8 @@ contract('Submission Testing with No Contributors and References', function(acco
     r = Contract(roundAddress, IMatryxRound, 0)
 
     //Create submission with no contributors
-    s2 = await createSubmission(t, false, 2)
     s = await createSubmission(t, false, 1)
-    stime = Math.floor(Date.now() / 1000)
-    utime = Math.floor(Date.now() / 1000)
+    s2 = await createSubmission(t, false, 2)
 
     assert.ok(s.address, 'Submission is not valid.')
   })
@@ -66,40 +62,40 @@ contract('Submission Testing with No Contributors and References', function(acco
 
   it('Submission has no Contributors', async function() {
     let contribs = await s.getContributors()
-    assert.equal(contribs.length, 0, 'References are not correct')
+    assert.equal(contribs.length, 0, 'Contributors are not correct')
   })
 
-  it('Get Reward Distribution', async function() {
+  it('Able to get Reward Distribution', async function() {
     let crd = await s.getDistribution()
     assert.equal(crd.length, 1, 'Reward distribution incorrect')
   })
 
-  it('Get Submission Tournament', async function() {
+  it('Able to get tournament address', async function() {
     let ts = await s.getTournament()
-    assert.equal(ts, t.address, 'Tournament Address is incorrect')
+    assert.equal(ts, t.address, 'Tournament address is incorrect')
   })
 
-  it('Get Submission Round', async function() {
+  it('Able to get round address', async function() {
     let tr = await s.getRound()
-    assert.equal(tr, r.address, 'Round Address is incorrect')
+    assert.equal(tr, r.address, 'Round address is incorrect')
   })
 
   it('Get Submission Owner', async function() {
     let to = await s.getOwner()
     let actual = web3.eth.accounts[1]
-    assert.equal(to.toLowerCase(), actual.toLowerCase(), 'Owner Address is incorrect')
+    assert.equal(to.toLowerCase(), actual.toLowerCase(), 'Owner is incorrect')
   })
 
-  it('Get Time Submitted', async function() {
-    let submission_time = await s.getTimeSubmitted().then(Number)
-    assert.isTrue(Math.abs(submission_time - stime) < 10, 'Submission Time is not correct')
+  it('Get Time Submitted and Updated', async function() {
+    let st = await s.getTimeSubmitted().then(Number)
+    let ut = await s.getTimeUpdated().then(Number)
+    assert.equal(st, ut, 'Time submitted and updated are incorrect')
   })
 
   it('Submission title correctly updated', async function() {
     await updateSubmission(s)
-    utime = Math.floor(Date.now() / 1000)
-    let title = await s.getTitle()
-    assert.equal(bytesToString(title[0]), 'AAAAAA', 'Submission Title should be Updated')
+    let title = await s.getTitle().then(bytesToString)
+    assert.equal(title, 'AAAAAA', 'Submission Title should be Updated')
   })
 
   it('Able to update contributors', async function() {
@@ -113,8 +109,9 @@ contract('Submission Testing with No Contributors and References', function(acco
   })
 
   it('Get Time Updated', async function() {
-    let update_time = await s.getTimeUpdated().then(Number)
-    assert.isTrue(Math.abs(update_time - utime) < 10, 'Update Time is not correct')
+    let st = await s.getTimeSubmitted().then(Number)
+    let ut = await s.getTimeUpdated().then(Number)
+    assert.isTrue(ut > st, 'Update Time is not correct')
   })
 
   it('Any Matryx entrant able to request download permissions', async function() {
@@ -122,7 +119,7 @@ contract('Submission Testing with No Contributors and References', function(acco
     s2.accountNumber = 1
     await waitUntilInReview(r)
 
-    //unlock the files from accounts[1]
+    //unlock the s2 files from accounts[1]
     await s2.unlockFile()
 
     let permitted = await s2.getViewers()
@@ -197,10 +194,9 @@ contract('Submission Testing with Contributors', function(accounts) {
     t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
-
-    //Create submission with some contributors
     s = await createSubmission(t, true, 1)
     s = Contract(s.address, IMatryxSubmission, 1)
+
     assert.ok(s.address, 'Submission is not valid.')
   })
 
@@ -226,13 +222,13 @@ contract('Submission Testing with Contributors', function(accounts) {
     }
 
     await s.setContributorsAndReferences(contribs, [1], [[], []])
-
     await setup(artifacts, web3, 3, true)
 
     // check contributors can unlock files
     s.accountNumber = 3
     await s.unlockFile()
     let unlocked = (await s.getFileHash()) != ''
+    s.accountNumber = 1
 
     assert.isTrue(unlocked, 'Download permissions are not correct')
   })

@@ -34,14 +34,9 @@ contract('Platform Testing', function(accounts) {
     assert.isTrue(count == 1, 'Tournament count should be 1.')
   })
 
-  it('I cannot enter my own tournament', async function() {
-    try {
-      await t.enter()
-      assert.fail('I should not be able to enter my own tournament')
-    } catch (error) {
-      const revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Successfully unable to enter my own tournament')
-    }
+  it('Platform can recognize the tournament address as a tournament', async function() {
+    isT = await platform.isTournament(t.address)
+    assert.isTrue(isT, 'Should be a tournament.')
   })
 
   it('Able to get tournaments by category', async function() {
@@ -78,10 +73,31 @@ contract('Platform Testing', function(accounts) {
     }
   })
 
+  it('Tournament owner cannot enter own tournament', async function() {
+    try {
+      await t.enter()
+      assert.fail('Should not be able to enter tournament')
+    } catch (error) {
+      const revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Successfully unable to enter my own tournament')
+    }
+  })
+
   it('Able to enter first tournament from another account', async function() {
     await enterTournament(t, 1)
     let ent = await t.getEntrantCount()
     assert.equal(ent, 1, 'Tournament should have 1 entrant')
+  })
+
+  it('Able to get the total nubmer of users in the platform', async function() {
+    let users = +await platform.getUserCount()
+    assert.equal(users, 2, 'Platform should have 2 users')
+  })
+
+  it('Able to get all users in the platform', async function() {
+    let users = await platform.getUsers(0, 0)
+    let isTrue = users[0].toLowerCase() == accounts[0] && users[1].toLowerCase() == accounts[1]
+    assert.isTrue(isTrue, 'Platform should have 2 users')
   })
 
 })

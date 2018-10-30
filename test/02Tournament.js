@@ -8,7 +8,7 @@ let users
 const { stringToBytes32, stringToBytes, bytesToString, Contract } = require('../truffle/utils')
 const { init, createTournament, waitUntilClose, waitUntilOpen, createSubmission, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
 
-contract('Tournament Testing', function(accounts) {
+contract('Open Tournament Testing', function(accounts) {
   let t //tournament
   let r //round
 
@@ -26,42 +26,55 @@ contract('Tournament Testing', function(accounts) {
     assert.isTrue(count == 1, 'Tournament count should be 1.')
   })
 
+  it('Able to get tournament owner', async function() {
+    let o = await t.getOwner()
+    assert.equal(o.toLowerCase(), accounts[0], 'Unable to get owner.')
+  })
+
+  it('Tournament owner total spent should be 10', async function() {
+    users = Contract(MatryxUser.address, IMatryxUser, 0)
+    let total = await users.getTotalSpent(accounts[0]).then(fromWei)
+    assert.equal(total, 10, 'Tournament owner total spent should be 10.')
+  })
+
   it('Able to get tournament title', async function() {
-    let title = await t.getTitle()
-    let str = bytesToString(title)
-    assert.equal(str, 'first tournament', 'Unable to get title.')
+    let title = await t.getTitle().then(bytesToString)
+    assert.equal(title, 'first tournament', 'Unable to get title.')
   })
 
   it('Able to get tournament description', async function() {
-    let d = await t.getDescriptionHash()
-    let str = bytesToString(d)
-    assert.equal(str, 'QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 'Unable to get description hash.')
+    let d = await t.getDescriptionHash().then(bytesToString)
+    assert.equal(d, 'QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 'Unable to get description hash.')
   })
 
   it('Able to get tournament files', async function() {
-    let f = await t.getFileHash()
-    let str = bytesToString(f)
-    assert.equal(str, 'QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 'Unable to get file hash.')
+    let f = await t.getFileHash().then(bytesToString)
+    assert.equal(f, 'QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 'Unable to get file hash.')
   })
 
   it('Able to get tournament bounty', async function() {
-    let b = await t.getBounty()
-    assert.equal(b, web3.toWei(10), 'Unable to get bounty.')
+    let b = await t.getBounty().then(fromWei)
+    assert.equal(b, 10, 'Unable to get bounty.')
   })
 
   it('Able to get tournament balance', async function() {
-    let b = await t.getBalance()
-    assert.equal(fromWei(b), 5, 'Unable to get balance.')
+    let b = await t.getBalance().then(fromWei)
+    assert.equal(b, 5, 'Unable to get balance.')
   })
 
   it('Able to get tournament entry fee', async function() {
-    let f = await t.getEntryFee()
-    assert.equal(f, web3.toWei(2), 'Unable to get entry fee.')
+    let f = await t.getEntryFee().then(fromWei)
+    assert.equal(f, 2, 'Unable to get entry fee.')
   })
 
   it('Able to get tournament state', async function() {
     let s = await t.getState()
     assert.equal(s, 0, 'Unable to get state.')
+  })
+
+  it('Able to get tournament details', async function() {
+    let d = await t.getDetails()
+    assert.ok(d, 'Unable to get tournament details.')
   })
 
   it('Able to get all tournament rounds', async function() {
@@ -76,9 +89,8 @@ contract('Tournament Testing', function(accounts) {
   })
 
   it('Able to get category', async function() {
-    let cat = await t.getCategory()
-    let math = stringToBytes32('math')
-    assert.equal(cat, math, 'Unable to get current round.')
+    let cat = await t.getCategory().then(bytesToString)
+    assert.equal(cat, 'math', 'Unable to get category.')
   })
 
   it('Number of entrants is 0', async function() {
@@ -92,20 +104,14 @@ contract('Tournament Testing', function(accounts) {
     assert.equal(pV + nV, 0, 'Number of total votes should be 0.')
   })
 
-  it('Tournament owner total spent should be 10', async function() {
-    users = Contract(MatryxUser.address, IMatryxUser, 0)
-    let total = await users.getTotalSpent(accounts[0]).then(fromWei)
-    assert.equal(total, 10, 'Tournament owner total spent should be 10.')
-  })
-
   it("Number of submissions is 0", async function () {
     let count = await t.getSubmissionCount()
     assert.equal(count, 0, "Number of submissions should be 0.")
   })
 
-  it('I am not an entrant of my tournament', async function() {
+  it('Tournament owner is not an entrant of own tournament', async function() {
     let isEntrant = await t.isEntrant(accounts[0])
-    assert.isFalse(isEntrant, 'I should not be an entrant of my own tournament.')
+    assert.isFalse(isEntrant, 'Owner should not be an entrant of own tournament.')
   })
 
   it('Able to edit the tournament data', async function() {
@@ -119,16 +125,13 @@ contract('Tournament Testing', function(accounts) {
     }
 
     await t.updateDetails(modData)
-    let title = await t.getTitle()
-    let desc = await t.getDescriptionHash()
-    let file = await t.getFileHash()
-    let fee = await t.getEntryFee()
+    let title = await t.getTitle().then(bytesToString)
+    let desc = await t.getDescriptionHash().then(bytesToString)
+    let file = await t.getFileHash().then(bytesToString)
+    let fee = await t.getEntryFee().then(fromWei)
+    let allNew = [title, desc, file].every(x => x === 'new')
 
-    let n = stringToBytes32('new', 2)
-
-    let allNew = [title[0], desc[0], file[0]].every(x => x === n[0])
-
-    assert.isTrue(allNew && fee == web3.toWei(1), 'Tournament data not updated correctly.')
+    assert.isTrue(allNew && fee == 1, 'Tournament data not updated correctly.')
   })
 
   it('Able to change the tournament category', async function() {
@@ -146,9 +149,9 @@ contract('Tournament Testing', function(accounts) {
     }
 
     await t.updateDetails(modData)
-    let cat = await t.getCategory()
+    let cat = await t.getCategory().then(bytesToString)
 
-    assert.equal(cat, stringToBytes32('science'), 'Tournament category not updated correctly.')
+    assert.equal(cat, 'science', 'Tournament category not updated correctly.')
   })
 
   it('Unable to create a tournament with 0 bounty', async function() {
@@ -175,6 +178,19 @@ contract('Tournament Testing', function(accounts) {
       assert(revertFound, 'Should not have been able to create a tournament with 0 bounty')
     }
   })
+
+  it('Able to enter and exit the tournament', async function() {
+    await enterTournament(t, 1)
+    // switch to accounts[1]
+    t.accountNumber = 1
+    await t.exit()
+
+    //switch back
+    t.accountNumber = 0
+    let c = await t.getEntrantCount()
+    let e = await t.getEntryFeePaid(accounts[0])
+    assert.equal(c + e, 0, 'Unable to exit the tournament.')
+  })
 })
 
 
@@ -197,14 +213,10 @@ contract('On Hold Tournament Testing', function(accounts) {
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
-    // Wait until open
+    // Set up ghost round
     await waitUntilOpen(r)
-
-    // Create submissions
     s = await createSubmission(t, false, 1)
     let submissions = await r.getSubmissions(0, 0)
-
-    // Select winners
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
     let rounds = await t.getRounds()
@@ -217,11 +229,10 @@ contract('On Hold Tournament Testing', function(accounts) {
       review: 40,
       bounty: web3.toWei(5)
     }
-
     await t.updateNextRound(roundData)
-
     await waitUntilClose(r)
-    assert.ok(gr, 'Unable to create tournament')
+
+    assert.ok(gr, 'Unable to create tournament On Hold')
   })
 
   it('Tournament should be On Hold', async function() {
@@ -237,6 +248,11 @@ contract('On Hold Tournament Testing', function(accounts) {
   it('New Round should be Not Yet Open', async function() {
     let state = await gr.getState()
     assert.equal(state, 0, 'Round should be Not Yet Open')
+  })
+
+  it('Current round should be Not Yet Open', async function() {
+    let [_,cr] = await t.getCurrentRound()
+    assert.equal(cr, gr.address, 'Incorrect current round')
   })
 
   it('New round should not have any submissions', async function() {
@@ -271,7 +287,7 @@ contract('On Hold Tournament Testing', function(accounts) {
   })
 })
 
-contract('Tournament Submission Review Testing', function(accounts) {
+contract('Tournament Voting Testing', function(accounts) {
   let t //tournament
   let r //round
   let s //submission
@@ -289,15 +305,12 @@ contract('Tournament Submission Review Testing', function(accounts) {
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
-    // Wait until open
+    // Setup
     await waitUntilOpen(r)
-
-    // Create submission
     s = await createSubmission(t, false, 1)
     let submissions = await r.getSubmissions(0, 0)
-
-    // Select winners
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
+
     assert.ok(r, 'Unable to create tournament and select submissions')
   })
 
@@ -331,7 +344,7 @@ contract('Tournament Submission Review Testing', function(accounts) {
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
+      assert(revertFound, 'Should not have been able to vote again')
     }
   })
 })
@@ -352,10 +365,8 @@ contract('Abandoned Tournament due to No Submissions Testing', function(accounts
     }
 
     t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
-
     // Wait for the round to become Abandoned
     await waitUntilClose(r)
 
@@ -365,6 +376,11 @@ contract('Abandoned Tournament due to No Submissions Testing', function(accounts
   it('Round state is Abandoned', async function() {
     let state = await r.getState()
     assert.equal(state, 6, 'Round State should be Abandoned')
+  })
+
+  it('Tournament state is Abandoned', async function() {
+    let state = await t.getState()
+    assert.equal(state, 4, 'Tournament State should be Abandoned')
   })
 
   it('Unable to add bounty to Abandoned round', async function() {
@@ -379,16 +395,16 @@ contract('Abandoned Tournament due to No Submissions Testing', function(accounts
 
   it("Only the tournament owner can attempt to recover the tournament funds", async function () {
       try {
-          // Switch to some other account
-          t.accountNumber = 1
-          await t.recoverFunds()
-          assert.fail('Expected revert not received')
-        } catch (error) {
-          // Switch back to the tournament owner account
-          t.accountNumber = 0
-          let revertFound = error.message.search('revert') >= 0
-          assert(revertFound, 'Should not have been able to add bounty to Abandoned round')
-        }
+        // Switch to some other account
+        t.accountNumber = 1
+        await t.recoverFunds()
+        assert.fail('Expected revert not received')
+      } catch (error) {
+        // Switch back to the tournament owner account
+        t.accountNumber = 0
+        let revertFound = error.message.search('revert') >= 0
+        assert(revertFound, 'Should not have been able to recover funds from another account')
+      }
   })
 
   it("Tournament owner is able to recover tournament funds", async function () {
@@ -398,6 +414,30 @@ contract('Abandoned Tournament due to No Submissions Testing', function(accounts
       assert.isTrue(fromWei(balAfter) == (fromWei(balBefore) + 10), "Tournament funds not transferred back to the owner")
   })
 
+  it("Unable to call recover funds twice", async function () {
+    try {
+        await t.recoverFunds()
+        assert.fail('Expected revert not received')
+      } catch (error) {
+        let revertFound = error.message.search('revert') >= 0
+        assert(revertFound, 'Should not have been able to recover funds twice')
+      }
+  })
+
+  it("Nonentrant unable to withdraw from Abandoned", async function () {
+    try {
+        // switch to accounts[1]
+        t.accountNumber = 1
+        await t.withdrawFromAbandoned()
+        assert.fail('Expected revert not received')
+      } catch (error) {
+        // switch back
+        t.accountNumber = 0
+        let revertFound = error.message.search('revert') >= 0
+        assert(revertFound, 'Should not have been able to withdraw')
+      }
+  })
+
   it("Tournament balance is 0", async function () {
       let tB = await t.getBalance()
       assert.isTrue(tB == 0, "Tournament balance should be 0")
@@ -405,6 +445,11 @@ contract('Abandoned Tournament due to No Submissions Testing', function(accounts
 
   it("Round balance is 0", async function () {
       let rB = await r.getBalance()
-      assert.isTrue(rB == 0, "Tournament balance should be 0")
+      assert.isTrue(rB == 0, "Round balance should be 0")
+  })
+
+  it('Tournament owner total spent should be 0', async function() {
+      let total = await users.getTotalSpent(accounts[0]).then(fromWei)
+      assert.equal(total, 0, 'Tournament owner total spent should be 0.')
   })
 })
