@@ -91,8 +91,12 @@ function Contract(address, artifact, accountNumber = 0) {
 
       return res
     } catch (err) {
-      if (data.logLevel >= 1 && err.message.includes('revert')) {
-        console.log(chalk`${prefix}{cyan ${name}}.{yellow ${fnName}} {red reverted}`)
+      let message = ''
+      if (err.message.includes('revert')) message = 'revert'
+      if (err.message.includes('out of gas')) message = 'out of gas'
+
+      if (data.logLevel >= 1 && message) {
+        console.log(chalk`${prefix}{cyan ${name}}.{yellow ${fnName}} {red ${message}}`)
       }
       else if (!err.message.includes('VM') && !constant) {
         // if error before even firing tx, decrement nonce
