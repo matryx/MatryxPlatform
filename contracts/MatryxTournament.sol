@@ -39,6 +39,7 @@ interface IMatryxTournament {
 
     function getSubmissionCount() external view returns (uint256);
     function getEntrantCount() external view returns (uint256);
+    function getEntryFeePaid(address) external view returns (uint256);
     function isEntrant(address) external view returns (bool);
 
     function enter() external;
@@ -224,11 +225,20 @@ library LibTournament {
         return data.tournaments[self].info.entrantCount;
     }
 
+    /// @dev Returns the entry fee that an entrant has paid
+    /// @param self     Address of this Tournament
+    /// @param sender   msg.sender to the Tournament
+    /// @param data     Data struct on Platform
+    /// @param uAddress Address of the tournament entrant
+    function getEntryFeePaid(address self, address sender, MatryxPlatform.Data storage data, address uAddress) public view returns (uint256) {
+        return data.tournaments[self].entryFeePaid[uAddress].value;
+    }
+
     /// @dev Returns true if address passed has entered the Tournament
-    /// @param self    Address of this Tournament
-    /// @param sender  msg.sender to the Tournament
-    /// @param data    Data struct on Platform
-    /// @param uAddress    Address of some user
+    /// @param self     Address of this Tournament
+    /// @param sender   msg.sender to the Tournament
+    /// @param data     Data struct on Platform
+    /// @param uAddress Address of some user
     function isEntrant(address self, address sender, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
         return data.tournaments[self].entryFeePaid[uAddress].exists;
     }
@@ -620,9 +630,10 @@ library LibTournament {
         // then transfer all to winners of that Round
         transferToWinners(info, data, rAddress);
 
-        // close round and remove ghost round
+        // close round and delete ghost round
         data.rounds[rAddress].info.closed = true;
         tournament.info.rounds.length = tournament.info.rounds.length - 1;
+        delete data.rounds[ghost];
     }
 
     /// @dev Give a positive or negative vote to a submission of the current round
