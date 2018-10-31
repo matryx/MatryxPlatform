@@ -540,7 +540,7 @@ contract('Unfunded Round Testing', function(accounts) {
     token = (await init()).token
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30,
+      end: Math.floor(Date.now() / 1000) + 35,
       review: 80,
       bounty: web3.toWei(10)
     }

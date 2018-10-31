@@ -8,7 +8,7 @@ const { init, createTournament, waitUntilInReview, createSubmission, selectWinne
 let platform
 
 // Case 1
-contract('Multiple Winning Submissions with No Contribs or Refs and Close Tournament', function(accounts) {
+contract('No Contribs and Close Tournament', function(accounts) {
   let t //tournament
   let r //round
   let s1 //submission 1
@@ -89,7 +89,7 @@ contract('Multiple Winning Submissions with No Contribs or Refs and Close Tourna
 })
 
 // Case 2
-contract('Multiple Winning Submissions with Contribs and Refs and Close Tournament', function(accounts) {
+contract('Contribs and Close Tournament', function(accounts) {
   let t //tournament
   let r //round
   let s1 //submission 1
@@ -181,7 +181,7 @@ contract('Multiple Winning Submissions with Contribs and Refs and Close Tourname
 })
 
 // Case 3
-contract('Multiple Winning Submissions with no Contribs or Refs and Start Next Round', function(accounts) {
+contract('No Contribs and Start Next Round', function(accounts) {
   let t //tournament
   let r //round
   let s1 //submission
@@ -291,7 +291,7 @@ contract('Multiple Winning Submissions with no Contribs or Refs and Start Next R
 })
 
 // Case 4
-contract('Multiple Winning Submissions with Contribs and Refs and Start Next Round', function(accounts) {
+contract('Contribs and Start Next Round', function(accounts) {
   let t //tournament
   let r //round
   let s1 //submission
@@ -412,7 +412,7 @@ contract('Multiple Winning Submissions with Contribs and Refs and Start Next Rou
 })
 
 // Case 5
-contract('Multiple Winning Submissions with no Contribs or Refs and Do Nothing', function(accounts) {
+contract('No Contribs and Do Nothing', function(accounts) {
   let t //tournament
   let r //round
   let s1 //submission
@@ -515,7 +515,7 @@ contract('Multiple Winning Submissions with no Contribs or Refs and Do Nothing',
 })
 
 // Case 6
-contract('Multiple Winning Submissions with Contribs and Refs and Do Nothing', function(accounts) {
+contract('Contribs and Do Nothing', function(accounts) {
   let t //tournament
   let r //round
   let s1 //submission

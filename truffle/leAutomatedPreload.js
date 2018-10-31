@@ -49,7 +49,7 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   //   bounty
   // }
 
-  let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 4e6, gasPrice: 25 })
+  let tx = await platform.createTournament(tournamentData, roundData)
   await getMinedTx(tx.hash)
 
   const address = await platform.allTournaments(count)
@@ -86,7 +86,7 @@ const createSubmission = async (tournament, accountNumber) => {
 
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) {
-    let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 4e6 })
+    let { hash } = await platform.enterTournament(tournament.address)
     await getMinedTx(hash)
   }
 
@@ -108,7 +108,7 @@ const createSubmission = async (tournament, accountNumber) => {
     references: new Array(0).fill(0).map(r => genAddress())
   }
 
-  let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 4e6 })
+  let tx = await tournament.createSubmission(submissionData, contribsAndRefs)
   await getMinedTx(tx.hash)
 
   const [_, roundAddress] = await tournament.currentRound()
@@ -185,7 +185,7 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
   console.log(chalk`{grey [Waiting ${~~timeTilRoundInReview}s until review period]}`)
   await sleep(timeTilRoundInReview * 1000)
 
-  const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 4e6 })
+  const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData)
   await getMinedTx(tx.hash)
 }
 

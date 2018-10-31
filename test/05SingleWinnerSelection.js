@@ -12,7 +12,7 @@ let users
 //
 // Case 1
 //
-contract('Single Winning Submission with No Contribs or Refs and Close Tournament', function(accounts) {
+contract('No Contribs and Close Tournament', function(accounts) {
   let t //tournament
   let r //round
   let s //submission
@@ -132,7 +132,7 @@ contract('Single Winning Submission with No Contribs or Refs and Close Tournamen
 //
 // Case 2
 //
-contract('Single Winning Submission with Contribs and Close Tournament', function(accounts) {
+contract('Contribs and Close Tournament', function(accounts) {
   let t //tournament
   let r //round
   let s //submission
@@ -239,7 +239,7 @@ contract('Single Winning Submission with Contribs and Close Tournament', functio
 //
 // Case 3
 //
-contract('Single Winning Submission with no Contribs or Refs and Start Next Round', function(accounts) {
+contract('No Contribs and Start Next Round', function(accounts) {
   let t //tournament
   let r //round
   let nr // new round (after choosing winners)
@@ -340,7 +340,7 @@ contract('Single Winning Submission with no Contribs or Refs and Start Next Roun
 
 // Case 4
 
-contract('Single Winning Submission with Contribs and Start Next Round', function(accounts) {
+contract('Contribs and Start Next Round', function(accounts) {
   let t //tournament
   let r //round
   let nr //new round
@@ -466,7 +466,7 @@ contract('Single Winning Submission with Contribs and Start Next Round', functio
 
 // Case 5
 
-contract('Single Winning Submission with no Contribs or Refs and Do Nothing', function(accounts) {
+contract('No Contribs or Refs and Do Nothing', function(accounts) {
   let t //tournament
   let r //round
   let s //submission
@@ -559,7 +559,7 @@ contract('Single Winning Submission with no Contribs or Refs and Do Nothing', fu
 //
 // Case 6
 //
-contract('Single Winning Submission with Contribs and Do Nothing', function(accounts) {
+contract('Contribs and Do Nothing', function(accounts) {
   let t //tournament
   let r //round
   let s //submission
@@ -686,7 +686,7 @@ contract('Single Winning Submission with Contribs and Do Nothing', function(acco
 //
 // Case 7
 //
-contract('Single Winning Submission and Do Nothing, then Close Tournament', function(accounts) {
+contract('Do Nothing, then Close Tournament', function(accounts) {
   let t //tournament
   let r //round
   let s //submission
@@ -805,7 +805,7 @@ contract('Single Winning Submission and Do Nothing, then Close Tournament', func
 //
 // Case 8
 //
-contract('Single Winning Submission and Do Nothing, then Start Next Round', function(accounts) {
+contract('Do Nothing, then Start Next Round', function(accounts) {
   let t //tournament
   let r //round
   let s //submission
@@ -912,74 +912,6 @@ contract('Single Winning Submission and Do Nothing, then Start Next Round', func
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to withdraw reward')
     }
-  })
-
-})
-
-//
-// Case 9 - References Reward Distribution Testing
-//
-contract('References Reward Distribution Testing', function(accounts) {
-  let t //tournament
-  let r //round
-  let s //submission
-  let ref //reference
-
-  it('Able to choose a winning submission and Do Nothing', async function() {
-    await init()
-    roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30,
-      review: 20,
-      bounty: web3.toWei(5)
-    }
-
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-    s = await createSubmission(t, false, 1)
-    s = Contract(s.address, IMatryxSubmission, 1)
-    ref = await createSubmission(t, false, 2)
-    ref = Contract(ref.address, IMatryxSubmission, 2)
-
-    // add ref as a reference
-    let refs = {
-      indices: [],
-      addresses: [ref.address]
-    }
-    await s.setContributorsAndReferences([[], []], [], refs)
-
-    let submissions = await r.getSubmissions(0, 1)
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
-    let winnings = await s.getTotalWinnings().then(fromWei)
-
-    assert.isTrue(winnings > 0, 'Winner was not chosen')
-  })
-
-  it('Correct winning submission balance', async function() {
-    let b = await s.getBalance().then(fromWei)
-    assert.equal(b, 10, 'Winning submission balance should be 10')
-  })
-
-  it('Correct winning submission owner available reward', async function() {
-    let b = await s.getAvailableReward().then(fromWei)
-    assert.equal(b, 9, 'Available reward should be 9')
-  })
-
-  it('Reference balance is correct after original owner withdraws their reward', async function() {
-    await s.withdrawReward()
-    let b = await ref.getBalance().then(fromWei)
-    assert.equal(b, 1, 'Reference balance should be 1')
-  })
-
-  it('Correct reference available reward', async function() {
-    let b = await ref.getAvailableReward().then(fromWei)
-    assert.equal(b, 1, 'Reference available reward should be 1')
-  })
-
-  it('Reference correctly stores the winning submissions it was referenced in', async function() {
-    let refIn = await ref.getReferencedIn()
-    assert.equal(refIn[0], s.address, 'Reference did not store winning submission it was referenced in correctly')
   })
 
 })
