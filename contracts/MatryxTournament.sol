@@ -534,6 +534,10 @@ library LibTournament {
                 require(rDetails.start >= currentDetails.end.add(currentDetails.review), "Round cannot start before end of review");
             }
 
+            // TODO: change to hours
+            uint256 end = rDetails.end > 0 ? rDetails.end : details.end;
+            require(end.sub(rDetails.start) >= 1 seconds, "Round length cannot be less than 1 hour");
+
             details.start = rDetails.start;
         }
         if (rDetails.end > 0) {
