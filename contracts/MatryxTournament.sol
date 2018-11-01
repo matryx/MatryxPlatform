@@ -204,7 +204,10 @@ library LibTournament {
         }
     }
 
-    /// @dev Returns the total number of submissions made in all rounds of this tournament
+    /// @dev Returns the total number of Submissions made in all rounds of this Tournament
+    /// @param self  Address of this Tournament
+    /// @param data  Data struct on Platform
+    /// @return      Number of all Submissions in this Tournament
     function getSubmissionCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         address[] storage rounds = data.tournaments[self].info.rounds;
         uint256 count = 0;
@@ -217,28 +220,27 @@ library LibTournament {
     }
 
     /// @dev Returns the number of entrants in this Tournament
-    /// @param self    Address of this Tournament
-    /// @param sender  msg.sender to the Tournament
-    /// @param data    Data struct on Platform
-    function getEntrantCount(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
+    /// @param self  Address of this Tournament
+    /// @param data  Data struct on Platform
+    /// @return      Number of entrants
+    function getEntrantCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.tournaments[self].info.entrantCount;
     }
 
     /// @dev Returns the entry fee that an entrant has paid
-    /// @param self     Address of this Tournament
-    /// @param sender   msg.sender to the Tournament
-    /// @param data     Data struct on Platform
-    /// @param uAddress Address of the tournament entrant
-    function getEntryFeePaid(address self, address sender, MatryxPlatform.Data storage data, address uAddress) public view returns (uint256) {
+    /// @param self      Address of this Tournament
+    /// @param data      Data struct on Platform
+    /// @param uAddress  Address of the tournament entrant
+    /// @return          Entry fee uAddress has paid
+    function getEntryFeePaid(address self, address, MatryxPlatform.Data storage data, address uAddress) public view returns (uint256) {
         return data.tournaments[self].entryFeePaid[uAddress].value;
     }
 
     /// @dev Returns true if address passed has entered the Tournament
     /// @param self     Address of this Tournament
-    /// @param sender   msg.sender to the Tournament
     /// @param data     Data struct on Platform
     /// @param uAddress Address of some user
-    function isEntrant(address self, address sender, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
+    function isEntrant(address self, address, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
         return data.tournaments[self].entryFeePaid[uAddress].exists;
     }
 
@@ -285,12 +287,11 @@ library LibTournament {
 
     /// @dev Creates a new Round on this Tournament
     /// @param self      Address of this Tournament
-    /// @param sender    msg.sender to the Tournament
     /// @param info      Info struct on Platform
     /// @param data      Data struct on Platform
     /// @param rDetails  Details of the Round being created
     /// @return          Address of the created Round
-    function createRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
+    function createRound(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
 
         address platform = IMatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
@@ -641,11 +642,10 @@ library LibTournament {
     /// @dev Give a positive or negative vote to a submission of the current round
     /// @param self        Address of this Tournament
     /// @param sender      msg.sender to the Tournament
-    /// @param info        Info struct on Platform
     /// @param data        Data struct on Platform
     /// @param submission  Address of the submission to vote
     /// @param positive    True if the vote is positive; false otherwise
-    function voteSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address submission, bool positive) public {
+    function voteSubmission(address self, address sender, MatryxPlatform.Data storage data, address submission, bool positive) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
 
@@ -672,11 +672,10 @@ library LibTournament {
     /// @dev Give a positive or negative vote to this tournament for current round
     /// @param self        Address of this Tournament
     /// @param sender      msg.sender to the Tournament
-    /// @param info        Info struct on Platform
     /// @param data        Data struct on Platform
     /// @param round       Address of the round to judge
     /// @param positive    True if the vote is positive; false otherwise
-    function voteRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address round, bool positive) public {
+    function voteRound(address self, address sender, MatryxPlatform.Data storage data, address round, bool positive) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
 
         uint256 state = IMatryxRound(round).getState();

@@ -108,7 +108,7 @@ library LibRound {
     }
 
     /// @dev Returns the MTX balance of this Round
-    function getBalance(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
+    function getBalance(address self, address, MatryxPlatform.Info storage info) public view returns (uint256) {
         return IMatryxToken(info.token).balanceOf(self);
     }
 

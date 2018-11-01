@@ -136,7 +136,7 @@ library LibSubmission {
     }
 
     /// @dev Returns the description hash of this Submission
-    function getDescriptionHash(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
+    function getDescriptionHash(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
         return data.submissions[self].details.descHash;
     }
 
@@ -199,7 +199,7 @@ library LibSubmission {
     }
 
     /// @dev Returns the MTX balance of this Submission
-    function getBalance(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
+    function getBalance(address self, address, MatryxPlatform.Info storage info) public view returns (uint256) {
         return IMatryxToken(info.token).balanceOf(self);
     }
 
@@ -355,10 +355,9 @@ library LibSubmission {
     /// @dev Flags this Submission as missing a reference
     /// @param self    Address of this Submission
     /// @param sender  msg.sender to this Submission
-    /// @param info    Info struct on Platform
     /// @param data    Data struct on Platform
     /// @param ref     Address of the missing reference
-    function flagMissingReference(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address ref) public {
+    function flagMissingReference(address self, address sender, MatryxPlatform.Data storage data, address ref) public {
         address owner = data.submissions[self].info.owner;
         require(sender == data.submissions[ref].info.owner, "Caller must own the reference");
         require(data.submissions[ref].permittedToView[owner], "Submission owner must have seen the reference's files");
@@ -389,10 +388,9 @@ library LibSubmission {
     /// @dev Get the reward available to the caller on this Submissions
     /// @param self    Address of this Submission
     /// @param sender  msg.sender to this Submission
-    /// @param info    Info struct on Platform
     /// @param data    Data struct on Platform
     /// @return        Amount of MTX available to msg.sender
-    function getAvailableReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
+    function getAvailableReward(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
         uint256[] storage distribution = submission.details.distribution;
 
@@ -448,7 +446,7 @@ library LibSubmission {
         if (sender == submission.info.owner) {
             for (uint256 i = 0; i < submission.details.references.length; i++) {
                 address ref = submission.details.references[i];
-                share = getAvailableReward(self, ref, info, data);
+                share = getAvailableReward(self, ref, data);
 
                 IMatryxSubmission(self).transferTo(info.token, ref, share);
                 submission.amountWithdrawn[ref] = submission.amountWithdrawn[ref].add(share);
@@ -457,7 +455,7 @@ library LibSubmission {
             }
         }
 
-        share = getAvailableReward(self, sender, info, data);
+        share = getAvailableReward(self, sender, data);
         require(share > 0, "Already withdrawn full amount");
 
         IMatryxSubmission(self).transferTo(info.token, sender, share);
