@@ -525,18 +525,21 @@ library LibTournament {
         address rAddress = tournament.info.rounds[tournament.info.rounds.length - 1];
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.NotYetOpen), "Cannot edit open Round");
 
-        if (tournament.info.rounds.length > 1 && rDetails.start > 0) {
-            (,address currentRound) = getCurrentRound(self, sender, data);
-            LibRound.RoundDetails storage currentDetails = data.rounds[currentRound].details;
-            require(rDetails.start >= currentDetails.end.add(currentDetails.review), "Round cannot start before end of review");
-        }
-
         LibRound.RoundDetails storage details = data.rounds[rAddress].details;
 
         if (rDetails.start > 0) {
+            if (tournament.info.rounds.length > 1) {
+                (,address currentRound) = getCurrentRound(self, sender, data);
+                LibRound.RoundDetails storage currentDetails = data.rounds[currentRound].details;
+                require(rDetails.start >= currentDetails.end.add(currentDetails.review), "Round cannot start before end of review");
+            }
+
             details.start = rDetails.start;
         }
-        if (rDetails.end > 0 && rDetails.end.sub(details.start) >= 1 seconds) { // TODO: change to hours
+        if (rDetails.end > 0) {
+            // TODO: change to hours
+            require(rDetails.end.sub(details.start) >= 1 seconds, "Round length cannot be less than 1 hour");
+
             details.end = rDetails.end;
         }
         if (rDetails.review > 0) { // TODO: review length restriction
