@@ -543,11 +543,14 @@ library LibTournament {
             details.review = rDetails.review;
         }
         if (rDetails.bounty > 0) {
-            uint256 tBalance = getBalance(self, sender, info, data);
             uint256 diff;
 
             if (rDetails.bounty > details.bounty) {
                 diff = rDetails.bounty.sub(details.bounty);
+
+                uint256 tBalance = getBalance(self, sender, info, data);
+                require(diff <= tBalance, "Not enough funds");
+
                 IMatryxTournament(self).transferTo(info.token, rAddress, diff);
             } else {
                 diff = details.bounty.sub(rDetails.bounty);
