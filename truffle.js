@@ -40,8 +40,8 @@ module.exports = {
         return new Web3.providers.HttpProvider('http://localhost:8545')
       },
       network_id: "*", // match any network
-      gas: 6541593,
-      gasPrice: 30000000
+      gas: 8e6,
+      gasPrice: 5e9
     },
     ropsten: {
       provider: function () {
@@ -50,7 +50,7 @@ module.exports = {
         return new HDWalletProvider(network.mnemonic, "https://ropsten.infura.io/metamask")
       },
       network_id: 3,
-      gas: 4500000
+      gas: 8e6
     },
     kovan: {
       provider: function () {
@@ -59,15 +59,15 @@ module.exports = {
         return new HDWalletProvider(network.mnemonic, "https://kovan.infura.io/metamask")
       },
       network_id: 42,
-      gas: 6e6,
+      gas: 8e6,
       gasPrice: 5e9 // 5 gwei
     },
     testing: {
       host: "localhost",
       port: 8545,
       network_id: "*", // match any network
-      gas: 6741593,
-      gasPrice: 30000000
+      gas: 8e6,
+      gasPrice: 5e9
     },
     coverage: {
       host: "localhost",
