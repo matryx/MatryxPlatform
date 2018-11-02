@@ -94,8 +94,7 @@ contract('Open Tournament Testing', function(accounts) {
   })
 
   it('Number of positive and negative votes is 0', async function() {
-    let pV = await t.getPositiveVotes()
-    let nV = await t.getNegativeVotes()
+    let [pV, nV] = await t.getVotes()
     assert.equal(pV + nV, 0, 'Number of total votes should be 0.')
   })
 
@@ -308,8 +307,7 @@ contract('Tournament Voting Testing', function(accounts) {
   })
 
   it('Positive & negative votes for the submission should be 0', async function() {
-    let pV = await s.getPositiveVotes()
-    let nV = await s.getNegativeVotes()
+    let [pV, nV] = await s.getVotes()
     assert.isTrue((pV + nV) == 0, 'Submission should not have any votes')
   })
 
@@ -327,7 +325,7 @@ contract('Tournament Voting Testing', function(accounts) {
 
   it('Able to give the submission a positive vote', async function() {
     await t.voteSubmission(s.address, true)
-    let pV = await s.getPositiveVotes()
+    let [pV, nV] = await s.getVotes()
     assert.isTrue(pV == 1, 'Submission should have 1 positive vote')
   })
 

@@ -243,7 +243,7 @@ contract('In Review Round Testing', function(accounts) {
 
   it('Tournament owner able to judge submissions while In Review', async function() {
     await t.voteSubmission(s.address, true)
-    let v = await s.getPositiveVotes()
+    let [v, n] = await s.getVotes()
     assert.equal(v, 1, 'Was not able to judge submission')
   })
 })
@@ -331,7 +331,7 @@ contract('Closed Round Testing', function(accounts) {
     await t.voteRound(r.address, true)
     //switch back
     t.accountNumber = 0
-    let pV = await t.getPositiveVotes()
+    let [pV, nV] = await t.getVotes()
     assert.equal(pV, 1, "Tournament should have 1 positive vote")
   })
 
@@ -627,8 +627,7 @@ contract('Unfunded Round Testing', function(accounts) {
     // switch back
     t.accountNumber = 0
 
-    let pV = await t.getPositiveVotes()
-    let nV = await t.getNegativeVotes()
+    let [pV, nV] = await t.getVotes()
     assert.isTrue(pV == 1 && nV == 1, "Tournament should have 1 positive & 1 negative vote")
   })
 })

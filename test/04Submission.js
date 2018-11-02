@@ -150,8 +150,8 @@ contract('Submission Testing with No Contributors and References', function(acco
     await s.flagMissingReference(s2.address);
 
     users = Contract(MatryxUser.address, IMatryxUser, 0)
-    let v = await users.getNegativeVotes(accounts[1])
-    assert.equal(v, 1, "Submission owner user should have 1 negative vote")
+    let [v, n] = await users.getVotes(accounts[1])
+    assert.equal(n, 1, "Submission owner user should have 1 negative vote")
   })
 
   it('Unable to flag same missing reference twice', async function() {

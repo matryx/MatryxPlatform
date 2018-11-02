@@ -32,8 +32,7 @@ interface IMatryxSubmission {
     function getTimeUpdated() external view returns (uint256);
     function getReward() external view returns (uint256);
     function getReferencedIn() external view returns (address[]);
-    function getPositiveVotes() external view returns (uint256);
-    function getNegativeVotes() external view returns (uint256);
+    function getVotes() external view returns (uint256, uint256);
     function getViewers() external view returns (address[]);
     function getBalance() external view returns (uint256);
     function getTotalWinnings() external view returns (uint256);
@@ -183,14 +182,9 @@ library LibSubmission {
         return data.submissions[self].info.referencedIn;
     }
 
-    /// @dev Returns the number of positive votes for this submission
-    function getPositiveVotes(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return data.submissions[self].info.positiveVotes;
-    }
-
-    /// @dev Returns the number of negative votes for this submission
-    function getNegativeVotes(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return data.submissions[self].info.negativeVotes;
+    /// @dev Returns the number of positive and negative votes for this submission
+    function getVotes(address self, address, MatryxPlatform.Data storage data) public view returns (uint256, uint256) {
+        return (data.submissions[self].info.positiveVotes, data.submissions[self].info.negativeVotes);
     }
 
     /// @dev Returns the list of addresses that are permitted to view the files for this submission

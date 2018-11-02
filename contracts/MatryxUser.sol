@@ -50,8 +50,7 @@ contract MatryxUser {
 interface IMatryxUser {
     function getData(address user) external view returns (LibUser.UserData);
     function getTimeInMatryx(address user) external view returns (uint256);
-    function getPositiveVotes(address user) external view returns (uint256);
-    function getNegativeVotes(address user) external view returns (uint256);
+    function getVotes(address user) external view returns (uint256, uint256);
     function getTotalSpent(address user) external view returns (uint256);
     function getTotalWinnings(address user) external view returns (uint256);
     function getTournaments(address user) external view returns (address[]);
@@ -84,12 +83,8 @@ library LibUser {
         return now - data.users[user].timeEntered;
     }
 
-    function getPositiveVotes(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
-        return data.users[user].positiveVotes;
-    }
-
-    function getNegativeVotes(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
-        return data.users[user].negativeVotes;
+    function getVotes(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256, uint256) {
+        return (data.users[user].positiveVotes, data.users[user].negativeVotes);
     }
 
     function getTotalSpent(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {

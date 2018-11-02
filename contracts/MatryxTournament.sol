@@ -21,8 +21,7 @@ interface IMatryxTournament {
 
     function getVersion() external view returns (uint256);
     function getOwner() external view returns (address);
-    function getPositiveVotes() external view returns (uint256);
-    function getNegativeVotes() external view returns (uint256);
+    function getVotes() external view returns (uint256, uint256);
 
     function getTitle() external view returns (bytes32[3]);
     function getCategory() external view returns (bytes32);
@@ -115,13 +114,8 @@ library LibTournament {
     }
 
     /// @dev Returns the number of positive votes for this Tournament
-    function getPositiveVotes(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return data.tournaments[self].info.positiveVotes;
-    }
-
-    /// @dev Returns the number of negative votes for this Tournament
-    function getNegativeVotes(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return data.tournaments[self].info.negativeVotes;
+    function getVotes(address self, address, MatryxPlatform.Data storage data) public view returns (uint256, uint256) {
+        return (data.tournaments[self].info.positiveVotes, data.tournaments[self].info.positiveVotes);
     }
 
     /// @dev Returns the title of this Tournament
