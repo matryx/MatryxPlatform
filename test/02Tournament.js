@@ -47,11 +47,6 @@ contract('Open Tournament Testing', function(accounts) {
     assert.equal(d, 'QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 'Unable to get description hash.')
   })
 
-  it('Able to get tournament files', async function() {
-    let f = await t.getFileHash().then(bytesToString)
-    assert.equal(f, 'QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 'Unable to get file hash.')
-  })
-
   it('Able to get tournament bounty', async function() {
     let b = await t.getBounty().then(fromWei)
     assert.equal(b, 10, 'Unable to get bounty.')
@@ -127,11 +122,9 @@ contract('Open Tournament Testing', function(accounts) {
     await t.updateDetails(modData)
     let title = await t.getTitle().then(bytesToString)
     let desc = await t.getDescriptionHash().then(bytesToString)
-    let file = await t.getFileHash().then(bytesToString)
-    let fee = await t.getEntryFee().then(fromWei)
-    let allNew = [title, desc, file].every(x => x === 'new')
+    let allNew = [title, desc].every(x => x === 'new')
 
-    assert.isTrue(allNew && fee == 1, 'Tournament data not updated correctly.')
+    assert.isTrue(allNew, 'Tournament data not updated correctly.')
   })
 
   it('Able to change the tournament category', async function() {

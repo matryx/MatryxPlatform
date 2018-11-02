@@ -5,6 +5,8 @@ const generate = require('./generate')
 const version = process.argv[3] || 1
 const batch = process.argv[2] === 'true'
 
+const ignore = ['LibUtils', 'LibTrinity', 'LibTournamentHelper']
+
 const st = Date.now()
 const files = fs.readdirSync('../contracts')
 const contracts = files
@@ -86,7 +88,7 @@ while ((match = interfaceReg.exec(source))) {
 libReg.lastIndex = 0
 while ((match = libReg.exec(source))) {
   const [, libName, libContent] = match
-  if (['LibUtils', 'LibTrinity'].includes(libName)) continue
+  if (ignore.includes(libName)) continue
 
   while ((match = fnReg.exec(libContent))) {
     if (match[0].includes('internal')) continue
