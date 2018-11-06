@@ -63,8 +63,8 @@ library LibTournament {
     using SafeMath for uint256;
 
     // TODO: change to 1 hours
-    uint256 constant minRoundLength = 1 seconds;
-    uint256 constant maxRoundLength = 365 days;
+    uint256 constant MIN_ROUND_LENGTH = 1 seconds;
+    uint256 constant MAX_ROUND_LENGTH = 365 days;
 
     event RoundCreated(address roundAddress);
     event SubmissionCreated(address submissionAddress);
@@ -233,8 +233,8 @@ library LibTournament {
         require(IMatryxToken(info.token).balanceOf(self) >= rDetails.bounty, "Insufficient funds for Round");
 
         uint256 duration = rDetails.end.sub(rDetails.start);
-        require(duration >= minRoundLength, "Round too short");
-        require(duration <= maxRoundLength, "Round too long");
+        require(duration >= MIN_ROUND_LENGTH, "Round too short");
+        require(duration <= MAX_ROUND_LENGTH, "Round too long");
 
         // TODO: add review time restrictions or auto review?
 
@@ -442,8 +442,8 @@ library LibTournament {
             LibRound.RoundDetails storage details = data.rounds[rAddress].details;
 
             uint256 duration = details.end.sub(details.start);
-            require(duration >= minRoundLength, "Round too short");
-            require(duration <= maxRoundLength, "Round too long");
+            require(duration >= MIN_ROUND_LENGTH, "Round too short");
+            require(duration <= MAX_ROUND_LENGTH, "Round too long");
         }
     }
 
