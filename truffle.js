@@ -50,7 +50,8 @@ module.exports = {
         return new HDWalletProvider(network.mnemonic, "https://ropsten.infura.io/metamask")
       },
       network_id: 3,
-      gas: 8e6
+      gas: 8e6,
+      gasPrice: 5e9
     },
     kovan: {
       provider: function () {
