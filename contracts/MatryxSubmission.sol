@@ -89,7 +89,8 @@ library LibSubmission {
 
         address[] allPermittedToView;
         mapping(address=>bool) permittedToView;
-        mapping(address=>uint256) amountWithdrawn;
+        mapping(address=>uint256) availableReward;
+        uint256 totalAllocated;
         address[] missingReferences;
     }
 
@@ -379,52 +380,83 @@ library LibSubmission {
         data.users[owner].negativeVotes = data.users[owner].negativeVotes.add(1);
     }
 
-    /// @dev Get the reward available to the caller on this Submissions
+    /// @dev Get the reward available to the caller on this Submission
     /// @param self    Address of this Submission
     /// @param sender  msg.sender to this Submission
     /// @param data    Data struct on Platform
     /// @return        Amount of MTX available to msg.sender
-    function getAvailableReward(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
+     function getAvailableReward(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
-        uint256[] storage distribution = submission.details.distribution;
+        uint256 remainingReward = submission.info.reward.sub(submission.totalAllocated);
+        uint256 share = submission.availableReward[sender];
 
-        uint256 contributorIndex = 0;
-        uint256 totalRefShare;
-        uint256 share;
+        if (remainingReward > 0) {
+            uint256[] storage distribution = submission.details.distribution;
+            uint256 distTotal = distribution[0];
+            uint256 contributorIndex = 0;
 
-        uint256 distTotal = distribution[0];
-        for (uint256 i = 1; i < distribution.length; i++) {
-            distTotal = distTotal.add(distribution[i]);
+            for (uint256 i = 1; i < distribution.length; i++) {
+                distTotal = distTotal.add(distribution[i]);
 
-            if (submission.details.contributors[i - 1] == sender) {
-                contributorIndex = i;
+                if (submission.details.contributors[i - 1] == sender) {
+                    contributorIndex = i;
+                }
             }
+
+            if (contributorIndex == 0 && sender != submission.info.owner) {
+                return share;
+            }
+
+            if (submission.details.references.length > 0) {
+                uint256 totalRefShare = remainingReward.mul(10**18).div(10**19); // 10% for references
+                remainingReward = remainingReward.sub(totalRefShare);    // remaining 90% for owner and contribs
+            }
+
+            share = share.add(remainingReward.mul(10**18).mul(distribution[contributorIndex]).div(distTotal).div(10**18));
         }
 
-        uint256 reward = submission.info.reward;
+        return share;
+    }
+
+    /// @dev Sets the reward allocation for each contributor and reference to this submission when someone withdraws
+    /// @param self    Address of this Submission
+    /// @param sender  msg.sender to this Submission
+    /// @param data    Data struct on Platform
+    function calculateRewardAllocation(address self, address sender, MatryxPlatform.Data storage data) internal {
+        LibSubmission.SubmissionData storage submission = data.submissions[self];
+        uint256 remainingReward = submission.info.reward.sub(submission.totalAllocated);
+
+        // if no new reward to allocate, return early
+        if (remainingReward == 0) return;
+        submission.totalAllocated = submission.totalAllocated.add(remainingReward);
+
+        uint256[] storage distribution = submission.details.distribution;
+        uint256 distTotal = 0;
+
+        for (uint256 i = 0; i < distribution.length; i++) {
+            distTotal = distTotal.add(distribution[i]);
+        }
+
         if (submission.details.references.length > 0) {
-            totalRefShare = reward.mul(10**18).div(10**19); // 10%
-            reward = reward - totalRefShare;
+            uint256 totalRefShare = remainingReward.mul(10**18).div(10**19); // 10% for references
+            remainingReward = remainingReward.sub(totalRefShare);    // remaining 90% for owner and contribs
 
             for (i = 0; i < submission.details.references.length; i++) {
                 address ref = submission.details.references[i];
-                if (sender != ref) continue;
 
-                share = totalRefShare.mul(10**18).div(submission.details.references.length).div(10**18);
-                share = share.sub(submission.amountWithdrawn[ref]);
-
-                return share;
+                uint256 share = totalRefShare.mul(10**18).div(submission.details.references.length).div(10**18);
+                submission.availableReward[ref] = submission.availableReward[ref].add(share);
             }
         }
 
-        if (contributorIndex == 0) {
-            if (sender != submission.info.owner) return 0;
+        for (i = 0; i < distribution.length; i++) {
+            share = remainingReward.mul(10**18).mul(distribution[i]).div(distTotal).div(10**18);
+
+            address contrib = submission.info.owner;
+            if (i != 0) contrib = submission.details.contributors[i - 1];
+
+            submission.availableReward[contrib] = submission.availableReward[contrib].add(share);
         }
-
-        share = reward.mul(10**18).mul(distribution[contributorIndex]).div(distTotal).div(10**18);
-        share = share.sub(submission.amountWithdrawn[sender]);
-
-        return share;
     }
 
     /// @dev Allows the owner and contributors to this Submission to withdraw from this Submission
@@ -434,31 +466,26 @@ library LibSubmission {
     /// @param data    Data struct on Platform
     function withdrawReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
-        uint256 share;
+        calculateRewardAllocation(self, sender, data);
 
-        // if owner, transfer 10% to references
+        uint256 share = submission.availableReward[sender];
+        require(share > 0, "Already withdrawn full amount");
+
+        submission.availableReward[sender] = 0;
+        data.users[sender].totalWinnings = data.users[sender].totalWinnings.add(share);
+        IMatryxSubmission(self).transferTo(info.token, sender, share);
+
+        // if owner, transfer references their shares
         if (sender == submission.info.owner) {
             for (uint256 i = 0; i < submission.details.references.length; i++) {
                 address ref = submission.details.references[i];
-                share = getAvailableReward(self, ref, data);
+                share = submission.availableReward[ref];
+                if (share == uint256(0)) continue;
 
-                IMatryxSubmission(self).transferTo(info.token, ref, share);
-                submission.amountWithdrawn[ref] = submission.amountWithdrawn[ref].add(share);
+                submission.availableReward[ref] = 0;
                 data.submissions[ref].info.reward = data.submissions[ref].info.reward.add(share);
-                data.submissions[ref].info.referencedIn.push(self);
+                IMatryxSubmission(self).transferTo(info.token, ref, share);
             }
-        }
-
-        share = getAvailableReward(self, sender, data);
-        require(share > 0, "Already withdrawn full amount");
-
-        IMatryxSubmission(self).transferTo(info.token, sender, share);
-        submission.amountWithdrawn[sender] = submission.amountWithdrawn[sender].add(share);
-        data.users[sender].totalWinnings = data.users[sender].totalWinnings.add(share);
-
-        // Update user contributor data
-        if (sender != submission.info.owner) {
-            data.users[sender].contributedTo.push(self);
         }
     }
 }
