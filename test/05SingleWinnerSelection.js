@@ -7,7 +7,7 @@ const { Contract } = require('../truffle/utils')
 const { init, createTournament, waitUntilInReview, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
 
 let platform
-let users
+let users = Contract(MatryxUser.address, IMatryxUser, 0)
 
 //
 // Case 1
@@ -128,7 +128,6 @@ contract('No Contribs and Close Tournament', function(accounts) {
 
 })
 
-
 //
 // Case 2
 //
@@ -139,6 +138,7 @@ contract('Contribs and Close Tournament', function(accounts) {
 
   it('Able to create a Submission with Contributors and References', async function() {
     await init()
+
     roundData = {
       start: Math.floor(Date.now() / 1000),
       end: Math.floor(Date.now() / 1000) + 30,
@@ -199,7 +199,7 @@ contract('Contribs and Close Tournament', function(accounts) {
     assert.equal(b, 10, 'Incorrect submission balance')
   })
 
-  it('Able to withdraw reward', async function() {
+  it('Able to withdraw reward', async function () {
     await s.withdrawReward()
     let sb = await s.getBalance().then(fromWei)
     assert.equal(sb, 5, 'Submission balance should now be 5')
@@ -210,7 +210,7 @@ contract('Contribs and Close Tournament', function(accounts) {
     s.accountNumber = 3
     await s.withdrawReward()
     let sb = await s.getBalance().then(fromWei)
-    assert.equal(sb, 0, 'Submission balance should now be 5')
+    assert.equal(sb, 0, 'Submission balance should now be 0')
   })
 
   it('Unable to withdraw reward twice from the same account', async function() {
@@ -225,7 +225,6 @@ contract('Contribs and Close Tournament', function(accounts) {
 
   it('Submission owner total winnings should be 5', async function() {
     s.accountNumber = 1
-    users = Contract(MatryxUser.address, IMatryxUser, 0)
     let w = await users.getTotalWinnings(accounts[1]).then(fromWei)
     assert.equal(w, 5, 'Submission owner total winnings should be 5')
   })
@@ -738,11 +737,6 @@ contract('Do Nothing, then Close Tournament', function(accounts) {
   it('Ghost round no longer exists in tournament', async function() {
     let rounds = await t.getRounds()
     assert.isTrue(rounds.length == 1, 'Ghost round should no longer exist')
-  })
-
-  it('Platform no longer recognizes the ghost round', async function() {
-    let isRound = await platform.isRound(gr.address)
-    assert.isFalse(isRound, 'Platform should not recognize ghost round address as an existing round')
   })
 
   it('Tournament balance should now be 0', async function() {

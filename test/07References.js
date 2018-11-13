@@ -62,9 +62,4 @@ contract('References Reward Distribution Testing', function(accounts) {
       assert.equal(b, 1, 'Reference available reward should be 1')
     })
 
-    it('Reference correctly stores the winning submissions it was referenced in', async function() {
-      let refIn = await ref.getReferencedIn()
-      assert.equal(refIn[0], s.address, 'Reference did not store winning submission it was referenced in correctly')
-    })
-
   })
