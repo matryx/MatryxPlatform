@@ -40,7 +40,8 @@ interface IMatryxSubmission {
 
     function unlockFile() external;
     function updateDetails(LibSubmission.DetailsUpdates) external;
-    function setContributorsAndReferences(LibGlobals.IndexedAddresses, uint256[], LibGlobals.IndexedAddresses) external;
+    function addContributorsAndReferences(address[], uint256[], address[]) external;
+    function removeContributorsAndReferences(address[], address[]) external;
     function flagMissingReference(address) external;
 
     function getAvailableReward() external view returns (uint256);
@@ -266,83 +267,153 @@ library LibSubmission {
         data.submissions[self].info.timeUpdated = now;
     }
 
-    /// @dev Adds and removes contributors and references on this Submission
+    /// @dev Adds contributors and references on this Submission
     /// @param self          Address of this Submission
     /// @param sender        msg.sender to this Submission
     /// @param info          Info struct on Platform
     /// @param data          Data struct on Platform
-    /// @param contribs      Contributor addresses and indices for modifying Submission's contributors
-    /// @param distribution  Distribution of credit to Submission's contributors
-    /// @param refs          Reference address and indices for modifying Submission's references
-    function setContributorsAndReferences(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibGlobals.IndexedAddresses contribs, uint256[] distribution, LibGlobals.IndexedAddresses refs) public {
+    /// @param contribs      Array of contributor addresses
+    /// @param dist          Array of contributor distribution values
+    /// @param refs          Array of reference addresses
+    function addContributorsAndReferences(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address[] contribs, uint256[] dist, address[] refs) public {
         onlyOwner(self, sender, data);
+        require(contribs.length == dist.length, "Must include distribution for each contributor");
 
-        require(contribs.addresses.length == distribution.length, "Must include distribution for each contributor");
+        LibSubmission.SubmissionDetails storage details = data.submissions[self].details;
+        bool flag = false;
+
+        // Add contributors
+        for (uint256 i = 0; i < contribs.length; i++) {
+            flag = false;
+
+            // Check to avoid duplicates
+            for (uint256 j = 0; j < details.contributors.length; j++) {
+                if (contribs[i] == details.contributors[j]) {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (!flag) {
+                details.contributors.push(contribs[i]);
+                details.distribution.push(dist[i]);
+                data.users[contribs[i]].contributedTo.push(self);
+            }
+        }
+
+        // Add references
+        for (i = 0; i < refs.length; i++) {
+            flag = false;
+
+            // Check to avoid duplicates
+            for (j = 0; j < details.references.length; j++) {
+                if (refs[i] == details.references[j]) {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (!flag) {
+                details.references.push(refs[i]);
+                data.submissions[refs[i]].info.referencedIn.push(self);
+            }
+        }
+    }
+
+    /// @dev Removes contributors and references on this Submission
+    /// @param self          Address of this Submission
+    /// @param sender        msg.sender to this Submission
+    /// @param info          Info struct on Platform
+    /// @param data          Data struct on Platform
+    /// @param contribs      Contributor addresses to remove
+    /// @param refs          Reference addresses ro remove
+    function removeContributorsAndReferences(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address[] contribs, address[] refs) public {
+        onlyOwner(self, sender, data);
 
         address LibUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
         LibSubmission.SubmissionDetails storage details = data.submissions[self].details;
 
-        for (uint256 i = 0; i < contribs.indices.length; i++) {
-            uint256 index = contribs.indices[i];
+        // Remove contributors and corresponding reward distribution values from submission data
+        for (uint256 i = 0; i < contribs.length; i++) {
+            for (uint256 j = 0; j < details.contributors.length; j++) {
+                if (contribs[i] == details.contributors[j]) {
+                    assembly {
+                        let offset := 0x100000000000000000000000000000000000000000000000000000000
+                        let ptr := mload(0x40)
 
-            if (contribs.addresses[i] != 0x0) {
-                details.contributors[index] = contribs.addresses[i];
-                details.distribution[index + 1] = distribution[i];
+                        mstore(ptr, mul(0x4a71ede8, offset))                        // removeArrayElement(bytes32[] storage,uint256)
+                        mstore(add(ptr, 0x04), add(details_slot, 8))                // arg 0 - details.contributors
+                        mstore(add(ptr, 0x24), j)                                   // arg 1 - index
+
+                        let res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
+                        if iszero(res) { revert(0, 0) }                             // safety check
+
+                        mstore(add(ptr, 0x04), add(details_slot, 7))                // arg 0 - details.distribution
+                        mstore(add(ptr, 0x24), add(j, 1))                           // arg 1 - index
+
+                        res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)         // call LibUtils.removeArrayElement
+                        if iszero(res) { revert(0, 0) }                             // safety check
+                    }
+                    break;
+                }
             }
 
-            else {
-                assembly {
-                    let offset := 0x100000000000000000000000000000000000000000000000000000000
-                    let ptr := mload(0x40)
+            // Remove submission from user contributedTo data
+            address[] storage contributedTo = data.users[contribs[i]].contributedTo;
+            for (uint256 k = 0; k < contributedTo.length; k++) {
+                if (contributedTo[k] == self) {
+                    assembly {
+                        let offset := 0x100000000000000000000000000000000000000000000000000000000
+                        let ptr := mload(0x40)
 
-                    mstore(ptr, mul(0x4a71ede8, offset))                        // removeArrayElement(bytes32[] storage,uint256)
-                    mstore(add(ptr, 0x04), add(details_slot, 8))                // arg 0 - details.contributors
-                    mstore(add(ptr, 0x24), index)                               // arg 1 - index
+                        mstore(ptr, mul(0x4a71ede8, offset))                        // removeArrayElement(bytes32[] storage,uint256)
+                        mstore(add(ptr, 0x04), contributedTo_slot)                  // arg 0 - users.contributedTo
+                        mstore(add(ptr, 0x24), k)                                   // arg 1 - index
 
-                    let res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
-                    if iszero(res) { revert(0, 0) }                             // safety check
-
-                    mstore(add(ptr, 0x04), add(details_slot, 7))                // arg 0 - details.distribution
-                    mstore(add(ptr, 0x24), add(index, 1))                       // arg 1 - index
-
-                    res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)         // call LibUtils.removeArrayElement
-                    if iszero(res) { revert(0, 0) }                             // safety check
+                        let res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
+                        if iszero(res) { revert(0, 0) }                             // safety check
+                    }
+                    break;
                 }
             }
         }
 
-        if (contribs.addresses.length > contribs.indices.length) {
-            for (i = contribs.indices.length; i < contribs.addresses.length; i++) {
-                details.contributors.push(contribs.addresses[i]);
-                details.distribution.push(distribution[i]);
-            }
-        }
+        // Remove references from submission data
+        for (i = 0; i < refs.length; i++) {
+            for (j = 0; j < details.references.length; j++) {
+                if (refs[i] == details.references[j]) {
+                    assembly {
+                        let offset := 0x100000000000000000000000000000000000000000000000000000000
+                        let ptr := mload(0x40)
 
-        for (i = 0; i < refs.indices.length; i++) {
-            index = refs.indices[i];
+                        mstore(ptr, mul(0x4a71ede8, offset))                        // removeArrayElement(bytes32[] storage,uint256)
+                        mstore(add(ptr, 0x04), add(details_slot, 9))                // arg 0 - details.references
+                        mstore(add(ptr, 0x24), j)                                   // arg 1 - index
 
-            if (refs.addresses[i] != 0x0) {
-                details.references[index] = refs.addresses[i];
-            }
-
-            else {
-                assembly {
-                    let offset := 0x100000000000000000000000000000000000000000000000000000000
-                    let ptr := mload(0x40)
-
-                    mstore(ptr, mul(0x4a71ede8, offset))                        // removeArrayElement(bytes32[] storage,uint256)
-                    mstore(add(ptr, 0x04), add(details_slot, 9))                // arg 0 - details.references
-                    mstore(add(ptr, 0x24), index)                               // arg 1 - index
-
-                    let res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
-                    if iszero(res) { revert(0, 0) }                             // safety check
+                        let res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
+                        if iszero(res) { revert(0, 0) }                             // safety check
+                    }
+                    break;
                 }
             }
-        }
 
-        if (refs.addresses.length > refs.indices.length) {
-            for (i = refs.indices.length; i < refs.addresses.length; i++) {
-                details.references.push(refs.addresses[i]);
+            address[] storage referencedIn = data.submissions[refs[i]].info.referencedIn;
+            // Remove referencedIn from reference data
+            for (k = 0; k < referencedIn.length; k++) {
+                if (self == referencedIn[k]) {
+                    assembly {
+                        let offset := 0x100000000000000000000000000000000000000000000000000000000
+                        let ptr := mload(0x40)
+
+                        mstore(ptr, mul(0x4a71ede8, offset))                        // removeArrayElement(bytes32[] storage,uint256)
+                        mstore(add(ptr, 0x04), referencedIn_slot)                   // arg 0 - info.referencedIn
+                        mstore(add(ptr, 0x24), k)                                   // arg 1 - index
+
+                        let res := delegatecall(gas, LibUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
+                        if iszero(res) { revert(0, 0) }                             // safety check
+                    }
+                    break;
+                }
             }
         }
     }
