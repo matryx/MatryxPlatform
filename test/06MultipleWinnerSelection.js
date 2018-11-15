@@ -115,11 +115,7 @@ contract('Contribs and Close Tournament', function(accounts) {
     s4 = await createSubmission(t, false, 4)
 
     //add accounts[3] as a new contributor
-    let contribs = {
-      indices: [],
-      addresses: [accounts[3]]
-    }
-    await s1.setContributorsAndReferences(contribs, [1], [[], []])
+    await s.addContributorsAndReferences([accounts[3]], [1], [])
 
     assert.ok(s1 && s2 && s3 && s4, 'Unable to create submissions.')
   })
@@ -319,11 +315,7 @@ contract('Contribs and Start Next Round', function(accounts) {
     s4 = await createSubmission(t, false, 4)
 
     //add accounts[3] as a new contributor
-    let contribs = {
-      indices: [],
-      addresses: [accounts[3]]
-    }
-    await s1.setContributorsAndReferences(contribs, [1], [[], []])
+    await s.addContributorsAndReferences([accounts[3]], [1], [])
 
     assert.ok(s1 && s2 && s3 && s4, 'Unable to create submissions.')
   })
@@ -543,11 +535,7 @@ contract('Contribs and Do Nothing', function(accounts) {
     s4 = await createSubmission(t, false, 4)
 
     //add accounts[3] as a new contributor
-    let contribs = {
-      indices: [],
-      addresses: [accounts[3]]
-    }
-    await s1.setContributorsAndReferences(contribs, [1], [[], []])
+    await s.addContributorsAndReferences([accounts[3]], [1], [])
 
     assert.ok(s1 && s2 && s3 && s4, 'Unable to create submissions.')
   })

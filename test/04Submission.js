@@ -216,12 +216,7 @@ contract('Submission Testing with Contributors', function(accounts) {
 
   it('Contributors have Download Permissions', async function() {
     // add accounts[3] as a new contributor
-    let contribs = {
-      indices: [],
-      addresses: [accounts[3]]
-    }
-
-    await s.setContributorsAndReferences(contribs, [1], [[], []])
+    await s.addContributorsAndReferences([accounts[3]], [1], [])
     await setup(artifacts, web3, 3, true)
 
     // check contributors can unlock files

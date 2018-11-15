@@ -155,11 +155,7 @@ contract('Contribs and Close Tournament', function(accounts) {
     s = Contract(s.address, IMatryxSubmission, 1)
 
     //add accounts[3] as a new contributor
-    let contribs = {
-      indices: [],
-      addresses: [accounts[3]]
-    }
-    await s.setContributorsAndReferences(contribs, [1], [[], []])
+    await s.addContributorsAndReferences([accounts[3]], [1], [])
 
     assert.ok(s.address, 'Submission is not valid.')
   })
@@ -361,11 +357,7 @@ contract('Contribs and Start Next Round', function(accounts) {
     s = Contract(s.address, IMatryxSubmission, 1)
 
     //add accounts[3] as a new contributor
-    let contribs = {
-      indices: [],
-      addresses: [accounts[3]]
-    }
-    await s.setContributorsAndReferences(contribs, [1], [[], []])
+    await s.addContributorsAndReferences([accounts[3]], [1], [])
 
     assert.ok(s.address, 'Submission is not valid.')
   })
@@ -580,11 +572,7 @@ contract('Contribs and Do Nothing', function(accounts) {
     s = Contract(s.address, IMatryxSubmission, 1)
 
     //add accounts[3] as a new contributor
-    let contribs = {
-      indices: [],
-      addresses: [accounts[3]]
-    }
-    await s.setContributorsAndReferences(contribs, [1], [[], []])
+    await s.addContributorsAndReferences([accounts[3]], [1], [])
 
     assert.ok(s.address, 'Submission is not valid.')
   })
