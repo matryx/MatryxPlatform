@@ -457,9 +457,11 @@ library LibSubmission {
     /// @param sender  msg.sender to this Submission
     /// @param data    Data struct on Platform
     /// @return        Amount of MTX available to msg.sender
-     function getAvailableReward(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
+     function getAvailableReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
-        uint256 remainingReward = submission.info.reward.sub(submission.totalAllocated);
+
+        uint256 balance = getBalance(self, sender, info);
+        uint256 remainingReward = balance.sub(submission.totalAllocated);
         uint256 share = submission.availableReward[sender];
 
         if (remainingReward > 0) {
@@ -494,9 +496,11 @@ library LibSubmission {
     /// @param self    Address of this Submission
     /// @param sender  msg.sender to this Submission
     /// @param data    Data struct on Platform
-    function calculateRewardAllocation(address self, address sender, MatryxPlatform.Data storage data) internal {
+    function calculateRewardAllocation(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) internal {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
-        uint256 remainingReward = submission.info.reward.sub(submission.totalAllocated);
+
+        uint256 balance = getBalance(self, sender, info);
+        uint256 remainingReward = balance.sub(submission.totalAllocated);
 
         // if no new reward to allocate, return early
         if (remainingReward == 0) return;
@@ -538,7 +542,7 @@ library LibSubmission {
     /// @param data    Data struct on Platform
     function withdrawReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
-        calculateRewardAllocation(self, sender, data);
+        calculateRewardAllocation(self, sender, info, data);
 
         uint256 share = submission.availableReward[sender];
         require(share > 0, "Already withdrawn full amount");
