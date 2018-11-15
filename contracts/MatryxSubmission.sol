@@ -549,6 +549,7 @@ library LibSubmission {
 
         submission.availableReward[sender] = 0;
         data.users[sender].totalWinnings = data.users[sender].totalWinnings.add(share);
+        submission.totalAllocated = submission.totalAllocated.sub(share);
         IMatryxSubmission(self).transferTo(info.token, sender, share);
 
         // if owner, transfer references their shares
@@ -560,6 +561,7 @@ library LibSubmission {
 
                 submission.availableReward[ref] = 0;
                 data.submissions[ref].info.reward = data.submissions[ref].info.reward.add(share);
+                submission.totalAllocated = submission.totalAllocated.sub(share);
                 IMatryxSubmission(self).transferTo(info.token, ref, share);
             }
         }
