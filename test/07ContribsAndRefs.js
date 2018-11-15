@@ -81,6 +81,26 @@ contract('Adding and removing Contributors and References', function(accounts) {
     }
   })
 
+  it('Unable to add nonexisting reference', async function() {
+    try {
+        await s.addContributorsAndReferences([], [], [t.address])
+        assert.fail('Expected revert not received')
+      } catch (error) {
+        let revertFound = error.message.search('revert') >= 0
+        assert(revertFound, 'Should not have been able to add nonexisting reference')
+    }
+  })
+
+  it('Unable to add contributors with invalid distribution array', async function() {
+    try {
+        await s.addContributorsAndReferences([accounts[5]], [1, 2], [])
+        assert.fail('Expected revert not received')
+      } catch (error) {
+        let revertFound = error.message.search('revert') >= 0
+        assert(revertFound, 'Should not have been able to add contributors')
+    }
+  })
+
   it('Able to remove a contributor', async function() {
     await s.removeContributorsAndReferences([accounts[3]], [])
     let c = await s.getContributors()
@@ -106,15 +126,16 @@ contract('Adding and removing Contributors and References', function(accounts) {
 
 })
 
-
+// References Tests
 contract('References Reward Distribution Testing', function(accounts) {
+    let token
     let t //tournament
     let r //round
     let s //submission
     let ref //reference
 
     it('Able to choose a winning submission with a reference', async function() {
-      await init()
+      token = (await init()).token
       roundData = {
         start: Math.floor(Date.now() / 1000),
         end: Math.floor(Date.now() / 1000) + 30,
@@ -162,6 +183,110 @@ contract('References Reward Distribution Testing', function(accounts) {
     it('Correct reference available reward', async function() {
       let b = await ref.getAvailableReward().then(fromWei)
       assert.equal(b, 1, 'Reference available reward should be 1')
+    })
+
+    it('Correct owner available reward if the submissions has more funds transferred to it', async function() {
+      await token.transfer(s.address, toWei(10))
+      let sr = await s.getAvailableReward().then(fromWei)
+      assert.isTrue(sr == 9, "Incorrect owner available reward")
+    })
+
+    it('Correct reference available reward if the submissions has more funds transferred to it', async function() {
+      await s.withdrawReward()
+      let rr = await ref.getAvailableReward().then(fromWei)
+      assert.equal(rr, 2, "Incorrect reference available reward")
+    })
+
+  })
+
+  // Contributors Tests
+  contract('Contributor Reward Distribution Testing', function(accounts) {
+    let token
+    let t //tournament
+    let r //round
+    let s //submission
+
+    it('Able to choose a winning submission with a contributor', async function() {
+      token = (await init()).token
+      roundData = {
+        start: Math.floor(Date.now() / 1000),
+        end: Math.floor(Date.now() / 1000) + 30,
+        review: 20,
+        bounty: web3.toWei(5)
+      }
+
+      t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+      let [_, roundAddress] = await t.getCurrentRound()
+      r = Contract(roundAddress, IMatryxRound, 0)
+
+      s = await createSubmission(t, false, 1)
+      s = Contract(s.address, IMatryxSubmission, 1)
+
+      await s.addContributorsAndReferences([accounts[2]], [4], [])
+
+      let submissions = await r.getSubmissions(0, 0)
+      await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
+      let winnings = await s.getTotalWinnings().then(fromWei)
+
+      assert.isTrue(winnings > 0, 'Winner was not chosen')
+    })
+
+    it('Correct winning submission balance', async function() {
+      let b = await s.getBalance().then(fromWei)
+      assert.equal(b, 10, 'Winning submission balance should be 10')
+    })
+
+    it('Correct owner available reward', async function() {
+      let b = await s.getAvailableReward().then(fromWei)
+      assert.equal(b, 2, 'Available reward should be 2')
+    })
+
+    it('Correct contributor available reward', async function() {
+      s.accountNumber = 2
+      let b = await s.getAvailableReward().then(fromWei)
+      s.accountNumber = 1
+      assert.equal(b, 8, 'Availbale reward should be 8')
+    })
+
+    it('Correct owner available reward if the submissions has more funds transferred to it', async function() {
+      await token.transfer(s.address, toWei(10))
+      let sr = await s.getAvailableReward().then(fromWei)
+      assert.equal(sr, 4, "Incorrect owner available reward")
+    })
+
+    it('Correct contributor available reward if the submissions has more funds transferred to it', async function() {
+      s.accountNumber = 2
+      let cr = await s.getAvailableReward().then(fromWei)
+      s.accountNumber = 1
+      assert.equal(cr, 16, "Incorrect contributor available reward")
+    })
+
+    it('Correct reward distribution after removing the contributor', async function() {
+      await s.withdrawReward()
+      await s.removeContributorsAndReferences([accounts[2]], [])
+      let sr = await s.getAvailableReward().then(fromWei)
+      s.accountNumber = 2
+      let cr = await s.getAvailableReward().then(fromWei)
+      s.accountNumber = 1
+      assert.isTrue(sr == 0 && cr == 16, "Incorrect reward distribution after removing the contributor")
+    })
+
+    it('Correct reward distribution after adding a new contributor', async function() {
+      await token.transfer(s.address, toWei(10))
+      await s.addContributorsAndReferences([accounts[3]], [1], [])
+      let sr = await s.getAvailableReward().then(fromWei)
+      s.accountNumber = 3
+      let cr = await s.getAvailableReward().then(fromWei)
+      s.accountNumber = 1
+      assert.isTrue(sr == 5 && cr == 5, 'Incorrect reward distribution')
+    })
+
+    it('Original contributor still able to withdraw their reward', async function() {
+      s.accountNumber = 2
+      await s.withdrawReward()
+      let cr = await s.getAvailableReward().then(fromWei)
+      s.accountNumber = 1
+      assert.equal(cr, 0, "Incorrect contributor available reward")
     })
 
   })
