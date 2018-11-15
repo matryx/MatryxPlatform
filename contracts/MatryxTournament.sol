@@ -413,6 +413,10 @@ library LibTournament {
             newRound.review = rDetails.review;
             newRound.bounty = rDetails.bounty;
 
+            if (newRound.end.sub(newRound.start) < MIN_ROUND_LENGTH) {
+                newRound.end = newRound.start.add(MIN_ROUND_LENGTH);
+            }
+
             createRound(self, sender, info, data, newRound);
         }
 
