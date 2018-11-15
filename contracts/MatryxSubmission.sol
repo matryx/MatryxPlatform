@@ -284,8 +284,8 @@ library LibSubmission {
 
         // Add contributors
         for (uint256 i = 0; i < contribs.length; i++) {
-            flag = false;
 
+            flag = false;
             // Check to avoid duplicates
             for (uint256 j = 0; j < details.contributors.length; j++) {
                 if (contribs[i] == details.contributors[j]) {
@@ -303,8 +303,9 @@ library LibSubmission {
 
         // Add references
         for (i = 0; i < refs.length; i++) {
-            flag = false;
+            require(data.submissions[refs[i]].info.owner != 0x0, "Reference must be an existing submission");
 
+            flag = false;
             // Check to avoid duplicates
             for (j = 0; j < details.references.length; j++) {
                 if (refs[i] == details.references[j]) {
