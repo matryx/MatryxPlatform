@@ -141,7 +141,7 @@ library LibSubmission {
         return data.submissions[self].details.descHash;
     }
 
-    /// @dev Returns the file hash of this Submission
+    /// @dev Returns the file hash of this Submission if the sender has file viewing permissions, and an empty array otherwise
     function getFileHash(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
         bool canView = data.submissions[self].permittedToView[sender];
         bytes32[2] memory empty;
@@ -223,7 +223,7 @@ library LibSubmission {
         return sub;
     }
 
-    /// @dev Unlocks the descHash and fileHash for sender
+    /// @dev Unlocks the fileHash of this Submission if allowed for this sender
     /// @param self    Address of this Submission
     /// @param sender  msg.sender to this Submission
     /// @param data    Data struct on Platform
