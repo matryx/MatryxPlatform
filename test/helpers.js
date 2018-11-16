@@ -154,19 +154,10 @@ module.exports = function (artifacts, web3) {
     tx = await submission.updateDetails(modData)
     await getMinedTx(tx.hash)
 
-    const contribs = {
-      indices:[],
-      addresses: new Array(3).fill(0).map(() => genAddress())
-    }
-
+    const contribs = new Array(3).fill(0).map(() => genAddress())
     const distribution = new Array(3).fill(1)
 
-    const references = {
-      indices: [],
-      addresses: new Array(3).fill(0).map(() => genAddress())
-    }
-
-    tx = await submission.setContributorsAndReferences(contribs, distribution, references)
+    tx = await submission.addContributorsAndReferences(contribs, distribution, [])
     await getMinedTx(tx.hash)
   }
 

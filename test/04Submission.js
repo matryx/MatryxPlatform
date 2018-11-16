@@ -14,12 +14,13 @@ contract('Submission Testing with No Contributors and References', function(acco
   let r  // round
   let s  // submission 1
   let s2 // submission 2
+  let s3 // submission 3
 
   it('Able to create a Submission', async function() {
     platform = (await init()).platform
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 20,
+      end: Math.floor(Date.now() / 1000) + 60,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -31,6 +32,7 @@ contract('Submission Testing with No Contributors and References', function(acco
     //Create submission with no contributors
     s = await createSubmission(t, false, 1)
     s2 = await createSubmission(t, false, 2)
+    s3 = await createSubmission(t, false, 3)
 
     assert.ok(s.address, 'Submission is not valid.')
   })
@@ -103,11 +105,6 @@ contract('Submission Testing with No Contributors and References', function(acco
     assert.equal(con.length, 3, 'Contributors not updated correctly.')
   })
 
-  it('Able to update references', async function() {
-    let ref = await s.getReferences()
-    assert.equal(ref.length, 3, 'Refernces not updated correctly.')
-  })
-
   it('Get Time Updated', async function() {
     let st = await s.getTimeSubmitted().then(Number)
     let ut = await s.getTimeUpdated().then(Number)
@@ -129,11 +126,8 @@ contract('Submission Testing with No Contributors and References', function(acco
   })
 
   it('Non Matryx entrant unable to request download permissions', async function() {
-    // switch to accounts[3]
-    s.accountNumber = 3
-
-    // try to unlock the files from accounts[3]
     try {
+      s.accountNumber = 4
       await s.unlockFile()
       assert.fail('Expected revert not received')
     } catch (error) {
@@ -148,7 +142,7 @@ contract('Submission Testing with No Contributors and References', function(acco
     // switch to accounts[2]
     s.accountNumber = 2
     await s.flagMissingReference(s2.address);
-
+    s.accountNumber = 1
     users = Contract(MatryxUser.address, IMatryxUser, 0)
     let [v, n] = await users.getVotes(accounts[1])
     assert.equal(n, 1, "Submission owner user should have 1 negative vote")
@@ -156,20 +150,35 @@ contract('Submission Testing with No Contributors and References', function(acco
 
   it('Unable to flag same missing reference twice', async function() {
     try {
+      s.accountNumber = 2
       await s.flagMissingReference(s2.address)
       assert.fail('Expected revert not received')
     } catch (error) {
+      s.accountNumber = 1
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to flag submission')
     }
   })
 
-  it('Unable to flag missing reference from another account', async function() {
+  it('Unable to flag missing reference from an account that doesn\'t own the reference', async function() {
     try {
       s.accountNumber = 3
       await s.flagMissingReference(s2.address)
       assert.fail('Expected revert not received')
     } catch (error) {
+      s.accountNumber = 1
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to flag submission from this account')
+    }
+  })
+
+  it('Unable to flag missing reference if submission owner does not have file download permissions', async function() {
+    try {
+      s.accountNumber = 3
+      await s.flagMissingReference(s3.address)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      s.accountNumber = 1
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to flag submission')
     }
@@ -179,7 +188,6 @@ contract('Submission Testing with No Contributors and References', function(acco
 
 contract('Submission Testing with Contributors', function(accounts) {
   let t
-  let r
   let s
 
   it('Able to create a Submission with Contributors and References', async function() {
@@ -192,8 +200,6 @@ contract('Submission Testing with Contributors', function(accounts) {
     }
 
     t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
     s = await createSubmission(t, true, 1)
     s = Contract(s.address, IMatryxSubmission, 1)
 

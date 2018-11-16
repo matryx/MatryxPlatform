@@ -115,7 +115,7 @@ contract('Contribs and Close Tournament', function(accounts) {
     s4 = await createSubmission(t, false, 4)
 
     //add accounts[3] as a new contributor
-    await s.addContributorsAndReferences([accounts[3]], [1], [])
+    await s1.addContributorsAndReferences([accounts[3]], [1], [])
 
     assert.ok(s1 && s2 && s3 && s4, 'Unable to create submissions.')
   })
@@ -299,7 +299,7 @@ contract('Contribs and Start Next Round', function(accounts) {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30,
+      end: Math.floor(Date.now() / 1000) + 60,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -315,7 +315,7 @@ contract('Contribs and Start Next Round', function(accounts) {
     s4 = await createSubmission(t, false, 4)
 
     //add accounts[3] as a new contributor
-    await s.addContributorsAndReferences([accounts[3]], [1], [])
+    await s1.addContributorsAndReferences([accounts[3]], [1], [])
 
     assert.ok(s1 && s2 && s3 && s4, 'Unable to create submissions.')
   })
@@ -519,7 +519,7 @@ contract('Contribs and Do Nothing', function(accounts) {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30,
+      end: Math.floor(Date.now() / 1000) + 60,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -535,7 +535,7 @@ contract('Contribs and Do Nothing', function(accounts) {
     s4 = await createSubmission(t, false, 4)
 
     //add accounts[3] as a new contributor
-    await s.addContributorsAndReferences([accounts[3]], [1], [])
+    await s1.addContributorsAndReferences([accounts[3]], [1], [])
 
     assert.ok(s1 && s2 && s3 && s4, 'Unable to create submissions.')
   })

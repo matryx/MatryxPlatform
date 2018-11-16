@@ -8,11 +8,6 @@ library LibGlobals {
         uint256 value;
     }
 
-    struct IndexedAddresses {
-        uint256[] indices;
-        address[] addresses;
-    }
-
     enum RoundState { NotYetOpen, Unfunded, Open, InReview, HasWinners, Closed, Abandoned }
     enum TournamentState { NotYetOpen, OnHold, Open, Closed, Abandoned}
     enum SelectWinnerAction { DoNothing, StartNextRound, CloseTournament }

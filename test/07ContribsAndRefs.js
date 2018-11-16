@@ -18,7 +18,7 @@ contract('Adding and removing Contributors and References', function(accounts) {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30,
+      end: Math.floor(Date.now() / 1000) + 80,
       review: 20,
       bounty: web3.toWei(5)
     }
@@ -122,6 +122,29 @@ contract('Adding and removing Contributors and References', function(accounts) {
     let ri = await ref.getReferencedIn()
     let ri2 = await ref2.getReferencedIn()
     assert.isTrue(ri.length == 0 && ri2.length == 0, "referencedIn not updated correctly in references data")
+  })
+
+  it('Able to add many contributors and references', async function() {
+    let contribs = [accounts[3], accounts[4], accounts[5], accounts[6], accounts[7]]
+    await createSubmission(t, false, 4)
+    await createSubmission(t, false, 5)
+    await createSubmission(t, false, 6)
+    let [_, r] = await t.getCurrentRound()
+    r = Contract(r, IMatryxRound, 0)
+    let allRefs = await r.getSubmissions(1, 5)
+    await s.addContributorsAndReferences(contribs, [1, 1, 1, 1, 1], allRefs)
+    let c = await s.getContributors()
+    let refs = await s.getReferences()
+    assert.isTrue(c.length == 5 && refs.length == 5, 'Unable to add many contributors and references')
+  })
+
+  it('Able to remove many contributors and references', async function() {
+    let c = await s.getContributors()
+    let refs = await s.getReferences()
+    await s.removeContributorsAndReferences(c, refs)
+    c = await s.getContributors()
+    refs = await s.getReferences()
+    assert.isTrue(c.length == 0 && refs.length == 0, 'Unable to remove many contributors and references')
   })
 
 })
