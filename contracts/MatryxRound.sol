@@ -112,7 +112,12 @@ library LibRound {
         return IMatryxToken(info.token).balanceOf(self);
     }
 
-    /// @dev Returns all Submissions of this Round
+    /// @dev Returns all Submissions of this Round or a given subset of them
+    /// @param self        Address of this Round
+    /// @param info        Info struct on Platform
+    /// @param data        Data struct on Platform
+    /// @param startIndex  Starting index of subset of Submissions to return
+    /// @param count       Number of Submissions to return from startIndex
     function getSubmissions(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
         address LibUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
         address[] storage submissions = data.rounds[self].info.submissions;
@@ -142,15 +147,17 @@ library LibRound {
         return round;
     }
 
+    /// @dev Returns the total number of Submissions in this Round
     function getSubmissionCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.rounds[self].info.submissions.length;
     }
 
+    /// @dev Returns the addresses of all winning Submissions of this Round
     function getWinningSubmissions(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
         return data.rounds[self].info.winners.submissions;
     }
 
-    /// @dev Returns the state of this Round
+    /// @dev Returns the current state of this Round
     function getState(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public returns (uint256) {
         LibRound.RoundData storage round = data.rounds[self];
 
