@@ -119,7 +119,7 @@ library LibRound {
     /// @param data        Data struct on Platform
     /// @param startIndex  Starting index of subset of Submissions to return
     /// @param count       Number of Submissions to return from startIndex
-    function getSubmissions(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public returns (address[] memory) {
+    function getSubmissions(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[] memory) {
         address LibUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
         address[] storage submissions = data.rounds[self].info.submissions;
 
