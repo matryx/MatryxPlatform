@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./Ownable.sol";
@@ -64,7 +64,7 @@ contract MatryxSystem is Ownable() {
     }
 
     /// @dev Get all versions of Platform
-    function getAllVersions() public view returns (uint256[]) {
+    function getAllVersions() public view returns (uint256[] memory) {
         return allVersions;
     }
 
@@ -76,7 +76,7 @@ contract MatryxSystem is Ownable() {
         require(platformByVersion[version].exists, "No such version");
         require(isContract(cAddress), "Invalid contract address");
 
-        if (platformByVersion[version].contracts[cName].location == 0x0) {
+        if (platformByVersion[version].contracts[cName].location == address(0)) {
             platformByVersion[version].allContracts.push(cName);
         }
 
@@ -99,7 +99,7 @@ contract MatryxSystem is Ownable() {
     /// @param cName     Name of the contract we want an address for
     /// @param selector  Hash of the method signature to register to the contract (keccak256)
     /// @param fnData    Calldata transformation information for library delegatecall
-    function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, FnData fnData) public onlyOwner {
+    function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, FnData memory fnData) public onlyOwner {
         require(platformByVersion[version].exists, "No such version");
         platformByVersion[version].contracts[cName].fnData[selector] = fnData;
     }
@@ -110,7 +110,7 @@ contract MatryxSystem is Ownable() {
     /// @param selectors          Hashes of the method signatures to register to the contract (keccak256)
     /// @param modifiedSelectors  Hashes of the library-specific method signatures to register to the contract (keccak256)
     /// @param fnData             Calldata transformation information for library delegatecall
-    function addContractMethods(uint256 version, bytes32 cName, bytes32[] selectors, bytes32[] modifiedSelectors, FnData fnData) public onlyOwner {
+    function addContractMethods(uint256 version, bytes32 cName, bytes32[] memory selectors, bytes32[] memory modifiedSelectors, FnData memory fnData) public onlyOwner {
         require(platformByVersion[version].exists, "No such version");
         require(selectors.length == modifiedSelectors.length, "List of selectors must match in length");
 
@@ -125,7 +125,7 @@ contract MatryxSystem is Ownable() {
     /// @param cName     Name of the contract we want an address for
     /// @param selector  Hash of the method signature to register to the contract (keccak256)
     /// @return          Calldata transformation information for library delegatecall
-    function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) public view returns (FnData) {
+    function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) public view returns (FnData memory) {
         address cAddress = platformByVersion[version].contracts[cName].location;
         require(isContract(cAddress), "Invalid contract address");
 
@@ -165,12 +165,12 @@ interface IMatryxSystem {
     function createVersion(uint256 version) external;
     function setVersion(uint256 version) external;
     function getVersion() external view returns (uint256);
-    function getAllVersions() external view returns (uint256[]);
+    function getAllVersions() external view returns (uint256[] memory);
     function setContract(uint256 version, bytes32 cName, address cAddress) external;
     function getContract(uint256 version, bytes32 cName) external view returns (address);
-    function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, MatryxSystem.FnData fnData) external;
-    function addContractMethods(uint256 version, bytes32 cName, bytes32[] selectors, bytes32[] modifiedSelectors, MatryxSystem.FnData fnData) external;
-    function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) external view returns (MatryxSystem.FnData);
+    function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, MatryxSystem.FnData calldata fnData) external;
+    function addContractMethods(uint256 version, bytes32 cName, bytes32[] calldata selectors, bytes32[] calldata modifiedSelectors, MatryxSystem.FnData calldata fnData) external;
+    function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) external view returns (MatryxSystem.FnData memory);
     function setContractType(address cAddress, uint256 cType) external;
     function getContractType(address cAddress) external view returns (uint256);
     function setLibraryName(uint256 cType, bytes32 lName) external;

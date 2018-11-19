@@ -4,7 +4,7 @@
  * Licensed under the Apache License, version 2.0: https://github.com/TokenMarketNet/ico/blob/master/LICENSE.txt
  */
 
-pragma solidity ^0.4.13;
+pragma solidity ^0.5.0;
 
 import './StandardToken.sol';
 import "./ownership/UpgradeAgent.sol";
@@ -49,7 +49,7 @@ contract UpgradeableToken is StandardToken {
   /**
    * Do not allow construction without upgrade master set.
    */
-  function UpgradeableToken(address _upgradeMaster) public {
+  constructor(address _upgradeMaster) public {
     upgradeMaster = _upgradeMaster;
   }
 
@@ -72,7 +72,7 @@ contract UpgradeableToken is StandardToken {
 
       // Upgrade agent reissues the tokens
       upgradeAgent.upgradeFrom(msg.sender, value);
-      Upgrade(msg.sender, upgradeAgent, value);
+      emit Upgrade(msg.sender, address(upgradeAgent), value);
   }
 
   /**
@@ -80,7 +80,7 @@ contract UpgradeableToken is StandardToken {
    */
   function setUpgradeAgent(address agent) external {
 
-      require(agent != 0x0);
+      require(agent != address(0));
       // Only a master can designate the next agent
       require(msg.sender == upgradeMaster);
       // Upgrade has already begun for an agent
@@ -93,14 +93,14 @@ contract UpgradeableToken is StandardToken {
       // Make sure that token supplies match in source and target
       require(upgradeAgent.originalSupply() != totalSupply);
 
-      UpgradeAgentSet(upgradeAgent);
+      emit UpgradeAgentSet(address(upgradeAgent));
   }
 
   /**
    * Get the state of the token upgrade.
    */
-  function getUpgradeState() public constant returns(UpgradeState) {
-    if(address(upgradeAgent) == 0x00) return UpgradeState.WaitingForAgent;
+  function getUpgradeState() public view returns(UpgradeState) {
+    if(address(upgradeAgent) == address(0x00)) return UpgradeState.WaitingForAgent;
     else if(totalUpgraded == 0) return UpgradeState.ReadyToUpgrade;
     else return UpgradeState.Upgrading;
   }
@@ -111,7 +111,7 @@ contract UpgradeableToken is StandardToken {
    * This allows us to set a new owner for the upgrade mechanism.
    */
   function setUpgradeMaster(address master) public {
-      require(master != 0x0);
+      require(master != address(0));
       require(msg.sender == upgradeMaster);
       upgradeMaster = master;
   }

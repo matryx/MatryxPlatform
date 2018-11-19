@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
@@ -23,13 +23,13 @@ interface IMatryxTournament {
     function getOwner() external view returns (address);
     function getVotes() external view returns (uint256, uint256);
 
-    function getTitle() external view returns (bytes32[3]);
+    function getTitle() external view returns (bytes32[3] memory);
     function getCategory() external view returns (bytes32);
-    function getDescriptionHash() external view returns (bytes32[2]);
+    function getDescriptionHash() external view returns (bytes32[2] memory);
     function getBounty() external view returns (uint256);
     function getEntryFee() external view returns (uint256);
-    function getRounds() external view returns (address[]);
-    function getDetails() external view returns (LibTournament.TournamentDetails);
+    function getRounds() external view returns (address[] memory);
+    function getDetails() external view returns (LibTournament.TournamentDetails memory);
 
     function getBalance() external view returns (uint256);
     function getState() external view returns (uint256);
@@ -42,13 +42,13 @@ interface IMatryxTournament {
 
     function enter() external;
     function exit() external;
-    function createSubmission(LibSubmission.SubmissionDetails) external returns (address);
+    function createSubmission(LibSubmission.SubmissionDetails calldata) external returns (address);
 
-    function updateDetails(LibTournament.TournamentDetails) external;
+    function updateDetails(LibTournament.TournamentDetails calldata) external;
     function transferToRound(uint256) external;
 
-    function selectWinners(LibRound.WinnersData, LibRound.RoundDetails) external;
-    function updateNextRound(LibRound.RoundDetails) external;
+    function selectWinners(LibRound.WinnersData calldata, LibRound.RoundDetails calldata) external;
+    function updateNextRound(LibRound.RoundDetails calldata) external;
     function startNextRound() external;
     function closeTournament() external;
 
@@ -119,7 +119,7 @@ library LibTournament {
     }
 
     /// @dev Returns the title of this Tournament
-    function getTitle(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[3]) {
+    function getTitle(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[3] memory) {
         return data.tournaments[self].details.title;
     }
 
@@ -129,7 +129,7 @@ library LibTournament {
     }
 
     /// @dev Returns the description hash of this Tournament
-    function getDescriptionHash(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
+    function getDescriptionHash(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[2] memory) {
         return data.tournaments[self].details.descHash;
     }
 
@@ -144,12 +144,12 @@ library LibTournament {
     }
 
     /// @dev Returns all Round addresses of this Tournament
-    function getRounds(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
+    function getRounds(address self, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
         return data.tournaments[self].info.rounds;
     }
 
     /// @dev Returns the data struct of this Tournament
-    function getDetails(address self, address, MatryxPlatform.Data storage data) public view returns (LibTournament.TournamentDetails) {
+    function getDetails(address self, address, MatryxPlatform.Data storage data) public view returns (LibTournament.TournamentDetails memory) {
         return data.tournaments[self].details;
     }
 
@@ -225,7 +225,7 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param rDetails  Details of the Round being created
     /// @return          Address of the created Round
-    function createRound(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
+    function createRound(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails memory rDetails) public returns (address) {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
 
         address platform = IMatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
@@ -238,7 +238,7 @@ library LibTournament {
 
         // TODO: add review time restrictions or auto review?
 
-        address rAddress = new MatryxRound(tournament.info.version, info.system);
+        address rAddress = address(new MatryxRound(tournament.info.version, info.system));
 
         IMatryxSystem(info.system).setContractType(rAddress, uint256(LibSystem.ContractType.Round));
         tournament.info.rounds.push(rAddress);
@@ -266,7 +266,7 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param sDetails  Submission details (title, descHash, fileHash)
     /// @return          Address of the created Submission
-    function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails sDetails) public returns (address) {
+    function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails memory sDetails) public returns (address) {
         require(sDetails.distribution.length == sDetails.contributors.length + 1, "Must include distribution for each contributor and the owner");
 
         LibTournament.TournamentData storage tournament = data.tournaments[self];
@@ -277,7 +277,7 @@ library LibTournament {
 
         LibRound.RoundData storage round = data.rounds[rAddress];
 
-        address sAddress = new MatryxSubmission(tournament.info.version, info.system);
+        address sAddress = address(new MatryxSubmission(tournament.info.version, info.system));
 
         IMatryxSystem(info.system).setContractType(sAddress, uint256(LibSystem.ContractType.Submission));
         data.allSubmissions.push(sAddress);
@@ -314,7 +314,7 @@ library LibTournament {
     /// @param info      Info struct on Platform
     /// @param data      Data struct on Platform
     /// @param tDetails  New tournament details
-    function updateDetails(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails tDetails) public {
+    function updateDetails(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails) public {
         LibTournamentHelper.updateDetails(self, sender, info, data, tDetails);
     }
 
@@ -353,7 +353,7 @@ library LibTournament {
         }
 
         uint256 bounty = IMatryxRound(rAddress).getBalance();
-        for (i = 0; i < wData.submissions.length; i++) {
+        for (uint256 i = 0; i < wData.submissions.length; i++) {
             uint256 reward = wData.distribution[i].mul(bounty).div(distTotal);
             IMatryxRound(rAddress).transferTo(info.token, wData.submissions[i], reward);
 
@@ -369,7 +369,7 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param wData     Winners data struct
     /// @param rDetails  New round details struct
-    function selectWinners(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.WinnersData wData, LibRound.RoundDetails rDetails) public {
+    function selectWinners(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.WinnersData memory wData, LibRound.RoundDetails memory rDetails) public {
         require(wData.submissions.length > 0, "Must specify winners");
         require(wData.submissions.length == wData.distribution.length, "Must include distribution for each winner");
 
@@ -436,7 +436,7 @@ library LibTournament {
     /// @param info      Info struct on Platform
     /// @param data      Data struct on Platform
     /// @param rDetails  New round details
-    function updateNextRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public {
+    function updateNextRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails memory rDetails) public {
         LibTournamentHelper.updateNextRound(self, sender, info, data, rDetails);
 
         // if either start or end modified, ensure duration is valid
@@ -654,7 +654,7 @@ library LibTournamentHelper {
         tournament.info.entrantCount = tournament.info.entrantCount.sub(1);
     }
 
-    function updateDetails(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails tDetails) public {
+    function updateDetails(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
 
@@ -678,7 +678,7 @@ library LibTournamentHelper {
         }
     }
 
-    function updateNextRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public {
+    function updateNextRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails memory rDetails) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
 

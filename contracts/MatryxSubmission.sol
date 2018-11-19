@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
@@ -22,26 +22,26 @@ interface IMatryxSubmission {
     function getRound() external view returns (address);
 
     function getOwner() external view returns (address);
-    function getTitle() external view returns (bytes32[3]);
-    function getDescriptionHash() external view returns (bytes32[2]);
-    function getFileHash() external view returns (bytes32[2]);
-    function getDistribution() external view returns(uint256[]);
-    function getContributors() external view returns (address[]);
-    function getReferences() external view returns (address[]);
+    function getTitle() external view returns (bytes32[3] memory);
+    function getDescriptionHash() external view returns (bytes32[2] memory);
+    function getFileHash() external view returns (bytes32[2] memory);
+    function getDistribution() external view returns(uint256[] memory);
+    function getContributors() external view returns (address[] memory);
+    function getReferences() external view returns (address[] memory);
     function getTimeSubmitted() external view returns (uint256);
     function getTimeUpdated() external view returns (uint256);
     function getReward() external view returns (uint256);
-    function getReferencedIn() external view returns (address[]);
+    function getReferencedIn() external view returns (address[] memory);
     function getVotes() external view returns (uint256, uint256);
-    function getViewers() external view returns (address[]);
+    function getViewers() external view returns (address[] memory);
     function getBalance() external view returns (uint256);
     function getTotalWinnings() external view returns (uint256);
-    function getData() external view returns (LibSubmission.SubmissionReturnData);
+    function getData() external view returns (LibSubmission.SubmissionReturnData memory);
 
     function unlockFile() external;
-    function updateDetails(LibSubmission.DetailsUpdates) external;
-    function addContributorsAndReferences(address[], uint256[], address[]) external;
-    function removeContributorsAndReferences(address[], address[]) external;
+    function updateDetails(LibSubmission.DetailsUpdates calldata) external;
+    function addContributorsAndReferences(address[] calldata, uint256[] calldata, address[] calldata) external;
+    function removeContributorsAndReferences(address[] calldata, address[] calldata) external;
     function flagMissingReference(address) external;
 
     function getAvailableReward() external view returns (uint256);
@@ -132,17 +132,17 @@ library LibSubmission {
     }
 
     /// @dev Returns the title of this Submission
-    function getTitle(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[3]) {
+    function getTitle(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[3] memory) {
         return data.submissions[self].details.title;
     }
 
     /// @dev Returns the description hash of this Submission
-    function getDescriptionHash(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
+    function getDescriptionHash(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[2] memory) {
         return data.submissions[self].details.descHash;
     }
 
     /// @dev Returns the file hash of this Submission if the sender has file viewing permissions, and an empty array otherwise
-    function getFileHash(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32[2]) {
+    function getFileHash(address self, address sender, MatryxPlatform.Data storage data) public view returns (bytes32[2] memory) {
         bool canView = data.submissions[self].permittedToView[sender];
         bytes32[2] memory empty;
 
@@ -150,17 +150,17 @@ library LibSubmission {
     }
 
     /// @dev Returns the reward distribution of this Submission
-    function getDistribution(address self, address, MatryxPlatform.Data storage data) external view returns (uint256[]) {
+    function getDistribution(address self, address, MatryxPlatform.Data storage data) external view returns (uint256[] memory) {
         return data.submissions[self].details.distribution;
     }
 
     /// @dev Returns the contributors of this Submission
-    function getContributors(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
+    function getContributors(address self, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
         return data.submissions[self].details.contributors;
     }
 
     /// @dev Returns the references of this Submission
-    function getReferences(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
+    function getReferences(address self, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
         return data.submissions[self].details.references;
     }
 
@@ -180,7 +180,7 @@ library LibSubmission {
     }
 
     /// @dev Returns the list of submissions that have added this Submission as a reference
-    function getReferencedIn(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
+    function getReferencedIn(address self, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
         return data.submissions[self].info.referencedIn;
     }
 
@@ -190,7 +190,7 @@ library LibSubmission {
     }
 
     /// @dev Returns the list of addresses that are permitted to view the files for this submission
-    function getViewers(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
+    function getViewers(address self, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
         return data.submissions[self].allPermittedToView;
     }
 
@@ -210,7 +210,7 @@ library LibSubmission {
     // }
 
     /// @dev Returns all information of this Submission
-    function getData(address self, address sender, MatryxPlatform.Data storage data) public view returns (LibSubmission.SubmissionReturnData) {
+    function getData(address self, address sender, MatryxPlatform.Data storage data) public view returns (LibSubmission.SubmissionReturnData memory) {
         SubmissionReturnData memory sub;
         sub.info = data.submissions[self].info;
         sub.details = data.submissions[self].details;
@@ -254,7 +254,7 @@ library LibSubmission {
     /// @param sender  msg.sender to this Submission
     /// @param data     Data struct on Platform
     /// @param updates  Details updates (title, descHash, fileHash)
-    function updateDetails(address self, address sender, MatryxPlatform.Data storage data, LibSubmission.DetailsUpdates updates) public {
+    function updateDetails(address self, address sender, MatryxPlatform.Data storage data, LibSubmission.DetailsUpdates memory updates) public {
         onlyOwner(self, sender, data);
         duringOpenSubmission(self, data);
 
@@ -270,12 +270,11 @@ library LibSubmission {
     /// @dev Adds contributors and references on this Submission
     /// @param self          Address of this Submission
     /// @param sender        msg.sender to this Submission
-    /// @param info          Info struct on Platform
     /// @param data          Data struct on Platform
     /// @param contribs      Array of contributor addresses
     /// @param dist          Array of contributor distribution values
     /// @param refs          Array of reference addresses
-    function addContributorsAndReferences(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address[] contribs, uint256[] dist, address[] refs) public {
+    function addContributorsAndReferences(address self, address sender, MatryxPlatform.Data storage data, address[] memory contribs, uint256[] memory dist, address[] memory refs) public {
         onlyOwner(self, sender, data);
         require(contribs.length == dist.length, "Must include distribution for each contributor");
 
@@ -302,12 +301,12 @@ library LibSubmission {
         }
 
         // Add references
-        for (i = 0; i < refs.length; i++) {
-            require(data.submissions[refs[i]].info.owner != 0x0, "Reference must be an existing submission");
+        for (uint256 i = 0; i < refs.length; i++) {
+            require(data.submissions[refs[i]].info.owner != address(0), "Reference must be an existing submission");
 
             flag = false;
             // Check to avoid duplicates
-            for (j = 0; j < details.references.length; j++) {
+            for (uint256 j = 0; j < details.references.length; j++) {
                 if (refs[i] == details.references[j]) {
                     flag = true;
                     break;
@@ -328,7 +327,7 @@ library LibSubmission {
     /// @param data          Data struct on Platform
     /// @param contribs      Contributor addresses to remove
     /// @param refs          Reference addresses ro remove
-    function removeContributorsAndReferences(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address[] contribs, address[] refs) public {
+    function removeContributorsAndReferences(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address[] memory contribs, address[] memory refs) public {
         onlyOwner(self, sender, data);
 
         address LibUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
@@ -380,8 +379,8 @@ library LibSubmission {
         }
 
         // Remove references from submission data
-        for (i = 0; i < refs.length; i++) {
-            for (j = 0; j < details.references.length; j++) {
+        for (uint256 i = 0; i < refs.length; i++) {
+            for (uint256 j = 0; j < details.references.length; j++) {
                 if (refs[i] == details.references[j]) {
                     assembly {
                         let offset := 0x100000000000000000000000000000000000000000000000000000000
@@ -400,7 +399,7 @@ library LibSubmission {
 
             address[] storage referencedIn = data.submissions[refs[i]].info.referencedIn;
             // Remove referencedIn from reference data
-            for (k = 0; k < referencedIn.length; k++) {
+            for (uint256 k = 0; k < referencedIn.length; k++) {
                 if (self == referencedIn[k]) {
                     assembly {
                         let offset := 0x100000000000000000000000000000000000000000000000000000000
@@ -438,7 +437,7 @@ library LibSubmission {
         require(!flag, "Cannot flag for the same missing reference twice");
 
         // Check all submissions already referenced
-        for (i = 0; i < data.submissions[self].details.references.length; i++) {
+        for (uint256 i = 0; i < data.submissions[self].details.references.length; i++) {
             flag = flag || ref == data.submissions[self].details.references[i];
             if (flag) break;
         }
@@ -517,7 +516,7 @@ library LibSubmission {
             uint256 totalRefShare = remainingReward.mul(10**18).div(10**19); // 10% for references
             remainingReward = remainingReward.sub(totalRefShare);    // remaining 90% for owner and contribs
 
-            for (i = 0; i < submission.details.references.length; i++) {
+            for (uint256 i = 0; i < submission.details.references.length; i++) {
                 address ref = submission.details.references[i];
 
                 uint256 share = totalRefShare.mul(10**18).div(submission.details.references.length).div(10**18);
@@ -525,8 +524,8 @@ library LibSubmission {
             }
         }
 
-        for (i = 0; i < distribution.length; i++) {
-            share = remainingReward.mul(10**18).mul(distribution[i]).div(distTotal).div(10**18);
+        for (uint256 i = 0; i < distribution.length; i++) {
+            uint256 share = remainingReward.mul(10**18).mul(distribution[i]).div(distTotal).div(10**18);
 
             address contrib = submission.info.owner;
             if (i != 0) contrib = submission.details.contributors[i - 1];

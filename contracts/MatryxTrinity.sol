@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./IMatryxToken.sol";
@@ -20,7 +20,7 @@ contract MatryxTrinity {
     /// Gets the address of the current version of Platform and forwards the
     /// received calldata to this address. Injects msg.sender at the front so
     /// Platform and libraries can know calling address
-    function () public {
+    function () external {
         assembly {
             let ptr := mload(0x40)
             let offset := 0x100000000000000000000000000000000000000000000000000000000
@@ -69,7 +69,7 @@ library LibTrinity {
     /// @param sender  Sender of tokens
     /// @param amount  Amount of tokens
     function transferFrom(address token, address sender, uint256 amount) public {
-        require(IMatryxToken(token).transferFrom(sender, this, amount), "Transfer failed");
+        require(IMatryxToken(token).transferFrom(sender, address(this), amount), "Transfer failed");
     }
 
     /// @dev Transfers MTX from MatryxTrinity to recipient
