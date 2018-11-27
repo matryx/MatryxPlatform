@@ -14,9 +14,6 @@ contract MatryxRound is MatryxTrinity {
 }
 
 interface IMatryxRound {
-    function transferFrom(address, address, uint256) external;
-    function transferTo(address, address, uint256) external;
-
     function getVersion() external view returns (uint256);
     function getTournament() external view returns (address);
     function getStart() external view returns (uint256);
@@ -108,8 +105,8 @@ library LibRound {
     }
 
     /// @dev Returns the MTX balance of this Round
-    function getBalance(address self, address, MatryxPlatform.Info storage info) public view returns (uint256) {
-        return IMatryxToken(info.token).balanceOf(self);
+    function getBalance(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.balanceOf[self];
     }
 
     /// @dev Returns all Submissions of this Round or a given subset of them
@@ -158,14 +155,14 @@ library LibRound {
     }
 
     /// @dev Returns the current state of this Round
-    function getState(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public returns (uint256) {
+    function getState(address self, address, MatryxPlatform.Data storage data) public returns (uint256) {
         LibRound.RoundData storage round = data.rounds[self];
 
         if (now < round.details.start) {
             return uint256(LibGlobals.RoundState.NotYetOpen);
         }
         else if (now < round.details.end) {
-            if (IMatryxToken(info.token).balanceOf(self) == 0) {
+            if (data.balanceOf[self] == 0) {
                 return uint256(LibGlobals.RoundState.Unfunded);
             }
             return uint256(LibGlobals.RoundState.Open);

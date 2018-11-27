@@ -2,8 +2,8 @@ pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
-import "./IMatryxToken.sol";
 import "./LibGlobals.sol";
+import "./IToken.sol";
 
 import "./MatryxSystem.sol";
 import "./MatryxUser.sol";
@@ -12,15 +12,19 @@ import "./MatryxRound.sol";
 import "./MatryxSubmission.sol";
 
 contract MatryxPlatform {
+    using SafeMath for uint256;
+
     struct Info {
         address system;
         uint256 version;
         address token;
-        // mapping(uint256=>address) tokens;
         address owner;
     }
 
     struct Data {
+        uint256 totalBalance;
+        mapping(address=>uint256) balanceOf;
+
         mapping(address=>LibTournament.TournamentData) tournaments;
         mapping(address=>LibRound.RoundData) rounds;
         mapping(address=>LibSubmission.SubmissionData) submissions;
@@ -38,9 +42,9 @@ contract MatryxPlatform {
     Info info; // slot 0
     Data data; // slot 4
 
-    constructor(address system, uint256 version, address token) public {
+    constructor(address system, address token) public {
         info.system = system;
-        info.version = version;
+        info.version = 1;
         info.token = token;
         info.owner = msg.sender;
     }
@@ -149,7 +153,7 @@ contract MatryxPlatform {
     }
 
     /// @dev Gets Information about the Platform
-    /// @return  Info Struct that contains directory, version, token, and owner
+    /// @return  Info Struct that contains system, version, token, and owner
     function getInfo() public view returns (MatryxPlatform.Info) {
         return info;
     }
@@ -162,22 +166,51 @@ contract MatryxPlatform {
     }
 
     /// @dev Sets the Token address
-    /// @param token  Address of MatryxToken
-    function setTokenAddress(address token) external {
+    /// @param token  New token address
+    function upgradeToken(address token) external {
         require(msg.sender == info.owner, "Must be Platform owner");
+        IToken(info.token).upgrade(data.totalBalance);
+
+        require(IToken(token).balanceOf(this) == data.totalBalance, "Token address must match upgraded token");
         info.token = token;
+    }
+
+    /// @dev Withdraws any Ether from Platform
+    function withdrawEther() external {
+        require(msg.sender == info.owner, "Must be Platform owner");
+        msg.sender.transfer(address(this).balance);
+    }
+
+    /// @dev Withdraws any ERC20 tokens from Platform
+    /// @param token  ERC20 token address to use
+    function withdrawTokens(address token) external {
+        require(msg.sender == info.owner, "Must be Platform owner");
+
+        uint256 balance = IToken(token).balanceOf(this);
+
+        // if current token, check if any extraneous tokens
+        if (token == info.token) {
+            balance = balance.sub(data.totalBalance);
+        }
+
+        IToken(token).transfer(msg.sender, balance);
     }
 }
 
 interface IMatryxPlatform {
     function getInfo() external view returns (MatryxPlatform.Info);
     function setVersion(uint256) external;
-    function setTokenAddress(address) external;
+    function upgradeToken(uint256, address) external;
+    function withdrawEther() external;
+    function withdrawTokens(address) external;
 
     function isTournament(address) external view returns (bool);
     function isRound(address) external view returns (bool);
     function isSubmission(address) external view returns (bool);
     function hasEnteredMatryx(address) external view returns (bool);
+
+    function getTotalBalance() external view returns (uint256);
+    function getBalanceOf(address) external view returns (uint256);
 
     function getTournamentCount() external view returns (uint256);
     function getUserCount() external view returns (uint256);
@@ -225,6 +258,21 @@ library LibPlatform {
     /// @return      If user has entered Matryx
     function hasEnteredMatryx(address, address, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
         return data.users[uAddress].exists;
+    }
+
+    /// @dev Return total MTX in Platform
+    /// @param data  Platform storage containing all contract data
+    /// @return      Total MTX in Platform
+    function getTotalBalance(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.totalBalance;
+    }
+
+    /// @dev Return balance of a Tournament, Round, or Submission contract
+    /// @param data      Platform storage containing all contract data
+    /// @param cAddress  Address of the contract we get the balance of
+    /// @return          Balance of the Trinity contract
+    function getBalanceOf(address, address, MatryxPlatform.Data storage data, address cAddress) public view returns (uint256) {
+        return data.balanceOf[cAddress];
     }
 
     /// @dev Return total number of Tournaments
@@ -277,17 +325,14 @@ library LibPlatform {
     /// @return          Array of Tournament addresses for given category
     function getTournamentsByCategory(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category, uint256 startIndex, uint256 count) public view returns (address[]) {
         address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
+        address[] storage cat = data.categories[category];
 
         assembly {
             let offset := 0x100000000000000000000000000000000000000000000000000000000
             let ptr := mload(0x40)
 
-            mstore(0, category)
-            mstore(0x20, add(data_slot, 4))                                     // data.categories
-            let s_category := keccak256(0, 0x40)                                // data.categories[category] slot
-
             mstore(ptr, mul(0xe79eda2c, offset))                                // getSubArray(bytes32[] storage,uint256,uint256)
-            mstore(add(ptr, 0x04), s_category)                                  // data.categories[category]
+            mstore(add(ptr, 0x04), cat_slot)                                    // data.categories[category]
             mstore(add(ptr, 0x24), startIndex)                                  // arg 0 - startIndex
             mstore(add(ptr, 0x44), count)                                       // arg 1 - count
 
@@ -372,7 +417,7 @@ library LibPlatform {
     /// @param data    Platform storage containing all contract data and users
     function enterMatryx(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         require(!data.users[sender].exists, "Already entered Matryx");
-        require(IMatryxToken(info.token).balanceOf(sender) > 0, "Must have MTX");
+        require(IToken(info.token).balanceOf(sender) > 0, "Must have MTX");
 
         data.users[sender].exists = true;
         data.users[sender].timeEntered = now;
@@ -430,7 +475,7 @@ library LibPlatform {
         require(data.users[sender].exists, "Must have entered Matryx");
         require(tDetails.bounty > 0, "Tournament bounty must be greater than 0");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
-        require(IMatryxToken(info.token).allowance(sender, this) >= tDetails.bounty, "Insufficient MTX");
+        require(IToken(info.token).allowance(sender, this) >= tDetails.bounty, "Insufficient MTX");
 
         address tAddress = new MatryxTournament(info.version, info.system);
 
@@ -447,7 +492,9 @@ library LibPlatform {
         tournament.info.owner = sender;
         tournament.details = tDetails;
 
-        require(IMatryxToken(info.token).transferFrom(sender, tAddress, tDetails.bounty), "Transfer failed");
+        data.totalBalance = data.totalBalance.add(tDetails.bounty);
+        data.balanceOf[tAddress] = tDetails.bounty;
+        require(IToken(info.token).transferFrom(sender, this, tDetails.bounty), "Transfer failed");
 
         bytes32 libName = IMatryxSystem(info.system).getLibraryName(uint256(LibSystem.ContractType.Tournament));
         address libTournament = IMatryxSystem(info.system).getContract(info.version, libName);
