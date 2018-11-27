@@ -51,7 +51,7 @@ contract('NotYetOpen Round Testing', function(accounts) {
   })
 
   it('Able to get round balance', async function() {
-    let b = await r.getBalance()
+    let b = await platform.getBalanceOf(r.address)
     assert.equal(b, web3.toWei(5), 'Unable to get balance.')
   })
 
@@ -208,7 +208,7 @@ contract('In Review Round Testing', function(accounts) {
 
   it('Able to allocate more tournament bounty to a round in review', async function() {
     await t.transferToRound(web3.toWei(1))
-    let bal = await r.getBalance()
+    let bal = await platform.getBalanceOf(r.address)
     assert.equal(fromWei(bal), 6, 'Incorrect round balance')
   })
 
@@ -461,12 +461,12 @@ contract('Abandoned Round Testing', function(accounts) {
   })
 
   it('Tournament balance is 0', async function() {
-    let tB = await t.getBalance()
+    let tB = await platform.getBalanceOf(t.address)
     assert.isTrue(tB == 0, 'Tournament balance should be 0')
   })
 
   it('Round balance is 0', async function() {
-    let rB = await r.getBalance()
+    let rB = await platform.getBalanceOf(r.address)
     assert.isTrue(rB == 0, 'Tournament balance should be 0')
   })
 
@@ -518,12 +518,12 @@ contract('Abandoned Round due to No Submissions', function(accounts) {
   })
 
   it('Tournament balance is 0', async function() {
-    let tB = await t.getBalance()
+    let tB = await platform.getBalanceOf(t.address)
     assert.isTrue(tB == 0, 'Tournament balance should be 0')
   })
 
   it('Round balance is 0', async function() {
-    let rB = await r.getBalance()
+    let rB = await platform.getBalanceOf(r.address)
     assert.isTrue(rB == 0, 'Round balance should be 0')
   })
 
@@ -572,12 +572,12 @@ contract('Unfunded Round Testing', function(accounts) {
   })
 
   it('Balance of unfunded round is 0', async function() {
-    let urB = await ur.getBalance()
+    let urB = await platform.getBalanceOf(ur.address)
     assert.equal(urB, 0, 'Round balance should be 0')
   })
 
   it('Balance of tournament is 0', async function() {
-    let tB = await t.getBalance()
+    let tB = await platform.getBalanceOf(t.address)
     assert.equal(tB, 0, 'Tournament balance should be 0')
   })
 
@@ -596,16 +596,16 @@ contract('Unfunded Round Testing', function(accounts) {
     }
   })
 
-  it('Able to transfer more MTX to the tournament', async function() {
-    await token.transfer(t.address, toWei(2))
-    let tB = await t.getBalance().then(fromWei)
+  it('Able to transfer more MTX to the tournament', async function () {
+    await t.addFunds(toWei(2))
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 2, 'Funds not transferred')
   })
 
   it('Able to transfer tournament funds to the Unfunded round', async function() {
     t.accountNumber = 0
     await t.transferToRound(toWei(2))
-    let urB = await ur.getBalance().then(fromWei)
+    let urB = await platform.getBalanceOf(ur.address).then(fromWei)
     assert.equal(urB, 2, 'Funds not transferred')
   })
 
@@ -685,12 +685,12 @@ contract('Ghost Round Testing', function(accounts) {
   })
 
   it('Tournament balance is correct', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 5, 'Tournament balance incorrect')
   })
 
   it('Ghost Round balance should be 5', async function() {
-    let grB = await gr.getBalance().then(fromWei)
+    let grB = await platform.getBalanceOf(gr.address).then(fromWei)
     assert.equal(grB, 5, 'Ghost round balance should be 0')
   })
 
@@ -714,7 +714,7 @@ contract('Ghost Round Testing', function(accounts) {
   })
 
   it('Ghost Round balance is correct', async function() {
-    let grb = await gr.getBalance().then(fromWei)
+    let grb = await platform.getBalanceOf(gr.address).then(fromWei)
     assert.equal(grb, 5, 'Ghost round balance should be 5')
   })
 
@@ -738,12 +738,12 @@ contract('Ghost Round Testing', function(accounts) {
   })
 
   it('Ghost Round balance should be 8', async function() {
-    let grb = await gr.getBalance().then(fromWei)
+    let grb = await platform.getBalanceOf(gr.address).then(fromWei)
     assert.equal(grb, 8, 'Ghost round balance incorrect')
   })
 
   it('Tournament balance is correct', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 2, 'Tournament balance incorrect')
   })
 
@@ -767,12 +767,12 @@ contract('Ghost Round Testing', function(accounts) {
   })
 
   it('Ghost Round balance is correct', async function() {
-    let grb = await gr.getBalance().then(fromWei)
+    let grb = await platform.getBalanceOf(gr.address).then(fromWei)
     assert.equal(grb, 2, 'Ghost round balance should be 2')
   })
 
   it('Tournament balance is correct', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 8, 'Tournament balance should be 8')
   })
 })

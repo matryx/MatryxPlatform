@@ -5,7 +5,7 @@ const IMatryxUser = artifacts.require('IMatryxUser')
 let platform
 let users
 
-const { stringToBytes32, stringToBytes, bytesToString, Contract } = require('../truffle/utils')
+const { setup, stringToBytes32, stringToBytes, bytesToString, Contract } = require('../truffle/utils')
 const { init, createTournament, waitUntilClose, waitUntilOpen, createSubmission, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
 
 contract('Open Tournament Testing', function(accounts) {
@@ -53,7 +53,7 @@ contract('Open Tournament Testing', function(accounts) {
   })
 
   it('Able to get tournament balance', async function() {
-    let b = await t.getBalance().then(fromWei)
+    let b = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(b, 5, 'Unable to get balance.')
   })
 
@@ -106,6 +106,21 @@ contract('Open Tournament Testing', function(accounts) {
   it('Tournament owner is not an entrant of own tournament', async function() {
     let isEntrant = await t.isEntrant(accounts[0])
     assert.isFalse(isEntrant, 'Owner should not be an entrant of own tournament.')
+  })
+
+  it('Able to add funds to the tournament', async function() {
+    await t.addFunds(toWei(1))
+    let b = await t.getBalance().then(fromWei)
+    assert.equal(b, 6, 'Incorrect tournament balance')
+  })
+
+  it('Able to add funds to the tournament from another account', async function() {
+    await setup(artifacts, web3, 2, true)
+    t.accountNumber = 2
+    await t.addFunds(toWei(1))
+    t.accountNumber = 0
+    let b = await t.getBalance().then(fromWei)
+    assert.equal(b, 7, 'Incorrect tournament balance')
   })
 
   it('Able to edit the tournament data', async function() {
@@ -376,11 +391,21 @@ contract('Abandoned Tournament due to No Submissions Testing', function(accounts
 
   it('Unable to add bounty to Abandoned round', async function() {
     try {
-      await t.transferToRound(web3.toWei(1))
+      await t.transferToRound(toWei(1))
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to add bounty to Abandoned round')
+    }
+  })
+
+  it('Unable to add funds to an Abandoned tournament', async function() {
+    try {
+      await t.addFunds(toWei(1))
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to add funds')
     }
   })
 
@@ -430,12 +455,12 @@ contract('Abandoned Tournament due to No Submissions Testing', function(accounts
   })
 
   it("Tournament balance is 0", async function () {
-      let tB = await t.getBalance()
+      let tB = await platform.getBalanceOf(t.address)
       assert.isTrue(tB == 0, "Tournament balance should be 0")
   })
 
   it("Round balance is 0", async function () {
-      let rB = await r.getBalance()
+      let rB = await platform.getBalanceOf(r.address)
       assert.isTrue(rB == 0, "Round balance should be 0")
   })
 

@@ -2,6 +2,7 @@ const MatryxPlatform = artifacts.require('MatryxPlatform')
 
 const { init, createTournament, enterTournament } = require('./helpers')(artifacts, web3)
 let platform
+let token
 
 contract('Platform Testing', function(accounts) {
   let t
@@ -13,7 +14,9 @@ contract('Platform Testing', function(accounts) {
   }
 
   it('Platform initialized correctly', async function() {
-    platform = (await init()).platform
+    let contracts = await init()
+    platform = contracts.platform
+    token = contracts.token
     assert.equal(platform.address, MatryxPlatform.address, 'Platform address was not set correctly.')
   })
 
@@ -42,7 +45,7 @@ contract('Platform Testing', function(accounts) {
   it('Able to get tournaments by category', async function() {
     let cat = await t.getCategory()
     let tourCat = await platform.getTournamentsByCategory(cat, 0, 0)
-    assert.isTrue(tourCat == t.address, 'Unable to get tournaments by category.')
+    assert.isTrue(tourCat[0] == t.address, 'Unable to get tournaments by category.')
   })
 
   it('Able to create a new category', async function() {
@@ -98,6 +101,20 @@ contract('Platform Testing', function(accounts) {
     let users = await platform.getUsers(0, 0)
     let isTrue = users[0].toLowerCase() == accounts[0] && users[1].toLowerCase() == accounts[1]
     assert.isTrue(isTrue, 'Platform should have 2 users')
+  })
+
+  it('Able to send tokens to the platform directly', async function() {
+    let bb = await token.balanceOf(platform.address).then(fromWei)
+    await token.transfer(platform.address, toWei(10))
+    let ba = await token.balanceOf(platform.address).then(fromWei)
+    assert.equal(bb + 10, ba, 'Incorrect platform balance')
+  })
+
+  it('Platform owner able to withdraw unallocated tokens from platform', async function() {
+    let bb = await token.balanceOf(platform.address).then(fromWei)
+    await platform.withdrawTokens(token.address)
+    let ba = await token.balanceOf(platform.address).then(fromWei)
+    assert.equal(bb - 10, ba, 'Unable to withdraw tokens')
   })
 
 })

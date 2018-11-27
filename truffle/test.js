@@ -88,11 +88,11 @@ const createSubmission = async (tournament, accountNumber) => {
 
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) {
-    let allowance = +await token.allowance(account, tournament.address)
+    let allowance = +await token.allowance(account, platform.address)
     if (!allowance) {
       let entryFee = await tournament.getEntryFee()
       token.accountNumber = accountNumber
-      let { hash } = await token.approve(tournament.address, entryFee)
+      let { hash } = await token.approve(platform.address, entryFee)
       await getMinedTx(hash)
     }
     let { hash } = await tournament.enter()

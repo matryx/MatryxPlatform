@@ -1,6 +1,8 @@
 const fs = require('fs')
 const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('../truffle/utils')
 
+Contract.logLevel = 1
+
 module.exports = function (artifacts, web3) {
   const MatryxSystem = artifacts.require("MatryxSystem")
   const MatryxPlatform = artifacts.require("MatryxPlatform")
@@ -189,10 +191,10 @@ module.exports = function (artifacts, web3) {
 
     const isEntrant = await tournament.isEntrant(account)
     if (!isEntrant) {
-      let allowance = +(await token.allowance(account, tournament.address))
+      let allowance = +(await token.allowance(account, platform.address))
       if (!allowance) {
         let entryFee = await tournament.getEntryFee()
-        let { hash } = await token.approve(tournament.address, entryFee)
+        let { hash } = await token.approve(platform.address, entryFee)
         await getMinedTx(hash)
       }
       let { hash } = await tournament.enter()

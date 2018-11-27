@@ -6,6 +6,7 @@ const IMatryxUser = artifacts.require('IMatryxUser')
 const { Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
 
+let platform
 let users = Contract(MatryxUser.address, IMatryxUser, 0)
 
 contract('Adding and removing Contributors and References', function(accounts) {
@@ -15,7 +16,7 @@ contract('Adding and removing Contributors and References', function(accounts) {
   let ref2 //reference
 
   it('Able to add a multiple contributors and references to a submission', async function() {
-    await init()
+    platform = (await init()).platform
     roundData = {
       start: Math.floor(Date.now() / 1000),
       end: Math.floor(Date.now() / 1000) + 80,
@@ -188,7 +189,7 @@ contract('References Reward Distribution Testing', function(accounts) {
     })
 
     it('Correct winning submission balance', async function() {
-      let b = await s.getBalance().then(fromWei)
+      let b = await platform.getBalanceOf(s.address).then(fromWei)
       assert.equal(b, 10, 'Winning submission balance should be 10')
     })
 
@@ -199,7 +200,7 @@ contract('References Reward Distribution Testing', function(accounts) {
 
     it('Reference balance is correct after original owner withdraws their reward', async function() {
       await s.withdrawReward()
-      let b = await ref.getBalance().then(fromWei)
+      let b = await platform.getBalanceOf(ref.address).then(fromWei)
       assert.equal(b, 1, 'Reference balance should be 1')
     })
 
@@ -208,8 +209,13 @@ contract('References Reward Distribution Testing', function(accounts) {
       assert.equal(b, 1, 'Reference available reward should be 1')
     })
 
+    it('Able to add funds to the submission', async function() {
+      await s.addFunds(toWei(10))
+      let b = await s.getBalance().then(fromWei)
+      assert.equal(b, 10, 'Incorrect submission balance')
+    })
+
     it('Correct owner available reward if the submissions has more funds transferred to it', async function() {
-      await token.transfer(s.address, toWei(10))
       let sr = await s.getAvailableReward().then(fromWei)
       assert.isTrue(sr == 9, "Incorrect owner available reward")
     })
@@ -255,7 +261,7 @@ contract('References Reward Distribution Testing', function(accounts) {
     })
 
     it('Correct winning submission balance', async function() {
-      let b = await s.getBalance().then(fromWei)
+      let b = await platform.getBalanceOf(s.address).then(fromWei)
       assert.equal(b, 10, 'Winning submission balance should be 10')
     })
 
@@ -272,7 +278,7 @@ contract('References Reward Distribution Testing', function(accounts) {
     })
 
     it('Correct owner available reward if the submissions has more funds transferred to it', async function() {
-      await token.transfer(s.address, toWei(10))
+      await s.addFunds(toWei(10))
       let sr = await s.getAvailableReward().then(fromWei)
       assert.equal(sr, 4, "Incorrect owner available reward")
     })
@@ -295,7 +301,7 @@ contract('References Reward Distribution Testing', function(accounts) {
     })
 
     it('Correct reward distribution after adding a new contributor', async function() {
-      await token.transfer(s.address, toWei(10))
+      await s.addFunds(toWei(10))
       await s.addContributorsAndReferences([accounts[3]], [1], [])
       let sr = await s.getAvailableReward().then(fromWei)
       s.accountNumber = 3

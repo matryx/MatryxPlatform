@@ -17,7 +17,7 @@ contract('No Contribs and Close Tournament', function(accounts) {
   let s4 //submission 4
 
   it('Able to create Multiple Submissions with no Contributors and References', async function() {
-    await init()
+    platform = (await init()).platform
     roundData = {
       start: Math.floor(Date.now() / 1000),
       end: Math.floor(Date.now() / 1000) + 30,
@@ -72,16 +72,16 @@ contract('No Contribs and Close Tournament', function(accounts) {
   })
 
   it('Tournament and Round balance should now be 0', async function() {
-    let tB = await t.getBalance().then(fromWei)
-    let rB = await r.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.isTrue(tB == 0 && rB == 0, 'Tournament and round balance should both be 0')
   })
 
   it('Balance of each winning submission should be 10/4', async function() {
-    let b1 = await s1.getBalance().then(fromWei)
-    let b2 = await s2.getBalance().then(fromWei)
-    let b3 = await s3.getBalance().then(fromWei)
-    let b4 = await s4.getBalance().then(fromWei)
+    let b1 = await platform.getBalanceOf(s1.address).then(fromWei)
+    let b2 = await platform.getBalanceOf(s2.address).then(fromWei)
+    let b3 = await platform.getBalanceOf(s3.address).then(fromWei)
+    let b4 = await platform.getBalanceOf(s4.address).then(fromWei)
     let allEqual = [b1, b2, b3, b4].every(x => x === 10 / 4)
 
     assert.isTrue(allEqual, 'Incorrect winning submissions balance')
@@ -160,16 +160,16 @@ contract('Contribs and Close Tournament', function(accounts) {
   })
 
   it('Tournament and Round balance should now be 0', async function() {
-    let rB = await r.getBalance().then(fromWei)
-    let tB = await t.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.isTrue(tB == 0 && rB == 0, 'Tournament and round balance should both be 0')
   })
 
   it('Balance of each winning submission should be 10/4', async function() {
-    let b2 = await s2.getBalance().then(fromWei)
-    let b1 = await s1.getBalance().then(fromWei)
-    let b3 = await s3.getBalance().then(fromWei)
-    let b4 = await s4.getBalance().then(fromWei)
+    let b2 = await platform.getBalanceOf(s2.address).then(fromWei)
+    let b1 = await platform.getBalanceOf(s1.address).then(fromWei)
+    let b3 = await platform.getBalanceOf(s3.address).then(fromWei)
+    let b4 = await platform.getBalanceOf(s4.address).then(fromWei)
     let allEqual = [b1, b2, b3, b4].every(x => x === 10 / 4)
 
     assert.isTrue(allEqual, 'Balance of each winning submission should be 10/4')
@@ -254,26 +254,26 @@ contract('No Contribs and Start Next Round', function(accounts) {
   })
 
   it('Tournament balance should now be 5', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 5, 'Tournament balance should be 5')
   })
 
   it('New Round balance should be 5', async function() {
-    let nrB = await nr.getBalance().then(fromWei)
+    let nrB = await platform.getBalanceOf(nr.address).then(fromWei)
     assert.equal(nrB, 5, 'New round balance should be 5')
   })
 
   it('First Round balance should now be 0', async function() {
     r.accountNumber = 0
-    let rB = await r.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.equal(rB, 0, 'First Round balance should be 0')
   })
 
   it('Balance of each winning submission should be 5/4', async function() {
-    let b1 = await s1.getBalance().then(fromWei)
-    let b2 = await s2.getBalance().then(fromWei)
-    let b3 = await s3.getBalance().then(fromWei)
-    let b4 = await s4.getBalance().then(fromWei)
+    let b1 = await platform.getBalanceOf(s1.address).then(fromWei)
+    let b2 = await platform.getBalanceOf(s2.address).then(fromWei)
+    let b3 = await platform.getBalanceOf(s3.address).then(fromWei)
+    let b4 = await platform.getBalanceOf(s4.address).then(fromWei)
     let allEqual = [b1, b2, b3, b4].every(x => x === 5 / 4)
 
     assert.isTrue(allEqual, 'Incorrect winning submissions balance')
@@ -371,18 +371,18 @@ contract('Contribs and Start Next Round', function(accounts) {
   })
 
   it('Tournament balance should now be 5', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 5, 'Tournament and round balance should both be 0')
   })
 
   it('New Round balance should be 5', async function() {
-    let nrB = await nr.getBalance().then(fromWei)
+    let nrB = await platform.getBalanceOf(nr.address).then(fromWei)
     assert.equal(nrB, 5, 'Tournament and round balance should both be 0')
   })
 
   it('First Round balance should now be 0', async function() {
     r.accountNumber = 0
-    let rB = await r.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.isTrue(rB == 0, 'Round balance should be 0')
   })
 
@@ -393,10 +393,10 @@ contract('Contribs and Start Next Round', function(accounts) {
   })
 
   it('Balance of each winning submission should be 5/4', async function() {
-    let b1 = await s1.getBalance().then(fromWei)
-    let b2 = await s2.getBalance().then(fromWei)
-    let b3 = await s3.getBalance().then(fromWei)
-    let b4 = await s4.getBalance().then(fromWei)
+    let b1 = await platform.getBalanceOf(s1.address).then(fromWei)
+    let b2 = await platform.getBalanceOf(s2.address).then(fromWei)
+    let b3 = await platform.getBalanceOf(s3.address).then(fromWei)
+    let b4 = await platform.getBalanceOf(s4.address).then(fromWei)
     let allEqual = [b1, b2, b3, b4].every(x => x === 5 / 4)
 
     assert.isTrue(allEqual, 'Incorrect winning submissions balance')
@@ -475,7 +475,7 @@ contract('No Contribs and Do Nothing', function(accounts) {
   })
 
   it('First Round balance should now be 0', async function() {
-    let rB = await r.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.equal(rB, 0, 'First round balance should be 0')
   })
 
@@ -485,20 +485,20 @@ contract('No Contribs and Do Nothing', function(accounts) {
   })
 
   it('Tournament balance should now be 5', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 5, 'Tournament balance should be 5')
   })
 
   it('Ghost Round balance should be 5', async function() {
-    let grB = await gr.getBalance().then(fromWei)
+    let grB = await platform.getBalanceOf(gr.address).then(fromWei)
     assert.equal(grB, 5, 'Ghost Round balance should be 5')
   })
 
   it('Balance of each winning submission should be 5/4', async function() {
-    let b1 = await s1.getBalance().then(fromWei)
-    let b2 = await s2.getBalance().then(fromWei)
-    let b3 = await s3.getBalance().then(fromWei)
-    let b4 = await s4.getBalance().then(fromWei)
+    let b1 = await platform.getBalanceOf(s1.address).then(fromWei)
+    let b2 = await platform.getBalanceOf(s2.address).then(fromWei)
+    let b3 = await platform.getBalanceOf(s3.address).then(fromWei)
+    let b4 = await platform.getBalanceOf(s4.address).then(fromWei)
 
     let allEqual = [b1, b2, b3, b4].every(x => x === 5 / 4)
 
@@ -589,26 +589,26 @@ contract('Contribs and Do Nothing', function(accounts) {
   })
 
   it('Tournament balance should now be 5', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 5, 'Tournament balance should be 5')
   })
 
   it('Ghost Round balance should be 5', async function() {
-    let grB = await gr.getBalance().then(fromWei)
+    let grB = await platform.getBalanceOf(gr.address).then(fromWei)
     assert.equal(grB, 5, 'Ghost round balance should be 5')
   })
 
   it('First Round balance should now be 0', async function() {
     r.accountNumber = 0
-    let rB = await r.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.equal(rB, 0, 'First round balance should be 0')
   })
 
   it('Balance of each winning submission should be 5/4', async function() {
-    let b1 = await s1.getBalance().then(fromWei)
-    let b2 = await s2.getBalance().then(fromWei)
-    let b3 = await s3.getBalance().then(fromWei)
-    let b4 = await s4.getBalance().then(fromWei)
+    let b1 = await platform.getBalanceOf(s1.address).then(fromWei)
+    let b2 = await platform.getBalanceOf(s2.address).then(fromWei)
+    let b3 = await platform.getBalanceOf(s3.address).then(fromWei)
+    let b4 = await platform.getBalanceOf(s4.address).then(fromWei)
 
     let allEqual = [b1, b2, b3, b4].every(x => x === 5 / 4)
 
