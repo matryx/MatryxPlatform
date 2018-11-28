@@ -652,6 +652,7 @@ library LibTournamentHelper {
 
         require(data.users[sender].exists, "Must have entered Matryx");
         require(sender != tournament.info.owner, "Cannot enter own Tournament");
+        require(!tournament.entryFeePaid[sender].exists, "Cannot enter Tournament more than once");
         require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Cannot enter closed or abandoned Tournament");
 
         data.totalBalance = data.totalBalance.add(entryFee);
