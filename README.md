@@ -1,153 +1,120 @@
-
-# Matryx Platform ![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
-
-[![travisCI](https://travis-ci.org/matryx/MatryxPlatform.svg?branch=master)](https://travis-ci.org/matryx/MatryxPlatform)
-[![Telegram](https://img.shields.io/badge/chat-Telegram-blue.svg)](https://t.me/matryxai)
-[![Latest News](https://img.shields.io/badge/Blog-Medium-yellowgreen.svg)](https://blog.matryx.ai/)
-
-
-[![Jenkins coverage](https://img.shields.io/badge/coverage-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/code-coverage)
-[![Jenkins tests](https://img.shields.io/badge/tests-Coming%20Soon-brightgreen.svg)](http://jenkins.matryx.ai/matryx-alpha-source/tests)
-
+![logo](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Matryx-Logo-Black-1600px.png)
 
 ## Introduction
 
-> [Matryx.ai](https://www.matryx.ai): 
-The Collaborative Research and Development Engine Optimized for Virtual Reality Interfaces
+> [matryx.ai](https://www.matryx.ai): A Collaborative Research and Development Platform
 
-A full description about our platform is in our [whitepaper](https://matryx.ai/matryx-whitepaper.pdf).
+## Platform Logic
 
-This branch is where the latest development happens. As we develop code during our sprints for the next release, merge our user stories to this branch. So this is the most up to date branch. All merges undergo peer reviewed Pull Requests prior to being merged and must pass strict non-functional requirements such as code coverage.
+**Matryx** consists of 3 major contracts: **MatryxSystem**, **MatryxPlatform**, and **MatryxTrinity**.
 
-For each tagged release, we will identify the major changes and add them to the CHANGELOG. Our next major release is March 31, 2018 so keep you eyes open for that huge push.
+**MatryxSystem**
+- Contains all released versions of the Platform
+- Contains all used libraries addresses
+- Contains all relevant data needed to transform function signatures for forwarding calls
 
-## How to use the platform on Develop Branch
+**MatryxPlatform**
+- Contains all data for Tournaments, Rounds, Submissions, and Users
+- Forwards calls from MatryxTrinity contracts to the relevant libraries
 
-Here you can test everything locally and run it as well. Running either our private chain or your own testRPC and then migrating the platform will be easy. 
+**MatryxTrinity**
+- Base contract for MatryxTournament, MatryxRound, and MatryxSubmission
+- Forwards calls to MatryxPlatform
+- Stores and transfers MTX for Tournaments, Rounds, and Submissions
 
-```
-truffle migrate
-```
+When a call is made on a **MatryxTrinity** contract, such as **MatryxTournament**, **MatryxTrinity** forwards the call to **MatryxPlatform**, inserting `msg.sender` into the calldata so the original caller doesn't get lost. **MatryxPlatform** then looks up information from **MatryxSystem** to get the current library for that function and version of the Platform. It then uses this information to transform the calldata again, inserting state data from the Platform so that the library has access to Tournament, Round, Submission, and User data.
 
-There are some major changes between Matryx Alpha v1 and the develop branch. In the first iteration since we focused on end-to-end integration, it is one main platform smart contract. Now we have multiple contracts such as Platform, Tournament, and Round.
+For every library method in **Matryx**, **MatryxSystem** stores function signature transformation data used to modify calldata by inserting **MatryxPlatform** `storage` slots for the delegatecall to the library method. This enables the libraries to modify **MatryxPlatform**'s state while keeping the outwardly facing contract method signatures simple.
 
-This increases the complexity on the UI side to interact with the platform, but not that much. Coming soon is an API you can call for the 3 tiered system's contract addresses and related ABIs. 
+An example of this logic:
 
-If you migrate the Platform locally, we recommend using ```truffle console``` to interact with it's ease of use.
-Here you can start typing MatryxPlatform and hit `tab` and it will be able to recognize the contract.
-You can grab the ABI by calling `MatryxPlatform.abi` if you want to interact with it through a testRPC/ganache-cli/geth console.
+    call to MatryxTournament.getTitle
+    => call to MatryxSystem to lookup Platform address
+    => call to MatryxPlatform (inserting User address)
+    => call to MatryxSystem to lookup forwarding info
+    => delegatecall to LibTournament.getTitle (inserting Platform `storage` data)
 
-### Documentation
+An example of a MTX transfer between MatryxTrinity contracts:
 
-Visit the docs for the [Platform Documentation](http://matryxPlatform.readthedocs.io)
+    call to MatryxTournament.transferTo
+    => delegatecall to LibTrinity.transferTo
+    => call to MatryxToken.transfer
 
-## Interfaces
-The are several interfaces that are being built that are designed to plug in to the Matryx Platform 
-* [Calcflow](http://calcflow.io): A Virtual Reality tool for mathematical modeling (Oculus and HTC Vive)
-* [Matryx WebApp](http://alpha.matryx.ai): A Web native application for interacting with the Matryx Platform and Marketplace
-* [MatryxCore (Coming Soon)](http://matryx.ai): A OS native application for interacting with the Matryx Platform and Marketplace (Windows, Linux, Mac OSX)
-* [Nano-one](http://store.steampowered.com/app/493430/nanoone/): A consumer Virtual Reality tool for chemical design and visualization
-* [Nano-pro](http://nanome.ai): An enterprise ready Virtual Reality Platform for Chemical and Pharmaceutical drug development
-* [Third party Interfaces](www.nanome.ai/TODO): Any third party integrated application utilizing the Matryx Platform- Contact us for details if you or your team is interested! 
+---
 
-Additonal information on the various interfaces supporting the Matryx Platform can be found on the [Matryx Interfaces Wiki](https://github.com/matryx/matryx-alpha-source/wiki/Matryx-Interfaces)
-
-
-Below is a GIF of Matryx's Calcflow VR interface viewing Matryx tournaments on the private chain.
-### Calcflow
-![Calcflow](https://github.com/matryx/matryx-alpha-source/blob/master/assets/Calcflow_mtx.gif)
+We set up the **Matryx** system like this to enable upgradeability, as well as to minimize gas costs of creating Tournaments, Rounds, and Submissions.
 
 
-## Build, Deploy, and Test the Platform
+## Testing Matryx locally with `truffle console`
 
-### Launching the Platform
-Specify the network configuration in the truffle.js file. Ours is originally pointed to localhost:8545 which is common for TestRPC/Ganache-CLI.
+1. Install dependencies, remove the build folder, and start ganache
+    ```
+    npm i
+    rm -r build/
+    ./ganache-local.sh
+    ```
 
-Make sure your have TestRPC or Ganache-CLI installed and run it a different tab.
+2. Then in a new window, enter the truffle console
+    ```
+    truffle console
+    ```
 
-```
-truffle migrate
-```
+3. The following commands are all executing inside truffle console
+    ```
+    migrate --reset
+    .load setup
+    ```
 
-This will move the platform on to your network. You can then interact with the contract by attaching to it using truffle console.
-```
-truffle console
-```
+4. Next, enter Matryx and create a Tournament.
 
-From there, when you type 'MatryxPlatform', it will recognize the contract and you can start to call functions with ease.
+    **Note**: `stb` is a helper method to convert a string into `bytes32`, or `bytes32[n]`
 
-Check out the [Matryx Wiki on Technical Overview and API](https://github.com/matryx/matryx-alpha-source/wiki/Platform-Technical-Overview-and-API)
+    **Note**: In this minimal version of Matryx, Round start, end, and review are not being used yet. This is why they are just set to "1, 2, 3"
+    ```
+    p.enterMatryx()
+    token.approve(p.address, toWei(100))
+    tData = [stb('title', 3), stb('category'), stb('descHash', 2), stb('fileHash', 2), toWei(100), toWei(2)]
+    rData = [1, 2, 3, toWei(10)]
+    p.createTournament(tData, rData)
+    p.getTournaments().then(ts => t = contract(ts.pop(), IMatryxTournament));0
+    ```
 
-### Testing the Platform
-The big ways we test the platform is through javascript tests using Mocha. You can see in the /tests/ folder some of our examples. We require extremely high code coverage for each contract to be know that we are covering all our bases. 
+5. Switch accounts, enter Matryx, approve the entry fee, and enter the Tournament
+    ```
+    token.accountNumber = 1
+    p.accountNumber = 1
+    t.accountNumber = 1
+    p.enterMatryx()
+    token.approve(t.address, toWei(2))
+    t.enterTournament()
+    ```
 
-To run the tests:
-```
-./retest.sh
-```
+6. Create a Submission on the Tournament
+    ```
+    sData = [stb('title', 3), stb('descHash', 2), stb('fileHash', 2)]
+    t.createSubmission(sData)
+    t.getRounds().then(rs => r = contract(rs.pop(), IMatryxRound));0
+    r.getSubmissions().then(ss => s = contract(ss.pop(), IMatryxSubmission));0
+    ```
 
-To run the code coverage:
-```
-./codeCoverage
-```
+7. Switch back to the first account and select the Submission as a winner
+    ```
+    t.accountNumber = 0
+    t.selectWinners([[s.address], [1]], rData)
+    ```
 
-If ./codecoverage.sh or retest.sh isnt able to be executed, make sure you change the permissions.
-```
-chmod +x codecoverage.sh
-```
+8. Finally, check the balance of your Submission. You should see it was rewarded 10 MTX
+    ```
+    token.balanceOf(s.address).then(fromWei)
+    ```
 
-### Contributing
-Our team at Matryx knows that the community is what will really drive the vision we all believe. So we strongly recommend that the community help us make improvements and we all make solid and sound decisions for the future direction of the platform. To report bugs with this package, please create an issue in this repository on the master branch.
+## Architecture Diagram
 
-Please read our contribution guidelines before getting started.
+![architecture diagram](https://github.com/matryx/MatryxPlatform/blob/audit/assets/ArchitectureDiagram.svg)
 
-[Install npm](https://www.npmjs.com/get-npm?utm_source=house&utm_medium=homepage&utm_campaign=free%20orgs&utm_term=Install%20npm)
+[draw.io diagram](https://www.draw.io/?lightbox=1&highlight=0000ff&layers=1&nav=1&page=0&title=Matryx%20Architecture#Uhttps%3A%2F%2Fdrive.google.com%2Fuc%3Fid%3D1KormLKjy1W3FZkiSdEpGdmwwvE9uNYSp%26export%3Ddownload)
 
+(includes example flow of calling "MatryxTournament.getTitle()", use arrow buttons at bottom)
 
-Install Truffle
-```
-npm install -g truffle
-```
-
-Install Ganache-cli
-```
-npm install -g ganache-cli
-```
-
-Make sure you pull the correct branch, which is called "develop"
-```
-git clone https://github.com/matryx/matryx-alpha-source -b develop
-```
-
-Install dependencies
-```
-npm install
-```
-
-For the develop branch, make sure you install the code coverage dependency.
-
-Before running the tests, run the ganache-cli
-```
-ganache-cli -u 0,1,2,3,4,5
-```
-
-In a separate terminal, navigate to the project directory and run the following:
-```
-./retest.sh
-truffle migrate
-./codeCoverage.sh
-```
-
-Make sure that the code coverage is as close to 100% as possible (99%+ is required)
-
-Please submit support related issues to the [issue tracker](https://github.com/matryx/matryx-alpha-source/issues)
-
-We look forward to seeing the community feedback and issue identifications to make this platform the long term vision we all believe in!
-
-Please take a look at our [Terms of Service](https://github.com/matryx/matryx-alpha-source/blob/master/TOS.txt) for using the platform that we have deployed
-
+---
 -The Matryx Team
-
-Architecture Below:
-
-![Architecture](https://github.com/matryx/MatryxPlatform/raw/develop/assets/alpha2architecture.png)

@@ -39,7 +39,7 @@ This is the ``createSubmission`` function signature:
 Editing your Submissions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-As long as the current round remains open, you are able to edit any submissions you have made. To modify the data of your submisison, you can call the ``updateData`` function like this:
+As long as the current round remains open, you are able to edit any submissions you have made. To modify the data of your submission, you can call the ``updateData`` function like this:
 
 .. code-block:: Solidity
 

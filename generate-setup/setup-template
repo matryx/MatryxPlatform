@@ -1,0 +1,41 @@
+q = []
+
+q.push("system = contract(MatryxSystem.address, MatryxSystem)")
+q.push("system.createVersion($VERSION)")
+q.push("system.setVersion($VERSION)")
+
+q.push("system.setContract($VERSION, stb('MatryxUser'), MatryxUser.address)")
+q.push("system.setContractType(MatryxUser.address, 1)")
+
+q.push("system.setContract($VERSION, stb('MatryxPlatform'), MatryxPlatform.address)")
+q.push("system.setContractType(MatryxPlatform.address, 2)")
+
+q.push("system.setContract($VERSION, stb('LibUtils'), LibUtils.address)")
+q.push("system.setContract($VERSION, stb('LibPlatform'), LibPlatform.address)")
+q.push("system.setContract($VERSION, stb('LibUser'), LibUser.address)")
+q.push("system.setContract($VERSION, stb('LibTournament'), LibTournament.address)")
+q.push("system.setContract($VERSION, stb('LibRound'), LibRound.address)")
+q.push("system.setContract($VERSION, stb('LibSubmission'), LibSubmission.address)")
+
+q.push("system.setLibraryName(0, stb('LibPlatform'))")
+q.push("system.setLibraryName(1, stb('LibUser'))")
+q.push("system.setLibraryName(2, stb('LibPlatform'))")
+q.push("system.setLibraryName(3, stb('LibTournament'))")
+q.push("system.setLibraryName(4, stb('LibRound'))")
+q.push("system.setLibraryName(5, stb('LibSubmission'))")
+
+$COMMANDS
+
+q.push("p = contract(MatryxPlatform.address, IMatryxPlatform)")
+q.push("p.createCategory(stb('math'))")
+
+q.push("token = contract(network.tokenAddress, MatryxToken)")
+q.push("token.setReleaseAgent(network.accounts[0])")
+q.push("token.releaseTokenTransfer()")
+q.push("token.mint(network.accounts[0], toWei(1e4))")
+q.push("token.mint(network.accounts[1], toWei(1e4))")
+q.push("token.mint(network.accounts[2], toWei(1e4))")
+q.push("token.mint(network.accounts[3], toWei(1e4))")
+q.push("token.mint(network.accounts[4], toWei(1e4))")
+
+;(async () => { for (let cmd of q) try { await eval(cmd) } catch (err) {} })()
