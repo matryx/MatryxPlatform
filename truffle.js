@@ -8,16 +8,16 @@ network = require('./truffle/network')
 // SETUP GLOBALS FOR CLI REPL
 const utils = require('./truffle/utils')
 getMinedTx = utils.getMinedTx
-bytesToString = utils.bytesToString
-stringToBytes = utils.stringToBytes
-stringToBytes32 = utils.stringToBytes32
+bts = bytesToString = utils.bytesToString
+ntb = numberToBytes = utils.numberToBytes
+stb = stringToBytes = utils.stringToBytes
 contract = utils.Contract
 
-selector = signature => '0x' + ethUtil.keccak(signature).hexSlice(0, 4)
-getFileContents = path => fs.readFileSync(path).toString()
+keccak = str => '0x' + ethUtil.keccak(str).hexSlice(0)
+selector = signature => keccak(signature).substr(0, 10)
 
-getTx = hash => wallet.provider.getTransaction(hash)
-getTxR = hash => wallet.provider.getTransactionReceipt(hash)
+gt = getTx = hash => wallet.provider.getTransaction(hash)
+gtr = getTxR = hash => wallet.provider.getTransactionReceipt(hash)
 
 hex = dec => '0x' + dec.toString(16)
 dec = hex => parseInt(hex, 16)
@@ -25,9 +25,7 @@ dec = hex => parseInt(hex, 16)
 fromWei = wei => +ethers.utils.formatEther(wei.toString())
 toWei = eth => ethers.utils.parseEther(eth.toString())
 
-console.log('Setup to copy paste:\n')
-console.log('platform = contract(MatryxPlatform.address, MatryxPlatform);0')
-console.log('token = contract(network.tokenAddress, MatryxToken);0\n')
+network.setNetwork('develop')
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
@@ -42,25 +40,35 @@ module.exports = {
         return new Web3.providers.HttpProvider('http://localhost:8545')
       },
       network_id: "*", // match any network
-      gas: 6541593,
-      gasPrice: 30000000
+      gas: 8e6,
+      gasPrice: 5e9
     },
     ropsten: {
       provider: function () {
         network.setNetwork('ropsten')
         wallet = new ethers.Wallet(network.privateKeys[0], network.provider)
-        const mnemonic = getFileContents(network.mnemonicPath)
-        return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/metamask")
+        return new HDWalletProvider(network.mnemonic, "https://ropsten.infura.io/metamask")
       },
       network_id: 3,
-      gas: 4500000
+      gas: 8e6,
+      gasPrice: 5e9
+    },
+    kovan: {
+      provider: function () {
+        network.setNetwork('kovan')
+        wallet = new ethers.Wallet(network.privateKeys[0], network.provider)
+        return new HDWalletProvider(network.mnemonic, "https://kovan.infura.io/metamask")
+      },
+      network_id: 42,
+      gas: 8e6,
+      gasPrice: 5e9 // 5 gwei
     },
     testing: {
       host: "localhost",
       port: 8545,
       network_id: "*", // match any network
-      gas: 6741593,
-      gasPrice: 30000000
+      gas: 8e6,
+      gasPrice: 5e9
     },
     coverage: {
       host: "localhost",
