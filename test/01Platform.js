@@ -20,6 +20,47 @@ contract('Platform Testing', function(accounts) {
     assert.equal(platform.address, MatryxPlatform.address, 'Platform address was not set correctly.')
   })
 
+  it('Able to get platform info', async function() {
+    let info = await platform.getInfo()
+    assert.equal(info.owner.toLowerCase(), accounts[0], 'Unable to get platform info')
+  })
+
+  it('Unable to set platform version from another account', async function() {
+    try {
+      platform.accountNumber = 2
+      await platform.setVersion(2)
+      assert.fail('Should not have been able to set platform version from this account')
+    } catch (error) {
+      platform.accountNumber = 0
+      const revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Successfully unable to set platform version')
+    }
+  })
+
+  it('Unable to set platform token from another account', async function() {
+    try {
+      platform.accountNumber = 2
+      await platform.upgradeToken(platform.address)
+      assert.fail('Should not have been able to set platform token from this account')
+    } catch (error) {
+      platform.accountNumber = 0
+      const revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Successfully unable to set platform token')
+    }
+  })
+
+  it('Unable to set platform owner from another account', async function() {
+    try {
+      platform.accountNumber = 2
+      await platform.setOwner(accounts[2])
+      assert.fail('Should not have been able to set platform owner from this account')
+    } catch (error) {
+      platform.accountNumber = 0
+      const revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Successfully unable to set platform owner')
+    }
+  })
+
   it('Platform has 0 tournaments', async function() {
     let count = await platform.getTournamentCount()
     let tournaments = await platform.getTournaments(0, 0)
@@ -108,6 +149,18 @@ contract('Platform Testing', function(accounts) {
     await token.transfer(platform.address, toWei(10))
     let ba = await token.balanceOf(platform.address).then(fromWei)
     assert.equal(bb + 10, ba, 'Incorrect platform balance')
+  })
+
+  it('Unable to withdraw platform tokens from another account', async function() {
+    try {
+      platform.accountNumber = 2
+      await platform.withdrawTokens(token.address)
+      assert.fail('Should not have been able to withdraw tokens')
+    } catch (error) {
+      platform.accountNumber = 0
+      const revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Successfully unable to withdraw tokens')
+    }
   })
 
   it('Platform owner able to withdraw unallocated tokens from platform', async function() {
