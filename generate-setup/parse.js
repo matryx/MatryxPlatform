@@ -19,8 +19,8 @@ const interfaceReg = /interface (\w+)\s+\{(.+?)^\}/gms
 const libAndContractReg = /(?:library|contract) (\w+).+?\{(.+?)^\}/gms
 const libReg = /library (\w+)\s+\{(.+?)^\}/gms
 const structReg = /struct (\w+?)\s+\{(.+?)\}/gs
-const membersReg = /^\s+([^\s]+)\s+\w+;/gm
-const dynTypesReg = /.*\[\].*|^(?!address|bool|bytes[\d]+|u?int[\d]*)/
+const membersReg = /^\s+(\S+)\s+\w+;/gm
+const dynTypesReg = /.*\[\].*|^(?!address|bool|bytes\d+|u?int\d*)/
 const fnReg = /function (\w+)\((.*?)\).*/g
 
 const slots = {
