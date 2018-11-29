@@ -175,6 +175,15 @@ contract MatryxPlatform {
         info.token = token;
     }
 
+    /// @dev Sets the owner of the platform
+    /// @param newOwner  New owner address
+    function setOwner(address newOwner) external {
+        require(msg.sender == info.owner, "Must be Platform owner");
+        require(newOwner != address(0));
+
+        info.owner = newOwner;
+    }
+
     /// @dev Withdraws any Ether from Platform
     function withdrawEther() external {
         require(msg.sender == info.owner, "Must be Platform owner");
@@ -200,7 +209,8 @@ contract MatryxPlatform {
 interface IMatryxPlatform {
     function getInfo() external view returns (MatryxPlatform.Info);
     function setVersion(uint256) external;
-    function upgradeToken(uint256, address) external;
+    function upgradeToken(address) external;
+    function setOwner(address) external;
     function withdrawEther() external;
     function withdrawTokens(address) external;
 
