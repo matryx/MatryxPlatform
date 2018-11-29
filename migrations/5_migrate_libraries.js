@@ -17,6 +17,5 @@ module.exports = function (deployer) {
   deployer.deploy(LibRound, { overwrite: false })
   deployer.deploy(LibSubmission, { overwrite: false })
 
-  deployer.link(LibTournament, LibPlatform)
   deployer.deploy(LibPlatform, { overwrite: false })
 }
