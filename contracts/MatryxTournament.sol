@@ -270,6 +270,10 @@ library LibTournament {
     function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails sDetails) public returns (address) {
         require(sDetails.distribution.length == sDetails.contributors.length + 1, "Must include distribution for each contributor and the owner");
 
+        for (uint256 i = 0; i < sDetails.references.length; i++) {
+            require(data.submissions[sDetails.references[i]].info.owner != 0x0, "Reference must be an existing submission");
+        }
+
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
 
