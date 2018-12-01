@@ -226,7 +226,8 @@ library LibTournament {
     function createRound(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
 
-        address platform = IMatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        address platform = IMatryxSystem(info.system).getContract(version, "MatryxPlatform");
         require(address(this) == platform, "Must be platform");
         require(data.balanceOf[self] >= rDetails.bounty, "Insufficient funds for Round");
 
@@ -695,7 +696,8 @@ library LibTournamentHelper {
         }
         if (tDetails.category != 0x0) {
             // get platform address
-            address platform = IMatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
+            uint256 version = IMatryxSystem(info.system).getVersion();
+            address platform = IMatryxSystem(info.system).getContract(version, "MatryxPlatform");
             IMatryxPlatform(platform).removeTournamentFromCategory(self);
             IMatryxPlatform(platform).addTournamentToCategory(self, tDetails.category);
         }

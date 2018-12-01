@@ -25,7 +25,7 @@ const fnReg = /function (\w+)\((.*?)\).*/g
 
 const slots = {
   info: 0,
-  data: 4
+  data: 3
 }
 
 const structs = {}

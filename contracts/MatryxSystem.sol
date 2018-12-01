@@ -153,10 +153,11 @@ contract MatryxSystem is Ownable() {
         contractTypeToLibraryName[cType] = lName;
     }
 
-    /// @dev Returns the library name for a given contract type
-    /// @param cType  Contract type
-    /// @return       Library name
-    function getLibraryName(uint256 cType) public view returns (bytes32) {
+    /// @dev Returns the library name for a given contract address
+    /// @param cAddress  Contract address
+    /// @return          Library name
+    function getLibraryName(address cAddress) public view returns (bytes32) {
+        uint256 cType = contractType[cAddress];
         return contractTypeToLibraryName[cType];
     }
 }
@@ -174,7 +175,7 @@ interface IMatryxSystem {
     function setContractType(address cAddress, uint256 cType) external;
     function getContractType(address cAddress) external view returns (uint256);
     function setLibraryName(uint256 cType, bytes32 lName) external;
-    function getLibraryName(uint256 cType) external view returns (bytes32);
+    function getLibraryName(address cAddress) external view returns (bytes32);
 }
 
 library LibSystem {

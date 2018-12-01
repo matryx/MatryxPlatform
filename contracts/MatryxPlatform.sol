@@ -16,7 +16,6 @@ contract MatryxPlatform {
 
     struct Info {
         address system;
-        uint256 version;
         address token;
         address owner;
     }
@@ -40,11 +39,10 @@ contract MatryxPlatform {
     }
 
     Info info; // slot 0
-    Data data; // slot 4
+    Data data; // slot 3
 
     constructor(address system, address token) public {
         info.system = system;
-        info.version = 1;
         info.token = token;
         info.owner = msg.sender;
     }
@@ -64,15 +62,15 @@ contract MatryxPlatform {
 
             let ptr := mload(0x40)                                              // scratch space for calldata
             let system := sload(info_slot)                                      // load info.system address
-            let version := sload(add(info_slot, 1))                             // load info.version number
 
-            mstore(0, mul(0xe11aa6a2, offset))                                  // getContractType(address)
-            mstore(0x04, caller)                                                // arg 0 - contract
-            let res := call(gas, system, 0, 0, 0x24, 0x04, 0x20)                // call system.getContractType
+            mstore(0, mul(0x0d8e6e2c, offset))                                  // getVersion()
+            let res := call(gas, system, 0, 0, 0x04, 0, 0x20)                   // call system getVersion
             if iszero(res) { revert(0, 0) }                                     // safety check
+            let version := mload(0)                                             // store version from response
 
-            mstore(0, mul(0xe4682204, offset))                                  // getLibraryName(uint256)
-            res := call(gas, system, 0, 0, 0x24, 0, 0x20)                       // call system getLibraryName (arg 0 already in 0x04)
+            mstore(0, mul(0xa8bc3927, offset))                                  // getLibraryName(address)
+            mstore(0x04, caller)                                                // arg 0 - contract
+            res := call(gas, system, 0, 0, 0x24, 0, 0x20)                       // call system getLibraryName
             if iszero(res) { revert(0, 0) }                                     // safety check
             let libName := mload(0)                                             // store libName from response
 
@@ -133,8 +131,7 @@ contract MatryxPlatform {
 
             calldatacopy(ptr2, cdOffset, sub(calldatasize, cdOffset))           // copy calldata after injected data storage
 
-            // update dynamic params location
-            for { let i := 0 } lt(i, dynParams_len) { i := add(i, 1) } {
+            for { let i := 0 } lt(i, dynParams_len) { i := add(i, 1) } {        // loop through params and update dynamic param locations
                 let idx := mload(add(m_dynParams, mul(i, 0x20)))                // get dynParam index in parameters
                 let loc := add(ptr2, mul(idx, 0x20))                            // get location in memory of dynParam
                 mstore(loc, add(mload(loc), mul(add(injParams_len, 2), 0x20)))  // shift dynParam location by num injected
@@ -158,11 +155,13 @@ contract MatryxPlatform {
         return info;
     }
 
-    /// @dev Sets the Version
-    /// @param version  New version
-    function setVersion(uint256 version) external {
+    /// @dev Sets the owner of the platform
+    /// @param newOwner  New owner address
+    function setOwner(address newOwner) external {
         require(msg.sender == info.owner, "Must be Platform owner");
-        info.version = version;
+        require(newOwner != address(0));
+
+        info.owner = newOwner;
     }
 
     /// @dev Sets the Token address
@@ -173,15 +172,6 @@ contract MatryxPlatform {
 
         require(IToken(token).balanceOf(this) == data.totalBalance, "Token address must match upgraded token");
         info.token = token;
-    }
-
-    /// @dev Sets the owner of the platform
-    /// @param newOwner  New owner address
-    function setOwner(address newOwner) external {
-        require(msg.sender == info.owner, "Must be Platform owner");
-        require(newOwner != address(0));
-
-        info.owner = newOwner;
     }
 
     /// @dev Withdraws any Ether from Platform
@@ -208,9 +198,8 @@ contract MatryxPlatform {
 
 interface IMatryxPlatform {
     function getInfo() external view returns (MatryxPlatform.Info);
-    function setVersion(uint256) external;
-    function upgradeToken(address) external;
     function setOwner(address) external;
+    function upgradeToken(address) external;
     function withdrawEther() external;
     function withdrawTokens(address) external;
 
@@ -306,7 +295,8 @@ library LibPlatform {
     /// @param count       Number of Tournaments to return. If 0, all
     /// @return            Array of Tournament addresses
     function getTournaments(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
-        address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage tournaments = data.allTournaments;
 
         assembly {
@@ -334,7 +324,8 @@ library LibPlatform {
     /// @param count       Number of User to return. If 0, all
     /// @return          Array of Tournament addresses for given category
     function getTournamentsByCategory(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category, uint256 startIndex, uint256 count) public view returns (address[]) {
-        address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage cat = data.categories[category];
 
         assembly {
@@ -361,7 +352,8 @@ library LibPlatform {
     /// @param count       Number of User to return. If 0, all
     /// @return            Array of User addresses
     function getUsers(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
-        address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage users = data.allUsers;
 
         assembly {
@@ -388,7 +380,8 @@ library LibPlatform {
     /// @param count       Number of Category to return. If 0, all
     /// @return            Array of Categories
     function getCategories(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (bytes32[]) {
-        address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         bytes32[] storage allCategories = data.allCategories;
 
         assembly {
@@ -452,7 +445,9 @@ library LibPlatform {
     function removeTournamentFromCategory(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress) public {
         require(sender == platform || IMatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
 
-        address libUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
+
         bytes32 category = data.tournaments[tAddress].details.category;
         address[] storage categoryList = data.categories[category];
         uint256 index;
@@ -485,29 +480,29 @@ library LibPlatform {
         require(data.users[sender].exists, "Must have entered Matryx");
         require(tDetails.bounty > 0, "Tournament bounty must be greater than 0");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
-        require(IToken(info.token).allowance(sender, this) >= tDetails.bounty, "Insufficient MTX");
+        require(IToken(info.token).allowance(sender, platform) >= tDetails.bounty, "Insufficient MTX");
 
-        address tAddress = new MatryxTournament(info.version, info.system);
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        address tAddress = new MatryxTournament(version, info.system);
 
         IMatryxSystem(info.system).setContractType(tAddress, uint256(LibSystem.ContractType.Tournament));
         data.allTournaments.push(tAddress);
-        addTournamentToCategory(address(this), platform, info, data, tAddress, tDetails.category);
+        addTournamentToCategory(platform, platform, info, data, tAddress, tDetails.category);
 
         LibUser.UserData storage user = data.users[sender];
         user.tournaments.push(tAddress);
         user.totalSpent = user.totalSpent.add(tDetails.bounty);
 
         LibTournament.TournamentData storage tournament = data.tournaments[tAddress];
-        tournament.info.version = info.version;
+        tournament.info.version = version;
         tournament.info.owner = sender;
         tournament.details = tDetails;
 
         data.totalBalance = data.totalBalance.add(tDetails.bounty);
         data.balanceOf[tAddress] = tDetails.bounty;
-        require(IToken(info.token).transferFrom(sender, this, tDetails.bounty), "Transfer failed");
+        require(IToken(info.token).transferFrom(sender, platform, tDetails.bounty), "Transfer failed");
 
-        bytes32 libName = IMatryxSystem(info.system).getLibraryName(uint256(LibSystem.ContractType.Tournament));
-        address libTournament = IMatryxSystem(info.system).getContract(info.version, libName);
+        address libTournament = IMatryxSystem(info.system).getContract(version, "LibTournament");
         assembly {
             let offset := 0x100000000000000000000000000000000000000000000000000000000
             let ptr := mload(0x40)

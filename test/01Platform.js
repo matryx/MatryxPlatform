@@ -25,18 +25,6 @@ contract('Platform Testing', function(accounts) {
     assert.equal(info.owner.toLowerCase(), accounts[0], 'Unable to get platform info')
   })
 
-  it('Unable to set platform version from another account', async function() {
-    try {
-      platform.accountNumber = 2
-      await platform.setVersion(2)
-      assert.fail('Should not have been able to set platform version from this account')
-    } catch (error) {
-      platform.accountNumber = 0
-      const revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Successfully unable to set platform version')
-    }
-  })
-
   it('Unable to set platform token from another account', async function() {
     try {
       platform.accountNumber = 2

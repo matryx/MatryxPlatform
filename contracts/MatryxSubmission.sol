@@ -344,7 +344,8 @@ library LibSubmission {
     function removeContributorsAndReferences(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address[] contribs, address[] refs) public {
         onlyOwner(self, sender, data);
 
-        address LibUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        address LibUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         LibSubmission.SubmissionDetails storage details = data.submissions[self].details;
 
         // Remove contributors and corresponding reward distribution values from submission data

@@ -36,9 +36,8 @@ contract MatryxTrinity {
             if iszero(res) { revert(0, 0) }                                     // safety check
             platform := mload(0)                                                // load platform address
 
-            calldatacopy(ptr, 0, 0x04)                                          // copy signature
-
             // forward method to MatryxPlatform, injecting msg.sender
+            calldatacopy(ptr, 0, 0x04)                                          // copy signature
             mstore(add(ptr, 0x04), caller)                                      // inject msg.sender
             mstore(add(ptr, 0x24), version)                                     // inject version
             calldatacopy(add(ptr, 0x44), 0x04, sub(calldatasize, 0x04))         // copy calldata for forwarding

@@ -189,6 +189,7 @@ contract('Submission Testing with No Contributors and References', function(acco
 contract('Submission Testing with Contributors', function(accounts) {
   let t
   let s
+  let s2
 
   it('Able to create a Submission with Contributors and References', async function() {
     platform = (await init()).platform
@@ -200,8 +201,10 @@ contract('Submission Testing with Contributors', function(accounts) {
     }
 
     t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    s = await createSubmission(t, true, 1)
+    s = await createSubmission(t, false, 1)
+    s2 = await createSubmission(t, false, 2)
     s = Contract(s.address, IMatryxSubmission, 1)
+    s2 = Contract(s2.address, IMatryxSubmission, 2)
 
     assert.ok(s.address, 'Submission is not valid.')
   })
@@ -222,7 +225,7 @@ contract('Submission Testing with Contributors', function(accounts) {
 
   it('Contributors have Download Permissions', async function() {
     // add accounts[3] as a new contributor
-    await s.addContributorsAndReferences([accounts[3]], [1], [])
+    await s.addContributorsAndReferences([accounts[3]], [1], [s2.address])
     await setup(artifacts, web3, 3, true)
 
     // check contributors can unlock files
@@ -236,17 +239,17 @@ contract('Submission Testing with Contributors', function(accounts) {
 
   it('Submission has References', async function() {
     let ref = await s.getReferences()
-    assert.equal(ref.length, 10, 'References are not correct')
+    assert.equal(ref.length, 1, 'References are not correct')
   })
 
   it('Submission has Contributors', async function() {
     let contribs = await s.getContributors()
-    assert.equal(contribs.length, 11, 'References are not correct')
+    assert.equal(contribs.length, 1, 'Contributors are not correct')
   })
 
   it('Get Contributor Reward Distribution', async function() {
     let crd = await s.getDistribution()
-    assert.equal(crd.length, 12, 'Contributor reward distribution incorrect')
+    assert.equal(crd.length, 2, 'Contributor reward distribution incorrect')
   })
 
 })
