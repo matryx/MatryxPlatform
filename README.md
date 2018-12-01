@@ -110,7 +110,7 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
 
 ## Architecture Diagram
 
-![architecture diagram](https://github.com/matryx/MatryxPlatform/blob/audit/assets/ArchitectureDiagram.svg)
+![architecture diagram](https://github.com/matryx/MatryxPlatform/blob/master/assets/ArchitectureDiagram.svg)
 
 [draw.io diagram](https://www.draw.io/?lightbox=1&highlight=0000ff&layers=1&nav=1&page=0&title=Matryx%20Architecture#Uhttps%3A%2F%2Fdrive.google.com%2Fuc%3Fid%3D1KormLKjy1W3FZkiSdEpGdmwwvE9uNYSp%26export%3Ddownload)
 
