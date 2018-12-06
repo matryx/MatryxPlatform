@@ -62,6 +62,7 @@ interface IMatryxUser {
     function getTournaments(address user) external view returns (address[]);
     function getTournamentsEntered(address user) external view returns (address[]);
     function getSubmissions(address user) external view returns (address[]);
+    function getSubmissionsByTournament(address user, address tAddress) external view returns (address[]);
     function getContributedTo(address user) external view returns (address[]);
     function getUnlockedFiles(address user) external view returns (address[]);
 }
@@ -111,6 +112,28 @@ library LibUser {
 
     function getSubmissions(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[]) {
         return data.users[user].submissions;
+    }
+
+    function getSubmissionsByTournament(address, address, MatryxPlatform.Data storage data, address user, address tAddress) public view returns (address[]) {
+        address[] storage submissions = data.users[user].submissions;
+
+        uint256 tSubCount = 0;
+        for (uint256 i = 0; i < submissions.length; i++) {
+            if (data.submissions[submissions[i]].info.tournament == tAddress) {
+                tSubCount++;
+            }
+        }
+
+        uint256 j = 0;
+        address[] memory tSubs = new address[](tSubCount);
+
+        for (i = 0; i < submissions.length; i++) {
+            if (data.submissions[submissions[i]].info.tournament == tAddress) {
+                tSubs[j++] = submissions[i];
+            }
+        }
+
+        return tSubs;
     }
 
     function getContributedTo(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[]) {
