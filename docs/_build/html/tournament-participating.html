@@ -89,6 +89,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#creating-a-submission">Creating a Submission</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#editing-your-submissions">Editing your Submissions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#exiting-a-tournament">Exiting a Tournament</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#viewing-other-submissions">Viewing Other Submissions</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tournament-admin.html">Tournament Administration</a></li>
@@ -164,43 +165,38 @@
 <h1>Participating in a Tournament<a class="headerlink" href="#participating-in-a-tournament" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="creating-a-submission">
 <h2>Creating a Submission<a class="headerlink" href="#creating-a-submission" title="Permalink to this headline">¶</a></h2>
-<p>To create a submission, you will first need to assemble all of your submission details and content as follows:</p>
+<p>To create a submission, you will first need to assemble all of your submission data as follows:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionData
 {
     bytes32[3] title;
-    bytes32[2] descriptionHash;
+    bytes32[2] descHash;
     bytes32[2] fileHash;
-    uint256 timeSubmitted;
-    uint256 timeUpdated;
-}
-</pre></div>
-</div>
-<p>Here you have the opportunity to cite any contributors or references in your submission and specify the intended reward distribution among all the contributors (expressed as a percentage or a proportion). This information should be included into the submission as follows:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ContributorsAndReferences
-{
+    uint256[] distribution;
     address[] contributors;
-    uint256[] contributorRewardDistribution;
     address[] references;
 }
 </pre></div>
 </div>
+<p>Here you have the opportunity to cite any contributors to your submission and specify the intended reward distribution among them (expressed as a percentage or a proportion). The first entry in the <code class="docutils literal notranslate"><span class="pre">distribution</span></code> array represents the percentage of the reward that will be assigned to the submission owner (yourself), and any subsequent entries represent the percentage of the reward that will be assigned to each of your contributors, in the same order as they appear in your <code class="docutils literal notranslate"><span class="pre">contributors</span></code> array.
+You can also cite other Matryx submissions in your submission’s <code class="docutils literal notranslate"><span class="pre">references</span></code> array by passing in their addresses.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The contributors and contributor reward distribution arrays must have the same number of entries.</p>
+<p class="last">The <code class="docutils literal notranslate"><span class="pre">distribution</span></code> array will always have one more entry than your <code class="docutils literal notranslate"><span class="pre">contributors</span></code> array, since the first entry in the <code class="docutils literal notranslate"><span class="pre">distribution</span></code> array includes information about the submission owner.</p>
 </div>
-<p>This is the <code class="docutils literal notranslate"><span class="pre">createSubmission</span></code> function signature:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function createSubmission(submissionData, contributorsAndReferences)
+<p>This is the <code class="docutils literal notranslate"><span class="pre">createSubmission</span></code> function call:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.createSubmission(submissionData)
 </pre></div>
 </div>
+<p>You are now ready to start making original submissions to any Matryx tournament!</p>
 </div>
 <div class="section" id="editing-your-submissions">
 <h2>Editing your Submissions<a class="headerlink" href="#editing-your-submissions" title="Permalink to this headline">¶</a></h2>
-<p>As long as the current round remains open, you are able to edit any submissions you have made. To modify the data of your submisison, you can call the <code class="docutils literal notranslate"><span class="pre">updateData</span></code> function like this:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateData(submissionModificationData)
+<p>As long as the current round remains open, you are able to edit any submissions you have made in that round. To modify the data of your submission, you can call the <code class="docutils literal notranslate"><span class="pre">updateDetails</span></code> function like this:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateDetails(submissionDetails)
 </pre></div>
 </div>
-<p>Where <code class="docutils literal notranslate"><span class="pre">SubmissionModificationData</span></code> is the following:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionModificationData
+<p>Where <code class="docutils literal notranslate"><span class="pre">submissionDetails</span></code> is the following:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionDetails
 {
     bytes32[3] title;
     bytes32[2] descriptionHash;
@@ -208,44 +204,41 @@
 }
 </pre></div>
 </div>
-<p>Similarly, you can update your submission’s contributors and references with the following calls:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateContributors(contributorsModificationData)
-mySubmission.updateReferences(referencesModificationData)
+<p>Similarly, you can add or remove contributors and references with the following calls:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.addContributorsAndReferences(contributors, distribution, references)
+mySubmission.removeContributorsAndReferences(contributors, references)
 </pre></div>
 </div>
-<p>Where <code class="docutils literal notranslate"><span class="pre">ContributorsModificationData</span></code> is</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ContributorsModificationData
-{
-    address[] contributorsToAdd;
-    uint256[] contributorRewardDistribution;
-    uint256[] contributorsToRemove;
-}
-</pre></div>
-</div>
-<p>and <code class="docutils literal notranslate"><span class="pre">ReferencesModificationData</span></code> is</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ReferencesModificationData
-{
-    address[] referencesToAdd;
-    uint256[] referencesToRemove;
-}
-</pre></div>
+<p>You can add or remove contributors and references to your submission at any time.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The distribution values assinged to any contributors that you remove will be automatically removed from the distribution array as well.</p>
 </div>
 </div>
 <div class="section" id="exiting-a-tournament">
 <h2>Exiting a Tournament<a class="headerlink" href="#exiting-a-tournament" title="Permalink to this headline">¶</a></h2>
-<p>You can choose to exit an ongoing tournament at any time. When you exit, you can claim the entry fee that you paid when you first entered the tournament with this call:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.collectMyEntryFee()
+<p>You can choose to exit an ongoing tournament at any time with the following call:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.exit()
 </pre></div>
 </div>
+<p>When you exit the tournament, the entry fee that you paid when you first entered will be returned to you automatically.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">If you later decide to enter the tournament again, you will have to pay the current tournament entry fee before you’re able to make any submissions.</p>
 </div>
-<p>If a tournament you are currently participating in happens to become Abandoned, you can collect your share of the remaining tournament bounty with the following call:</p>
+<p>If a tournament you are currently participating in happens to become Abandoned, you can collect your share of the remaining tournament bounty, as well as your original entry fee, with the following call:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.withdrawFromAbandoned()
 </pre></div>
 </div>
-<p>Your tournament entry fee will also be returned to you when you make this call.</p>
+</div>
+<div class="section" id="viewing-other-submissions">
+<h2>Viewing Other Submissions<a class="headerlink" href="#viewing-other-submissions" title="Permalink to this headline">¶</a></h2>
+<p>In order to incentivize open collaboration between participants on the Matryx platform, all submissions are viewable to Matryx entrants after the round review period is over. However, in order to prevent inter-round plagiarism or inadequate credit attribution between different participants, a user has to first unlock a submission’s files in order to view them. The list users that have unlocked a submission’s files are stored on the Matryx platform. This ensures that, in the event of a dispute over the originality of a piece of work, the platform data can prove whether or not a user has at least viewed another user’s submission files.</p>
+<p>To see what other people have been working on, you can make the following call on any submission:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>submission.unlockFile()
+</pre></div>
+</div>
+<p>The submission’s file hash will then become available to you.</p>
 </div>
 </div>
 

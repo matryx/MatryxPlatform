@@ -166,18 +166,18 @@
 <h1>Tournament Administration<a class="headerlink" href="#tournament-administration" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="creating-a-tournament">
 <h2>Creating a Tournament<a class="headerlink" href="#creating-a-tournament" title="Permalink to this headline">¶</a></h2>
-<p>To create a tournament, you can call the <code class="docutils literal notranslate"><span class="pre">createTournament</span></code> function on the platform. The function signature is:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function createTournament(tournamentData, roundData) returns (address _tournamentAddress)
+<p>To create a tournament, you can call the <code class="docutils literal notranslate"><span class="pre">createTournament</span></code> function on the platform like this:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.createTournament(tournamentData, roundData)
 </pre></div>
 </div>
 <p>Where <code class="docutils literal notranslate"><span class="pre">TournamentData</span></code> and <code class="docutils literal notranslate"><span class="pre">RoundData</span></code> are stuctured as follows:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct TournamentData
 {
-    bytes32 category;
     bytes32[3] title;
-    bytes32[2] descriptionHash;
+    bytes32 category;
+    bytes32[2] descHash;
     bytes32[2] fileHash;
-    uint256 initialBounty;
+    uint256 bounty;
     uint256 entryFee;
 }
 
@@ -185,9 +185,8 @@ struct RoundData
 {
     uint256 start;
     uint256 end;
-    uint256 reviewPeriodDuration;
+    uint256 review;
     uint256 bounty;
-    bool closed;
 }
 </pre></div>
 </div>
@@ -197,38 +196,28 @@ struct RoundData
 <p class="first admonition-title">Note</p>
 <p class="last">The tournament and round bounty will be visible to any users looking to enter your tournament, as well as the tournament and round details.</p>
 </div>
-</div>
-<div class="section" id="your-tournaments">
-<h2>Your Tournaments<a class="headerlink" href="#your-tournaments" title="Permalink to this headline">¶</a></h2>
-<p>Congratulations, you have now created your first tournament! You can access all of your tournaments with the following call to the platform:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.myTournaments()
-</pre></div>
-</div>
-<p>The last address that this call returns is the address of your most recently created tournament.
-You can also check the current state of your tournament with</p>
+<p>You can always check the current state of your tournament with</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.getState()
 </pre></div>
 </div>
 <p>This will tell you whether your tournament is Not Yet Open, On Hold, Open, Closed, or Abandoned.</p>
 </div>
+<div class="section" id="your-tournaments">
+<h2>Your Tournaments<a class="headerlink" href="#your-tournaments" title="Permalink to this headline">¶</a></h2>
+<p>Congratulations, you have now created your first tournament! You can access all of your user information, including any tournaments that you have created or entered, with the following calls to the MatryxUser contract:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>users.getTournaments(userAddress)
+users.getTournamentsEntered(userAddress)
+</pre></div>
+</div>
+<p>If you pass your own address as the <code class="docutils literal notranslate"><span class="pre">userAddress</span></code>, the last address that the <code class="docutils literal notranslate"><span class="pre">getTournaments</span></code> call returns is the address of your most recently created tournament.</p>
+</div>
 <div class="section" id="updating-tournament-details">
 <h2>Updating Tournament Details<a class="headerlink" href="#updating-tournament-details" title="Permalink to this headline">¶</a></h2>
-<p>To edit the details of your tournament, you can call the <code class="docutils literal notranslate"><span class="pre">update</span></code> function. The function signature is:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function update(tournamentModificationData)
+<p>To edit the data of your tournament, you can call the <code class="docutils literal notranslate"><span class="pre">updateDetails</span></code> function as follows:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.updateDetails(tournamentData)
 </pre></div>
 </div>
-<p>Where <code class="docutils literal notranslate"><span class="pre">TournamentModificationData</span></code> is the following:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct TournamentModificationData
-{
-    bytes32 category;
-    bytes32[3] title;
-    bytes32[2] descriptionHash;
-    bytes32[2] fileHash;
-    uint256 entryFee;
-    bool entryFeeChanged;
-}
-</pre></div>
-</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">tournamentData</span></code> is the same data struct used to create the tournament originally. The <code class="docutils literal notranslate"><span class="pre">bounty</span></code> field, however, will not change when you try to modify the tournament’s data.</p>
 </div>
 <div class="section" id="adding-funds-to-your-tournament">
 <h2>Adding Funds to your Tournament<a class="headerlink" href="#adding-funds-to-your-tournament" title="Permalink to this headline">¶</a></h2>
@@ -236,29 +225,34 @@ You can also check the current state of your tournament with</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.addFunds(1)
 </pre></div>
 </div>
+<p>This function transfers funds to the specified tournament. To allocate these new funds to the current round, you can call the <code class="docutils literal notranslate"><span class="pre">transferToRound</span></code> function.</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.transferToRound(1)
+</pre></div>
+</div>
+<p>The added funds will now also be distributed to this round’s winners when it is time to reward their submissions.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">Remember that you cannot remove funds from a tournament’s bounty after you’ve added them.</p>
+<p class="last">Remember that you cannot remove funds from a tournament’s bounty after you’ve added them or remove funds from a round after it has already started.</p>
 </div>
 </div>
 <div class="section" id="choosing-winners">
 <h2>Choosing Winners<a class="headerlink" href="#choosing-winners" title="Permalink to this headline">¶</a></h2>
 <p>Once the round enters its review period, users will no longer be able to make any more submissions, and all the submissions that participants have made will become accessible to you. It is now time to review the submissions and select some winners.</p>
 <p>To get all the submissions made to this round, you can call</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>round.getSubmissions()
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>round.getSubmissions(0, 0)
 </pre></div>
 </div>
-<p>To choose your round winners, you can call <code class="docutils literal notranslate"><span class="pre">selectWinners</span></code> on the tournament. The function signature of <code class="docutils literal notranslate"><span class="pre">selectWinners</span></code> is the following:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function selectWinners(selectWinnersData, roundData)
+<p>The first parameter indicates the starting index of the submissions to return, and the second parameter indicates the number of submissions to return starting at that index. To get all of the round’s submissions, you can use the parameters <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code>.</p>
+<p>To choose your round winners, you can call <code class="docutils literal notranslate"><span class="pre">selectWinners</span></code> on the tournament as follows:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.selectWinners(winnersData, roundData)
 </pre></div>
 </div>
-<p>Where <code class="docutils literal notranslate"><span class="pre">SelectWinnersData</span></code> is</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SelectWinnersData
+<p>Where <code class="docutils literal notranslate"><span class="pre">winnersData</span></code> is</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct WinnersData
 {
-    address[] winningSubmissions;
-    uint256[] rewardDistribution;
-    uint256 selectWinnerAction;
-    uint256 rewardDistributionTotal;
+    address[] submissions;
+    uint256[] distribution;
+    uint256 action;
 }
 </pre></div>
 </div>
@@ -267,22 +261,20 @@ You can also check the current state of your tournament with</p>
 {
     uint256 start;
     uint256 end;
-    uint256 reviewPeriodDuration;
+    uint256 review;
     uint256 bounty;
-    bool closed;
 }
 </pre></div>
 </div>
-<p>In <code class="docutils literal notranslate"><span class="pre">SelectWinnersData</span></code>, you can specify which submissions get rewarded and how much MTX is assigned to each one as the first two parameters of the struct; the first parameter contains all the winning submissions’ addresses, and the second contains the reward each one will get, respectively, expressed as a percentage or a propoprtion of the total round bounty.</p>
-<p>When you choose your round winners, you can choose to wait until the end of the review period for a new round to start automatically, start the next round immediately after selecting the winners, or close the tournament. The action you choose to proceed with (<code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code> or <code class="docutils literal notranslate"><span class="pre">2</span></code>, respectively) is passed as the third parameter. If you choose to start the next round immediately when you select the winners, it will be initialized with the round data that you provide. If you choose to wait until the end of the review period, the next round will automatically be created as an identical copy of the last round.
-The last parameter is simply the sum of all the values in your <code class="docutils literal notranslate"><span class="pre">rewardDistribution</span></code> array. This value is also calulated internally within the platform later, so feel free to ignore it for now.</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">winnersData</span></code>, you can specify which submissions get rewarded and how much MTX is assigned to each one; the first parameter contains all the winning submissions’ addresses, and the second contains the reward each one will get, respectively, expressed as a percentage or a propoprtion of the total round bounty.</p>
+<p>When you select your round winners, you can choose to wait until the end of the review period for a new round to start automatically, start the next round immediately after selecting the winners, or close the tournament. The action you choose to proceed with (<code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code> or <code class="docutils literal notranslate"><span class="pre">2</span></code>, respectively) is passed as the third parameter. If you choose to start the next round immediately when you select the winners, it will be initialized with the round data that you provide. If you choose to wait until the end of the review period, the next round will automatically be created as an identical copy of the last round.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">Once you close the tournament, you can’t open it up again. Any remaining funds that might still be in the tournament’s balance will be evenly distributed among the last round’s winners when you close the tournament.</p>
 </div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">If the round’s review period ends and you still have not chosen any winners, the tournament will be considered Abandoned, and any remaining funds in the tournament’s balance will be evenly distributed among all the round participants automatically.</p>
+<p class="last">If the round’s review period ends and you still have not chosen any winners, the tournament will be considered Abandoned, and any remaining funds in the tournament’s balance will be evenly distributed among all the tournament participants automatically.</p>
 </div>
 </div>
 </div>
