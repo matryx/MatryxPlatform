@@ -4,7 +4,7 @@ Reputation System
 User Reputation
 ^^^^^^^^^^^^^^^
 
-Every Matryx user has a number of potive and negative votes associated with their address that represents the number of positive or negative interactions that they have had on the platform.
+Every Matryx user has a number of positive and negative votes associated with their address that represents the number of positive or negative interactions that they have had on the platform.
 These votes are only given by other Matryx platform users. To check a user's positive and negative vote count, you can make the following call to the MatryxUser contract:
 
 .. code-block:: Solidity
