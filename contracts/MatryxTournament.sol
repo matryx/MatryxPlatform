@@ -28,9 +28,6 @@ interface IMatryxTournament {
     function getRounds() external view returns (address[]);
     function getDetails() external view returns (LibTournament.TournamentDetails);
 
-<<<<<<< HEAD
-    function enterTournament() external;
-=======
     function getBalance() external view returns (uint256);
     function getState() external view returns (uint256);
     function getCurrentRound() external view returns (uint256, address);
@@ -42,7 +39,6 @@ interface IMatryxTournament {
 
     function enter() external;
     function exit() external;
->>>>>>> 759b19ed504329df4a864fe7a2fe464c113e9cca
     function createSubmission(LibSubmission.SubmissionDetails) external returns (address);
 
     function updateDetails(LibTournament.TournamentDetails) external;
@@ -227,11 +223,7 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param rDetails  Details of the Round being created
     /// @return          Address of the created Round
-<<<<<<< HEAD
-    function createRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) internal returns (address) {
-=======
     function createRound(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails rDetails) public returns (address) {
->>>>>>> 759b19ed504329df4a864fe7a2fe464c113e9cca
         LibTournament.TournamentData storage tournament = data.tournaments[self];
 
         uint256 version = IMatryxSystem(info.system).getVersion();
