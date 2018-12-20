@@ -85,7 +85,7 @@
               <p class="caption"><span class="caption-text">API Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Diving into Matryx</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#becoming-a-matryxpeer">Becoming a MatryxPeer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#entering-matryx">Entering Matryx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#approving-platform-transactions">Approving Platform Transactions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#entering-a-tournament">Entering a Tournament</a></li>
 </ul>
@@ -164,13 +164,13 @@
 <h1>Diving into Matryx<a class="headerlink" href="#diving-into-matryx" title="Permalink to this headline">¶</a></h1>
 <p>Matryx is a bounty-based platform that enables and incentivizes decentralized scientific collaboration in the form of tournaments and submissions, where all users participating in a tournament receive credit for their collaborations, and the tournament bounty is rightfully distributed among the chosen winners.</p>
 <p>Welcome!</p>
-<div class="section" id="becoming-a-matryxpeer">
-<h2>Becoming a MatryxPeer<a class="headerlink" href="#becoming-a-matryxpeer" title="Permalink to this headline">¶</a></h2>
-<p>To start using the platform, you first need to create a <code class="docutils literal notranslate"><span class="pre">MatryxPeer</span></code> for the Ethereum address you intend to use it with. You can do this as many times as you like with as many Ethereum addresses as you have, although the process does cost a bit of gas, so we’re not sure why you would. That said, creating a peer is as simple as running the following:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.createPeer({gas: platform.createPeer.estimateGas()})
+<div class="section" id="entering-matryx">
+<h2>Entering Matryx<a class="headerlink" href="#entering-matryx" title="Permalink to this headline">¶</a></h2>
+<p>To start using the platform, you first need to enter Matryx with the Ethereum address that you intend to use on the platform. Entering Matryx is as simple as running the following:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.enterMatryx()
 </pre></div>
 </div>
-<p>Congrats! Now that you’ve created a peer, anytime you use the platform the positive and negative trust you earn through interacting with others will be aggregated by this <code class="docutils literal notranslate"><span class="pre">MatryxPeer</span></code> representation you’ve just created. For the <code class="docutils literal notranslate"><span class="pre">MatryxPlatform</span></code> Beta, we simply use <code class="docutils literal notranslate"><span class="pre">MatryxPeer</span></code> as a way to ensure that you cite your sources.</p>
+<p>Congrats! You have now entered the Matryx platform. We’re glad to have you on board.</p>
 </div>
 <div class="section" id="approving-platform-transactions">
 <h2>Approving Platform Transactions<a class="headerlink" href="#approving-platform-transactions" title="Permalink to this headline">¶</a></h2>
@@ -178,19 +178,20 @@
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>token.approve(MatryxPlatform.address, tokens)
 </pre></div>
 </div>
+<p>Great! Now that you know how to approve platform transactions, you can create tournaments, make submissions, and interact with other platform users.</p>
 </div>
 <div class="section" id="entering-a-tournament">
 <h2>Entering a Tournament<a class="headerlink" href="#entering-a-tournament" title="Permalink to this headline">¶</a></h2>
-<p>Now that you’ve done this, you should be able to enter the tournament. This is a call to the platform itself and goes like</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.enterTournament(tournament.address)
+<p>To enter a tournament that you’d like to participate in, you can make the following call:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.enter()
 </pre></div>
 </div>
-<p>Whenever you enter a tournament, you will first have to pay the tournament entry fee designated by the tournament creator. To check a tournament’s entry fee in advance, you can call</p>
+<p>Whenever you enter a tournament, you will have to pay the tournament entry fee designated by the tournament creator, so you need to first approve at least that many MTX tokens. To check a tournament’s entry fee before entering, you can call</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.getEntryFee()
 </pre></div>
 </div>
-<p>The value returned here is the Wei equivalent of MTX, so a single unit is equal to one-eighteenth of a MTX. This fee is incurred solely to prevent malicious actors from attemping a cross-tournament Sybil attack and will be returned to you at the end of each tournament you enter.</p>
-<p>Congratulations! You’ve now entered into your first Matryx Tournament! Assemble a team; Let’s save the world!!</p>
+<p>The value returned here is the Wei equivalent of MTX, so a sinlge MTX has 1e18 digit precision. This fee is incurred solely to prevent malicious actors from attemping a cross-tournament Sybil attack, and it will be returned to you at the end of the tournament (or whenever you choose to exit the tournament).</p>
+<p>Congratulations! You have now entered your first Matryx tournament. Assemble a team; let’s get solving!</p>
 </div>
 </div>
 
@@ -214,7 +215,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Max Howard, Sam Hessenauer.
+        &copy; Copyright 2018, Max Howard, Sam Hessenauer
 
     </p>
   </div>
@@ -233,21 +234,13 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.2',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
 
   
 

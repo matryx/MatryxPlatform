@@ -3,7 +3,7 @@ const path = require('path')
 const ethers = require('ethers')
 
 const mnemonicHelper = require('mnemonichelper')
-let accounts, privateKeys, mnemonicPath, provider, tokenAddress, network
+let accounts, privateKeys, mnemonic, provider, tokenAddress, network
 
 const setNetwork = id => {
     // if network already set, short circuit
@@ -11,7 +11,7 @@ const setNetwork = id => {
 
     network = id
     // ganache mnemonic below, ropsten mnemonic loaded from <project_root>/../keys/ropsten_mnemonic.txt
-    let mnemonic = "fix tired congress gold type flight access jeans payment echo chef host"
+    mnemonic = "fix tired congress gold type flight access jeans payment echo chef host"
 
     if (network === 'ganache') {
         provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
@@ -25,8 +25,8 @@ const setNetwork = id => {
         provider = new ethers.providers.JsonRpcProvider('')
         tokenAddress = '0x0c484097e2f000aadaef0450ab35aa00652481a1'
     }
-    else if (network === 'ropsten') {
-        provider = new ethers.providers.InfuraProvider('ropsten', 'metamask')
+    else if (['kovan', 'ropsten'].includes(network)) {
+        provider = new ethers.providers.InfuraProvider(network, 'metamask')
         tokenAddress = '0xf35a0f92848bdfdb2250b60344e87b176b499a8f'
         const mnemonicPath = path.join(__dirname, '../../keys/ropsten_mnemonic.txt')
         mnemonic = fs.readFileSync(mnemonicPath, 'utf8').trim().replace(/(\n|\r|\t|\u2028|\u2029|)/gm, '')
@@ -45,5 +45,5 @@ module.exports = {
     get privateKeys() { return privateKeys },
     get provider() { return provider },
     get tokenAddress() { return tokenAddress },
-    get mnemonicPath() { return mnemonicPath }
+    get mnemonic() { return mnemonic }
 }

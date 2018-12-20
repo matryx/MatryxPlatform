@@ -4,76 +4,245 @@ q.push("system = contract(MatryxSystem.address, MatryxSystem)")
 q.push("system.createVersion(1)")
 q.push("system.setVersion(1)")
 
-q.push("system.setContract(1, stringToBytes('MatryxPlatform'), MatryxPlatform.address)")
-q.push("system.setContract(1, stringToBytes('LibPlatform'), LibPlatform.address)")
-q.push("system.setContract(1, stringToBytes('LibTournament'), LibTournament.address)")
-q.push("system.setContract(1, stringToBytes('LibRound'), LibRound.address)")
-q.push("system.setContract(1, stringToBytes('LibSubmission'), LibSubmission.address)")
+q.push("system.setContract(1, stb('MatryxUser'), MatryxUser.address)")
+q.push("system.setContractType(MatryxUser.address, 1)")
 
+q.push("system.setContract(1, stb('MatryxPlatform'), MatryxPlatform.address)")
+q.push("system.setContractType(MatryxPlatform.address, 2)")
+
+q.push("system.setContract(1, stb('LibUtils'), LibUtils.address)")
+q.push("system.setContract(1, stb('LibPlatform'), LibPlatform.address)")
+q.push("system.setContract(1, stb('LibUser'), LibUser.address)")
+q.push("system.setContract(1, stb('LibTournament'), LibTournament.address)")
+q.push("system.setContract(1, stb('LibRound'), LibRound.address)")
+q.push("system.setContract(1, stb('LibSubmission'), LibSubmission.address)")
+
+q.push("system.setLibraryName(0, stb('LibPlatform'))")
+q.push("system.setLibraryName(1, stb('LibUser'))")
+q.push("system.setLibraryName(2, stb('LibPlatform'))")
+q.push("system.setLibraryName(3, stb('LibTournament'))")
+q.push("system.setLibraryName(4, stb('LibRound'))")
+q.push("system.setLibraryName(5, stb('LibSubmission'))")
+
+
+// MatryxPlatform.isTournament
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0xe10f1b06', ['0xcda2084d', [3], []])")
+// MatryxPlatform.isRound
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x8c1fc0bb', ['0x1886dbb4', [3], []])")
+// MatryxPlatform.isSubmission
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x818b5fa8', ['0xa624531d', [3], []])")
+// MatryxPlatform.hasEnteredMatryx
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x7a348ab3', ['0x2ace6c70', [3], []])")
+// MatryxPlatform.getTotalBalance
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x12b58349', ['0x7f279bd0', [3], []])")
+// MatryxPlatform.getBalanceOf
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x9b96eece', ['0xcd32526d', [3], []])")
+// MatryxPlatform.getTournamentCount
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x078c51f0', ['0x54b73af5', [3], []])")
+// MatryxPlatform.getUserCount
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0xb5cb15f7', ['0xcaa6f75a', [3], []])")
 // MatryxPlatform.getTournaments
-q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0xf7f20cb3', ['0x275111eb', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x5e723a76', ['0xc0445db0', [0,3], []])")
+// MatryxPlatform.getTournamentsByCategory
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0xb1dace31', ['0x728fc452', [0,3], []])")
+// MatryxPlatform.getUsers
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x45982a66', ['0xef2b1259', [0,3], []])")
+// MatryxPlatform.getCategories
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x5bd3ab8c', ['0x3fc78f6f', [0,3], []])")
+// MatryxPlatform.createCategory
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x6696bf11', ['0x8c756d0e', [0,3], []])")
 // MatryxPlatform.enterMatryx
-q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x91e8cc3f', ['0x5a88223c', [0,4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x91e8cc3f', ['0x5a88223c', [0,3], []])")
+// MatryxPlatform.addTournamentToCategory
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0xeb19a6b6', ['0xa39e145a', [0,3], []])")
+// MatryxPlatform.removeTournamentFromCategory
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0xdcd3fb33', ['0x9e05b11f', [0,3], []])")
 // MatryxPlatform.createTournament
-q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x2d8a52bd', ['0x3a1f7ffd', [0,4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibPlatform'), '0x2d8a52bd', ['0x3a1f7ffd', [0,3], []])")
 
+// MatryxRound.getVersion
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0x0d8e6e2c', ['0x15bd7b01', [3], []])")
 // MatryxRound.getTournament
-q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0xe76c293e', ['0x19820bce', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0xe76c293e', ['0x19820bce', [3], []])")
 // MatryxRound.getStart
-q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0xc5292c67', ['0xaf8c54e5', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0xc5292c67', ['0xaf8c54e5', [3], []])")
 // MatryxRound.getEnd
-q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0x9f05a36d', ['0x6ff732f9', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0x9f05a36d', ['0x6ff732f9', [3], []])")
 // MatryxRound.getReview
-q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0xa73a4aaf', ['0xc73d4968', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0xa73a4aaf', ['0xc73d4968', [3], []])")
 // MatryxRound.getBounty
-q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0xf49bff7b', ['0x7cc0c3b9', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0xf49bff7b', ['0x7cc0c3b9', [3], []])")
+// MatryxRound.getBalance
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0x12065fe0', ['0x8a1250dd', [3], []])")
 // MatryxRound.getSubmissions
-q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0x54f6aa20', ['0x40721539', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0x5a80489b', ['0x56b3e2ff', [0,3], []])")
 // MatryxRound.getData
-q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0x3bc5de30', ['0x412559e1', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0x3bc5de30', ['0x412559e1', [3], []])")
+// MatryxRound.getSubmissionCount
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0x9999d2ae', ['0xed7c9de9', [3], []])")
+// MatryxRound.getWinningSubmissions
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0xc3ae985f', ['0x15c8e3bc', [3], []])")
+// MatryxRound.getState
+q.push("system.addContractMethod(1, stringToBytes('LibRound'), '0x1865c57d', ['0xb5413d67', [3], []])")
 
+// MatryxSubmission.getVersion
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x0d8e6e2c', ['0x15bd7b01', [3], []])")
 // MatryxSubmission.getTournament
-q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xe76c293e', ['0x19820bce', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xe76c293e', ['0x19820bce', [3], []])")
 // MatryxSubmission.getRound
-q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x9f8743f7', ['0xece7bcc7', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x9f8743f7', ['0xece7bcc7', [3], []])")
+// MatryxSubmission.getOwner
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x893d20e8', ['0xc40c4371', [3], []])")
 // MatryxSubmission.getTitle
-q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xff3c1a8f', ['0xa35d9e78', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xff3c1a8f', ['0xa35d9e78', [3], []])")
 // MatryxSubmission.getDescriptionHash
-q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x245edf06', ['0x61f08a3d', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x245edf06', ['0x61f08a3d', [3], []])")
 // MatryxSubmission.getFileHash
-q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x8493f71f', ['0xeb292bf4', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x8493f71f', ['0xeb292bf4', [3], []])")
+// MatryxSubmission.getDistribution
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x1cced51b', ['0x3af0c3e4', [3], []])")
+// MatryxSubmission.getContributors
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xaf157c19', ['0x6872d25b', [3], []])")
+// MatryxSubmission.getReferences
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x7a6337fa', ['0x8f1fc0be', [3], []])")
+// MatryxSubmission.getTimeSubmitted
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xae1ca692', ['0x5e7b3151', [3], []])")
+// MatryxSubmission.getTimeUpdated
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x8efa5410', ['0x4fbc6390', [3], []])")
+// MatryxSubmission.getReward
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x3d18b912', ['0x3eb302a0', [3], []])")
+// MatryxSubmission.getReferencedIn
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x9cbfcf31', ['0x9c02f9dd', [3], []])")
+// MatryxSubmission.getVotes
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x0dc96015', ['0xf0d6e0bd', [3], []])")
+// MatryxSubmission.getViewers
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x8dd137d9', ['0x30c28253', [3], []])")
+// MatryxSubmission.getBalance
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x12065fe0', ['0x8a1250dd', [3], []])")
+// MatryxSubmission.getTotalWinnings
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x9b057610', ['0xbad474b6', [3], []])")
+// MatryxSubmission.getDetails
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xfbbf93a0', ['0xba90b857', [3], []])")
 // MatryxSubmission.getData
-q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x3bc5de30', ['0x412559e1', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x3bc5de30', ['0x412559e1', [3], []])")
+// MatryxSubmission.addFunds
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xbe999705', ['0x6e6661aa', [0,3], []])")
+// MatryxSubmission.unlockFile
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xb09103d8', ['0x81f8ff6d', [3], []])")
+// MatryxSubmission.updateDetails
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x4d3a42fa', ['0x7adb7b47', [3], []])")
+// MatryxSubmission.addContributorsAndReferences
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xd6ff074f', ['0xf9d683b8', [3], [0,1,2]])")
+// MatryxSubmission.removeContributorsAndReferences
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x023d2688', ['0x53ea28fd', [0,3], [0,1]])")
+// MatryxSubmission.flagMissingReference
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0x32c9c9d3', ['0x38236dcf', [3], []])")
+// MatryxSubmission.getAvailableReward
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xe0974ea5', ['0x504e6041', [3], []])")
+// MatryxSubmission.withdrawReward
+q.push("system.addContractMethod(1, stringToBytes('LibSubmission'), '0xc885bc58', ['0xa1b8f524', [0,3], []])")
 
+
+// MatryxTournament.getVersion
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x0d8e6e2c', ['0x15bd7b01', [3], []])")
 // MatryxTournament.getOwner
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x893d20e8', ['0xc40c4371', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x893d20e8', ['0xc40c4371', [3], []])")
+// MatryxTournament.getVotes
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x0dc96015', ['0xf0d6e0bd', [3], []])")
 // MatryxTournament.getTitle
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xff3c1a8f', ['0xa35d9e78', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xff3c1a8f', ['0xa35d9e78', [3], []])")
 // MatryxTournament.getCategory
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x80258e47', ['0x457914a8', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x80258e47', ['0x457914a8', [3], []])")
 // MatryxTournament.getDescriptionHash
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x245edf06', ['0x61f08a3d', [4], []])")
-// MatryxTournament.getFileHash
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x8493f71f', ['0xeb292bf4', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x245edf06', ['0x61f08a3d', [3], []])")
 // MatryxTournament.getBounty
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xf49bff7b', ['0x7cc0c3b9', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xf49bff7b', ['0x7cc0c3b9', [3], []])")
 // MatryxTournament.getEntryFee
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xe586a4f0', ['0x10206095', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xe586a4f0', ['0x10206095', [3], []])")
 // MatryxTournament.getRounds
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x6984d070', ['0x6852c33e', [4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x6984d070', ['0x6852c33e', [3], []])")
 // MatryxTournament.getDetails
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xfbbf93a0', ['0xba90b857', [4], []])")
-// MatryxTournament.enterTournament
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xd33bc9cb', ['0xa96bd9eb', [0,4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xfbbf93a0', ['0xba90b857', [3], []])")
+// MatryxTournament.getBalance
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x12065fe0', ['0x8a1250dd', [3], []])")
+// MatryxTournament.getState
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x1865c57d', ['0xb5413d67', [3], []])")
+// MatryxTournament.getCurrentRound
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xa32bf597', ['0x82b45813', [3], []])")
+// MatryxTournament.getSubmissionCount
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x9999d2ae', ['0xed7c9de9', [3], []])")
+// MatryxTournament.getEntrantCount
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x790b6209', ['0x6f5de052', [3], []])")
+// MatryxTournament.getEntryFeePaid
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xdca0f3ef', ['0x8a57f372', [3], []])")
+// MatryxTournament.isEntrant
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x52c01fab', ['0xb419874a', [3], []])")
+// MatryxTournament.enter
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xe97dcb62', ['0x19fe07db', [0,3], []])")
+// MatryxTournament.exit
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xe9fad8ee', ['0x22fb9c1e', [0,3], []])")
 // MatryxTournament.createRound
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xe1226bb1', ['0xca0ba8b4', [0,4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xe1226bb1', ['0xca0ba8b4', [0,3], []])")
 // MatryxTournament.createSubmission
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xadcd7859', ['0x5670f808', [0,4], []])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x28b0bfae', ['0x5670f808', [0,3], [0]])")
+// MatryxTournament.updateDetails
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x0640bcc1', ['0xb4835ebe', [0,3], []])")
+// MatryxTournament.addFunds
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xbe999705', ['0x6e6661aa', [0,3], []])")
+// MatryxTournament.transferToRound
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xa84fa137', ['0x86f7b75f', [0,3], []])")
 // MatryxTournament.selectWinners
-q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x724db3b7', ['0x8fd2c899', [0,4], [0]])")
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x346adf5c', ['0x8fd2c899', [0,3], [0]])")
+// MatryxTournament.updateNextRound
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x6c87da28', ['0x6892107c', [0,3], []])")
+// MatryxTournament.startNextRound
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x3c3ccc44', ['0xfab2d488', [3], []])")
+// MatryxTournament.withdrawFromAbandoned
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x542fe6c2', ['0xf7230424', [0,3], []])")
+// MatryxTournament.closeTournament
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x39900857', ['0xbc04601c', [0,3], []])")
+// MatryxTournament.voteSubmission
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x3c7655b1', ['0xd0f9980f', [3], []])")
+// MatryxTournament.voteRound
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0x710a7c2e', ['0x56e655e9', [3], []])")
+// MatryxTournament.recoverFunds
+q.push("system.addContractMethod(1, stringToBytes('LibTournament'), '0xb79550be', ['0x77f3fbdc', [0,3], []])")
+
+// MatryxUser.getData
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x38266b22', ['0xc7ef5c16', [3], []])")
+// MatryxUser.getTimeInMatryx
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x83ec507e', ['0x923c77e7', [3], []])")
+// MatryxUser.getVotes
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x9ab24eb0', ['0x5c6995dd', [3], []])")
+// MatryxUser.getTotalSpent
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x02c81f82', ['0xd0509905', [3], []])")
+// MatryxUser.getTotalWinnings
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0xcacc0efb', ['0x2feb3e42', [3], []])")
+// MatryxUser.getTournaments
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x726ec8f0', ['0x78f78cac', [3], []])")
+// MatryxUser.getTournamentsEntered
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0xf343eb96', ['0x374c9653', [3], []])")
+// MatryxUser.getSubmissions
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0xbdbd3583', ['0x80a762ca', [3], []])")
+// MatryxUser.getSubmissionsByTournament
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x62ea86cf', ['0x25c1ca06', [3], []])")
+// MatryxUser.getContributedTo
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0xceb507f4', ['0x760316da', [3], []])")
+// MatryxUser.getUnlockedFiles
+q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x59d25902', ['0x3ca308ac', [3], []])")
 
 
 q.push("p = contract(MatryxPlatform.address, IMatryxPlatform)")
+q.push("p.createCategory(stb('math'))")
+
+q.push("token = contract(network.tokenAddress, MatryxToken)")
+q.push("token.setReleaseAgent(network.accounts[0])")
+q.push("token.releaseTokenTransfer()")
+q.push("token.mint(network.accounts[0], toWei(1e4))")
+q.push("token.mint(network.accounts[1], toWei(1e4))")
+q.push("token.mint(network.accounts[2], toWei(1e4))")
+q.push("token.mint(network.accounts[3], toWei(1e4))")
+q.push("token.mint(network.accounts[4], toWei(1e4))")
 
 q.push("token = contract(network.tokenAddress, MatryxToken)")
 q.push("token.setReleaseAgent(network.accounts[0])")

@@ -1,961 +1,868 @@
-const { setup, getMinedTx, sleep, stringToBytes32, stringToBytes, bytesToString, Contract } = require('./utils')
-let platform;
+const IMatryxRound = artifacts.require('IMatryxRound')
 
-const genId = length => new Array(length).fill(0).map(() => Math.floor(36 * Math.random()).toString(36)).join('')
-const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * Math.random()).toString(16)).join('')
+const { Contract } = require('../truffle/utils')
+const { init, createTournament, createSubmission, waitUntilInReview, waitUntilClose, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
 
-
-const init = async () => {
-    const data = await setup(artifacts, web3, 0)
-    MatryxTournament = data.MatryxTournament
-    MatryxRound = data.MatryxRound
-    MatryxSubmission = data.MatryxSubmission
-    wallet = data.wallet
-    platform = data.platform
-    token = data.token
-  }
-
-  const createTournament = async (_title, _category, bounty, roundData, accountNumber) => {
-    const { platform } = await setup(artifacts, web3, accountNumber)
-
-    let count = +await platform.tournamentCount()
-
-    const category = stringToBytes(_category)
-    const title = stringToBytes32(_title, 3)
-    const descriptionHash = stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2)
-    const fileHash = stringToBytes32('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2)
-    const tournamentData = {
-      category,
-      title,
-      descriptionHash,
-      fileHash,
-      initialBounty: bounty,
-      entryFee: web3.toWei(2)
-    }
-
-    let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 8e6, gasPrice: 25 })
-    await getMinedTx('Platform.createTournament', tx.hash)
-
-    const address = await platform.allTournaments(count)
-    const tournament = Contract(address, MatryxTournament, accountNumber)
-
-    return tournament
-  }
-
-  const createSubmission = async (tournament, contribs, accountNumber) => {
-    await setup(artifacts, web3, accountNumber)
-
-    tournament.accountNumber = accountNumber
-    platform.accountNumber = accountNumber
-    const account = tournament.wallet.address
-
-    const isEntrant = await tournament.isEntrant(account)
-    if (!isEntrant) {
-      let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
-      await getMinedTx('Platform.enterTournament', hash)
-    }
-
-    const title = stringToBytes32('A submission ' + genId(6), 3)
-    const descriptionHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
-    const fileHash = stringToBytes32('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g', 2)
-
-    const submissionData = {
-      title,
-      descriptionHash,
-      fileHash,
-      timeSubmitted: 0,
-      timeUpdated: 0
-    }
-
-    const noContribsAndRefs = {
-      contributors: new Array(0).fill(0).map(r => genAddress()),
-      contributorRewardDistribution: new Array(0).fill(1),
-      references: new Array(0).fill(0).map(r => genAddress())
-    }
-
-    let tx = await tournament.createSubmission(submissionData, noContribsAndRefs, { gasLimit: 8e6 })
-    await getMinedTx('Tournament.createSubmission', tx.hash)
-
-    const [_, roundAddress] = await tournament.currentRound()
-    const round = Contract(roundAddress, MatryxRound)
-    const submissions = await round.getSubmissions()
-    const submissionAddress = submissions[submissions.length-1]
-    const submission = Contract(submissionAddress, MatryxSubmission, accountNumber)
-
-    tournament.accountNumber = 0
-    platform.accountNumber = 0
-
-    return submission
-  }
-
-const waitUntilInReview = async (round) => {
-    let roundEndTime = await round.getEndTime()
-
-    let timeTilRoundInReview = roundEndTime - Date.now() / 1000
-    timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
-
-    await sleep(timeTilRoundInReview * 1000)
-}
-
-const waitUntilClose = async (round) => {
-    let roundEndTime = +await round.getEndTime()
-    let reviewPeriodDuration = +await round.getReviewPeriodDuration()
-    let timeTilClose = Math.max(0, roundEndTime + reviewPeriodDuration - Date.now() / 1000)
-    timeTilClose = timeTilClose > 0 ? timeTilClose : 0
-
-    await sleep(timeTilClose * 1000)
-}
-
-const selectWinnersWhenInReview = async (tournament, winners, rewardDistribution, roundData, selectWinnerAction) => {
-    const [_, roundAddress] = await tournament.currentRound()
-    const round = Contract(roundAddress, MatryxRound, tournament.accountNumber)
-    const roundEndTime = await round.getEndTime()
-
-    let timeTilRoundInReview = roundEndTime - Date.now() / 1000
-    timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
-
-    await sleep(timeTilRoundInReview * 1000)
-
-    const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 5000000 })
-    await getMinedTx('Tournament.selectWinners', tx.hash)
-  }
-
-const enterTournament = async (tournament, accountNumber) => {
-    await setup(artifacts, web3, accountNumber)
-    tAccount = tournament.accountNumber
-    pAccount = platform.accountNumber
-
-    tournament.accountNumber = accountNumber
-    platform.accountNumber = accountNumber
-    const account = tournament.wallet.address
-
-    const isEntrant = await tournament.isEntrant(account)
-    if (!isEntrant) {
-      let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 5e6 })
-      await getMinedTx('Platform.enterTournament', hash)
-    }
-
-    let isEnt = await tournament.isEntrant(account)
-    return isEnt
-  }
-
+let platform
 
 contract('NotYetOpen Round Testing', function(accounts) {
-    let t; //tournament
-    let r; //round
+  let t //tournament
+  let r //round
 
-    it("Able to create a tournament with a valid round", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000) + 60,
-            end: Math.floor(Date.now() / 1000) + 120,
-            reviewPeriodDuration: 60,
-            bounty: web3.toWei(5),
-            closed: false
-          }
+  it('Able to create a tournament with a valid round', async function() {
+    platform = (await init()).platform
+    roundData = {
+      start: Math.floor(Date.now() / 1000) + 60,
+      end: Math.floor(Date.now() / 1000) + 120,
+      review: 60,
+      bounty: web3.toWei(5)
+    }
 
-        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-        let [_, roundAddress] = await t.currentRound()
-        r = Contract(roundAddress, MatryxRound, 0)
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
 
-        assert.ok(r.address, "Round is not valid.");
-    });
+    assert.ok(r.address, 'Round is not valid.')
+  })
 
-    it("Able to get platform from round", async function () {
-        let p = await r.getPlatform();
-        assert.equal(p.toLowerCase(), platform.address, "Unable to get platform from round.");
-    });
+  it('Able to get tournament from round', async function() {
+    let tournament = await r.getTournament()
+    assert.equal(tournament, t.address, 'Unable to get tournament from round.')
+  })
 
-    it("Able to get token from round", async function () {
-        let token = await r.getTokenAddress();
-        assert.equal(token.toLowerCase(), network.tokenAddress, "Unable to get platform from round.");
-    });
+  it('Able to get round start time', async function() {
+    let time = await r.getStart()
+    assert.isTrue(time > Math.floor(Date.now() / 1000), 'Unable to get start time.')
+  })
 
-    it("Able to get tournament from round", async function () {
-        let tournament = await r.getTournament();
-        assert.equal(tournament, t.address, "Unable to get tournament from round.");
-    });
+  it('Able to get round end time', async function() {
+    let time = await r.getEnd()
+    assert.isTrue(time > Math.floor(Date.now() / 1000), 'Unable to get end time.')
+  })
 
-    it("Able to get round start time", async function () {
-        let time = await r.getStartTime();
-        assert.isTrue(time > Math.floor(Date.now() / 1000), "Unable to get start time.");
-    });
+  it('Able to get round review period duration', async function() {
+    let review = await r.getReview()
+    assert.equal(review, 60, 'Unable to get review period duration.')
+  })
 
-    it("Able to get round end time", async function () {
-        let time = await r.getEndTime();
-        assert.isTrue(time > Math.floor(Date.now() / 1000), "Unable to get end time.");
-    });
+  it('Able to get round bounty', async function() {
+    let b = await r.getBounty()
+    assert.equal(b, web3.toWei(5), 'Unable to get bounty.')
+  })
 
-    it("Able to get round review period duration", async function () {
-        let review = await r.getReviewPeriodDuration();
-        assert.equal(review, 60, "Unable to get review period duration.");
-    });
+  it('Able to get round balance', async function() {
+    let b = await platform.getBalanceOf(r.address)
+    assert.equal(b, web3.toWei(5), 'Unable to get balance.')
+  })
 
-    it("Able to get round bounty", async function () {
-        let b = await r.getBounty();
-        assert.equal(b, web3.toWei(5), "Unable to get bounty.");
-    });
+  it('Round state is Not Yet Open', async function() {
+    let state = await r.getState()
+    assert.equal(state, 0, 'Round State should be NotYetOpen')
+  })
 
-    it("Remaining bounty should be the same as original bounty", async function () {
-        let b = await r.getRemainingBounty();
-        assert.equal(b, web3.toWei(5), "Unable to get remaining bounty.");
-    });
+  it('Round should not have any submissions', async function() {
+    let sub = await r.getSubmissions(0, 0)
+    assert.equal(sub.length, 0, 'Round should not have submissions')
+  })
 
-    it("Round balance should be the same as original bounty", async function () {
-        let b = await r.getRoundBalance();
-        assert.equal(b, web3.toWei(5), "Unable to get remaining bounty.");
-    });
+  it('Submission count should be zero', async function() {
+    let num = await r.getSubmissionCount()
+    assert.equal(num, 0, 'Submission count should be 0')
+  })
 
-    it("Round state is Not Yet Open", async function () {
-      let state = await r.getState();
-      assert.equal(state, 0, "Round State should be NotYetOpen");
-    });
+  it('Round winning submissions should be empty', async function() {
+    let sub = await r.getWinningSubmissions()
+    assert.equal(sub.length, 0, 'Round should not have winning submissions')
+  })
 
-    it("Round should not have any submissions", async function () {
-        let sub = await r.getSubmissions();
-        assert.equal(sub.length, 0, "Round should not have submissions");
-    });
+  it('Able to add bounty to a round', async function() {
+    await t.transferToRound(web3.toWei(1))
+    let b = await r.getBounty().then(fromWei)
+    assert.equal(b, 6, 'Bounty was not added')
+  })
 
-    it("No submissions should have been chosen in this round", async function () {
-        let sub = await r.submissionsChosen();
-        assert.isFalse(sub, "Round should not have any chosen submissions");
-    });
-
-    it("Number of submissions should be zero", async function () {
-        let no_sub = await r.numberOfSubmissions();
-        assert.equal(no_sub.toNumber(), 0, "Number of Submissions should be Zero")
-    });
-
-    it("Add bounty to a round", async function () {
-        await t.allocateMoreToRound(web3.toWei(1));
-        let b = await r.getBounty();
-        assert.equal(fromWei(b), 6, "Bounty was not added")
-    });
-
-    it("Able to enter Not Yet Open round", async function() {
-        let isEnt = await enterTournament(t, 2)
-        assert.isTrue(isEnt, "Could not enter tournament")
-    });
-});
-
-
+  it('Able to enter tournament with Not Yet Open round', async function() {
+    await enterTournament(t, 2)
+    let isEnt = await t.isEntrant(accounts[2])
+    assert.isTrue(isEnt, 'Could not enter tournament')
+  })
+})
 
 contract('Open Round Testing', function(accounts) {
-    let t; //tournament
-    let r; //round
+  let t //tournament
+  let r //round
+  let s //submission
 
-    it("Able to create a tournament with a Open round", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 120,
-            reviewPeriodDuration: 60,
-            bounty: web3.toWei(5),
-            closed: false
-          }
+  it('Able to create a tournament with a Open round', async function() {
+    await init()
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 120,
+      review: 60,
+      bounty: web3.toWei(5)
+    }
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
 
-        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-        let [_, roundAddress] = await t.currentRound()
-        r = Contract(roundAddress, MatryxRound, 0)
+    assert.ok(r.address, 'Round is not valid.')
+  })
 
-        assert.ok(r.address, "Round is not valid.");
-    });
+  it('Round state is Open', async function() {
+    let state = await r.getState()
+    assert.equal(state, 2, 'Round State should be Open')
+  })
 
-    it("Round state is Open", async function () {
-      let state = await r.getState();
-      assert.equal(state, 2, "Round State should be Open");
-    });
+  it('Able to enter the tournament and make submissions', async function() {
+    // Create submissions
+    s = await createSubmission(t, false, 1)
+    s2 = await createSubmission(t, false, 2)
+    assert.ok(s && s2, 'Unable to make submissions')
+  })
 
-    it("Round should not have any submissions", async function () {
-        let sub = await r.getSubmissions();
-        assert.equal(sub.length, 0, "Round should not have submissions");
-    });
+  it('Unable to judge submissions while the round is still open', async function() {
+    try {
+      await t.voteSubmission(s.address, true)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
 
-    it("No submissions should have been chosen in this round", async function () {
-        let sub = await r.submissionsChosen();
-        assert.isFalse(sub, "Round should not have any chosen submissions");
-    });
+  it('Entrants unable to vote open round', async function() {
+    try {
+      //switch account
+      t.accountNumber = 1
+      await t.voteRound(r.address, true)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      //switch back
+      t.accountNumber = 0
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
 
-    it("Number of submissions should be zero", async function () {
-        let no_sub = await r.numberOfSubmissions();
-        assert.equal(no_sub.toNumber(), 0, "Number of Submissions should be Zero")
-    });
+  it('Able to exit the tournament', async function() {
+    // Switch to accounts[1]
+    t.accountNumber = 1
+    let isEnt = await t.isEntrant(accounts[1])
+    await t.exit()
+    isEnt = await t.isEntrant(accounts[1])
+    assert.isFalse(isEnt, 'Unable to exit tournament')
+  })
 
-    it("Add bounty to a round", async function () {
-        await t.allocateMoreToRound(web3.toWei(1));
-        let b = await r.getBounty();
-        assert.equal(fromWei(b), 6, "Bounty was not added")
-    });
+  it('Unable to exit tournament multiple times', async function() {
+    try {
+      t.accountNumber = 1
+      await t.exit()
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to exit again')
+    }
+  })
 
-    it("Able to enter the tournament and make submissions", async function () {
-        // Create submissions
-        s = await createSubmission(t, false, 1)
-        s2 = await createSubmission(t, false, 2)
-        assert.ok(s && s2, "Unable to make submissions")
-    });
+  it('Number of entrants should now be 0', async function() {
+    let ent = await t.getEntrantCount()
+    assert.equal(ent, 1, 'Number of entrants should be 0')
+  })
 
-    it("Able to exit the tournament and collect my entry fee", async function () {
-        // Switch to accounts[1]
-        t.accountNumber = 1
-        let isEnt = await t.isEntrant(accounts[1])
-        await t.collectMyEntryFee()
-        isEnt = await t.isEntrant(accounts[1])
-        assert.isFalse(isEnt, "Unable to exit tournament")
-    });
-
-    it("Unable to collect my entry fee multiple times", async function () {
-        try {
-            t.accountNumber = 1
-            await t.collectMyEntryFee()
-            assert.fail('Expected revert not received');
-          } catch (error) {
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to add bounty to round in review');
-          }
-    });
-
-    it("Number of entrants should now be 0", async function () {
-        let ent = await t.entrantCount();
-        assert.equal(ent, 1, "Number of entrants should be 0")
-    });
-
-    it("Number of submissions should still be two", async function () {
-        let n_sub = await r.numberOfSubmissions();
-        assert.equal(n_sub.toNumber(), 2, "Number of Submissions should be 2")
-    });
-
-});
-
+  it('Number of submissions should still be 2', async function() {
+    let num = await r.getSubmissionCount()
+    assert.equal(num, 2, 'Number of Submissions should be 2')
+  })
+})
 
 contract('In Review Round Testing', function(accounts) {
-    let t; //tournament
-    let r; //round
-    let s; //submission
+  let t //tournament
+  let r //round
+  let s //submission
 
-    it("Able to create a round In Review", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 10,
-            reviewPeriodDuration: 60,
-            bounty: web3.toWei(5),
-            closed: false
-            }
+  it('Able to create a round In Review', async function() {
+    await init()
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 30,
+      review: 60,
+      bounty: web3.toWei(5)
+    }
 
-        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-        let [_, roundAddress] = await t.currentRound()
-        r = Contract(roundAddress, MatryxRound, 0)
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
 
-        //Create submissions
-        s = await createSubmission(t, false, 1)
-        s2 = await createSubmission(t, false, 2)
-        await waitUntilInReview(r);
+    //Create submissions
+    s = await createSubmission(t, false, 1)
+    s2 = await createSubmission(t, false, 2)
+    await waitUntilInReview(r)
 
-        assert.ok(r.address, "Round is not valid.");
-    });
+    assert.ok(r.address, 'Round is not valid.')
+  })
 
-    it("Round state is In Review", async function () {
-        let state = await r.getState();
-        assert.equal(state, 3, "Round State should be In Review");
-    });
+  it('Round state is In Review', async function() {
+    let state = await r.getState()
+    assert.equal(state, 3, 'Round State should be In Review')
+  })
 
-    it("Submissions accessible to any tournament entrants when round is In Review", async function () {
-        let isAccessible = await s.isAccessible(accounts[2]);
-        assert.isTrue(isAccessible, "Submissions should be accessible to entrants while round is in review");
-    });
+  it('Able to allocate more tournament bounty to a round in review', async function() {
+    await t.transferToRound(web3.toWei(1))
+    let bal = await platform.getBalanceOf(r.address)
+    assert.equal(fromWei(bal), 6, 'Incorrect round balance')
+  })
 
-    it("Submissions accessible to tournament owner when round is In Review", async function () {
-        let isAccessible = await s.isAccessible(accounts[0]);
-        assert.isTrue(isAccessible, "Submissions should be accessible to entrants while round is in review");
-    });
+  it('Able to enter round in review', async function() {
+    let isEnt = await enterTournament(t, 3)
+    assert.isTrue(isEnt, 'Could not enter tournament')
+  })
 
-    it("Submission accessible to its owner", async function () {
-        let isAccessible = await s.isAccessible(accounts[1]);
-        assert.isTrue(isAccessible, "Submission should be accessible to its owner");
-    });
+  it('Unable to make submissions while the round is in review', async function() {
+    try {
+      await createSubmission(t, false, 1)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to make a submission while In Review')
+    }
+  })
 
-    it("Submissions are not accessible to non-entrants", async function () {
-        let isAccessible = await s.isAccessible(accounts[3]);
-        assert.isFalse(isAccessible, "Submission should not be accessible to non-entrant");
+  it('Entrants unable to vote round while in review', async function() {
+    try {
+      //switch account
+      t.accountNumber = 1
+      await t.voteRound(r.address, false)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      //switch back
+      t.accountNumber = 0
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
 
-    });
-
-    it("Unable to allocate more tournament bounty to a round in review", async function () {
-        try {
-            await t.allocateMoreToRound(web3.toWei(1));
-            assert.fail('Expected revert not received');
-          } catch (error) {
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to add bounty to round in review');
-          }
-    });
-
-    it("Able to enter round in review", async function () {
-        let isEnt = await enterTournament(t, 3)
-        assert.isTrue(isEnt, "Could not enter tournament")
-    });
-
-    it("Round balance should still be 5", async function () {
-        let rB = await r.getRoundBalance();
-        assert.equal(fromWei(rB), 5, "Incorrect round balance")
-    });
-
-    it("Unable to make submissions while the round is in review", async function () {
-        const title = stringToBytes32('A submission ' + genId(6), 3)
-        const descriptionHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
-        const fileHash = stringToBytes32('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g', 2)
-
-        const submissionData = {
-        title,
-        descriptionHash,
-        fileHash,
-        timeSubmitted: 0,
-        timeUpdated: 0
-        }
-
-        //switch to accounts[1]
-        t.accountNumber = 1
-        try {
-            await t.createSubmission(submissionData, [[],[],[]])
-            assert.fail('Expected revert not received');
-          } catch (error) {
-            t.accountNumber = 0
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to make a submission while In Review');
-          }
-    });
-
-});
+  it('Tournament owner able to judge submissions while In Review', async function() {
+    await t.voteSubmission(s.address, true)
+    let [v, n] = await s.getVotes()
+    assert.equal(v, 1, 'Was not able to judge submission')
+  })
+})
 
 contract('Closed Round Testing', function(accounts) {
-    let t; //tournament
-    let r; //round
-    let s; //submission
+  let t //tournament
+  let r //round
+  let s //submission
 
-    it("Able to create a closed round", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 10,
-            reviewPeriodDuration: 60,
-            bounty: web3.toWei(5),
-            closed: false
-            }
+  it('Able to create a closed round', async function() {
+    await init()
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 20,
+      review: 60,
+      bounty: web3.toWei(5)
+    }
 
-        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-        let [_, roundAddress] = await t.currentRound()
-        r = Contract(roundAddress, MatryxRound, 0)
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
 
-        //Create submissions
-        s = await createSubmission(t, false, 1)
+    //Create submissions
+    s = await createSubmission(t, false, 1)
 
-        let submissions = await r.getSubmissions()
-        await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0, 0], 2)
+    let submissions = await r.getSubmissions(0, 0)
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
 
-        assert.ok(s.address, "Submission is not valid.");
-    });
+    assert.ok(s.address, 'Submission is not valid.')
+  })
 
-    it("Tournament should be closed", async function () {
-        let state = await t.getState();
-        assert.equal(state, 3, "Tournament is not Closed")
-    });
+  it('Tournament should be closed', async function() {
+    let state = await t.getState()
+    assert.equal(state, 3, 'Tournament is not Closed')
+  })
 
-    it("Round should be closed", async function () {
-        let state = await r.getState();
-        assert.equal(state, 5, "Round is not Closed")
-    });
+  it('Round should be closed', async function() {
+    let state = await r.getState()
+    assert.equal(state, 5, 'Round is not Closed')
+  })
 
-    it("Submissions accessible to anyone when round is Closed", async function () {
-        let isAccessible = await s.isAccessible(accounts[2]);
-        assert.isTrue(isAccessible, "Submissions should be accessible to entrants while round is in review");
-    });
+  it('Unable to allocate more tournament bounty to a closed round', async function() {
+    try {
+      await t.transferToRound(web3.toWei(1))
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to add bounty to Closed round')
+    }
+  })
 
-    it("Unable to allocate more tournament bounty to a closed round", async function () {
-        try {
-            await t.allocateMoreToRound(web3.toWei(1));
-               assert.fail('Expected revert not received');
-          } catch (error) {
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to add bounty to Closed round');
-          }
-    });
+  it('Unable to enter closed tournament', async function() {
+    try {
+      await enterTournament(t, 2)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to add bounty to Closed round')
+    }
+  })
 
-    it("Unable to enter closed tournament", async function () {
-        try {
-            await enterTournament(t, 2)
-            assert.fail('Expected revert not received');
-          } catch (error) {
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to add bounty to Closed round');
-          }
-    });
+  it('Unable to make submissions while the round is closed', async function() {
+    try {
+      await createSubmission(t, false, 1)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to make a submission while In Review')
+    }
+  })
 
-    it("Unable to make submissions while the round is closed", async function () {
-        const title = stringToBytes32('A submission ' + genId(6), 3)
-        const descriptionHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
-        const fileHash = stringToBytes32('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g', 2)
+  it('Tournament entrant able to vote on last closed round', async function() {
+    try {
+      await createSubmission(t, false, 1)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to make a submission while In Review')
+    }
+  })
 
-        const submissionData = {
-        title,
-        descriptionHash,
-        fileHash,
-        timeSubmitted: 0,
-        timeUpdated: 0
-        }
+  it('Tournament entrant able to vote on last closed round', async function() {
+    //switch accounts
+    t.accountNumber = 1
+    await t.voteRound(r.address, true)
+    //switch back
+    t.accountNumber = 0
+    let [pV, nV] = await t.getVotes()
+    assert.equal(pV, 1, "Tournament should have 1 positive vote")
+  })
 
-        //switch to accounts[1]
-        t.accountNumber = 1
-        try {
-            let tx = await t.createSubmission(submissionData, [[],[],[]])
-            assert.fail('Expected revert not received');
-          } catch (error) {
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to make a submission while In Review');
-          }
-    });
+  it('Tournament entrant cannot vote twice', async function() {
+    try {
+      //switch accounts
+      t.accountNumber = 1
+      await t.voteRound(r.address, false)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      //switch back
+      t.accountNumber = 0
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
 
-});
+  it('Tournament owner cannot vote on their own tournament', async function() {
+    try {
+      await t.voteRound(r.address, true)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
 
+  it('Non-entrant should not be able to vote', async function() {
+    try {
+      //switch accounts
+      t.accountNumber = 2
+      await t.voteRound(r.address, true)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      //switch back
+      t.accountNumber = 0
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to vote')
+    }
+  })
+})
 
 contract('Abandoned Round Testing', function(accounts) {
-    let t; //tournament
-    let r; //round
+  let t //tournament
+  let r //round
 
-    it("Able to create an Abandoned round", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 20,
-            reviewPeriodDuration: 1,
-            bounty: web3.toWei(5),
-            closed: false
-          }
+  it('Able to create an Abandoned round', async function() {
+    await init()
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 20,
+      review: 1,
+      bounty: web3.toWei(5)
+    }
 
-        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
 
-        let [_, roundAddress] = await t.currentRound()
-        r = Contract(roundAddress, MatryxRound, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
 
-        // Create a submission
-        s = await createSubmission(t, false, 1)
-        s = await createSubmission(t, false, 2)
+    // Create a submission
+    s = await createSubmission(t, false, 1)
+    s = await createSubmission(t, false, 2)
 
-        // Wait for the round to become Abandoned
-        await waitUntilClose(r)
+    // Wait for the round to become Abandoned
+    await waitUntilClose(r)
 
-        assert.ok(r.address, "Round is not valid.");
-    });
+    assert.ok(r.address, 'Round is not valid.')
+  })
 
-    it("Round state is Abandoned", async function () {
-        let state = await r.getState();
-        assert.equal(state, 6, "Round State should be Abandoned");
-    });
+  it('Round state is Abandoned', async function() {
+    let state = await r.getState()
+    assert.equal(state, 6, 'Round State should be Abandoned')
+  })
 
-    it("Unable to add bounty to Abandoned round", async function () {
-        try {
-            await t.allocateMoreToRound(web3.toWei(1));
-               assert.fail('Expected revert not received');
-          } catch (error) {
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
-          }
-    });
+  it('Tournament state is Abandoned', async function() {
+    let state = await t.getState()
+    assert.equal(state, 4, 'Tournament State should be Abandoned')
+  })
 
-    it("Round is still open in round data before the first withdraw", async function () {
-        let data = await r.getData()
-        assert.isFalse(data.closed, "Round should be open")
-    });
+  it('Unable to add bounty to Abandoned round', async function() {
+    try {
+      await t.transferToRound(web3.toWei(1))
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to add bounty to Abandoned round')
+    }
+  })
 
-    it("First entrant is able to withdraw their share from the bounty from an abandoned round", async function () {
-        // Switch to acounts[1]
-        t.accountNumber = 1
-        await t.withdrawFromAbandoned()
-        let isEnt = await t.isEntrant(accounts[1])
-        assert.isFalse(isEnt, "Should no longer be an entrant")
-    });
+  it('Round is still open in round data before the first withdrawal', async function() {
+    let data = await r.getData()
+    assert.isFalse(data.info.closed, 'Round should still be set as open')
+  })
 
-    it("Second entrant also able to withdraw their share", async function () {
-        // Switch to acounts[2]
-        t.accountNumber = 2
-        await t.withdrawFromAbandoned()
-        let isEnt = await t.isEntrant(accounts[2])
-        assert.isFalse(isEnt, "Should no longer be an entrant")
-    });
+  it('First entrant is able to withdraw their share from the bounty from an abandoned round', async function() {
+    // Switch to acounts[1]
+    t.accountNumber = 1
+    await t.withdrawFromAbandoned()
+    let isEnt = await t.isEntrant(accounts[1])
+    assert.isFalse(isEnt, 'Should no longer be an entrant')
+  })
 
-    it("Unable to withdraw from tournament multiple times from the same account", async function () {
-        try {
-            t.accountNumber = 1
-            await t.withdrawFromAbandoned()
-            assert.fail('Expected revert not received');
-          } catch (error) {
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to add bounty to Abandoned round');
-          }
-    });
+  it('Round is set to closed after first withdrawal', async function() {
+    let data = await r.getData()
+    assert.isTrue(data.info.closed, 'Round should be closed after 1st reward withdrawal')
+  })
 
-    it("Tournament balance is 0", async function () {
-        let tB = await t.getBalance()
-        assert.isTrue(tB == 0, "Tournament balance should be 0")
-    });
+  it('Second entrant also able to withdraw their share', async function() {
+    // Switch to acounts[2]
+    t.accountNumber = 2
+    await t.withdrawFromAbandoned()
+    let isEnt = await t.isEntrant(accounts[2])
+    assert.isFalse(isEnt, 'Should no longer be an entrant')
+  })
 
-    it("Round balance is 0", async function () {
-        let rB = await r.getRoundBalance()
-        assert.isTrue(rB == 0, "Tournament balance should be 0")
-    });
+  it('Unable to withdraw from tournament multiple times from the same account', async function() {
+    try {
+      t.accountNumber = 1
+      await t.withdrawFromAbandoned()
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      t.accountNumber = 0
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to add bounty to Abandoned round')
+    }
+  })
 
-    it("Round is closed", async function () {
-        let data = await r.getData()
-        assert.isTrue(data.closed, "Round should be closed")
-    });
+  it('Tournament balance is 0', async function() {
+    let tB = await platform.getBalanceOf(t.address)
+    assert.isTrue(tB == 0, 'Tournament balance should be 0')
+  })
 
-});
+  it('Round balance is 0', async function() {
+    let rB = await platform.getBalanceOf(r.address)
+    assert.isTrue(rB == 0, 'Tournament balance should be 0')
+  })
 
+})
+
+contract('Abandoned Round due to No Submissions', function(accounts) {
+  let t //tournament
+  let r //round
+
+  it('Able to create an Abandoned round', async function() {
+    await init()
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 5,
+      review: 1,
+      bounty: web3.toWei(5)
+    }
+
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
+
+    // Wait for the round to become Abandoned
+    await waitUntilClose(r)
+
+    assert.ok(r.address, 'Round is not valid.')
+  })
+
+  it('Round state is Abandoned', async function() {
+    let state = await r.getState()
+    assert.equal(state, 6, 'Round State should be Abandoned')
+  })
+
+  it('Able to recover funds and mark the round as closed', async function() {
+    await t.recoverFunds()
+    let data = await r.getData()
+    assert.isTrue(data.info.closed, 'Round should be closed after 1st reward withdrawal')
+  })
+
+  it('Unable to recover funds multiple times', async function() {
+    try {
+      await t.recoverFunds()
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to recover funds again')
+    }
+  })
+
+  it('Tournament balance is 0', async function() {
+    let tB = await platform.getBalanceOf(t.address)
+    assert.isTrue(tB == 0, 'Tournament balance should be 0')
+  })
+
+  it('Round balance is 0', async function() {
+    let rB = await platform.getBalanceOf(r.address)
+    assert.isTrue(rB == 0, 'Round balance should be 0')
+  })
+
+})
 
 contract('Unfunded Round Testing', function(accounts) {
-    let t; //tournament
-    let r; //round
-    let ur; //unfunded round
-    let s; //submission
+  let t //tournament
+  let r //round
+  let ur //unfunded round
+  let s //submission
+  let token
 
-    it("Able to create an Unfunded round", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 10,
-            reviewPeriodDuration: 60,
-            bounty: web3.toWei(10),
-            closed: false
-            }
+  it('Able to create an Unfunded round', async function() {
+    token = (await init()).token
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 35,
+      review: 80,
+      bounty: web3.toWei(10)
+    }
 
-        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-        let [_, roundAddress] = await t.currentRound()
-        r = Contract(roundAddress, MatryxRound, 0)
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
 
-        //Create submissions
-        s = await createSubmission(t, false, 1)
+    //Create submissions
+    s = await createSubmission(t, false, 1)
 
-        let submissions = await r.getSubmissions()
-        await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0, 0], 0)
-        await waitUntilClose(r)
+    let submissions = await r.getSubmissions(0, 0)
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
+    await waitUntilClose(r)
 
-        assert.ok(s.address, "Submission is not valid.");
-    });
+    assert.ok(s.address, 'Submission is not valid.')
+  })
 
-    it("Tournament should be Open", async function () {
-        let state = await t.getState();
-        assert.equal(state, 2, "Tournament is not Open")
-    });
+  it('Tournament should be Open', async function() {
+    let state = await t.getState()
+    assert.equal(state, 2, 'Tournament is not Open')
+  })
 
-    it("Round should be Unfunded", async function () {
-        let [_, roundAddress] = await t.currentRound()
-        ur = Contract(roundAddress, MatryxRound, 0)
-        let state = await ur.getState();
-        assert.equal(state, 1, "Round is not Unfunded")
-    });
+  it('Round should be Unfunded', async function() {
+    let [_, roundAddress] = await t.getCurrentRound()
+    ur = Contract(roundAddress, IMatryxRound, 0)
+    let state = await ur.getState()
+    assert.equal(state, 1, 'Round is not Unfunded')
+  })
 
-    it("Balance of unfunded round is 0", async function () {
-        let urB = await ur.getRoundBalance()
-        assert.equal(urB, 0, "Round has funds in balance")
-    });
+  it('Balance of unfunded round is 0', async function() {
+    let urB = await platform.getBalanceOf(ur.address)
+    assert.equal(urB, 0, 'Round balance should be 0')
+  })
 
-    it("Balance of tournament is 0", async function () {
-        let tB = await t.getBalance()
-        assert.equal(tB, 0, "Round has funds in balance")
-    });
+  it('Balance of tournament is 0', async function() {
+    let tB = await platform.getBalanceOf(t.address)
+    assert.equal(tB, 0, 'Tournament balance should be 0')
+  })
 
-    it("Round should not have any submissions", async function () {
-        let sub = await ur.getSubmissions();
-        assert.equal(sub.length, 0, "Round should not have submissions");
-    });
+  it('Round should not have any submissions', async function() {
+    let sub = await ur.getSubmissions(0, 0)
+    assert.equal(sub.length, 0, 'Round should not have submissions')
+  })
 
-    it("Unable to make submissions while the round is Unfunded", async function () {
-        const title = stringToBytes32('A submission ' + genId(6), 3)
-        const descriptionHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
-        const fileHash = stringToBytes32('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g', 2)
+  it('Unable to make submissions while the round is Unfunded', async function() {
+    try {
+      await createSubmission(t, false, 1)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to make a submission while round is Unfunded')
+    }
+  })
 
-        const submissionData = {
-        title,
-        descriptionHash,
-        fileHash,
-        timeSubmitted: 0,
-        timeUpdated: 0
-        }
+  it('Able to transfer more MTX to the tournament', async function () {
+    await t.addFunds(toWei(2))
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    assert.equal(tB, 2, 'Funds not transferred')
+  })
 
-        //switch to accounts[1]
-        t.accountNumber = 1
-        try {
-            let tx = await t.createSubmission(submissionData, [[],[],[]])
-            assert.fail('Expected revert not received');
-          } catch (error) {
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to make a submission while round is Unfunded');
-          }
-    });
+  it('Able to transfer tournament funds to the Unfunded round', async function() {
+    t.accountNumber = 0
+    await t.transferToRound(toWei(2))
+    let urB = await platform.getBalanceOf(ur.address).then(fromWei)
+    assert.equal(urB, 2, 'Funds not transferred')
+  })
 
-    it("Able to transfer more MTX to the tournament", async function () {
-        await token.transfer(t.address, toWei(2));
-        let tB = await t.getBalance()
-        assert.equal(fromWei(tB), 2, "Funds not transferred");
-    });
+  it('Round should now be Open', async function() {
+    let state = await ur.getState()
+    assert.equal(state, 2, 'Round is not Open')
+  })
 
-    it("Able to transfer tournament funds to the Unfunded round", async function () {
-        t.accountNumber = 0
-        await t.allocateMoreToRound(toWei(2));
-        let urB = await ur.getRoundBalance()
-        assert.equal(fromWei(urB), 2, "Funds not transferred");
-    });
+  it('Entrants able to vote newest round as well as past rounds', async function() {
+    // Create submission & winner selection
+    await createSubmission(t, false, 1)
+    let submissions = await ur.getSubmissions(0, 0)
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
 
-    it("Round should now be Open", async function () {
-        let state = await ur.getState();
-        assert.equal(state, 2, "Round is not Open")
-    });
+    // switch accounts to vote
+    t.accountNumber = 1
+    await t.voteRound(r.address, true)
+    await t.voteRound(ur.address, false)
+    // switch back
+    t.accountNumber = 0
 
-});
-
+    let [pV, nV] = await t.getVotes()
+    assert.isTrue(pV == 1 && nV == 1, "Tournament should have 1 positive & 1 negative vote")
+  })
+})
 
 contract('Ghost Round Testing', function(accounts) {
-    let t; //tournament
-    let r; //round
-    let gr; //ghost round
-    let s; //submission
+  let t //tournament
+  let r //round
+  let gr //ghost round
+  let s //submission
 
-    it("Able to create a ghost round", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 10,
-            reviewPeriodDuration: 20,
-            bounty: web3.toWei(5),
-            closed: false
-        }
+  it('Able to create a ghost round', async function() {
+    await init()
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 30,
+      review: 20,
+      bounty: web3.toWei(5)
+    }
 
-        t = await createTournament('first tournament', 'math', web3.toWei(15), roundData, 0)
-        let [_, roundAddress] = await t.currentRound()
-        r = Contract(roundAddress, MatryxRound, 0)
+    t = await createTournament('first tournament', 'math', web3.toWei(15), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
+    s = await createSubmission(t, false, 1)
+    let submissions = await r.getSubmissions(0, 0)
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
-        //Create submissions
-        s = await createSubmission(t, false, 1)
+    assert.ok(s.address, 'Submission is not valid.')
+  })
 
-        let submissions = await r.getSubmissions()
-        await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0, 0], 0)
+  it('Tournament should be Open', async function() {
+    let state = await t.getState()
+    assert.equal(state, 2, 'Tournament is not Open')
+  })
 
-        assert.ok(s.address, "Submission is not valid.");
-    });
+  it('Round state should be Has Winners', async function() {
+    let state = await r.getState()
+    assert.equal(state, 4, 'Round should be in Has Winners state')
+  })
 
-    it("Tournament should be Open", async function () {
-        let state = await t.getState();
-        assert.equal(state, 2, "Tournament is not Open")
-    });
+  it('Able to get ghost round', async function() {
+    let rounds = await t.getRounds()
+    grAddress = rounds[rounds.length - 1]
+    gr = Contract(grAddress, IMatryxRound, 0)
+    assert.isTrue(gr.address != r.address, 'Unable to get ghost round')
+  })
 
-    it("Able to get ghost round", async function () {
-        let rounds = await t.getRounds();
-        grAddress = rounds[rounds.length-1]
-        gr = Contract(grAddress, MatryxRound, 0)
-        assert.isTrue(gr.address != r.address, "Unable to get ghost round")
-    });
+  it('Ghost round Review Period Duration is correct', async function() {
+    let rpd = await gr.getReview()
+    assert.equal(rpd, 20, 'Incorrect ghost round review period')
+  })
 
-    it("Ghost round Review Period Duration is correct", async function () {
-        let rpd = await gr.getReviewPeriodDuration()
-        assert.equal(rpd, 20, "New round details not updated correctly")
-    });
+  it('Ghost round bounty is correct', async function() {
+    let grb = await gr.getBounty().then(fromWei)
+    assert.equal(grb, 5, 'Incorrect ghost round bounty')
+  })
 
-    it("Ghost round bounty is correct", async function () {
-        let grb = await gr.getBounty()
-        assert.equal(fromWei(grb), 5, "New round details not updated correctly")
-    });
+  it('Tournament balance is correct', async function() {
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    assert.equal(tB, 5, 'Tournament balance incorrect')
+  })
 
-    it("Tournament balance is correct", async function () {
-        let tB = await t.getBalance()
-        assert.equal(fromWei(tB), 5, "Tournament balance incorrect")
-    });
+  it('Ghost Round balance should be 5', async function() {
+    let grB = await platform.getBalanceOf(gr.address).then(fromWei)
+    assert.equal(grB, 5, 'Ghost round balance should be 0')
+  })
 
-    it("Ghost Round balance should be 5", async function () {
-        let grB = await gr.getRoundBalance()
-        assert.equal(fromWei(grB), 5, "Tournament and round balance should both be 0")
-    });
+  it('Able to edit ghost round, review period duration updated correctly', async function() {
+    roundData = {
+      start: Math.floor(Date.now() / 1000) + 60,
+      end: Math.floor(Date.now() / 1000) + 80,
+      review: 40,
+      bounty: web3.toWei(5)
+    }
 
-    it("Able to edit ghost round, review period duration updated correctly", async function () {
-        roundData = {
-            start: Math.floor(Date.now() / 1000) + 60,
-            end: Math.floor(Date.now() / 1000) + 80,
-            reviewPeriodDuration: 40,
-            bounty: web3.toWei(5),
-            closed: false
-        }
+    await t.updateNextRound(roundData)
+    let rpd = await gr.getReview().then(Number)
 
-        await t.editGhostRound(roundData)
-        let rpd = await gr.getReviewPeriodDuration()
+    assert.equal(rpd, 40, 'Review period duration not updated correctly')
+  })
 
-        assert.equal(rpd.toNumber(), 40, "Review period duration not updated correctly")
-    });
+  it('Ghost round bounty is correct', async function() {
+    let grb = await gr.getBounty().then(fromWei)
+    assert.equal(grb, 5, 'Ghost round bounty should be 5')
+  })
 
-    it("Ghost round bounty is correct", async function () {
-        let grb = await gr.getBounty()
-        assert.equal(fromWei(grb), 5, "New round details not updated correctly")
-    });
+  it('Ghost Round balance is correct', async function() {
+    let grb = await platform.getBalanceOf(gr.address).then(fromWei)
+    assert.equal(grb, 5, 'Ghost round balance should be 5')
+  })
 
-    it("Ghost Round balance should be 5", async function () {
-        let grB = await gr.getRoundBalance()
-        assert.equal(fromWei(grB), 5, "Tournament and round balance should both be 0")
-    });
+  // Tournament can send more funds to ghost round if round is edited
+  it('Able to edit ghost round, send more MTX to the round', async function() {
+    roundData = {
+      start: Math.floor(Date.now() / 1000) + 200,
+      end: Math.floor(Date.now() / 1000) + 220,
+      review: 40,
+      bounty: web3.toWei(8)
+    }
+    await t.updateNextRound(roundData)
+    let rpd = await gr.getReview()
 
-    // Tournament can send more funds to ghost round if round is edited
-    it("Able to edit ghost round, send more MTX to the round", async function () {
-        roundData = {
-            start: Math.floor(Date.now() / 1000) + 200,
-            end: Math.floor(Date.now() / 1000) + 220,
-            reviewPeriodDuration: 40,
-            bounty: web3.toWei(8),
-            closed: false
-        }
+    assert.equal(rpd, 40, 'Ghost Round not updated correctly')
+  })
 
-        await t.editGhostRound(roundData)
-        let rpd = await gr.getReviewPeriodDuration()
+  it('Ghost round bounty is correct', async function() {
+    let grb = await gr.getBounty().then(fromWei)
+    assert.equal(grb, 8, 'Ghost round bounty not updated correctly')
+  })
 
-        assert.equal(rpd, 40, "Ghost Round not updated correctly")
-    });
+  it('Ghost Round balance should be 8', async function() {
+    let grb = await platform.getBalanceOf(gr.address).then(fromWei)
+    assert.equal(grb, 8, 'Ghost round balance incorrect')
+  })
 
-    it("Ghost round bounty is correct", async function () {
-        let grb = await gr.getBounty()
-        assert.equal(fromWei(grb), 8, "Ghost round bounty not updated correctly")
-    });
+  it('Tournament balance is correct', async function() {
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    assert.equal(tB, 2, 'Tournament balance incorrect')
+  })
 
-    it("Ghost Round balance should be 8", async function () {
-        let grB = await gr.getRoundBalance()
-        assert.equal(fromWei(grB), 8, "Ghost round balance incorrect")
-    });
+  // Ghost round can send funds back to tournament upon being edited
+  it('Able to edit ghost round, send MTX from round back to tournament', async function() {
+    roundData = {
+      start: Math.floor(Date.now() / 1000) + 300,
+      end: Math.floor(Date.now() / 1000) + 320,
+      review: 40,
+      bounty: web3.toWei(2)
+    }
+    await t.updateNextRound(roundData)
+    let rpd = await gr.getReview()
 
-    it("Tournament balance is correct", async function () {
-        let tB = await t.getBalance()
-        assert.equal(fromWei(tB), 2, "Tournament balance incorrect")
-    });
+    assert.equal(rpd, 40, 'Ghost Round not updated correctly')
+  })
 
-    // Ghost round can send funds back to tournament upon being edited
-    it("Able to edit ghost round, send MTX from round back to tournament", async function () {
-        roundData = {
-            start: Math.floor(Date.now() / 1000) + 300,
-            end: Math.floor(Date.now() / 1000) + 320,
-            reviewPeriodDuration: 40,
-            bounty: web3.toWei(2),
-            closed: false
-        }
+  it('Ghost round bounty is correct', async function() {
+    let grb = await gr.getBounty().then(fromWei)
+    assert.equal(grb, 2, 'Ghost round bounty should be 2')
+  })
 
-        await t.editGhostRound(roundData)
-        let rpd = await gr.getReviewPeriodDuration()
+  it('Ghost Round balance is correct', async function() {
+    let grb = await platform.getBalanceOf(gr.address).then(fromWei)
+    assert.equal(grb, 2, 'Ghost round balance should be 2')
+  })
 
-        assert.equal(rpd, 40, "Ghost Round not updated correctly")
-    });
+  it('Tournament balance is correct', async function() {
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    assert.equal(tB, 8, 'Tournament balance should be 8')
+  })
+})
 
-    it("Ghost round bounty is correct", async function () {
-        let grb = await gr.getBounty()
-        assert.equal(fromWei(grb), 2, "New round details not updated correctly")
-    });
-
-    it("Ghost Round balance should be 5", async function () {
-        let grB = await gr.getRoundBalance()
-        assert.equal(fromWei(grB), 2, "Tournament and round balance should both be 0")
-    });
-
-    it("Tournament balance is correct", async function () {
-        let tB = await t.getBalance()
-        assert.equal(fromWei(tB), 8, "Tournament balance incorrect")
-    });
-
-});
-
+//TODO - add timing restrictions
+/*
 contract('Round Timing Restrictions Testing', function(accounts) {
-    let t; //tournament
-    let r; //round
+  let t //tournament
+  let r //round
 
-    it("Able to create a round with duration: 1 day", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 86400,
-            reviewPeriodDuration: 5,
-            bounty: web3.toWei(5),
-            closed: false
-        }
+  it('Able to create a round with duration: 1 day', async function() {
+    await init()
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 86400,
+      review: 5,
+      bounty: web3.toWei(5)
+    }
 
-        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-        let [_, roundAddress] = await t.currentRound()
-        r = Contract(roundAddress, MatryxRound, 0)
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
 
-        assert.ok(r.address, "Round not created successfully.");
-    });
+    assert.ok(r.address, 'Round not created successfully.')
+  })
 
-    it("Able to create a round with duration: 1 year", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 31536000,
-            reviewPeriodDuration: 5,
-            bounty: web3.toWei(5),
-            closed: false
-        }
+  it('Able to create a round with duration: 1 year', async function() {
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 31536000,
+      review: 5,
+      bounty: web3.toWei(5)
+    }
 
-        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-        let [_, roundAddress] = await t.currentRound()
-        r = Contract(roundAddress, MatryxRound, 0)
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
 
-        assert.ok(r.address, "Round not created successfully.");
-    });
+    assert.ok(r.address, 'Round not created successfully.')
+  })
 
-    it("Unable to create a round with duration: 1 year + 1 second", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 31536001,
-            reviewPeriodDuration: 5,
-            bounty: web3.toWei(5),
-            closed: false
-        }
+  it('Unable to create a round with duration: 1 year + 1 second', async function() {
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 31536001,
+      review: 5,
+      bounty: web3.toWei(5)
+    }
 
-        try {
-            t.accountNumber = 1
-            await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-            assert.fail('Expected revert not received');
-          } catch (error) {
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to create the round');
-          }
-    });
+    try {
+      t.accountNumber = 1
+      await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to create the round')
+    }
+  })
 
-    it("Able to create a round review period duration: 1 year", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 10,
-            reviewPeriodDuration: 31536000,
-            bounty: web3.toWei(5),
-            closed: false
-        }
+  it('Able to create a round review period duration: 1 year', async function() {
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 10,
+      review: 31536000,
+      bounty: web3.toWei(5)
+    }
 
-        t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-        let [_, roundAddress] = await t.currentRound()
-        r = Contract(roundAddress, MatryxRound, 0)
+    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    let [_, roundAddress] = await t.getCurrentRound()
+    r = Contract(roundAddress, IMatryxRound, 0)
 
-        assert.ok(r.address, "Round not created successfully.");
-    });
+    assert.ok(r.address, 'Round not created successfully.')
+  })
 
-    it("Unable to create a round with duration: 1 year + 1 second", async function () {
-        await init();
-        roundData = {
-            start: Math.floor(Date.now() / 1000),
-            end: Math.floor(Date.now() / 1000) + 10,
-            reviewPeriodDuration: 31536001,
-            bounty: web3.toWei(5),
-            closed: false
-        }
+  it('Unable to create a round with duration: 1 year + 1 second', async function() {
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 10,
+      review: 31536001,
+      bounty: web3.toWei(5)
+    }
 
-        try {
-            t.accountNumber = 1
-            await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-            assert.fail('Expected revert not received');
-          } catch (error) {
-            let revertFound = error.message.search('revert') >= 0;
-            assert(revertFound, 'Should not have been able to create the round');
-          }
-    });
-
-});
+    try {
+      t.accountNumber = 1
+      await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to create the round')
+    }
+  })
+})
+*/

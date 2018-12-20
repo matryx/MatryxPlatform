@@ -5,44 +5,45 @@ Matryx is a bounty-based platform that enables and incentivizes decentralized sc
 
 Welcome!
 
-Becoming a MatryxPeer
-^^^^^^^^^^^^^^^^^^^^^
+Entering Matryx
+^^^^^^^^^^^^^^^
 
-To start using the platform, you first need to create a ``MatryxPeer`` for the Ethereum address you intend to use it with. You can do this as many times as you like with as many Ethereum addresses as you have, although the process does cost a bit of gas, so we're not sure why you would. That said, creating a peer is as simple as running the following:
+To start using the platform, you first need to enter Matryx with the Ethereum address that you intend to use on the platform. Entering Matryx is as simple as running the following:
 
 .. code-block:: Solidity
 
-	platform.createPeer({gas: platform.createPeer.estimateGas()})
+	platform.enterMatryx()
 
-Congrats! Now that you've created a peer, anytime you use the platform the positive and negative trust you earn through interacting with others will be aggregated by this ``MatryxPeer`` representation you've just created. For the ``MatryxPlatform`` Beta, we simply use ``MatryxPeer`` as a way to ensure that you cite your sources.
+Congrats! You have now entered the Matryx platform. We're glad to have you on board.
 
 Approving Platform Transactions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To interact with the platform, you first need to tell ``MatryxToken`` that you approve of ``MatryxPlatform``, and specify a number of ``tokens`` you want to approve. This is done by calling 
+To interact with the platform, you first need to tell ``MatryxToken`` that you approve of ``MatryxPlatform``, and specify a number of ``tokens`` you want to approve. This is done by calling
 
 .. code-block:: Solidity
 
 	token.approve(MatryxPlatform.address, tokens)
 
+Great! Now that you know how to approve platform transactions, you can create tournaments, make submissions, and interact with other platform users.
 
 Entering a Tournament
 ^^^^^^^^^^^^^^^^^^^^^
 
-Now that you've done this, you should be able to enter the tournament. This is a call to the platform itself and goes like
+To enter a tournament that you'd like to participate in, you can make the following call:
 
 .. code-block:: Solidity
 
-	platform.enterTournament(tournament.address)
+	tournament.enter()
 
-Whenever you enter a tournament, you will first have to pay the tournament entry fee designated by the tournament creator. To check a tournament's entry fee in advance, you can call
+Whenever you enter a tournament, you will have to pay the tournament entry fee designated by the tournament creator, so you need to first approve at least that many MTX tokens. To check a tournament's entry fee before entering, you can call
 
 .. code-block:: Solidity
 
 	tournament.getEntryFee()
 
-The value returned here is the Wei equivalent of MTX, so a single unit is equal to one-eighteenth of a MTX. This fee is incurred solely to prevent malicious actors from attemping a cross-tournament Sybil attack and will be returned to you at the end of each tournament you enter.
+The value returned here is the Wei equivalent of MTX, so a sinlge MTX has 1e18 digit precision. This fee is incurred solely to prevent malicious actors from attemping a cross-tournament Sybil attack, and it will be returned to you at the end of the tournament (or whenever you choose to exit the tournament).
 
-Congratulations! You've now entered into your first Matryx Tournament! Assemble a team; Let's save the world!!
+Congratulations! You have now entered your first Matryx tournament. Assemble a team; let's get solving!
 
 .. _diving_in

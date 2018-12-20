@@ -15,7 +15,6 @@ contract = utils.Contract
 
 keccak = str => '0x' + ethUtil.keccak(str).hexSlice(0)
 selector = signature => keccak(signature).substr(0, 10)
-getFileContents = path => fs.readFileSync(path).toString()
 
 gt = getTx = hash => wallet.provider.getTransaction(hash)
 gtr = getTxR = hash => wallet.provider.getTransactionReceipt(hash)
@@ -41,25 +40,35 @@ module.exports = {
         return new Web3.providers.HttpProvider('http://localhost:8545')
       },
       network_id: "*", // match any network
-      gas: 6541593,
-      gasPrice: 30000000
+      gas: 8e6,
+      gasPrice: 5e9
     },
     ropsten: {
       provider: function () {
         network.setNetwork('ropsten')
         wallet = new ethers.Wallet(network.privateKeys[0], network.provider)
-        const mnemonic = getFileContents(network.mnemonicPath)
-        return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/metamask")
+        return new HDWalletProvider(network.mnemonic, "https://ropsten.infura.io/metamask")
       },
       network_id: 3,
-      gas: 4500000
+      gas: 8e6,
+      gasPrice: 5e9
+    },
+    kovan: {
+      provider: function () {
+        network.setNetwork('kovan')
+        wallet = new ethers.Wallet(network.privateKeys[0], network.provider)
+        return new HDWalletProvider(network.mnemonic, "https://kovan.infura.io/metamask")
+      },
+      network_id: 42,
+      gas: 8e6,
+      gasPrice: 5e9 // 5 gwei
     },
     testing: {
       host: "localhost",
       port: 8545,
       network_id: "*", // match any network
-      gas: 6741593,
-      gasPrice: 30000000
+      gas: 8e6,
+      gasPrice: 5e9
     },
     coverage: {
       host: "localhost",

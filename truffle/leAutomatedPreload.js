@@ -49,8 +49,8 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   //   bounty
   // }
 
-  let tx = await platform.createTournament(tournamentData, roundData, { gasLimit: 4e6, gasPrice: 25 })
-  await getMinedTx('Platform.createTournament', tx.hash)
+  let tx = await platform.createTournament(tournamentData, roundData)
+  await getMinedTx(tx.hash)
 
   const address = await platform.allTournaments(count)
   const tournament = Contract(address, MatryxTournament, accountNumber)
@@ -86,8 +86,8 @@ const createSubmission = async (tournament, accountNumber) => {
 
   const isEntrant = await tournament.isEntrant(account)
   if (!isEntrant) {
-    let { hash } = await platform.enterTournament(tournament.address, { gasLimit: 4e6 })
-    await getMinedTx('Platform.enterTournament', hash)
+    let { hash } = await platform.enterTournament(tournament.address)
+    await getMinedTx(hash)
   }
 
   const title = stringToBytes32('A submission ' + genId(6), 3)
@@ -108,8 +108,8 @@ const createSubmission = async (tournament, accountNumber) => {
     references: new Array(0).fill(0).map(r => genAddress())
   }
 
-  let tx = await tournament.createSubmission(submissionData, contribsAndRefs, { gasLimit: 4e6 })
-  await getMinedTx('Tournament.createSubmission', tx.hash)
+  let tx = await tournament.createSubmission(submissionData, contribsAndRefs)
+  await getMinedTx(tx.hash)
 
   const [_, roundAddress] = await tournament.currentRound()
   const round = Contract(roundAddress, MatryxRound)
@@ -130,7 +130,7 @@ const updateSubmission = async submission => {
   let tx
 
   tx = await submission.updateData(modData)
-  await getMinedTx('Submission.updateData', tx.hash)
+  await getMinedTx(tx.hash)
 
   const conModData = {
     contributorsToAdd: new Array(3).fill(0).map(() => genAddress()),
@@ -139,7 +139,7 @@ const updateSubmission = async submission => {
   }
 
   tx = await submission.updateContributors(conModData)
-  await getMinedTx('Submission.updateContributors', tx.hash)
+  await getMinedTx(tx.hash)
 
   const refModData = {
     referencesToAdd: new Array(3).fill(0).map(() => genAddress()),
@@ -147,7 +147,7 @@ const updateSubmission = async submission => {
   }
 
   tx = await submission.updateReferences(refModData)
-  await getMinedTx('Submission.updateReferences', tx.hash)
+  await getMinedTx(tx.hash)
 }
 
 const logSubmissions = async tournament => {
@@ -185,8 +185,8 @@ const selectWinnersWhenInReview = async (tournament, accountNumber, winners, rew
   console.log(chalk`{grey [Waiting ${~~timeTilRoundInReview}s until review period]}`)
   await sleep(timeTilRoundInReview * 1000)
 
-  const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData, { gasLimit: 4e6 })
-  await getMinedTx('Tournament.selectWinners', tx.hash)
+  const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction, 0], roundData)
+  await getMinedTx(tx.hash)
 }
 
 module.exports = async exit => {
