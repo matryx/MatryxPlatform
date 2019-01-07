@@ -21,7 +21,7 @@ library LibCommit
 
     event Bid(bytes32 _commit, address bidder, uint256 bid);                   // Fired when someone bids on a commit
     event JoinGroupRequest(string group, address user);                        // Fired when someone requests to join a group
-    event Sold(bytes32 commitHash, uint256 workPrice, address _newOwner);      // Fired when a commit is sold by its owner
+    event Sold(bytes32 commitHash, uint256 usePrice, address _newOwner);      // Fired when a commit is sold by its owner
     event Committed(bytes32 commitHash, bytes32 _mergeTree);                   // Fired when a new commit is created
 
     struct User
@@ -42,20 +42,26 @@ library LibCommit
     {
         bytes32 commitHash;
         bytes32 treeHash;
-        uint256 workPrice;
-        SubtreeInfo[2] parents;
-        VirtualParent[] virtualParents;
+        uint256 usePrice;
+        uint256 value;
+        uint256 height;
+        SubtreeInfo[] parents;
     }
 
+    ///@dev Information about a subtree under a commit
+    ///@param rootHash Hash of the root of the subtree
+    ///@param givenValue Value paid by commit to include this parent commit
+    ///@param accHeight Length of subtree from root commit to this parent
+    ///@param accValue Accumulated value from root commit to this parent
     struct SubtreeInfo
     {
         bytes32 rootHash;
-        uint256 value;
-        uint256 accSize;
+        uint256 givenValue;
+        uint256 accHeight;
         uint256 accValue;
     }
 
-    /// @dev Represents a path to a specific ancestor.
+    /// @dev Represents a path to a specific ancestor commit.
     /// @param path The path in 0:=left_parent,1:=right_parent encoded bits.
     /// @param length The length of the path in bits
     struct Path
@@ -64,13 +70,13 @@ library LibCommit
         uint256 length;
     }
 
-    struct VirtualParent {
-        bytes32 parentHash;
-        uint256 totalValue;
-        uint256 minimumValue;
-        uint256 minimumSteps;
-        bytes32 minPathHash;
-    }
+    // struct VirtualParent {
+    //     bytes32 parentHash;
+    //     uint256 totalValue;
+    //     uint256 minimumValue;
+    //     uint256 minimumSteps;
+    //     bytes32 minPathHash;
+    // }
 
     struct Group {
         bool exists;
@@ -130,20 +136,19 @@ library LibCommit
     /// @param leftPath Most valuable (longest) path backwards from this commit to a virtual parent (merges only)
     /// @param rightPath Most valuable (longest) path backwards from this commit to a virtual parent (merges only)
     function createCommit(address self, address sender, address token, CollaborationData storage data, CommitDetails commitDetails, bytes32 groupAddress, Path leftPath, Path rightPath) public {
-        require(leftPath.length == rightPath.length);
         Commit storage parent0 = data.commits[commitDetails.parents[0].rootHash];
         Commit storage parent1 = data.commits[commitDetails.parents[1].rootHash];
         require(parent0.exists);
-        uint256 numParents = parent1.exists ? 2 : 1;
-        uint256[2] memory parentPrices = uint256[2](parent0.details.workPrice, parent1.details.workPrice);
-
+        require(leftPath.length == rightPath.length);
+        
         bytes32 commitHash = keccak256(abi.encodePacked(commitDetails.parents[0].rootHash, commitDetails.parents[1].rootHash));
         Commit memory memCommit;
         memCommit.exists = true;
         memCommit.owner = sender;
         memCommit.groupAddress = groupAddress;
         memCommit.details = commitDetails;
-        memCommit.details.parentPrices = parentPrices;
+        memCommit.details.parents[0].givenValue = parent0.details.usePrice;
+        memCommit.details.parents[1].givenValue = parent1.details.usePrice;
 
         // Create the commit! (for later: this is a parent block hash)
         data.treeToCommit[commitDetails.treeHash] = commitHash;
@@ -152,7 +157,6 @@ library LibCommit
         if(leftPath != 0x0)
         {
             // TODO: begin implementing merge with new logic (groups, no branches, virtual parent addition, not in group means paying, etc)
-            // uint256 price = parent0.details.workPrice + parent1.details.workPrice;
             uint256 leftPathValue;
             uint256 rightPathValue;
             bytes32 virtualParentLeft;
@@ -164,7 +168,7 @@ library LibCommit
                 uint256 theByte = i/8;
                 uint8 theBit = (leftPath[theByte] >> i) & 0x01;
 
-                leftPathValue += backwalkCommit.parentPrices[theBit];
+                leftPathValue += backwalkCommit.parents[theBit].givenValue;
                 virtualParentLeft = backwalkCommit.parents[theBit].rootHash;
 
                 backwalkCommit = data.commits[backwalkCommit.parents[theBit].rootHash];
@@ -176,22 +180,29 @@ library LibCommit
                 uint256 theByte = i/8;
                 uint8 theBit = (rightPath[theByte] >> i) & 0x01;
 
-                rightPathValue += backwalkCommit.parentPrices[theBit];
+                rightPathValue += backwalkCommit.parents[theBit].givenValue;
                 virtualParentRight = backwalkCommit.parents[theBit].rootHash;
 
                 backwalkCommit = data.commits[backwalkCommit.parents[theBit].rootHash];
             }
 
             require(virtualParentLeft == virtualParentRight);
-            // Push to virtual parents
-            newCommit.details.virtualParents.push(virtualParentLeft);
 
-            // Set subtree size and value
-            Subtree sTree;
-            sTree.size = parent0.subtree.size + parent1.subtree.size - leftPath.length - rightPath.length;
-            sTree.value = commitDetails.workPrice + parent0.subtree.value + parent1.subtree.value - leftPathValue - rightPathValue;
-            // newCommit.sTree.size = data.commits[vParentHashLeft].size + 2;
-            // newCommit.subtree.value = data.commits[vParentHashLeft].value
+            // Set size and value of commit
+            newCommit.details.value = leftPathValue + rightPathValue + data.comits[virtualParentLeft].details.value;
+            newCommit.details.height = leftPath.length + rightPath.length + data.commits[virtualParentLeft].details.height;
+            // Set parent sizes and values
+            newCommit.details.parents[0].rootHash = commitDetails.parents[0].rootHash;
+            newCommit.details.parents[0].accHeight = leftPath.length + data.commits[virtualParentLeft].details.height;
+            newCommit.details.parents[0].accValue = leftPathValue + data.commits[virtualParentLeft].details.value;
+            newCommit.details.parents[1].rootHash = commitDetails.parents[1].rootHash;
+            newCommit.details.parents[1].accHeight = rightPath.length + data.commits[virtualParentRight].details.height;
+            newCommit.details.parents[1].accValue = rightPathValue + data.commits[virtualParentRight].details.value;
+            // Create virtual parent
+            newCommit.details.parents[2].rootHash = virtualParentLeft;
+            newCommit.details.parents[2].givenValue = leftPathValue + rightPathValue;
+            newCommit.details.parents[2].accHeight = leftPath.length + rightPath.length + data.commits[virtualParentLeft].details.height;
+            newCommit.details.parents[2].accValue = leftPathValue + rightPathValue + data.commits[virtualParentLeft].details.value;
         }
 
         emit Committed(commitHash, commitDetails.treeHash);
@@ -202,11 +213,11 @@ library LibCommit
     /// @param sender  msg.sender to the Platform
     /// @param data All commit data on the Platform
     /// @param commitHash Hash of the commmit to set the price of
-    /// @param workPrice New price to work off of the commit
-    function setCommitPrice(address self, address sender, CollaborationData storage data, bytes32 commitHash, uint256 workPrice) public {
+    /// @param usePrice New price to work off of the commit
+    function setCommitPrice(address self, address sender, CollaborationData storage data, bytes32 commitHash, uint256 usePrice) public {
         require(data.commits[commitHash].owner == sender);
-        if(workPrice != 0) {
-            data.commits[commitHash].details.workPrice = workPrice;
+        if(usePrice != 0) {
+            data.commits[commitHash].details.usePrice = usePrice;
         }
     }
 
