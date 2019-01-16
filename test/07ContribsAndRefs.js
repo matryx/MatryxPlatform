@@ -5,11 +5,12 @@ const IMatryxUser = artifacts.require('IMatryxUser')
 
 const { Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
+const { accounts } = require('../truffle/network')
 
 let platform
 let users = Contract(MatryxUser.address, IMatryxUser, 0)
 
-contract('Adding and removing Contributors and References', function(accounts) {
+contract('Adding and removing Contributors and References', function() {
   let t //tournament
   let s //submission
   let ref //reference
@@ -105,7 +106,7 @@ contract('Adding and removing Contributors and References', function(accounts) {
   it('Able to remove a contributor', async function() {
     await s.removeContributorsAndReferences([accounts[3]], [])
     let c = await s.getContributors()
-    assert.isTrue(c.length == 1 && c[0].toLowerCase() == accounts[4], 'Contributor not removed correctly')
+    assert.isTrue(c.length == 1 && c[0] == accounts[4], 'Contributor not removed correctly')
   })
 
   it('Submission is also removed from contributor data', async function() {
@@ -151,7 +152,7 @@ contract('Adding and removing Contributors and References', function(accounts) {
 })
 
 // References Tests
-contract('References Reward Distribution Testing', function(accounts) {
+contract('References Reward Distribution Testing', function() {
     let token
     let t //tournament
     let r //round
@@ -229,7 +230,7 @@ contract('References Reward Distribution Testing', function(accounts) {
   })
 
   // Contributors Tests
-  contract('Contributor Reward Distribution Testing', function(accounts) {
+  contract('Contributor Reward Distribution Testing', function() {
     let token
     let t //tournament
     let r //round

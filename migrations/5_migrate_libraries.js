@@ -7,15 +7,15 @@ var LibRound = artifacts.require('LibRound')
 var LibSubmission = artifacts.require('LibSubmission')
 
 module.exports = function (deployer) {
-  deployer.deploy(LibUtils, { overwrite: false })
-  deployer.deploy(LibUser, { overwrite: false })
+  deployer.deploy(LibUtils, { gasLimit: 8e6, overwrite: false })
+  deployer.deploy(LibUser, { gasLimit: 8e6, overwrite: false })
 
-  deployer.deploy(LibTournamentHelper, { overwrite: false })
+  deployer.deploy(LibTournamentHelper, { gasLimit: 8e6, overwrite: false })
   deployer.link(LibTournamentHelper, LibTournament)
 
-  deployer.deploy(LibTournament, { overwrite: false })
-  deployer.deploy(LibRound, { overwrite: false })
-  deployer.deploy(LibSubmission, { overwrite: false })
+  deployer.deploy(LibTournament, { gasLimit: 8e6, overwrite: false })
+  deployer.deploy(LibRound, { gasLimit: 8e6, overwrite: false })
+  deployer.deploy(LibSubmission, { gasLimit: 8e6, overwrite: false })
 
-  deployer.deploy(LibPlatform, { overwrite: false })
+  deployer.deploy(LibPlatform, { gasLimit: 8e6, overwrite: false })
 }

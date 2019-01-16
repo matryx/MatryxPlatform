@@ -2,10 +2,11 @@ const IMatryxRound = artifacts.require('IMatryxRound')
 
 const { Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, waitUntilInReview, waitUntilClose, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
+const { accounts } = require('../truffle/network')
 
 let platform
 
-contract('NotYetOpen Round Testing', function(accounts) {
+contract('NotYetOpen Round Testing', function() {
   let t //tournament
   let r //round
 
@@ -88,7 +89,7 @@ contract('NotYetOpen Round Testing', function(accounts) {
   })
 })
 
-contract('Open Round Testing', function(accounts) {
+contract('Open Round Testing', function() {
   let t //tournament
   let r //round
   let s //submission
@@ -175,7 +176,7 @@ contract('Open Round Testing', function(accounts) {
   })
 })
 
-contract('In Review Round Testing', function(accounts) {
+contract('In Review Round Testing', function() {
   let t //tournament
   let r //round
   let s //submission
@@ -248,7 +249,7 @@ contract('In Review Round Testing', function(accounts) {
   })
 })
 
-contract('Closed Round Testing', function(accounts) {
+contract('Closed Round Testing', function() {
   let t //tournament
   let r //round
   let s //submission
@@ -374,7 +375,7 @@ contract('Closed Round Testing', function(accounts) {
   })
 })
 
-contract('Abandoned Round Testing', function(accounts) {
+contract('Abandoned Round Testing', function() {
   let t //tournament
   let r //round
 
@@ -472,7 +473,7 @@ contract('Abandoned Round Testing', function(accounts) {
 
 })
 
-contract('Abandoned Round due to No Submissions', function(accounts) {
+contract('Abandoned Round due to No Submissions', function() {
   let t //tournament
   let r //round
 
@@ -529,7 +530,7 @@ contract('Abandoned Round due to No Submissions', function(accounts) {
 
 })
 
-contract('Unfunded Round Testing', function(accounts) {
+contract('Unfunded Round Testing', function() {
   let t //tournament
   let r //round
   let ur //unfunded round
@@ -632,7 +633,7 @@ contract('Unfunded Round Testing', function(accounts) {
   })
 })
 
-contract('Ghost Round Testing', function(accounts) {
+contract('Ghost Round Testing', function() {
   let t //tournament
   let r //round
   let gr //ghost round
@@ -779,7 +780,7 @@ contract('Ghost Round Testing', function(accounts) {
 
 //TODO - add timing restrictions
 /*
-contract('Round Timing Restrictions Testing', function(accounts) {
+contract('Round Timing Restrictions Testing', function() {
   let t //tournament
   let r //round
 

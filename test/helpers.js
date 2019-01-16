@@ -1,6 +1,9 @@
 const fs = require('fs')
 const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('../truffle/utils')
 
+const toWei = n => web3.utils.toWei(n.toString())
+web3.toWei = toWei
+
 Contract.logLevel = 1
 
 module.exports = function (artifacts, web3) {
@@ -49,7 +52,7 @@ module.exports = function (artifacts, web3) {
       descHash,
       fileHash,
       bounty,
-      entryFee: web3.toWei(2)
+      entryFee: toWei(2)
     }
 
     let tx = await platform.createTournament(tournamentData, roundData)

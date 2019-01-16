@@ -229,12 +229,12 @@ library LibSubmission {
     /// @param data      Data struct on Platform
     /// @param amount    Amount of MTX to add
     function addFunds(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 amount) public {
-        require(IToken(info.token).allowance(sender, this) >= amount, "Must approve funds first");
+        require(IToken(info.token).allowance(sender, address(this)) >= amount, "Must approve funds first");
 
         data.totalBalance = data.totalBalance.add(amount);
         data.balanceOf[self] = data.balanceOf[self].add(amount);
         data.users[sender].totalSpent = data.users[sender].totalSpent.add(amount);
-        require(IToken(info.token).transferFrom(sender, this, amount), "Transfer failed");
+        require(IToken(info.token).transferFrom(sender, address(this), amount), "Transfer failed");
     }
 
     /// @dev Unlocks the fileHash of this Submission if allowed for this sender

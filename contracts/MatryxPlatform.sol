@@ -150,7 +150,7 @@ contract MatryxPlatform {
     }
 
     /// @dev Gets Information about the Platform
-    /// @return  Info Struct that contains directory, version, token, and owner
+    /// @return  Info Struct that contains system, version, token, and owner
     function getInfo() public view returns (MatryxPlatform.Info memory) {
         return info;
     }
@@ -170,7 +170,7 @@ contract MatryxPlatform {
         require(msg.sender == info.owner, "Must be Platform owner");
         IToken(info.token).upgrade(data.totalBalance);
 
-        require(IToken(token).balanceOf(this) == data.totalBalance, "Token address must match upgraded token");
+        require(IToken(token).balanceOf(address(this)) == data.totalBalance, "Token address must match upgraded token");
         info.token = token;
     }
 
@@ -185,7 +185,7 @@ contract MatryxPlatform {
     function withdrawTokens(address token) external {
         require(msg.sender == info.owner, "Must be Platform owner");
 
-        uint256 balance = IToken(token).balanceOf(this);
+        uint256 balance = IToken(token).balanceOf(address(this));
 
         // if current token, check if any extraneous tokens
         if (token == info.token) {
@@ -213,10 +213,10 @@ interface IMatryxPlatform {
 
     function getTournamentCount() external view returns (uint256);
     function getUserCount() external view returns (uint256);
-    function getTournaments(uint256, uint256) external returns (address[] memory);
-    function getTournamentsByCategory(bytes32, uint256, uint256) external returns (address[] memory);
-    function getUsers(uint256, uint256) external returns (address[] memory);
-    function getCategories(uint256, uint256) external returns (bytes32[] memory);
+    function getTournaments(uint256, uint256) external view returns (address[] memory);
+    function getTournamentsByCategory(bytes32, uint256, uint256) external view returns (address[] memory);
+    function getUsers(uint256, uint256) external view returns (address[] memory);
+    function getCategories(uint256, uint256) external view returns (bytes32[] memory);
 
     function createCategory(bytes32) external;
 
@@ -294,7 +294,7 @@ library LibPlatform {
     /// @param startIndex  Index of first Tournament to return
     /// @param count       Number of Tournaments to return. If 0, all
     /// @return            Array of Tournament addresses
-    function getTournaments(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[] memory) {
+    function getTournaments(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public returns (address[] memory) {
         uint256 version = IMatryxSystem(info.system).getVersion();
         address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage tournaments = data.allTournaments;
@@ -323,7 +323,7 @@ library LibPlatform {
     /// @param startIndex  Index of first User to return
     /// @param count       Number of User to return. If 0, all
     /// @return          Array of Tournament addresses for given category
-    function getTournamentsByCategory(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category, uint256 startIndex, uint256 count) public view returns (address[] memory) {
+    function getTournamentsByCategory(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category, uint256 startIndex, uint256 count) public returns (address[] memory) {
         uint256 version = IMatryxSystem(info.system).getVersion();
         address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage cat = data.categories[category];
@@ -351,7 +351,7 @@ library LibPlatform {
     /// @param startIndex  Index of first User to return
     /// @param count       Number of User to return. If 0, all
     /// @return            Array of User addresses
-    function getUsers(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[] memory) {
+    function getUsers(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public returns (address[] memory) {
         uint256 version = IMatryxSystem(info.system).getVersion();
         address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage users = data.allUsers;
@@ -379,7 +379,7 @@ library LibPlatform {
     /// @param startIndex  Index of first Category to return
     /// @param count       Number of Category to return. If 0, all
     /// @return            Array of Categories
-    function getCategories(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (bytes32[] memory) {
+    function getCategories(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public returns (bytes32[] memory) {
         uint256 version = IMatryxSystem(info.system).getVersion();
         address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         bytes32[] storage allCategories = data.allCategories;
@@ -483,7 +483,7 @@ library LibPlatform {
         require(IToken(info.token).allowance(sender, platform) >= tDetails.bounty, "Insufficient MTX");
 
         uint256 version = IMatryxSystem(info.system).getVersion();
-        address tAddress = new MatryxTournament(version, info.system);
+        address tAddress = address(new MatryxTournament(version, info.system));
 
         IMatryxSystem(info.system).setContractType(tAddress, uint256(LibSystem.ContractType.Tournament));
         data.allTournaments.push(tAddress);

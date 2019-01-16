@@ -37,7 +37,7 @@ module.exports = {
       provider: function () {
         network.setNetwork('ganache')
         wallet = new ethers.Wallet(network.privateKeys[0], network.provider)
-        return new Web3.providers.HttpProvider('http://localhost:8545')
+        return new HDWalletProvider(network.mnemonic, "http://localhost:8545")
       },
       network_id: "*", // match any network
       gas: 8e6,

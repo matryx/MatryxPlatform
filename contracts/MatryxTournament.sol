@@ -272,7 +272,7 @@ library LibTournament {
         require(sDetails.distribution.length == sDetails.contributors.length + 1, "Must include distribution for each contributor and the owner");
 
         for (uint256 i = 0; i < sDetails.references.length; i++) {
-            require(data.submissions[sDetails.references[i]].info.owner != 0x0, "Reference must be an existing submission");
+            require(data.submissions[sDetails.references[i]].info.owner != address(0), "Reference must be an existing submission");
         }
 
         LibTournament.TournamentData storage tournament = data.tournaments[self];
@@ -331,13 +331,13 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param amount    Amount of MTX to add
     function addFunds(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 amount) public {
-        require(IToken(info.token).allowance(sender, this) >= amount, "Must approve funds first");
+        require(IToken(info.token).allowance(sender, address(this)) >= amount, "Must approve funds first");
         require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Tournament must be active");
 
         data.totalBalance = data.totalBalance.add(amount);
         data.balanceOf[self] = data.balanceOf[self].add(amount);
         data.users[sender].totalSpent = data.users[sender].totalSpent.add(amount);
-        require(IToken(info.token).transferFrom(sender, this, amount), "Transfer failed");
+        require(IToken(info.token).transferFrom(sender, address(this), amount), "Transfer failed");
     }
 
     /// @dev Transfers some of Tournament MTX to current Round
@@ -661,7 +661,7 @@ library LibTournamentHelper {
         require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Cannot enter closed or abandoned Tournament");
 
         data.totalBalance = data.totalBalance.add(entryFee);
-        IToken(info.token).transferFrom(sender, this, entryFee);
+        IToken(info.token).transferFrom(sender, address(this), entryFee);
 
         tournament.entryFeePaid[sender].exists = true;
         tournament.entryFeePaid[sender].value = entryFee;

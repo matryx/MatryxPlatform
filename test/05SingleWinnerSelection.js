@@ -5,6 +5,7 @@ const IMatryxUser = artifacts.require('IMatryxUser')
 
 const { Contract } = require('../truffle/utils')
 const { init, createTournament, waitUntilInReview, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
+const { accounts } = require('../truffle/network')
 
 let platform
 let users = Contract(MatryxUser.address, IMatryxUser, 0)
@@ -12,7 +13,7 @@ let users = Contract(MatryxUser.address, IMatryxUser, 0)
 //
 // Case 1
 //
-contract('No Contribs and Close Tournament', function(accounts) {
+contract('No Contribs and Close Tournament', function() {
   let t //tournament
   let r //round
   let s //submission
@@ -131,7 +132,7 @@ contract('No Contribs and Close Tournament', function(accounts) {
 //
 // Case 2
 //
-contract('Contribs and Close Tournament', function(accounts) {
+contract('Contribs and Close Tournament', function() {
   let t //tournament
   let r //round
   let s //submission
@@ -234,7 +235,7 @@ contract('Contribs and Close Tournament', function(accounts) {
 //
 // Case 3
 //
-contract('No Contribs and Start Next Round', function(accounts) {
+contract('No Contribs and Start Next Round', function() {
   let t //tournament
   let r //round
   let nr // new round (after choosing winners)
@@ -335,7 +336,7 @@ contract('No Contribs and Start Next Round', function(accounts) {
 
 // Case 4
 
-contract('Contribs and Start Next Round', function(accounts) {
+contract('Contribs and Start Next Round', function() {
   let t //tournament
   let r //round
   let nr //new round
@@ -457,7 +458,7 @@ contract('Contribs and Start Next Round', function(accounts) {
 
 // Case 5
 
-contract('No Contribs or Refs and Do Nothing', function(accounts) {
+contract('No Contribs or Refs and Do Nothing', function() {
   let t //tournament
   let r //round
   let s //submission
@@ -550,7 +551,7 @@ contract('No Contribs or Refs and Do Nothing', function(accounts) {
 //
 // Case 6
 //
-contract('Contribs and Do Nothing', function(accounts) {
+contract('Contribs and Do Nothing', function() {
   let t //tournament
   let r //round
   let s //submission
@@ -673,7 +674,7 @@ contract('Contribs and Do Nothing', function(accounts) {
 //
 // Case 7
 //
-contract('Do Nothing, then Close Tournament', function(accounts) {
+contract('Do Nothing, then Close Tournament', function() {
   let t //tournament
   let r //round
   let s //submission
@@ -787,7 +788,7 @@ contract('Do Nothing, then Close Tournament', function(accounts) {
 //
 // Case 8
 //
-contract('Do Nothing, then Start Next Round', function(accounts) {
+contract('Do Nothing, then Start Next Round', function() {
   let t //tournament
   let r //round
   let s //submission

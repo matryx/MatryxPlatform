@@ -21,7 +21,7 @@ interface IMatryxRound {
     function getReview() external view returns (uint256);
     function getBounty() external view returns (uint256);
     function getBalance() external view returns (uint256);
-    function getSubmissions(uint256, uint256) external returns (address[] memory);
+    function getSubmissions(uint256, uint256) external view returns (address[] memory);
     function getData() external view returns (LibRound.RoundReturnData memory);
 
     function getSubmissionCount() external view returns (uint256);
@@ -116,7 +116,7 @@ library LibRound {
     /// @param data        Data struct on Platform
     /// @param startIndex  Starting index of subset of Submissions to return
     /// @param count       Number of Submissions to return from startIndex
-    function getSubmissions(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[] memory) {
+    function getSubmissions(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public returns (address[] memory) {
         uint256 version = IMatryxSystem(info.system).getVersion();
         address LibUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage submissions = data.rounds[self].info.submissions;
