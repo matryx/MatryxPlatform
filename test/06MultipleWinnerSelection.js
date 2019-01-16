@@ -4,11 +4,12 @@ const IMatryxSubmission = artifacts.require('IMatryxSubmission')
 
 const { Contract } = require('../truffle/utils')
 const { init, createTournament, waitUntilInReview, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
+const { accounts } = require('../truffle/network')
 
 let platform
 
 // Case 1
-contract('No Contribs and Close Tournament', function(accounts) {
+contract('No Contribs and Close Tournament', function() {
   let t //tournament
   let r //round
   let s1 //submission 1
@@ -89,7 +90,7 @@ contract('No Contribs and Close Tournament', function(accounts) {
 })
 
 // Case 2
-contract('Contribs and Close Tournament', function(accounts) {
+contract('Contribs and Close Tournament', function() {
   let t //tournament
   let r //round
   let s1 //submission 1
@@ -177,7 +178,7 @@ contract('Contribs and Close Tournament', function(accounts) {
 })
 
 // Case 3
-contract('No Contribs and Start Next Round', function(accounts) {
+contract('No Contribs and Start Next Round', function() {
   let t //tournament
   let r //round
   let s1 //submission
@@ -287,7 +288,7 @@ contract('No Contribs and Start Next Round', function(accounts) {
 })
 
 // Case 4
-contract('Contribs and Start Next Round', function(accounts) {
+contract('Contribs and Start Next Round', function() {
   let t //tournament
   let r //round
   let s1 //submission
@@ -404,7 +405,7 @@ contract('Contribs and Start Next Round', function(accounts) {
 })
 
 // Case 5
-contract('No Contribs and Do Nothing', function(accounts) {
+contract('No Contribs and Do Nothing', function() {
   let t //tournament
   let r //round
   let s1 //submission
@@ -507,7 +508,7 @@ contract('No Contribs and Do Nothing', function(accounts) {
 })
 
 // Case 6
-contract('Contribs and Do Nothing', function(accounts) {
+contract('Contribs and Do Nothing', function() {
   let t //tournament
   let r //round
   let s1 //submission

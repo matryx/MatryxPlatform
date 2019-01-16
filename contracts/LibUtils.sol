@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
@@ -11,7 +11,7 @@ library LibUtils {
     /// @param index  Index to start at
     /// @param count  Number elements to return
     /// @return       Returns a subarray of array with count elements starting at index
-    function getSubArray(bytes32[] storage array, uint256 index, uint256 count) public view returns (bytes32[]) {
+    function getSubArray(bytes32[] storage array, uint256 index, uint256 count) public view returns (bytes32[] memory) {
         if (array.length == 0) return array;
 
         require(index >= 0 && index < array.length, "Index out of bounds");

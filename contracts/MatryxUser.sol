@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./MatryxPlatform.sol";
@@ -20,7 +20,7 @@ contract MatryxUser {
     /// Gets the address of the current version of Platform and forwards the
     /// received calldata to this address. Injects msg.sender at the front so
     /// Platform and libraries can know calling address
-    function () public {
+    function () external {
         assembly {
             let ptr := mload(0x40)
             let offset := 0x100000000000000000000000000000000000000000000000000000000
@@ -54,17 +54,17 @@ contract MatryxUser {
 }
 
 interface IMatryxUser {
-    function getData(address user) external view returns (LibUser.UserData);
+    function getData(address user) external view returns (LibUser.UserData memory);
     function getTimeInMatryx(address user) external view returns (uint256);
     function getVotes(address user) external view returns (uint256, uint256);
     function getTotalSpent(address user) external view returns (uint256);
     function getTotalWinnings(address user) external view returns (uint256);
-    function getTournaments(address user) external view returns (address[]);
-    function getTournamentsEntered(address user) external view returns (address[]);
-    function getSubmissions(address user) external view returns (address[]);
-    function getSubmissionsByTournament(address user, address tAddress) external view returns (address[]);
-    function getContributedTo(address user) external view returns (address[]);
-    function getUnlockedFiles(address user) external view returns (address[]);
+    function getTournaments(address user) external view returns (address[] memory);
+    function getTournamentsEntered(address user) external view returns (address[] memory);
+    function getSubmissions(address user) external view returns (address[] memory);
+    function getSubmissionsByTournament(address user, address tAddress) external view returns (address[] memory);
+    function getContributedTo(address user) external view returns (address[] memory);
+    function getUnlockedFiles(address user) external view returns (address[] memory);
 }
 
 library LibUser {
@@ -82,7 +82,7 @@ library LibUser {
         address[] unlockedFiles;
     }
 
-    function getData(address, address, MatryxPlatform.Data storage data, address user) public view returns (LibUser.UserData) {
+    function getData(address, address, MatryxPlatform.Data storage data, address user) public view returns (LibUser.UserData memory) {
         return data.users[user];
     }
 
@@ -102,19 +102,19 @@ library LibUser {
         return data.users[user].totalWinnings;
     }
 
-    function getTournaments(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[]) {
+    function getTournaments(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[] memory) {
         return data.users[user].tournaments;
     }
 
-    function getTournamentsEntered(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[]) {
+    function getTournamentsEntered(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[] memory) {
         return data.users[user].tournamentsEntered;
     }
 
-    function getSubmissions(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[]) {
+    function getSubmissions(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[] memory) {
         return data.users[user].submissions;
     }
 
-    function getSubmissionsByTournament(address, address, MatryxPlatform.Data storage data, address user, address tAddress) public view returns (address[]) {
+    function getSubmissionsByTournament(address, address, MatryxPlatform.Data storage data, address user, address tAddress) public view returns (address[] memory) {
         address[] storage submissions = data.users[user].submissions;
 
         uint256 tSubCount = 0;
@@ -127,7 +127,7 @@ library LibUser {
         uint256 j = 0;
         address[] memory tSubs = new address[](tSubCount);
 
-        for (i = 0; i < submissions.length; i++) {
+        for (uint256 i = 0; i < submissions.length; i++) {
             if (data.submissions[submissions[i]].info.tournament == tAddress) {
                 tSubs[j++] = submissions[i];
             }
@@ -136,11 +136,11 @@ library LibUser {
         return tSubs;
     }
 
-    function getContributedTo(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[]) {
+    function getContributedTo(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[] memory) {
         return data.users[user].contributedTo;
     }
 
-    function getUnlockedFiles(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[]) {
+    function getUnlockedFiles(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[] memory) {
         return data.users[user].unlockedFiles;
     }
 

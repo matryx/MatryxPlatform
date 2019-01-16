@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
@@ -21,16 +21,17 @@ interface IMatryxRound {
     function getReview() external view returns (uint256);
     function getBounty() external view returns (uint256);
     function getBalance() external view returns (uint256);
-    function getSubmissions(uint256, uint256) external view returns (address[]);
-    function getData() external view returns (LibRound.RoundReturnData);
+    function getSubmissions(uint256, uint256) external view returns (address[] memory);
+    function getData() external view returns (LibRound.RoundReturnData memory);
 
     function getSubmissionCount() external view returns (uint256);
-    function getWinningSubmissions() external view returns (address[]);
+    function getWinningSubmissions() external view returns (address[] memory);
 
     function getState() external view returns (uint256);
 }
 
 library LibRound {
+
     using SafeMath for uint256;
 
     struct RoundInfo {
@@ -115,7 +116,7 @@ library LibRound {
     /// @param data        Data struct on Platform
     /// @param startIndex  Starting index of subset of Submissions to return
     /// @param count       Number of Submissions to return from startIndex
-    function getSubmissions(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
+    function getSubmissions(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public returns (address[] memory) {
         uint256 version = IMatryxSystem(info.system).getVersion();
         address LibUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage submissions = data.rounds[self].info.submissions;
@@ -138,7 +139,7 @@ library LibRound {
     }
 
     /// @dev Returns the data struct of this Round
-    function getData(address self, address, MatryxPlatform.Data storage data) public view returns (LibRound.RoundReturnData) {
+    function getData(address self, address, MatryxPlatform.Data storage data) public view returns (LibRound.RoundReturnData memory) {
         RoundReturnData memory round;
         round.info = data.rounds[self].info;
         round.details = data.rounds[self].details;
@@ -151,12 +152,12 @@ library LibRound {
     }
 
     /// @dev Returns the addresses of all winning Submissions of this Round
-    function getWinningSubmissions(address self, address, MatryxPlatform.Data storage data) public view returns (address[]) {
+    function getWinningSubmissions(address self, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
         return data.rounds[self].info.winners.submissions;
     }
 
     /// @dev Returns the current state of this Round
-    function getState(address self, address, MatryxPlatform.Data storage data) public returns (uint256) {
+    function getState(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         LibRound.RoundData storage round = data.rounds[self];
 
         if (now < round.details.start) {

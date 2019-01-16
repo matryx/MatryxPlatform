@@ -1,4 +1,4 @@
-pragma solidity ^0.4.13;
+pragma solidity ^0.5.0;
 
 import "./MintableToken.sol";
 import "./UpgradeableToken.sol";
@@ -13,7 +13,7 @@ contract MatryxToken is MintableToken, UpgradeableToken{
   uint public decimals = 18;
 
   // supply upgrade owner as the contract creation account
-  function MatryxToken() public UpgradeableToken(msg.sender) {
+  constructor() public UpgradeableToken(msg.sender) {
 
   }
 }

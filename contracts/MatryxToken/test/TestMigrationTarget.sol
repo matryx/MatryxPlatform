@@ -1,4 +1,4 @@
-pragma solidity ^0.4.13;
+pragma solidity ^0.5.0;
 
 import "../UpgradeableToken.sol";
 
@@ -13,12 +13,12 @@ contract TestMigrationTarget is StandardToken, UpgradeAgent {
 
   uint public originalSupply;
 
-  function TestMigrationTarget(UpgradeableToken _oldToken) public {
+  constructor(UpgradeableToken _oldToken) public {
 
     oldToken = _oldToken;
 
     // Let's not set bad old token
-    require(address(oldToken) != 0);
+    require(address(oldToken) != address(0));
 
     // Let's make sure we have something to migrate
     originalSupply = _oldToken.totalSupply();
@@ -31,10 +31,10 @@ contract TestMigrationTarget is StandardToken, UpgradeAgent {
     // Mint new tokens to the migrator
     totalSupply = totalSupply.add(_value);
     balances[_from] = balances[_from].add(_value);
-    Transfer(0, _from, _value);
+    emit Transfer(address(0), _from, _value);
   }
 
-  function() public {
+  function() external {
     revert();
   }
 
