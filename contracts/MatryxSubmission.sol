@@ -3,6 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
 import "./LibGlobals.sol";
+import "./IToken.sol";
 
 import "./MatryxSystem.sol";
 import "./MatryxPlatform.sol";
@@ -14,9 +15,6 @@ contract MatryxSubmission is MatryxTrinity {
 }
 
 interface IMatryxSubmission {
-    function transferFrom(address, address, uint256) external;
-    function transferTo(address, address, uint256) external;
-
     function getVersion() external view returns (uint256);
     function getTournament() external view returns (address);
     function getRound() external view returns (address);
@@ -38,6 +36,7 @@ interface IMatryxSubmission {
     function getTotalWinnings() external view returns (uint256);
     function getData() external view returns (LibSubmission.SubmissionReturnData memory);
 
+    function addFunds(uint256) external;
     function unlockFile() external;
     function updateDetails(LibSubmission.DetailsUpdates calldata) external;
     function addContributorsAndReferences(address[] calldata, uint256[] calldata, address[] calldata) external;
@@ -195,8 +194,8 @@ library LibSubmission {
     }
 
     /// @dev Returns the MTX balance of this Submission
-    function getBalance(address self, address, MatryxPlatform.Info storage info) public view returns (uint256) {
-        return IMatryxToken(info.token).balanceOf(self);
+    function getBalance(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.balanceOf[self];
     }
 
     /// @dev Returns the total winnings of this Submission
@@ -221,6 +220,21 @@ library LibSubmission {
         }
 
         return sub;
+    }
+
+    /// @dev Adds funds to the Submission
+    /// @param self      Address of this Submission
+    /// @param sender    msg.sender to the Submission
+    /// @param info      Info struct on Platform
+    /// @param data      Data struct on Platform
+    /// @param amount    Amount of MTX to add
+    function addFunds(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 amount) public {
+        require(IToken(info.token).allowance(sender, this) >= amount, "Must approve funds first");
+
+        data.totalBalance = data.totalBalance.add(amount);
+        data.balanceOf[self] = data.balanceOf[self].add(amount);
+        data.users[sender].totalSpent = data.users[sender].totalSpent.add(amount);
+        require(IToken(info.token).transferFrom(sender, this, amount), "Transfer failed");
     }
 
     /// @dev Unlocks the fileHash of this Submission if allowed for this sender
@@ -330,7 +344,8 @@ library LibSubmission {
     function removeContributorsAndReferences(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address[] memory contribs, address[] memory refs) public {
         onlyOwner(self, sender, data);
 
-        address LibUtils = IMatryxSystem(info.system).getContract(info.version, "LibUtils");
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        address LibUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         LibSubmission.SubmissionDetails storage details = data.submissions[self].details;
 
         // Remove contributors and corresponding reward distribution values from submission data
@@ -456,10 +471,10 @@ library LibSubmission {
     /// @param sender  msg.sender to this Submission
     /// @param data    Data struct on Platform
     /// @return        Amount of MTX available to msg.sender
-     function getAvailableReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
+     function getAvailableReward(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
 
-        uint256 balance = getBalance(self, sender, info);
+        uint256 balance = data.balanceOf[self];
         uint256 remainingReward = balance.sub(submission.totalAllocated);
         uint256 share = submission.availableReward[sender];
 
@@ -495,10 +510,10 @@ library LibSubmission {
     /// @param self    Address of this Submission
     /// @param sender  msg.sender to this Submission
     /// @param data    Data struct on Platform
-    function calculateRewardAllocation(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) internal {
+    function calculateRewardAllocation(address self, address sender, MatryxPlatform.Data storage data) internal {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
 
-        uint256 balance = getBalance(self, sender, info);
+        uint256 balance = data.balanceOf[self];
         uint256 remainingReward = balance.sub(submission.totalAllocated);
 
         // if no new reward to allocate, return early
@@ -541,7 +556,7 @@ library LibSubmission {
     /// @param data    Data struct on Platform
     function withdrawReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
-        calculateRewardAllocation(self, sender, info, data);
+        calculateRewardAllocation(self, sender, data);
 
         uint256 share = submission.availableReward[sender];
         require(share > 0, "Already withdrawn full amount");
@@ -549,7 +564,10 @@ library LibSubmission {
         submission.availableReward[sender] = 0;
         data.users[sender].totalWinnings = data.users[sender].totalWinnings.add(share);
         submission.totalAllocated = submission.totalAllocated.sub(share);
-        IMatryxSubmission(self).transferTo(info.token, sender, share);
+
+        data.totalBalance = data.totalBalance.sub(share);
+        data.balanceOf[self] = data.balanceOf[self].sub(share);
+        IToken(info.token).transfer(sender, share);
 
         // if owner, transfer references their shares
         if (sender == submission.info.owner) {
@@ -561,7 +579,9 @@ library LibSubmission {
                 submission.availableReward[ref] = 0;
                 data.submissions[ref].info.reward = data.submissions[ref].info.reward.add(share);
                 submission.totalAllocated = submission.totalAllocated.sub(share);
-                IMatryxSubmission(self).transferTo(info.token, ref, share);
+
+                data.balanceOf[self] = data.balanceOf[self].sub(share);
+                data.balanceOf[ref] = data.balanceOf[ref].add(share);
             }
         }
     }

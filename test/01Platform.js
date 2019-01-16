@@ -2,6 +2,7 @@ const MatryxPlatform = artifacts.require('MatryxPlatform')
 
 const { init, createTournament, enterTournament } = require('./helpers')(artifacts, web3)
 let platform
+let token
 
 contract('Platform Testing', function(accounts) {
   let t
@@ -13,8 +14,39 @@ contract('Platform Testing', function(accounts) {
   }
 
   it('Platform initialized correctly', async function() {
-    platform = (await init()).platform
+    let contracts = await init()
+    platform = contracts.platform
+    token = contracts.token
     assert.equal(platform.address, MatryxPlatform.address, 'Platform address was not set correctly.')
+  })
+
+  it('Able to get platform info', async function() {
+    let info = await platform.getInfo()
+    assert.equal(info.owner.toLowerCase(), accounts[0], 'Unable to get platform info')
+  })
+
+  it('Unable to set platform token from another account', async function() {
+    try {
+      platform.accountNumber = 2
+      await platform.upgradeToken(platform.address)
+      assert.fail('Should not have been able to set platform token from this account')
+    } catch (error) {
+      platform.accountNumber = 0
+      const revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Successfully unable to set platform token')
+    }
+  })
+
+  it('Unable to set platform owner from another account', async function() {
+    try {
+      platform.accountNumber = 2
+      await platform.setOwner(accounts[2])
+      assert.fail('Should not have been able to set platform owner from this account')
+    } catch (error) {
+      platform.accountNumber = 0
+      const revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Successfully unable to set platform owner')
+    }
   })
 
   it('Platform has 0 tournaments', async function() {
@@ -42,7 +74,7 @@ contract('Platform Testing', function(accounts) {
   it('Able to get tournaments by category', async function() {
     let cat = await t.getCategory()
     let tourCat = await platform.getTournamentsByCategory(cat, 0, 0)
-    assert.isTrue(tourCat == t.address, 'Unable to get tournaments by category.')
+    assert.isTrue(tourCat[0] == t.address, 'Unable to get tournaments by category.')
   })
 
   it('Able to create a new category', async function() {
@@ -98,6 +130,32 @@ contract('Platform Testing', function(accounts) {
     let users = await platform.getUsers(0, 0)
     let isTrue = users[0].toLowerCase() == accounts[0] && users[1].toLowerCase() == accounts[1]
     assert.isTrue(isTrue, 'Platform should have 2 users')
+  })
+
+  it('Able to send tokens to the platform directly', async function() {
+    let bb = await token.balanceOf(platform.address).then(fromWei)
+    await token.transfer(platform.address, toWei(10))
+    let ba = await token.balanceOf(platform.address).then(fromWei)
+    assert.equal(bb + 10, ba, 'Incorrect platform balance')
+  })
+
+  it('Unable to withdraw platform tokens from another account', async function() {
+    try {
+      platform.accountNumber = 2
+      await platform.withdrawTokens(token.address)
+      assert.fail('Should not have been able to withdraw tokens')
+    } catch (error) {
+      platform.accountNumber = 0
+      const revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Successfully unable to withdraw tokens')
+    }
+  })
+
+  it('Platform owner able to withdraw unallocated tokens from platform', async function() {
+    let bb = await token.balanceOf(platform.address).then(fromWei)
+    await platform.withdrawTokens(token.address)
+    let ba = await token.balanceOf(platform.address).then(fromWei)
+    assert.equal(bb - 10, ba, 'Unable to withdraw tokens')
   })
 
 })

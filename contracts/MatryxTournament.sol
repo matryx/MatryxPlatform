@@ -16,9 +16,6 @@ contract MatryxTournament is MatryxTrinity {
 }
 
 interface IMatryxTournament {
-    function transferFrom(address, address, uint256) external;
-    function transferTo(address, address, uint256) external;
-
     function getVersion() external view returns (uint256);
     function getOwner() external view returns (address);
     function getVotes() external view returns (uint256, uint256);
@@ -45,6 +42,7 @@ interface IMatryxTournament {
     function createSubmission(LibSubmission.SubmissionDetails calldata) external returns (address);
 
     function updateDetails(LibTournament.TournamentDetails calldata) external;
+    function addFunds(uint256) external;
     function transferToRound(uint256) external;
 
     function selectWinners(LibRound.WinnersData calldata, LibRound.RoundDetails calldata) external;
@@ -154,8 +152,8 @@ library LibTournament {
     }
 
     /// @dev Returns the MTX balance of the Tournament
-    function getBalance(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return IMatryxToken(info.token).balanceOf(self).sub(data.tournaments[self].totalEntryFees);
+    function getBalance(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+        return data.balanceOf[self];
     }
 
     /// @dev Returns the state of this Tournament
@@ -228,9 +226,10 @@ library LibTournament {
     function createRound(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibRound.RoundDetails memory rDetails) public returns (address) {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
 
-        address platform = IMatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        address platform = IMatryxSystem(info.system).getContract(version, "MatryxPlatform");
         require(address(this) == platform, "Must be platform");
-        require(IMatryxToken(info.token).balanceOf(self) >= rDetails.bounty, "Insufficient funds for Round");
+        require(data.balanceOf[self] >= rDetails.bounty, "Insufficient funds for Round");
 
         uint256 duration = rDetails.end.sub(rDetails.start);
         require(duration >= MIN_ROUND_LENGTH, "Round too short");
@@ -244,15 +243,18 @@ library LibTournament {
         tournament.info.rounds.push(rAddress);
         data.allRounds.push(rAddress);
 
-        IMatryxTournament(self).transferTo(info.token, rAddress, rDetails.bounty);
+        data.balanceOf[self] = data.balanceOf[self].sub(rDetails.bounty);
+        data.balanceOf[rAddress] = rDetails.bounty;
 
         LibRound.RoundData storage round = data.rounds[rAddress];
         round.info.version = tournament.info.version;
         round.info.tournament = self;
         round.details = rDetails;
 
+        // if round started in past, shift end date to preserve duration
         if (rDetails.start < now) {
             round.details.start = now;
+            round.details.end = now.add(round.details.end.sub(round.details.start));
         }
 
         emit RoundCreated(rAddress);
@@ -268,6 +270,10 @@ library LibTournament {
     /// @return          Address of the created Submission
     function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails memory sDetails) public returns (address) {
         require(sDetails.distribution.length == sDetails.contributors.length + 1, "Must include distribution for each contributor and the owner");
+
+        for (uint256 i = 0; i < sDetails.references.length; i++) {
+            require(data.submissions[sDetails.references[i]].info.owner != 0x0, "Reference must be an existing submission");
+        }
 
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
@@ -318,6 +324,22 @@ library LibTournament {
         LibTournamentHelper.updateDetails(self, sender, info, data, tDetails);
     }
 
+    /// @dev Adds funds to the Tournament
+    /// @param self      Address of this Tournament
+    /// @param sender    msg.sender to the Tournament
+    /// @param info      Info struct on Platform
+    /// @param data      Data struct on Platform
+    /// @param amount    Amount of MTX to add
+    function addFunds(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 amount) public {
+        require(IToken(info.token).allowance(sender, this) >= amount, "Must approve funds first");
+        require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Tournament must be active");
+
+        data.totalBalance = data.totalBalance.add(amount);
+        data.balanceOf[self] = data.balanceOf[self].add(amount);
+        data.users[sender].totalSpent = data.users[sender].totalSpent.add(amount);
+        require(IToken(info.token).transferFrom(sender, this, amount), "Transfer failed");
+    }
+
     /// @dev Transfers some of Tournament MTX to current Round
     /// @param self    Address of this Tournament
     /// @param sender  msg.sender to the Tournament
@@ -327,17 +349,17 @@ library LibTournament {
     function transferToRound(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 amount) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
+        require(amount <= data.balanceOf[self], "Tournament does not have the funds");
 
         (,address rAddress) = getCurrentRound(self, sender, data);
-
         uint256 rState = IMatryxRound(rAddress).getState();
         require(rState <= uint256(LibGlobals.RoundState.InReview), "Cannot transfer after winners selected");
 
-        uint256 balance = getBalance(self, sender, info, data);
-        require(amount <= balance, "Tournament does not have the funds");
 
         data.rounds[rAddress].details.bounty = data.rounds[rAddress].details.bounty.add(amount);
-        IMatryxTournament(self).transferTo(info.token, rAddress, amount);
+
+        data.balanceOf[self] = data.balanceOf[self].sub(amount);
+        data.balanceOf[rAddress] = data.balanceOf[rAddress].add(amount);
     }
 
     /// @dev Transfers the round reward to its winning submissions during the winner selection process
@@ -352,13 +374,16 @@ library LibTournament {
             distTotal = distTotal.add(wData.distribution[i]);
         }
 
-        uint256 bounty = IMatryxRound(rAddress).getBalance();
+        uint256 bounty = data.balanceOf[rAddress];
         for (uint256 i = 0; i < wData.submissions.length; i++) {
+            address winner = wData.submissions[i];
             uint256 reward = wData.distribution[i].mul(bounty).div(distTotal);
-            IMatryxRound(rAddress).transferTo(info.token, wData.submissions[i], reward);
 
-            reward = reward.add(data.submissions[wData.submissions[i]].info.reward);
-            data.submissions[wData.submissions[i]].info.reward = reward;
+            data.balanceOf[rAddress] = data.balanceOf[rAddress].sub(reward);
+            data.balanceOf[winner] = data.balanceOf[winner].add(reward);
+
+            reward = reward.add(data.submissions[winner].info.reward);
+            data.submissions[winner].info.reward = reward;
         }
     }
 
@@ -388,7 +413,7 @@ library LibTournament {
 
         round.info.winners = wData;
 
-        uint256 bounty = getBalance(self, sender, info, data);
+        uint256 bounty = data.balanceOf[self];
 
         if (wData.action == uint256(LibGlobals.SelectWinnerAction.DoNothing)) {
             // create new round but don't start
@@ -424,7 +449,8 @@ library LibTournament {
             // transfer rest of tournament balance to round and close tournament
             round.info.closed = true;
 
-            IMatryxTournament(self).transferTo(info.token, rAddress, bounty);
+            data.balanceOf[self] = 0;
+            data.balanceOf[rAddress] = data.balanceOf[rAddress].add(bounty);
         }
 
         transferToWinners(info, data, rAddress);
@@ -473,20 +499,26 @@ library LibTournament {
 
         if (!tournament.hasBeenWithdrawnFrom) {
             (,address rAddress) = getCurrentRound(self, sender, data);
-            uint256 rBalance = IMatryxToken(info.token).balanceOf(rAddress);
+            uint256 rBalance = data.balanceOf[rAddress];
+
             tournament.hasBeenWithdrawnFrom = true;
             data.rounds[rAddress].info.closed = true;
-            IMatryxRound(rAddress).transferTo(info.token, self, rBalance);
+
+            data.balanceOf[rAddress] = 0;
+            data.balanceOf[self] = data.balanceOf[self].add(rBalance);
         }
 
-        uint256 tBalance = getBalance(self, sender, info, data);
+        uint256 tBalance = data.balanceOf[self];
         uint256 entrantCount = tournament.info.entrantCount;
         uint256 share = tBalance.mul(10**18).div(entrantCount).div(10**18);
 
         tournament.hasWithdrawn[sender] = true;
         data.users[sender].totalWinnings = data.users[sender].totalWinnings.add(share);
 
-        IMatryxTournament(self).transferTo(info.token, sender, share);
+        data.totalBalance = data.totalBalance.sub(share);
+        data.balanceOf[self] = data.balanceOf[self].sub(share);
+        IToken(info.token).transfer(sender, share);
+
         exit(self, sender, info, data);
     }
 
@@ -508,12 +540,12 @@ library LibTournament {
 
         // transfer from ghost into HasWinners Round
         address ghost = tournament.info.rounds[tournament.info.rounds.length - 1];
-        uint256 ghostBalance = IMatryxToken(info.token).balanceOf(ghost);
-        IMatryxRound(ghost).transferTo(info.token, rAddress, ghostBalance);
+        data.balanceOf[rAddress] = data.balanceOf[rAddress].add(data.balanceOf[ghost]);
+        data.balanceOf[ghost] = 0;
 
         // transfer remaining Tournament balance into HasWinners Round
-        uint256 tBalance = getBalance(self, sender, info, data);
-        IMatryxTournament(self).transferTo(info.token, rAddress, tBalance);
+        data.balanceOf[rAddress] = data.balanceOf[rAddress].add(data.balanceOf[self]);
+        data.balanceOf[self] = 0;
 
         // then transfer all to winners of that Round
         transferToWinners(info, data, rAddress);
@@ -572,10 +604,6 @@ library LibTournament {
 library LibTournamentHelper {
     using SafeMath for uint256;
 
-    function getBalance(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return IMatryxToken(info.token).balanceOf(self).sub(data.tournaments[self].totalEntryFees);
-    }
-
     function getState(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         (uint256 numRounds, address roundAddress) = getCurrentRound(self, self, data);
 
@@ -629,8 +657,11 @@ library LibTournamentHelper {
 
         require(data.users[sender].exists, "Must have entered Matryx");
         require(sender != tournament.info.owner, "Cannot enter own Tournament");
+        require(!tournament.entryFeePaid[sender].exists, "Cannot enter Tournament more than once");
         require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Cannot enter closed or abandoned Tournament");
-        IMatryxTournament(self).transferFrom(info.token, sender, entryFee);
+
+        data.totalBalance = data.totalBalance.add(entryFee);
+        IToken(info.token).transferFrom(sender, this, entryFee);
 
         tournament.entryFeePaid[sender].exists = true;
         tournament.entryFeePaid[sender].value = entryFee;
@@ -647,7 +678,9 @@ library LibTournamentHelper {
 
         if (entryFeePaid > 0) {
             tournament.totalEntryFees = tournament.totalEntryFees.sub(entryFeePaid);
-            IMatryxTournament(self).transferTo(info.token, sender, entryFeePaid);
+
+            data.totalBalance = data.totalBalance.sub(entryFeePaid);
+            IToken(info.token).transfer(sender, entryFeePaid);
         }
 
         tournament.entryFeePaid[sender].exists = false;
@@ -663,7 +696,8 @@ library LibTournamentHelper {
         }
         if (tDetails.category != 0x0) {
             // get platform address
-            address platform = IMatryxSystem(info.system).getContract(info.version, "MatryxPlatform");
+            uint256 version = IMatryxSystem(info.system).getVersion();
+            address platform = IMatryxSystem(info.system).getContract(version, "MatryxPlatform");
             IMatryxPlatform(platform).removeTournamentFromCategory(self);
             IMatryxPlatform(platform).addTournamentToCategory(self, tDetails.category);
         }
@@ -710,14 +744,12 @@ library LibTournamentHelper {
 
             if (rDetails.bounty > details.bounty) {
                 diff = rDetails.bounty.sub(details.bounty);
-
-                uint256 tBalance = getBalance(self, sender, info, data);
-                require(diff <= tBalance, "Not enough funds");
-
-                IMatryxTournament(self).transferTo(info.token, rAddress, diff);
+                data.balanceOf[self] = data.balanceOf[self].sub(diff);
+                data.balanceOf[rAddress] = data.balanceOf[rAddress].add(diff);
             } else {
                 diff = details.bounty.sub(rDetails.bounty);
-                IMatryxRound(rAddress).transferTo(info.token, self, diff);
+                data.balanceOf[rAddress] = data.balanceOf[rAddress].sub(diff);
+                data.balanceOf[self] = data.balanceOf[self].add(diff);
             }
 
             details.bounty = rDetails.bounty;
@@ -771,17 +803,19 @@ library LibTournamentHelper {
         require(data.rounds[rAddress].info.submissions.length == 0, "Must have 0 submissions");
         require(!tournament.hasWithdrawn[sender], "Already withdrawn");
 
-        uint256 tBounty = getBalance(self, sender, info, data);
-        uint256 rBounty = IMatryxRound(rAddress).getBalance();
+        uint256 funds = data.balanceOf[self].add(data.balanceOf[rAddress]);
 
         // close round
         data.rounds[rAddress].info.closed = true;
         // update data
         tournament.hasWithdrawn[sender] = true;
-        data.users[sender].totalSpent = data.users[sender].totalSpent.sub(tBounty).sub(rBounty);
+
+        data.users[sender].totalSpent = data.users[sender].totalSpent.sub(funds);
 
         // recover remaining tournament and round funds
-        IMatryxTournament(self).transferTo(info.token, sender, tBounty);
-        IMatryxRound(rAddress).transferTo(info.token, sender, rBounty);
+        data.totalBalance = data.totalBalance.sub(funds);
+        data.balanceOf[self] = 0;
+        data.balanceOf[rAddress] = 0;
+        IToken(info.token).transfer(sender, funds);
     }
 }

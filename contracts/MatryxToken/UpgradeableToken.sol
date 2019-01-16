@@ -91,7 +91,7 @@ contract UpgradeableToken is StandardToken {
       // Bad interface
       require(upgradeAgent.isUpgradeAgent());
       // Make sure that token supplies match in source and target
-      require(upgradeAgent.originalSupply() != totalSupply);
+      require(upgradeAgent.originalSupply() == totalSupply);
 
       emit UpgradeAgentSet(address(upgradeAgent));
   }

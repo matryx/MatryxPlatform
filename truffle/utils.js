@@ -26,7 +26,7 @@ function Contract(address, artifact, accountNumber = 0) {
     name,
     accountNumber,
     contract: {},
-    logLevel: 2, // 0 none, 1 reverts, 2 completion, 3 verbose
+    logLevel: Contract.logLevel || 2, // 0 none, 1 reverts, 2 completion, 3 verbose
     wallet: {},
     resetNonce,
   }

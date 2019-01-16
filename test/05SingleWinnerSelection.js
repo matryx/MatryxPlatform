@@ -86,13 +86,13 @@ contract('No Contribs and Close Tournament', function(accounts) {
   })
 
   it('Tournament and Round balance should now be 0', async function() {
-    let tB = await t.getBalance().then(fromWei)
-    let rB = await r.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.isTrue(tB == 0 && rB == 0, 'Tournament and round balance should both be 0')
   })
 
   it('Submission balance should be tournament + round bounty', async function() {
-    let b = await s.getBalance().then(fromWei)
+    let b = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(b, 10, 'Submission balance should be 10')
   })
 
@@ -112,7 +112,7 @@ contract('No Contribs and Close Tournament', function(accounts) {
 
   it('Submission owner able to withdraw reward', async function() {
     await s.withdrawReward()
-    let sb = await s.getBalance().then(fromWei)
+    let sb = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(sb, 0, 'Unable to withdraw reward')
   })
 
@@ -185,19 +185,19 @@ contract('Contribs and Close Tournament', function(accounts) {
   })
 
   it('Tournament and Round balance should now be 0', async function() {
-    let tB = await t.getBalance().then(fromWei)
-    let rB = await r.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.isTrue(tB == 0 && fromWei(rB) == 0, 'Tournament and round balance should both be 0')
   })
 
   it('Winning submission balance should be 10', async function() {
-    let b = await s.getBalance().then(fromWei)
+    let b = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(b, 10, 'Incorrect submission balance')
   })
 
   it('Able to withdraw reward', async function () {
     await s.withdrawReward()
-    let sb = await s.getBalance().then(fromWei)
+    let sb = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(sb, 5, 'Submission balance should now be 5')
   })
 
@@ -205,7 +205,7 @@ contract('Contribs and Close Tournament', function(accounts) {
     //switch to accounts[3]
     s.accountNumber = 3
     await s.withdrawReward()
-    let sb = await s.getBalance().then(fromWei)
+    let sb = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(sb, 0, 'Submission balance should now be 0')
   })
 
@@ -300,22 +300,22 @@ contract('No Contribs and Start Next Round', function(accounts) {
   })
 
   it('Tournament balance should now be 5', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 5, 'Tournament balance should be 5')
   })
 
   it('New Round balance should be 5', async function() {
-    let nrB = await nr.getBalance().then(fromWei)
+    let nrB = await platform.getBalanceOf(nr.address).then(fromWei)
     assert.equal(nrB, 5, 'New round balance should be 5')
   })
 
   it('First Round balance should now be 0', async function() {
-    let rB = await r.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.equal(rB, 0, 'First round balance should be 0')
   })
 
   it('Winning submission balance should be 5', async function() {
-    let b = await s.getBalance().then(fromWei)
+    let b = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(b, 5, 'Incorrect submission balance')
   })
 
@@ -327,7 +327,7 @@ contract('No Contribs and Start Next Round', function(accounts) {
 
   it('Able to withdraw reward', async function() {
     await s.withdrawReward()
-    let sb = await s.getBalance().then(fromWei)
+    let sb = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(sb, 0, 'Submission balance should be 0 after withdrawal')
   })
 
@@ -415,22 +415,22 @@ contract('Contribs and Start Next Round', function(accounts) {
   })
 
   it('Tournament balance should now be 5', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 5, 'Tournament balance should be 5')
   })
 
   it('New Round balance should be 5', async function() {
-    let nrB = await nr.getBalance().then(fromWei)
+    let nrB = await platform.getBalanceOf(nr.address).then(fromWei)
     assert.equal(nrB, 5, 'New round balance should be 5')
   })
 
   it('First Round balance should now be 0', async function() {
-    let rB = await r.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.isTrue(rB == 0, 'First round balance should be 0')
   })
 
   it('Winning submission balance should be 5', async function() {
-    let b = await s.getBalance().then(fromWei)
+    let b = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(b, 5, 'Winning submission balance should be 5')
   })
 
@@ -442,14 +442,14 @@ contract('Contribs and Start Next Round', function(accounts) {
 
   it('Submission owner able to withdraw reward', async function() {
     await s.withdrawReward()
-    let sb = await s.getBalance().then(fromWei)
+    let sb = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(sb, 5 / 2, 'Unable to withdraw reward')
   })
 
   it('Submission contributor able to withdraw reward', async function() {
     s.accountNumber = 3
     await s.withdrawReward()
-    let sb = await s.getBalance().then(fromWei)
+    let sb = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(sb, 0, 'Contributor unable to withdraw reward')
   })
 
@@ -503,7 +503,7 @@ contract('No Contribs or Refs and Do Nothing', function(accounts) {
   })
 
   it('Round balance should now be 0', async function() {
-    let rB = await r.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.isTrue(rB == 0, 'Round balance should be 0')
   })
 
@@ -525,23 +525,23 @@ contract('No Contribs or Refs and Do Nothing', function(accounts) {
   })
 
   it('Tournament balance should now be 5', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 5, 'Tournament balance should be 5')
   })
 
   it('Ghost Round balance should be 5', async function() {
-    let grB = await gr.getBalance().then(fromWei)
+    let grB = await platform.getBalanceOf(gr.address).then(fromWei)
     assert.equal(grB, 5, 'Ghost round balance should be 5')
   })
 
   it('Winning submission balance should be 5', async function() {
-    let b = await s.getBalance().then(fromWei)
+    let b = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(b, 5, 'Incorrect winning submission balance')
   })
 
   it('Submission owner able to withdraw reward', async function() {
     await s.withdrawReward()
-    let sb = await s.getBalance().then(fromWei)
+    let sb = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(sb, 0, 'Submission balance should now be 0')
   })
 
@@ -630,22 +630,22 @@ contract('Contribs and Do Nothing', function(accounts) {
   })
 
   it('Tournament balance should now be 5', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 5, 'Tournament balance should be 5')
   })
 
   it('Ghost Round balance should be 5', async function() {
-    let grB = await gr.getBalance().then(fromWei)
+    let grB = await platform.getBalanceOf(gr.address).then(fromWei)
     assert.equal(grB, 5, 'Ghost round balance should be 5')
   })
 
   it('First Round balance should be 0', async function() {
-    let rB = await r.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.isTrue(rB == 0, 'First round balance should be 0')
   })
 
   it('Winning submission balance should be 5', async function() {
-    let b = await s.getBalance().then(fromWei)
+    let b = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(b, 5, 'Winning submission balance should be 5')
   })
 
@@ -665,7 +665,7 @@ contract('Contribs and Do Nothing', function(accounts) {
 
   it('Able to withdraw reward', async function() {
     await s.withdrawReward()
-    let sb = await s.getBalance().then(fromWei)
+    let sb = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(sb, 5 / 2, 'Submission balance should now be 5/2')
   })
 })
@@ -728,22 +728,22 @@ contract('Do Nothing, then Close Tournament', function(accounts) {
   })
 
   it('Tournament balance should now be 0', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 0, 'Tournament balance should be 0')
   })
 
   it('First Round balance should now be 0', async function() {
-    let rB = await r.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.isTrue(rB == 0, 'First round balance should be 0')
   })
 
   it('Ghost Round balance should be 0', async function() {
-    let grB = await gr.getBalance().then(fromWei)
+    let grB = await platform.getBalanceOf(gr.address).then(fromWei)
     assert.equal(grB, 0, 'Ghost round balance should be 0')
   })
 
   it('Correct winning submission balance', async function() {
-    let b = await s.getBalance().then(fromWei)
+    let b = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(b, 10, 'Winning submission balance should be 10')
   })
 
@@ -768,7 +768,7 @@ contract('Do Nothing, then Close Tournament', function(accounts) {
 
   it('Able to withdraw my reward', async function() {
     await s.withdrawReward()
-    let sb = await s.getBalance().then(fromWei)
+    let sb = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(sb, 0, 'Submission balance should be 0')
   })
 
@@ -842,22 +842,22 @@ contract('Do Nothing, then Start Next Round', function(accounts) {
   })
 
   it('Tournament balance should be 5', async function() {
-    let tB = await t.getBalance().then(fromWei)
+    let tB = await platform.getBalanceOf(t.address).then(fromWei)
     assert.equal(tB, 5, 'Tournament balance should be 5')
   })
 
   it('First Round balance should be 0', async function() {
-    let rB = await r.getBalance().then(fromWei)
+    let rB = await platform.getBalanceOf(r.address).then(fromWei)
     assert.equal(rB, 0, 'Round balance should be 0')
   })
 
   it('New Round balance should be 5', async function() {
-    let grB = await gr.getBalance().then(fromWei)
+    let grB = await platform.getBalanceOf(gr.address).then(fromWei)
     assert.equal(grB, 5, 'New round balance should be 5')
   })
 
   it('Correct winning submission balance', async function() {
-    let b = await s.getBalance().then(fromWei)
+    let b = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(b, 5, 'Winning submission balance should be 5')
   })
 
@@ -882,7 +882,7 @@ contract('Do Nothing, then Start Next Round', function(accounts) {
 
   it('Able to withdraw my reward', async function() {
     await s.withdrawReward()
-    let sb = await s.getBalance().then(fromWei)
+    let sb = await platform.getBalanceOf(s.address).then(fromWei)
     assert.equal(sb, 0, 'Submission balance should now be 0')
   })
 
