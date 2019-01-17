@@ -4,7 +4,7 @@ Tournament Administration
 Creating a Tournament
 ^^^^^^^^^^^^^^^^^^^^^
 
-To create a tournament, you can call the ``createTournament`` function on the platform like this:
+To create a tournament, you can call the ``createTournament`` function on the platform as follows:
 
 .. code-block:: Solidity
 
@@ -32,7 +32,7 @@ Where ``TournamentData`` and ``RoundData`` are stuctured as follows:
         uint256 bounty;
     }
 
-These structs contain all the information we need about the tournament that you are about to create and the first round that will kick off when the tournament starts. You can add more funds to the tournament bounty at any point, but you cannot remove funds from it after you make the ``createTournament`` call, so choose your initial bounty wisely!
+These structs contain all the information we need about the tournament that you are about to create and the first round that will kick off when the tournament begins. You can add more funds to the tournament bounty at any point, but you cannot remove funds from it after you make the ``createTournament`` call, so choose your initial bounty wisely!
 
 Similarly, you cannot remove funds from the share of the tournament bounty you assign to the first round, and you won’t be able to edit the round details after the round has started. Be sure to enter a reasonable amount of time (in seconds) for the round’s start and end time, as well as its review period. You’ll need some time to look over the submissions and choose your round winners before the review period ends!
 
@@ -118,6 +118,12 @@ Where ``winnersData`` is
         uint256 action;
     }
 
+where action represents an enumerated value from the following enum
+
+.. code-block:: Solidity
+
+    enum SelectWinnerAction { DoNothing, StartNextRound, CloseTournament }
+
 and ``RoundData`` is
 
 .. code-block:: Solidity
@@ -132,8 +138,8 @@ and ``RoundData`` is
 
 In ``winnersData``, you can specify which submissions get rewarded and how much MTX is assigned to each one; the first parameter contains all the winning submissions' addresses, and the second contains the reward each one will get, respectively, expressed as a percentage or a propoprtion of the total round bounty.
 
-When you select your round winners, you can choose to wait until the end of the review period for a new round to start automatically, start the next round immediately after selecting the winners, or close the tournament. The action you choose to proceed with (``0``, ``1`` or ``2``, respectively) is passed as the third parameter. If you choose to start the next round immediately when you select the winners, it will be initialized with the round data that you provide. If you choose to wait until the end of the review period, the next round will automatically be created as an identical copy of the last round.
+When selecting round winners, you have three options for how to proceed with the tournament: you can choose to wait until the end of the review period for the next round to start, to start the next round immediately after selecting the winners, or to close the tournament. The action you choose (``0``, ``1`` or ``2``, representing SelectWinnerAction.DoNothing, SelectWinnerAction.StartNextRound and SelectWinnerAction.CloseTournament, respectively) is passed as the third parameter of winnersData and indicates how you would like to proceed. If you choose to wait until the end of the review period (DoNothing), the next round will automatically be created as an identical copy of the last round. If you choose to start the next round immediately when you select the winners (StartNextRound), the next round will be initialized with the round data that you provide. If you choose the third action, CloseTournament, the Tournament will close and the remaining bounty unallocated to any round will be allocated to the current round and used to award ``winnersData.submissions``.
 
 .. warning:: Once you close the tournament, you can’t open it up again. Any remaining funds that might still be in the tournament’s balance will be evenly distributed among the last round’s winners when you close the tournament.
 
-.. warning:: If the round's review period ends and you still have not chosen any winners, the tournament will be considered Abandoned, and any remaining funds in the tournament's balance will be evenly distributed among all the tournament participants for them to withdraw.
+.. warning:: If the round's review period ends and you still have not chosen any winners, the tournament will be considered Abandoned, and any remaining funds in the tournament's balance will be uniformly allocated to all tournament participants for them to withdraw.

@@ -36,7 +36,7 @@ You are now ready to start making original submissions to any Matryx tournament!
 Editing your Submissions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-As long as the current round remains open, you are able to edit any submissions you have made in that round. To modify the data of your submission, you can call the ``updateDetails`` function like this:
+As long as the current round remains open, you are able to edit any submissions you have made in that round. To modify the data of your submission, you can call the ``updateDetails`` function as follows:
 
 .. code-block:: Solidity
 
@@ -62,7 +62,7 @@ Similarly, you can add or remove contributors and references with the following 
 
 You can add or remove contributors and references to your submission at any time.
 
-.. note:: The distribution values assinged to any contributors that you remove will be automatically removed from the distribution array as well.
+.. note:: The distribution values assigned to any contributors that you remove will be automatically removed from the distribution array as well.
 
 Exiting a Tournament
 ^^^^^^^^^^^^^^^^^^^^
@@ -75,7 +75,7 @@ You can choose to exit an ongoing tournament at any time with the following call
 
 When you exit the tournament, the entry fee that you paid when you first entered will be returned to you automatically.
 
-.. note:: If you later decide to enter the tournament again, you will have to pay the current tournament entry fee before you’re able to make any submissions.
+.. note:: If you later decide to enter the tournament again, you will have to pay the current tournament entry fee before making any submissions.
 
 If a tournament you are currently participating in happens to become Abandoned, you can collect your share of the remaining tournament bounty, as well as your original entry fee, with the following call:
 

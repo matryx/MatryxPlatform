@@ -183,6 +183,10 @@ You can also cite other Matryx submissions in your submission’s <code class="d
 <p class="first admonition-title">Note</p>
 <p class="last">The <code class="docutils literal notranslate"><span class="pre">distribution</span></code> array will always have one more entry than your <code class="docutils literal notranslate"><span class="pre">contributors</span></code> array, since the first entry in the <code class="docutils literal notranslate"><span class="pre">distribution</span></code> array includes information about the submission owner.</p>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">THe addresses in your <code class="docutils literal notranslate"><span class="pre">references</span></code> array must be existing submissions on the Matryx platform.</p>
+</div>
 <p>This is the <code class="docutils literal notranslate"><span class="pre">createSubmission</span></code> function call:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.createSubmission(submissionData)
 </pre></div>
@@ -191,7 +195,7 @@ You can also cite other Matryx submissions in your submission’s <code class="d
 </div>
 <div class="section" id="editing-your-submissions">
 <h2>Editing your Submissions<a class="headerlink" href="#editing-your-submissions" title="Permalink to this headline">¶</a></h2>
-<p>As long as the current round remains open, you are able to edit any submissions you have made in that round. To modify the data of your submission, you can call the <code class="docutils literal notranslate"><span class="pre">updateDetails</span></code> function like this:</p>
+<p>As long as the current round remains open, you are able to edit any submissions you have made in that round. To modify the data of your submission, you can call the <code class="docutils literal notranslate"><span class="pre">updateDetails</span></code> function as follows:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateDetails(submissionDetails)
 </pre></div>
 </div>
@@ -199,7 +203,7 @@ You can also cite other Matryx submissions in your submission’s <code class="d
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionDetails
 {
     bytes32[3] title;
-    bytes32[2] descriptionHash;
+    bytes32[2] descHash;
     bytes32[2] fileHash;
 }
 </pre></div>
@@ -212,7 +216,7 @@ mySubmission.removeContributorsAndReferences(contributors, references)
 <p>You can add or remove contributors and references to your submission at any time.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The distribution values assinged to any contributors that you remove will be automatically removed from the distribution array as well.</p>
+<p class="last">The distribution values assigned to any contributors that you remove will be automatically removed from the distribution array as well.</p>
 </div>
 </div>
 <div class="section" id="exiting-a-tournament">
@@ -224,7 +228,7 @@ mySubmission.removeContributorsAndReferences(contributors, references)
 <p>When you exit the tournament, the entry fee that you paid when you first entered will be returned to you automatically.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">If you later decide to enter the tournament again, you will have to pay the current tournament entry fee before you’re able to make any submissions.</p>
+<p class="last">If you later decide to enter the tournament again, you will have to pay the current tournament entry fee before making any submissions.</p>
 </div>
 <p>If a tournament you are currently participating in happens to become Abandoned, you can collect your share of the remaining tournament bounty, as well as your original entry fee, with the following call:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.withdrawFromAbandoned()
@@ -233,12 +237,16 @@ mySubmission.removeContributorsAndReferences(contributors, references)
 </div>
 <div class="section" id="viewing-other-submissions">
 <h2>Viewing Other Submissions<a class="headerlink" href="#viewing-other-submissions" title="Permalink to this headline">¶</a></h2>
-<p>In order to incentivize open collaboration between participants on the Matryx platform, all submissions are viewable to Matryx entrants after the round review period is over. However, in order to prevent inter-round plagiarism or inadequate credit attribution between different participants, a user has to first unlock a submission’s files in order to view them. The list users that have unlocked a submission’s files are stored on the Matryx platform. This ensures that, in the event of a dispute over the originality of a piece of work, the platform data can prove whether or not a user has at least viewed another user’s submission files.</p>
+<p>In order to incentivize open collaboration between participants on the Matryx platform, all submissions are viewable to Matryx entrants after the round review period is over. However, in order to prevent inter-round plagiarism or inadequate credit attribution between different participants, a user has to first unlock a submission’s files in order to view them. The list of users that have unlocked a submission’s files are stored on the Matryx platform. This ensures that, in the event of a dispute over the originality of a piece of work, the platform data can prove whether or not a user has at least viewed another user’s submission files.</p>
 <p>To see what other people have been working on, you can make the following call on any submission:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>submission.unlockFile()
 </pre></div>
 </div>
 <p>The submission’s file hash will then become available to you.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The tournament owner doesn’t need to unlock the files of any submission in their tournament to view them, since they will need to see the files in order to select the round’s winners.</p>
+</div>
 </div>
 </div>
 
@@ -262,7 +270,7 @@ mySubmission.removeContributorsAndReferences(contributors, references)
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Max Howard, Sam Hessenauer.
+        &copy; Copyright 2018, Max Howard, Sam Hessenauer
 
     </p>
   </div>
@@ -281,21 +289,13 @@ mySubmission.removeContributorsAndReferences(contributors, references)
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.2',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
 
   
 
