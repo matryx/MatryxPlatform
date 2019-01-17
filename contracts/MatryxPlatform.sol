@@ -6,6 +6,7 @@ import "./LibGlobals.sol";
 import "./IToken.sol";
 
 import "./MatryxSystem.sol";
+import "./LibCommit.sol";
 import "./MatryxUser.sol";
 import "./MatryxTournament.sol";
 import "./MatryxRound.sol";
@@ -38,8 +39,9 @@ contract MatryxPlatform {
         bytes32[] allCategories;
     }
 
-    Info info; // slot 0
-    Data data; // slot 3
+    Info info;                              // slot 0
+    Data data;                              // slot 3
+    LibCommit.CollaborationData collabData; // slot 16
 
     constructor(address system, address token) public {
         info.system = system;
@@ -224,6 +226,9 @@ interface IMatryxPlatform {
     function addTournamentToCategory(address, bytes32) external;
     function removeTournamentFromCategory(address) external;
     function createTournament(LibTournament.TournamentDetails calldata, LibRound.RoundDetails calldata) external returns (address);
+
+    function addUserToGroup(string memory group, address newUser);
+
 }
 
 library LibPlatform {
