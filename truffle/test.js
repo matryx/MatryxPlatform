@@ -1,6 +1,8 @@
 const chalk = require('chalk')
 
 const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('./utils')
+const toWei = n => web3.utils.toWei(n.toString())
+web3.toWei = toWei
 
 let MatryxTournament, MatryxRound, MatryxSubmission, platform, token, wallet
 let IMatryxTournament, IMatryxRound, IMatryxSubmission
@@ -39,7 +41,7 @@ const createTournament = async (bounty, roundData, accountNumber) => {
     descHash,
     fileHash,
     bounty,
-    entryFee: web3.toWei(2)
+    entryFee: toWei(2)
   }
   //   const startTime = Math.floor(new Date() / 1000)
   //   const endTime = startTime + 60
@@ -220,29 +222,29 @@ module.exports = async exit => {
     await init()
     let roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 1500,
-      review: 1000,
-      bounty: web3.toWei(3)
+      end: Math.floor(Date.now() / 1000) + 15,
+      review: 10,
+      bounty: toWei(3)
     }
     const tournamentCreator = 0
-    const tournament = await createTournament(web3.toWei(10), roundData, tournamentCreator)
-    // const submission = await createSubmission(tournament, 1)
+    const tournament = await createTournament(toWei(10), roundData, tournamentCreator)
+    const submission = await createSubmission(tournament, 1)
     // let c = await submission.getContributors()
     // console.log(c)
     // await updateSubmission(submission)
     // c = await submission.getContributors()
     // console.log(c)
-    // await createSubmission(tournament, 2)
-    // await createSubmission(tournament, 3)
+    await createSubmission(tournament, 2)
+    await createSubmission(tournament, 3)
 
-    // roundData = {
-    //   start: Math.floor(Date.now() / 1000),
-    //   end: Math.floor(Date.now() / 1000) + 15,
-    //   review: 20,
-    //   bounty: web3.toWei(3)
-    // }
-    // let submissions = await logSubmissions(tournament)
-    // await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), roundData, 1)
+    roundData = {
+      start: Math.floor(Date.now() / 1000),
+      end: Math.floor(Date.now() / 1000) + 15,
+      review: 20,
+      bounty: toWei(3)
+    }
+    let submissions = await logSubmissions(tournament)
+    await selectWinnersWhenInReview(tournament, tournamentCreator, submissions, submissions.map(s => 1), roundData, 1)
     // timeouts.forEach(t => clearTimeout(t))
     // await sleep(1000)
     // await createSubmission(tournament, 1)
@@ -267,7 +269,7 @@ module.exports = async exit => {
     //   start: Math.floor(Date.now() / 1000),
     //   end: Math.floor(Date.now() / 1000) + 15,
     //   review: 15,
-    //   bounty: web3.toWei(3)
+    //   bounty: toWei(3)
     // }
 
     // submissions = await logSubmissions(tournament)

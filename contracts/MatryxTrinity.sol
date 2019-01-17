@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 contract MatryxTrinity {
@@ -18,7 +18,7 @@ contract MatryxTrinity {
     /// Gets the address of the current version of Platform and forwards the
     /// received calldata to this address. Injects msg.sender at the front so
     /// Platform and libraries can know calling address
-    function () public {
+    function () external {
         assembly {
             let ptr := mload(0x40)
             let offset := 0x100000000000000000000000000000000000000000000000000000000

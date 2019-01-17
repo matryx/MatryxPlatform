@@ -2,6 +2,8 @@ const fs = require('fs')
 const chalk = require('chalk')
 
 const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('./utils')
+const toWei = n => web3.utils.toWei(n.toString())
+web3.toWei = toWei
 
 let MatryxTournament, MatryxRound, MatryxSubmission, platform, token, wallet
 let IMatryxTournament, IMatryxRound, IMatryxSubmission

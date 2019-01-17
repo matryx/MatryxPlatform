@@ -5,11 +5,12 @@ const IMatryxUser = artifacts.require('IMatryxUser')
 
 const { setup, bytesToString, Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, updateSubmission, waitUntilInReview } = require('./helpers')(artifacts, web3)
+const { accounts } = require('../truffle/network')
 
 let platform
 let users
 
-contract('Submission Testing with No Contributors and References', function(accounts) {
+contract('Submission Testing with No Contributors and References', function() {
   let t  // tournament
   let r  // round
   let s  // submission 1
@@ -84,8 +85,8 @@ contract('Submission Testing with No Contributors and References', function(acco
 
   it('Get Submission Owner', async function() {
     let to = await s.getOwner()
-    let actual = web3.eth.accounts[1]
-    assert.equal(to.toLowerCase(), actual.toLowerCase(), 'Owner is incorrect')
+    let actual = accounts[1]
+    assert.equal(to, actual, 'Owner is incorrect')
   })
 
   it('Get Time Submitted and Updated', async function() {
@@ -120,7 +121,7 @@ contract('Submission Testing with No Contributors and References', function(acco
     await s2.unlockFile()
 
     let permitted = await s2.getViewers()
-    let p2 = permitted.some(x => x.toLowerCase() == accounts[1])
+    let p2 = permitted.some(x => x == accounts[1])
 
     assert.isTrue(p2, 'Permissions are not correct')
   })
@@ -186,7 +187,7 @@ contract('Submission Testing with No Contributors and References', function(acco
 
 })
 
-contract('Submission Testing with Contributors', function(accounts) {
+contract('Submission Testing with Contributors', function() {
   let t
   let s
   let s2
@@ -224,9 +225,9 @@ contract('Submission Testing with Contributors', function(accounts) {
   })
 
   it('Contributors have Download Permissions', async function() {
+    await setup(artifacts, web3, 3, true)
     // add accounts[3] as a new contributor
     await s.addContributorsAndReferences([accounts[3]], [1], [s2.address])
-    await setup(artifacts, web3, 3, true)
 
     // check contributors can unlock files
     s.accountNumber = 3
@@ -251,5 +252,4 @@ contract('Submission Testing with Contributors', function(accounts) {
     let crd = await s.getDistribution()
     assert.equal(crd.length, 2, 'Contributor reward distribution incorrect')
   })
-
 })

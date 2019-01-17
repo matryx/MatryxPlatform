@@ -7,8 +7,9 @@ let users
 
 const { setup, stringToBytes32, stringToBytes, bytesToString, Contract } = require('../truffle/utils')
 const { init, createTournament, waitUntilClose, waitUntilOpen, createSubmission, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
+const { accounts } = require('../truffle/network')
 
-contract('Open Tournament Testing', function(accounts) {
+contract('Open Tournament Testing', function() {
   let t //tournament
   let r //round
 
@@ -28,7 +29,7 @@ contract('Open Tournament Testing', function(accounts) {
 
   it('Able to get tournament owner', async function() {
     let o = await t.getOwner()
-    assert.equal(o.toLowerCase(), accounts[0], 'Unable to get owner.')
+    assert.equal(o, accounts[0], 'Unable to get owner.')
   })
 
   it('Tournament owner total spent should be 10', async function() {
@@ -142,10 +143,6 @@ contract('Open Tournament Testing', function(accounts) {
   })
 
   it('Able to change the tournament category', async function() {
-    //create new category
-    await platform.createCategory(stringToBytes32('science'))
-    let allCat = await platform.getCategories(1, 1)
-
     modData = {
       title: stringToBytes32('new', 3),
       category: stringToBytes32('science'),
@@ -201,7 +198,7 @@ contract('Open Tournament Testing', function(accounts) {
 })
 
 
-contract('On Hold Tournament Testing', function(accounts) {
+contract('On Hold Tournament Testing', function() {
   let t //tournament
   let r //round
   let gr //new round
@@ -294,7 +291,7 @@ contract('On Hold Tournament Testing', function(accounts) {
   })
 })
 
-contract('Tournament Voting Testing', function(accounts) {
+contract('Tournament Voting Testing', function() {
   let t //tournament
   let r //round
   let s //submission
@@ -355,7 +352,7 @@ contract('Tournament Voting Testing', function(accounts) {
   })
 })
 
-contract('Abandoned Tournament due to No Submissions Testing', function(accounts) {
+contract('Abandoned Tournament due to No Submissions Testing', function() {
   let token
   let t //tournament
   let r //round

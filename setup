@@ -233,7 +233,12 @@ q.push("system.addContractMethod(1, stringToBytes('LibUser'), '0x59d25902', ['0x
 
 
 q.push("p = contract(MatryxPlatform.address, IMatryxPlatform)")
+q.push("p.createCategory(stb('art'))")
+q.push("p.createCategory(stb('environment'))")
+q.push("p.createCategory(stb('health'))")
 q.push("p.createCategory(stb('math'))")
+q.push("p.createCategory(stb('science'))")
+q.push("p.createCategory(stb('technology'))")
 
 q.push("token = contract(network.tokenAddress, MatryxToken)")
 q.push("token.setReleaseAgent(network.accounts[0])")
@@ -244,4 +249,4 @@ q.push("token.mint(network.accounts[2], toWei(1e4))")
 q.push("token.mint(network.accounts[3], toWei(1e4))")
 q.push("token.mint(network.accounts[4], toWei(1e4))")
 
-;(async () => { for (let cmd of q) try { await eval(cmd) } catch (err) {} })()
+;(async () => { for (let cmd of q) try { await eval(cmd) } catch (err) { console.log(err) } })()

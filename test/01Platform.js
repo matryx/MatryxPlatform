@@ -1,10 +1,12 @@
 const MatryxPlatform = artifacts.require('MatryxPlatform')
 
 const { init, createTournament, enterTournament } = require('./helpers')(artifacts, web3)
+const { accounts } = require('../truffle/network')
+
 let platform
 let token
 
-contract('Platform Testing', function(accounts) {
+contract('Platform Testing', function() {
   let t
   let roundData = {
     start: Math.floor(Date.now() / 1000),
@@ -22,7 +24,7 @@ contract('Platform Testing', function(accounts) {
 
   it('Able to get platform info', async function() {
     let info = await platform.getInfo()
-    assert.equal(info.owner.toLowerCase(), accounts[0], 'Unable to get platform info')
+    assert.equal(info.owner, accounts[0], 'Unable to get platform info')
   })
 
   it('Unable to set platform token from another account', async function() {
@@ -55,9 +57,9 @@ contract('Platform Testing', function(accounts) {
     assert.isTrue(count == 0 && tournaments.length == 0, 'Tournament count should be 0 and tournaments array should be empty.')
   })
 
-  it('Platform has 1 preloaded category', async function() {
+  it('Platform has 6 preloaded categories', async function() {
     let cat = await platform.getCategories(0, 0)
-    assert.isTrue(cat.length == 1, 'Platform should only contain 1 category.')
+    assert.isTrue(cat.length == 6, 'Platform should only contain 6 categories.')
   })
 
   it('Able to create a tournament', async function() {
@@ -78,9 +80,9 @@ contract('Platform Testing', function(accounts) {
   })
 
   it('Able to create a new category', async function() {
-    await platform.createCategory(stb('science'))
+    await platform.createCategory(stb('music'))
     let cat = await platform.getCategories(0, 0)
-    assert.isTrue(cat.length == 2, 'Platform should contain 2 categories.')
+    assert.isTrue(cat.length == 7, 'Platform should contain 7 categories.')
   })
 
   it('Able to create second tournament in first category', async function() {
@@ -128,7 +130,7 @@ contract('Platform Testing', function(accounts) {
 
   it('Able to get all users in the platform', async function() {
     let users = await platform.getUsers(0, 0)
-    let isTrue = users[0].toLowerCase() == accounts[0] && users[1].toLowerCase() == accounts[1]
+    let isTrue = users[0] == accounts[0] && users[1] == accounts[1]
     assert.isTrue(isTrue, 'Platform should have 2 users')
   })
 

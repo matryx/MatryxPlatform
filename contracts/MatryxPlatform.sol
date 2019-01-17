@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
@@ -54,7 +54,7 @@ contract MatryxPlatform {
     /// 4) Uses name and signature to ask MatryxSystem for the data necessary to modify the incoming calldata
     ///    so as to be appropriate for the associated library call
     /// 5) Makes a delegatecall to the library address given by MatryxSystem with the library-appropriate calldata
-    function () public {
+    function () external {
         assembly {
             // constants
             let offset := 0x100000000000000000000000000000000000000000000000000000000
@@ -151,7 +151,7 @@ contract MatryxPlatform {
 
     /// @dev Gets Information about the Platform
     /// @return  Info Struct that contains system, version, token, and owner
-    function getInfo() public view returns (MatryxPlatform.Info) {
+    function getInfo() public view returns (MatryxPlatform.Info memory) {
         return info;
     }
 
@@ -170,7 +170,7 @@ contract MatryxPlatform {
         require(msg.sender == info.owner, "Must be Platform owner");
         IToken(info.token).upgrade(data.totalBalance);
 
-        require(IToken(token).balanceOf(this) == data.totalBalance, "Token address must match upgraded token");
+        require(IToken(token).balanceOf(address(this)) == data.totalBalance, "Token address must match upgraded token");
         info.token = token;
     }
 
@@ -185,7 +185,7 @@ contract MatryxPlatform {
     function withdrawTokens(address token) external {
         require(msg.sender == info.owner, "Must be Platform owner");
 
-        uint256 balance = IToken(token).balanceOf(this);
+        uint256 balance = IToken(token).balanceOf(address(this));
 
         // if current token, check if any extraneous tokens
         if (token == info.token) {
@@ -197,7 +197,7 @@ contract MatryxPlatform {
 }
 
 interface IMatryxPlatform {
-    function getInfo() external view returns (MatryxPlatform.Info);
+    function getInfo() external view returns (MatryxPlatform.Info memory);
     function setOwner(address) external;
     function upgradeToken(address) external;
     function withdrawEther() external;
@@ -213,17 +213,17 @@ interface IMatryxPlatform {
 
     function getTournamentCount() external view returns (uint256);
     function getUserCount() external view returns (uint256);
-    function getTournaments(uint256, uint256) external view returns (address[]);
-    function getTournamentsByCategory(bytes32, uint256, uint256) external view returns (address[]);
-    function getUsers(uint256, uint256) external view returns (address[]);
-    function getCategories(uint256, uint256) external view returns (bytes32[]);
+    function getTournaments(uint256, uint256) external view returns (address[] memory);
+    function getTournamentsByCategory(bytes32, uint256, uint256) external view returns (address[] memory);
+    function getUsers(uint256, uint256) external view returns (address[] memory);
+    function getCategories(uint256, uint256) external view returns (bytes32[] memory);
 
     function createCategory(bytes32) external;
 
     function enterMatryx() external;
     function addTournamentToCategory(address, bytes32) external;
     function removeTournamentFromCategory(address) external;
-    function createTournament(LibTournament.TournamentDetails, LibRound.RoundDetails) external returns (address);
+    function createTournament(LibTournament.TournamentDetails calldata, LibRound.RoundDetails calldata) external returns (address);
 }
 
 library LibPlatform {
@@ -235,21 +235,21 @@ library LibPlatform {
     /// @param tAddress  Tournament address
     /// @return          true if Tournament exists
     function isTournament(address, address, MatryxPlatform.Data storage data, address tAddress) public view returns (bool) {
-        return data.tournaments[tAddress].info.owner != 0x0;
+        return data.tournaments[tAddress].info.owner != address(0);
     }
 
     /// @dev Return if a Round exists
     /// @param rAddress  Round address
     /// @return          true if Round exists
     function isRound(address, address, MatryxPlatform.Data storage data, address rAddress) public view returns (bool) {
-        return data.rounds[rAddress].info.tournament != 0x0;
+        return data.rounds[rAddress].info.tournament != address(0);
     }
 
     /// @dev Return if a Submission exists
     /// @param sAddress  Submission address
     /// @return          true if Submission exists
     function isSubmission(address, address, MatryxPlatform.Data storage data, address sAddress) public view returns (bool) {
-        return data.submissions[sAddress].info.owner != 0x0;
+        return data.submissions[sAddress].info.owner != address(0);
     }
 
     /// @dev Return if user has entered Matryx
@@ -294,7 +294,7 @@ library LibPlatform {
     /// @param startIndex  Index of first Tournament to return
     /// @param count       Number of Tournaments to return. If 0, all
     /// @return            Array of Tournament addresses
-    function getTournaments(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
+    function getTournaments(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public returns (address[] memory) {
         uint256 version = IMatryxSystem(info.system).getVersion();
         address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage tournaments = data.allTournaments;
@@ -323,7 +323,7 @@ library LibPlatform {
     /// @param startIndex  Index of first User to return
     /// @param count       Number of User to return. If 0, all
     /// @return          Array of Tournament addresses for given category
-    function getTournamentsByCategory(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category, uint256 startIndex, uint256 count) public view returns (address[]) {
+    function getTournamentsByCategory(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category, uint256 startIndex, uint256 count) public returns (address[] memory) {
         uint256 version = IMatryxSystem(info.system).getVersion();
         address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage cat = data.categories[category];
@@ -351,7 +351,7 @@ library LibPlatform {
     /// @param startIndex  Index of first User to return
     /// @param count       Number of User to return. If 0, all
     /// @return            Array of User addresses
-    function getUsers(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (address[]) {
+    function getUsers(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public returns (address[] memory) {
         uint256 version = IMatryxSystem(info.system).getVersion();
         address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         address[] storage users = data.allUsers;
@@ -379,7 +379,7 @@ library LibPlatform {
     /// @param startIndex  Index of first Category to return
     /// @param count       Number of Category to return. If 0, all
     /// @return            Array of Categories
-    function getCategories(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public view returns (bytes32[]) {
+    function getCategories(address, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public returns (bytes32[] memory) {
         uint256 version = IMatryxSystem(info.system).getVersion();
         address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
         bytes32[] storage allCategories = data.allCategories;
@@ -476,14 +476,14 @@ library LibPlatform {
     /// @param tDetails  Tournament details (title, category, descHash, fileHash, bounty, entryFee)
     /// @param rDetails  Round details (start, end, review, bounty)
     /// @return          Address of the created Tournament
-    function createTournament(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails tDetails, LibRound.RoundDetails rDetails) public returns (address) {
+    function createTournament(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails, LibRound.RoundDetails memory rDetails) public returns (address) {
         require(data.users[sender].exists, "Must have entered Matryx");
         require(tDetails.bounty > 0, "Tournament bounty must be greater than 0");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
         require(IToken(info.token).allowance(sender, platform) >= tDetails.bounty, "Insufficient MTX");
 
         uint256 version = IMatryxSystem(info.system).getVersion();
-        address tAddress = new MatryxTournament(version, info.system);
+        address tAddress = address(new MatryxTournament(version, info.system));
 
         IMatryxSystem(info.system).setContractType(tAddress, uint256(LibSystem.ContractType.Tournament));
         data.allTournaments.push(tAddress);
