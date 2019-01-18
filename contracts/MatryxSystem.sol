@@ -179,5 +179,5 @@ interface IMatryxSystem {
 }
 
 library LibSystem {
-    enum ContractType { Unknown, User, Platform, Tournament, Round, Submission }
+    enum ContractType { Unknown, Platform, User, Commit, Tournament, Round, Submission }
 }

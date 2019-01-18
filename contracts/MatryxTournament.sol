@@ -2,7 +2,6 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
-import "./IMatryxToken.sol";
 import "./LibGlobals.sol";
 
 import "./MatryxSystem.sol";

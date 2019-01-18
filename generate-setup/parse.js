@@ -24,8 +24,9 @@ const dynTypesReg = /.*\[\].*|^(?!address|bool|bytes\d+|u?int\d*)/
 const fnReg = /function (\w+)\((.*?)\).*/g
 
 const slots = {
-  info: 0,
-  data: 3
+  'MatryxPlatform.Info': 0,
+  'MatryxPlatform.Data': 3,
+  'LibCommit.CollaborationData': 16
 }
 
 const structs = {}
@@ -97,7 +98,7 @@ while ((match = libReg.exec(source))) {
 
     const name = match[1]
     const params = match[2].split(/, ?/).map(p => p.split(' '))
-    const injParams = params.filter(p => p.includes('storage')).map(p => slots[p[2]])
+    const injParams = params.filter(p => p.includes('storage')).map(p => slots[p[0]])
     const numInject = injParams.length
 
     const toParams = params.map(p => {

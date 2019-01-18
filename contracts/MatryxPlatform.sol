@@ -6,7 +6,7 @@ import "./LibGlobals.sol";
 import "./IToken.sol";
 
 import "./MatryxSystem.sol";
-import "./LibCommit.sol";
+import "./MatryxCommit.sol";
 import "./MatryxUser.sol";
 import "./MatryxTournament.sol";
 import "./MatryxRound.sol";
@@ -226,9 +226,6 @@ interface IMatryxPlatform {
     function addTournamentToCategory(address, bytes32) external;
     function removeTournamentFromCategory(address) external;
     function createTournament(LibTournament.TournamentDetails calldata, LibRound.RoundDetails calldata) external returns (address);
-
-    function addUserToGroup(string memory group, address newUser);
-
 }
 
 library LibPlatform {
