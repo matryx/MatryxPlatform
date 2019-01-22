@@ -172,7 +172,6 @@ library LibCommit {
     /// @param rightPath Most valuable (longest) path backwards from this commit to a virtual parent (merges only)
     function createCommit(address self, address sender, MatryxPlatform.Info storage info, LibCommit.CollaborationData storage data, LibCommit.CommitDetails memory commitDetails, bytes32 group, LibCommit.Path memory leftPath, LibCommit.Path memory rightPath) public {
         Commit storage parent0 = data.commits[commitDetails.parents[0].rootHash];
-        Commit storage parent1 = data.commits[commitDetails.parents[1].rootHash];
         require(parent0.exists);
         // require(group == parent0.group || group == parent1.group);
         // TODO: Handle where this is not the case, if you aren't already
@@ -181,9 +180,6 @@ library LibCommit {
         // Transfer MTX if sender is not in a parent commit's group
         if (!data.groups[parent0.group].containsUser[sender]) {
             require(IToken(info.token).transferFrom(sender, parent0.creator, parent0.details.value));
-        }
-        if (!data.groups[parent1.group].containsUser[sender]) {
-            require(IToken(info.token).transferFrom(sender, parent1.creator, parent1.details.value));
         }
         
         bytes32 commitHash = keccak256(abi.encodePacked(commitDetails.parents[0].rootHash, commitDetails.parents[1].rootHash));
@@ -197,59 +193,6 @@ library LibCommit {
         data.commits[commitHash].details.value = commitDetails.value;
         data.commits[commitHash].details.height = commitDetails.height;
         data.commits[commitHash].details.parents[0] = commitDetails.parents[0];
-        data.commits[commitHash].details.parents[1] = commitDetails.parents[1];
-
-        if (leftPath.length != 0) {
-            Commit storage newCommit = data.commits[commitHash];
-            // TODO: begin implementing merge with new logic (groups, etc)
-            uint256 leftPathValue;
-            uint256 rightPathValue;
-            bytes32[2] memory ancestor;
-
-            CommitDetails storage backwalkCommit = data.commits[commitHash].details;
-            uint256 theByte;
-            uint256 theBit;
-            uint256 i;
-            for (i = 0; i < leftPath.length*8; i++) {
-                theByte = i/8;
-                theBit = uint8((leftPath.path[theByte] >> i) & 0x01);
-
-                leftPathValue += backwalkCommit.parents[theBit].givenValue;
-                ancestor[0] = backwalkCommit.parents[theBit].rootHash;
-
-                backwalkCommit = data.commits[backwalkCommit.parents[theBit].rootHash].details;
-            }
-
-            backwalkCommit = data.commits[commitHash].details;
-            for (i = 0; i < rightPath.length*8; i++) {
-                theByte = i/8;
-                theBit = uint8((rightPath.path[theByte] >> i) & 0x01);
-
-                rightPathValue += backwalkCommit.parents[theBit].givenValue;
-                ancestor[1] = backwalkCommit.parents[theBit].rootHash;
-
-                backwalkCommit = data.commits[backwalkCommit.parents[theBit].rootHash].details;
-            }
-
-            require(ancestor[0] == ancestor[1]);
-
-            // Set size and value of commit
-            newCommit.details.value = leftPathValue + rightPathValue + data.commits[ancestor[0]].details.value;
-            newCommit.details.height = leftPath.length + rightPath.length + data.commits[ancestor[0]].details.height;
-            // Set parent sizes and values
-            newCommit.details.parents[0].rootHash = commitDetails.parents[0].rootHash;
-            newCommit.details.parents[0].accHeight = leftPath.length + data.commits[ancestor[0]].details.height;
-            newCommit.details.parents[0].accValue = leftPathValue + data.commits[ancestor[0]].details.value;
-            newCommit.details.parents[1].rootHash = commitDetails.parents[1].rootHash;
-            newCommit.details.parents[1].accHeight = rightPath.length + data.commits[ancestor[1]].details.height;
-            newCommit.details.parents[1].accValue = rightPathValue + data.commits[ancestor[1]].details.value;
-            // Create virtual parent
-            newCommit.details.parents[2].rootHash = ancestor[0];
-            newCommit.details.parents[2].givenValue = leftPathValue + rightPathValue;
-            // TODO: Are these values correct?
-            newCommit.details.parents[2].accHeight = leftPath.length + rightPath.length + data.commits[ancestor[0]].details.height;
-            newCommit.details.parents[2].accValue = leftPathValue + rightPathValue + data.commits[ancestor[0]].details.value;
-        }
 
         emit Committed(commitHash, commitDetails.treeHash);
     }
