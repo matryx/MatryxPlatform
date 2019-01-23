@@ -38,7 +38,7 @@ library LibRound {
         uint256 version;
         address tournament;
         address[] submissions;
-        WinnersData winners;
+        LibRound.WinnersData winners;
         bool closed;
     }
 
@@ -60,8 +60,8 @@ library LibRound {
     }
 
     struct RoundData {
-        RoundInfo info;
-        RoundDetails details;
+        LibRound.RoundInfo info;
+        LibRound.RoundDetails details;
 
         mapping(address=>bool) isSubmission;
         address[] judgedSubmissions;
@@ -71,8 +71,8 @@ library LibRound {
 
     // All state data and details of Round
     struct RoundReturnData {
-        RoundInfo info;
-        RoundDetails details;
+        LibRound.RoundInfo info;
+        LibRound.RoundDetails details;
     }
 
     /// @dev Returns the version of this Round

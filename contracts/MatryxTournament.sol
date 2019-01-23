@@ -89,8 +89,8 @@ library LibTournament {
 
     // All state data and details of Tournament
     struct TournamentData {
-        TournamentInfo info;
-        TournamentDetails details;
+        LibTournament.TournamentInfo info;
+        LibTournament.TournamentDetails details;
 
         mapping(address=>LibGlobals.o_uint256) entryFeePaid;
         address[] allEntrants;

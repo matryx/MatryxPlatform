@@ -54,12 +54,14 @@ contract MatryxCommit {
 }
 
 interface IMatryxCommit {
+    function getCommit(bytes32 commitHash) external view returns (LibCommit.Commit memory commit);
+    function getRootCommits() external view returns (bytes32[] memory);
+    function getAllGroups() external view returns (bytes32[] memory);
+    function createGroup(string calldata group) external returns (address);
     function requestToJoinGroup(string calldata group) external;
     function addUserToGroup(string calldata group, address newUser) external;
-    function createCommit(LibCommit.CommitDetails calldata commitDetails, bytes32 group, LibCommit.Path calldata leftPath, LibCommit.Path calldata rightPath) external;
-    function setCommitPrice(bytes32 commitHash, uint256 usePrice) external;
-    function bidCommit(bytes32 commitHash, uint256 bid) external ;
-    function sellCommit(bytes32 commitHash, address bidder, uint256 bid) external;
+    function createCommit(LibCommit.NewCommit calldata newCommit, string calldata group) external;
+    function fork(LibCommit.NewCommit calldata newCommit, string calldata group) external;
 }
 
 library LibCommit {
@@ -67,168 +69,186 @@ library LibCommit {
 
     struct CollaborationData {
         mapping(bytes32=>Commit) commits;                                      // commit hash to commit struct mapping
-        bytes32[] rootCommits;                                                 // all root level commits (no parents)
+        bytes32[] rootCommits;                                                 // all root level commits (no parent)
         mapping(bytes32=>Group) groups;                                        // group mask hash to group struct mapping
         bytes32[] allGroups;                                                   // array of all group(name) hashes. length is new group number
         mapping(bytes32=>bytes32) treeToCommit;                                // top level directory hash to commit hash mapping
     }
 
-    event Bid(bytes32 _commit, address bidder, uint256 bid);                   // Fired when someone bids on a commit
     event JoinGroupRequest(string group, address user);                        // Fired when someone requests to join a group
-    event Sold(bytes32 commitHash, uint256 usePrice, address _newOwner);       // Fired when a commit is sold by its owner
     event Committed(bytes32 commitHash, bytes32 _mergeTree);                   // Fired when a new commit is created
 
     struct Commit {
-        bool exists;
         address creator;
         bytes32 group;
-        CommitDetails details;
-        mapping(bytes32=>CommitDetails) mergeRequests;
+        bytes32 commitHash;
+        bytes32 treeHash;
+        uint256 value;
+        uint256 totalValue;
+        uint256 height;
+        bytes32 parent;
         bytes32[] children;
     }
 
-    struct CommitDetails {
-        bytes32 commitHash;
+    struct NewCommit {
         bytes32 treeHash;
-        uint256 usePrice;
         uint256 value;
-        uint256 height;
-        SubtreeInfo[] parents;
-    }
-
-    ///@dev Information about a subtree under a commit
-    ///@param rootHash Hash of the root of the subtree
-    ///@param givenValue Value paid by commit to include this parent commit
-    ///@param accHeight Length of subtree from root commit to this parent
-    ///@param accValue Accumulated value from root commit to this parent
-    struct SubtreeInfo {
-        bytes32 rootHash;
-        uint256 givenValue;
-        uint256 accHeight;
-        uint256 accValue;
-    }
-
-    /// @dev Represents a path to a specific ancestor commit.
-    /// @param path The path in 0:=left_parent,1:=right_parent encoded bits.
-    /// @param length The length of the path in bits
-    struct Path {
-        bytes path;
-        uint256 length;
+        bytes32 parent;
     }
 
     struct Group {
         bool exists;
         mapping(address=>bool) containsUser;
         address[] users;
-        // TODO: Worry about this
-        // uint256[] distribution;
-        // mapping(address=>uint256) deltaDistributionByUser;
+    }
+
+    /// @dev Returns commit data for hash
+    /// @param self        Address of contract calling this method: MatryxPlatform
+    /// @param sender      msg.sender to the Platform
+    /// @param data        All commit data on the Platform
+    /// @param commitHash  Commit hash to get
+    function getCommit(address self, address sender, LibCommit.CollaborationData storage data, bytes32 commitHash) public view returns (Commit memory commit) {
+        return data.commits[commitHash];
+    }
+
+    /// @dev Returns commit data for hash
+    /// @param self        Address of contract calling this method: MatryxPlatform
+    /// @param sender      msg.sender to the Platform
+    /// @param data        All commit data on the Platform
+    function getRootCommits(address self, address sender, LibCommit.CollaborationData storage data) public view returns (bytes32[] memory) {
+        return data.rootCommits;
+    }
+
+    /// @dev Returns commit data for hash
+    /// @param self        Address of contract calling this method: MatryxPlatform
+    /// @param sender      msg.sender to the Platform
+    /// @param data        All commit data on the Platform
+    function getAllGroups(address self, address sender, LibCommit.CollaborationData storage data) public view returns (bytes32[] memory) {
+        return data.allGroups;
+    }
+
+    function withdrawBalance(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage platformData) public {
+        uint256 amount = platformData.balanceOf[sender];
+        platformData.balanceOf[sender] = 0;
+        require(IToken(info.token).transfer(sender, amount));
+    }
+
+    /// @dev Creates a new group
+    /// @param self    Address of contract calling this method: MatryxPlatform
+    /// @param sender  msg.sender to the Platform
+    /// @param data    All commit data on the Platform
+    /// @param group   Name of the group to create
+    function createGroup(address self, address sender, LibCommit.CollaborationData storage data, string memory group) public {
+        bytes32 groupHash = keccak256(abi.encodePacked(group));
+        require(!data.groups[groupHash].exists, "Group already exists");
+
+        data.groups[groupHash].exists = true;
+        data.allGroups.push(groupHash);
+        data.groups[groupHash].containsUser[sender] = true;
+        data.groups[groupHash].users.push(sender);
     }
 
     /// @dev Request to join a group
-    /// @param self  Address of contract calling this method: MatryxPlatform
+    /// @param self    Address of contract calling this method: MatryxPlatform
     /// @param sender  msg.sender to the Platform
-    /// @param data All commit data on the Platform
-    /// @param group Name of the group to request access to
+    /// @param data    All commit data on the Platform
+    /// @param group   Name of the group to request access to
     function requestToJoinGroup(address self, address sender, LibCommit.CollaborationData storage data, string memory group) public {
         bytes32 groupHash = keccak256(abi.encodePacked(group));
         emit JoinGroupRequest(group, sender);
     }
 
     /// @dev Adds a user to a group
-    /// @param self  Address of contract calling this method: MatryxPlatform
-    /// @param sender  msg.sender to the Platform
-    /// @param data All commit data on the Platform
-    /// @param group Name of the group
-    /// @param newUser User to add to the group
+    /// @param self     Address of contract calling this method: MatryxPlatform
+    /// @param sender   msg.sender to the Platform
+    /// @param data     All commit data on the Platform
+    /// @param group    Name of the group
+    /// @param newUser  User to add to the group
     function addUserToGroup(address self, address sender, LibCommit.CollaborationData storage data, string memory group, address newUser) public {
         bytes32 groupHash = keccak256(abi.encodePacked(group));
-        if (data.groups[groupHash].exists) {
-            require(data.groups[groupHash].exists);
-            require(data.groups[groupHash].containsUser[sender]);
-            require(!data.groups[groupHash].containsUser[newUser]);
-        }
-        else {
-            data.groups[groupHash].exists = true;
-            data.allGroups.push(groupHash);
-
-            data.groups[groupHash].containsUser[sender] = true;
-            data.groups[groupHash].users.push(sender);
-        }
+        require(data.groups[groupHash].exists);
+        require(data.groups[groupHash].containsUser[sender]);
+        require(!data.groups[groupHash].containsUser[newUser]);
 
         data.groups[groupHash].containsUser[newUser] = true;
         data.groups[groupHash].users.push(newUser);
-        // TODO: Worry about distributions
     }
 
     /// @dev Creates a new commit.
-    /// @param self  Address of contract calling this method: MatryxPlatform
+    /// @param self    Address of contract calling this method: MatryxPlatform
     /// @param sender  msg.sender to the Platform
-    /// @param info Info struct on the Platform
-    /// @param data All commit data on the Platform
-    /// @param commitDetails Details of the commit to be created
-    /// @param leftPath Most valuable (longest) path backwards from this commit to a virtual parent (merges only)
-    /// @param rightPath Most valuable (longest) path backwards from this commit to a virtual parent (merges only)
-    function createCommit(address self, address sender, MatryxPlatform.Info storage info, LibCommit.CollaborationData storage data, LibCommit.CommitDetails memory commitDetails, bytes32 group, LibCommit.Path memory leftPath, LibCommit.Path memory rightPath) public {
-        Commit storage parent0 = data.commits[commitDetails.parents[0].rootHash];
-        require(parent0.exists);
-        // require(group == parent0.group || group == parent1.group);
-        // TODO: Handle where this is not the case, if you aren't already
-        require(leftPath.length == rightPath.length);
-
-        // Transfer MTX if sender is not in a parent commit's group
-        if (!data.groups[parent0.group].containsUser[sender]) {
-            require(IToken(info.token).transferFrom(sender, parent0.creator, parent0.details.value));
-        }
+    /// @param info    Info struct on the Platform
+    /// @param data    All commit data on the Platform
+    /// @param newCommit Details of the commit to be created
+    function createCommit(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage platformData, LibCommit.CollaborationData storage data, LibCommit.NewCommit memory newCommit, string memory group) public {
+        Commit storage parent = data.commits[newCommit.parent];
+        require(newCommit.parent == bytes32(0) || data.groups[parent.group].containsUser[sender], "Must be in the parent commit's group to commit");
         
-        bytes32 commitHash = keccak256(abi.encodePacked(commitDetails.parents[0].rootHash, commitDetails.parents[1].rootHash));
-        // Create the commit! (for later: this is a parent block hash)
-        data.commits[commitHash].exists = true;
-        data.commits[commitHash].creator = sender;
-        data.commits[commitHash].group = group;
-        data.commits[commitHash].details.commitHash = commitDetails.commitHash;
-        data.commits[commitHash].details.treeHash = commitDetails.treeHash;
-        data.commits[commitHash].details.usePrice = commitDetails.usePrice;
-        data.commits[commitHash].details.value = commitDetails.value;
-        data.commits[commitHash].details.height = commitDetails.height;
-        data.commits[commitHash].details.parents[0] = commitDetails.parents[0];
-
-        emit Committed(commitHash, commitDetails.treeHash);
+        // Create the commit!
+        initCommit(sender, data, newCommit, group);
     }
 
-    /// @dev Sets the price to branch from a particular commit
-    /// @param self  Address of contract calling this method: MatryxPlatform
-    /// @param sender  msg.sender to the Platform
-    /// @param data All commit data on the Platform
-    /// @param commitHash Hash of the commmit to set the price of
-    /// @param usePrice New price to work off of the commit
-    function setCommitPrice(address self, address sender, LibCommit.CollaborationData storage data, bytes32 commitHash, uint256 usePrice) public {
-        require(data.commits[commitHash].creator == sender);
-        if (usePrice != 0) {
-            data.commits[commitHash].details.usePrice = usePrice;
+    /// @dev Forks off of an existing commit and creates a new commit
+    /// @param self       Address of contract calling this method: MatryxPlatform
+    /// @param sender     msg.sender to the Platform
+    /// @param info       Info struct on the Platform
+    /// @param data       All commit data on the Platform
+    /// @param newCommit  Commit to be created
+    /// @param group      Group for the new commit
+    function fork(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage platformData, LibCommit.CollaborationData storage data, LibCommit.NewCommit memory newCommit, string memory group) public {
+        // Buy the subtree of the forked commit and distribute to ancestors
+        distributeForkFunds(sender, info.token, platformData, data, newCommit.parent);
+
+        // Create the commit!
+        initCommit(sender, data, newCommit, group);
+    }
+
+    /// @dev Initializes a new commit
+    /// @param creator    Creator of the commit
+    /// @param group      Hash of the name of this commit's group
+    /// @param data       All commit data on the Platform
+    /// @param newCommit  Commit to be created
+    function initCommit(address creator, LibCommit.CollaborationData storage data, LibCommit.NewCommit memory newCommit, string memory group) internal {
+        bytes32 groupHash = keccak256(abi.encodePacked(group));
+        bytes32 commitHash = keccak256(abi.encodePacked(newCommit.parent, newCommit.treeHash));
+
+        require(data.groups[groupHash].containsUser[creator]);
+
+        data.commits[commitHash].creator = creator;
+        data.commits[commitHash].group = groupHash;
+        data.commits[commitHash].commitHash = commitHash;
+        data.commits[commitHash].treeHash = newCommit.treeHash;
+        data.commits[commitHash].value = newCommit.value;
+        data.commits[commitHash].totalValue = data.commits[newCommit.parent].totalValue.add(newCommit.value);
+        data.commits[commitHash].height = data.commits[newCommit.parent].height + 1;
+        data.commits[commitHash].parent = newCommit.parent;
+
+        data.treeToCommit[newCommit.treeHash] = commitHash;
+
+        if (newCommit.parent == bytes32(0)) {
+            data.rootCommits.push(commitHash);
+        } else {
+            data.commits[newCommit.parent].children.push(commitHash);
         }
+
+        emit Committed(commitHash, newCommit.treeHash);
     }
 
-    /// @dev Bid on a particular commit.
-    /// @param self  Address of contract calling this method: MatryxPlatform
-    /// @param sender  msg.sender to the Platform
-    /// @param data All commit data on the Platform
-    /// @param commitHash The hash of the commit being bid on.
-    /// @param bid The bid for the commit.
-    function bidCommit(address self, address sender, LibCommit.CollaborationData storage data, bytes32 commitHash, uint256 bid) public  {
-        emit Bid(commitHash, sender, bid);
-    }
+    /// @dev Distributes funds after a fork
+    /// @param sender        Address to withdraw funds from
+    /// @param token         Token address
+    /// @param platformData  MatryxPlatform data
+    /// @param data          Collaboration data
+    /// @param commitHash    Commit hash to begin distributing funds back from
+    function distributeForkFunds(address sender, address token, MatryxPlatform.Data storage platformData, LibCommit.CollaborationData storage data, bytes32 commitHash) internal {
+        Commit storage commit = data.commits[commitHash];
 
-    /// @dev Sell a particular commit after its been bid on
-    /// @param self  Address of contract calling this method: MatryxPlatform
-    /// @param sender  msg.sender to the Platform
-    /// @param data All commit data on the Platform
-    /// @param commitHash The hash of the commit to sell.
-    /// @param bidder The address to sell the commit to.
-    function sellCommit(address self, address sender, MatryxPlatform.Info storage info, LibCommit.CollaborationData storage data, bytes32 commitHash, address bidder, uint256 bid) public {
-        require(data.commits[commitHash].exists == true, "This commit does not exist");
-        require(sender == data.commits[commitHash].creator, "You must own a commit to sell it");
-        require(IToken(info.token).transferFrom(bidder, data.commits[commitHash].creator, bid), "Sell transaction must go through");
-        emit Sold(commitHash, bid, bidder);
+        require(IToken(token).transferFrom(sender, address(this), commit.totalValue));
+        platformData.totalBalance = platformData.totalBalance.add(commit.totalValue);
+        
+        for (uint256 i = commit.height; i > 0; i--) {
+            platformData.balanceOf[commit.creator] = platformData.balanceOf[commit.creator].add(commit.value);
+            commit = data.commits[commit.parent];
+        }
     }
 }

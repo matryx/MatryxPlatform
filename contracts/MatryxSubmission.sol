@@ -84,8 +84,8 @@ library LibSubmission {
 
     // All state data and details of Submission
     struct SubmissionData {
-        SubmissionInfo info;
-        SubmissionDetails details;
+        LibSubmission.SubmissionInfo info;
+        LibSubmission.SubmissionDetails details;
 
         address[] allPermittedToView;
         mapping(address=>bool) permittedToView;
@@ -96,8 +96,8 @@ library LibSubmission {
 
     // everything but the mappings
     struct SubmissionReturnData {
-        SubmissionInfo info;
-        SubmissionDetails details;
+        LibSubmission.SubmissionInfo info;
+        LibSubmission.SubmissionDetails details;
     }
 
     function onlyOwner(address self, address sender, MatryxPlatform.Data storage data) internal view {

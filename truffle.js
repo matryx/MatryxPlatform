@@ -41,7 +41,8 @@ module.exports = {
       },
       network_id: "*", // match any network
       gas: 8e6,
-      gasPrice: 5e9
+      gasPrice: 5e9,
+      skipDryRun: true
     },
     ropsten: {
       provider: function () {

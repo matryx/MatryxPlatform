@@ -23,6 +23,9 @@ const membersReg = /^\s+(\S+)\s+\w+;/gm
 const dynTypesReg = /.*\[\].*|^(?!address|bool|bytes\d+|u?int\d*)/
 const fnReg = /function (\w+)\((.*?)\).*/g
 
+const wordTypesReg = /^(address|bool|bytes\d+|u?int\d*)$/
+const arrayType = /\[(\d*)\]/
+
 const slots = {
   'MatryxPlatform.Info': 0,
   'MatryxPlatform.Data': 3,
@@ -33,6 +36,32 @@ const structs = {}
 const selectors = {}
 const setup = []
 const methods = []
+
+// return the size of a type in words
+const sizeof = type => {
+  if (structs[type] !== undefined) {
+    return structs[type].words
+  }
+  
+  if (wordTypesReg.test(type)) return 1
+  if (type.includes('mapping')) return 1
+  
+  let match = arrayType.exec(type)
+  if (!match) throw new Error('wtf happened: ' + type)
+  return +match[1] || 1
+}
+
+// flattens a struct to basic types (no nested structs)
+const flattenStruct = structName => {
+  const struct = structs[structName]
+  let members = struct.tuple.replace(/^\(|\)$/g, '').split(',')
+  members = members.map(member => {
+    if (structs[member] !== undefined) {
+      return flattenStruct(member)
+    } else return member
+  })
+  return members.join(',')
+}
 
 let match
 
@@ -56,6 +85,18 @@ while ((match = libAndContractReg.exec(source))) {
       tuple: `(${types.join(',')})`
     }
   }
+}
+
+// calculate all the struct sizes
+for (const structName of Object.keys(structs)) {
+  const struct = structs[structName]
+  if (struct.dynamic) {
+    struct.words = 1
+    continue
+  }
+
+  const basicTypes = flattenStruct(structName).split(',')
+  struct.words = basicTypes.map(sizeof).reduce((a, x) => a + x, 0)
 }
 
 console.log(JSON.stringify(structs, 0, 2))
@@ -117,17 +158,25 @@ while ((match = libReg.exec(source))) {
     const fromSig = `${name}(${fromParams.join(',')})`
     const fromSel = sha3(fromSig).substr(0, 10)
 
+    // calculate dynamic param word indices, accounting for struct sizes
+    let i = 0
     const dynParams = []
-    const numDyn = nonStorage.reduce((c, type, i) => {
-      if (!dynTypesReg.test(type)) return c
-
-      let dyn = 1
-      if (type && structs[type] !== undefined) {
-        if (!structs[type].dynamic) dyn = 0
+    const numDyn = nonStorage.reduce((c, type) => {
+      if (!dynTypesReg.test(type)) {
+        i++
+        return c
       }
 
-      if (dyn) dynParams.push(i)
-      return c + dyn
+      if (type && structs[type] !== undefined) {
+        if (!structs[type].dynamic) {
+          i += structs[type].words
+          return c
+        }
+      }
+
+      dynParams.push(i)
+      i++
+      return c + 1
     }, 0)
 
     console.log(`${libName}.${name}: inject ${numInject}, dynamic ${numDyn}${numDyn ? ` at ${dynParams.join(' ')}` : ''}`)
