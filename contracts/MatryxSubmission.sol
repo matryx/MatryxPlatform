@@ -471,7 +471,7 @@ library LibSubmission {
     /// @param sender  msg.sender to this Submission
     /// @param data    Data struct on Platform
     /// @return        Amount of MTX available to msg.sender
-     function getAvailableReward(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
+    function getAvailableReward(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
         LibSubmission.SubmissionData storage submission = data.submissions[self];
 
         uint256 balance = data.balanceOf[self];

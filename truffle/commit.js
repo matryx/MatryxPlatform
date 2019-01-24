@@ -15,7 +15,7 @@ const init = async () => {
 }
 
 const createCommit = async (treeHash, value, parent, group) => {
-  await commit.createCommit([treeHash, value, parent], group)
+  await commit.commit([treeHash, value, parent], group)
 
   // return the newly created commit hash
   if (parent != '0x00') {
@@ -27,7 +27,7 @@ const createCommit = async (treeHash, value, parent, group) => {
   }
 }
 
-const congoLine = async (length) => {
+const congaLine = async (length) => {
   let parent = '0x00'
   for(let i = 0; i < length; i++) {
     parent = await createCommit(stringToBytes(i), toWei(i), parent, 'group')
@@ -38,9 +38,9 @@ const congoLine = async (length) => {
 module.exports = async exit => {
   try {
     await init()
-    await commit.createGroup('group')
+    // await commit.createGroup('group')
     // await createCommit('0x72ee', '0x777', '0x00', 'group')
-    await congoLine(10)
+    await congaLine(10)
   } catch (err) {
     console.log(err.message)
   } finally {

@@ -55,15 +55,18 @@ contract MatryxCommit {
 
 interface IMatryxCommit {
     function getCommit(bytes32 commitHash) external view returns (LibCommit.Commit memory commit);
-    function getRootCommits() external view returns (bytes32[] memory);
+    function getCommitByContentHash(bytes32[2] calldata contentHash) external view returns (LibCommit.Commit memory commit);
+    function getInitialCommits() external view returns (bytes32[] memory);
     function getAllGroups() external view returns (bytes32[] memory);
     function getGroupName(bytes32 groupHash) external view returns (string memory);
     function getGroupMembers(string calldata group) external view returns (address[] memory);
     function createGroup(string calldata group) external returns (address);
     function requestToJoinGroup(string calldata group) external;
     function addGroupMember(string calldata group, address newUser) external;
-    function commit(LibCommit.NewCommit calldata newCommit, string calldata group) external;
-    function fork(LibCommit.NewCommit calldata newCommit, string calldata group) external;
+    function initialCommit(bytes32[2] calldata contentHash, bytes32 value, string calldata group) external;
+    function commit(bytes32[2] calldata contentHash, bytes32 value, bytes32 parentHash) external;
+    function fork(bytes32[2] calldata contentHash, bytes32 value, bytes32 parentHash, string calldata group) external;
+    // function submitToTournament(bytes32 commitHash, )
 }
 
 library LibCommit {
@@ -71,31 +74,25 @@ library LibCommit {
 
     struct CollaborationData {
         mapping(bytes32=>Commit) commits;                                      // commit hash to commit struct mapping
-        bytes32[] rootCommits;                                                 // all root level commits (no parent)
+        bytes32[] initialCommits;                                              // all root level commits (no parent)
         mapping(bytes32=>Group) groups;                                        // group mask hash to group struct mapping
         bytes32[] allGroups;                                                   // array of all group(name) hashes. length is new group number
-        mapping(bytes32=>bytes32) treeToCommit;                                // top level directory hash to commit hash mapping
+        mapping(bytes32=>bytes32) commitHashes;                                // top level directory hash to commit hash mapping
     }
 
     event JoinGroupRequest(string group, address user);                        // Fired when someone requests to join a group
-    event Committed(bytes32 commitHash, bytes32 treeHash);                     // Fired when a new commit is created
+    event Committed(bytes32 commitHash, bytes32[2] contentHash);               // Fired when a new commit is created
 
     struct Commit {
         address creator;
-        bytes32 group;
+        bytes32 groupHash;
         bytes32 commitHash;
-        bytes32 treeHash;
+        bytes32[2] contentHash;
         uint256 value;
         uint256 totalValue;
         uint256 height;
-        bytes32 parent;
+        bytes32 parentHash;
         bytes32[] children;
-    }
-
-    struct NewCommit {
-        bytes32 treeHash;
-        uint256 value;
-        bytes32 parent;
     }
 
     struct Group {
@@ -114,12 +111,23 @@ library LibCommit {
         return data.commits[commitHash];
     }
 
-    /// @dev Returns commit data for hash
+    /// @dev Returns commit data for content hash
+    /// @param self         MatryxCommit address
+    /// @param sender       msg.sender to the Platform
+    /// @param data         All commit data on the Platform
+    /// @param contentHash  Content hash commit was created from
+    function getCommitByContentHash(address self, address sender, LibCommit.CollaborationData storage data, bytes32[2] memory contentHash) public view returns (Commit memory commit) {
+        bytes32 lookupHash = keccak256(abi.encodePacked(contentHash));
+        bytes32 commitHash = data.commitHashes[lookupHash];
+        return data.commits[commitHash];
+    }
+
+    /// @dev Returns all initial commits
     /// @param self    MatryxCommit address
     /// @param sender  msg.sender to the Platform
     /// @param data    All commit data on the Platform
-    function getRootCommits(address self, address sender, LibCommit.CollaborationData storage data) public view returns (bytes32[] memory) {
-        return data.rootCommits;
+    function getInitialCommits(address self, address sender, LibCommit.CollaborationData storage data) public view returns (bytes32[] memory) {
+        return data.initialCommits;
     }
     
     /// @dev Returns all group hashes
@@ -130,7 +138,7 @@ library LibCommit {
         return data.allGroups;
     }
 
-    /// @dev Returns all group members
+    /// @dev Returns group name for hash
     /// @param self       MatryxCommit address
     /// @param sender     msg.sender to the Platform
     /// @param data       All commit data on the Platform
@@ -190,74 +198,84 @@ library LibCommit {
         data.groups[groupHash].members.push(member);
     }
 
-    /// @dev Creates a new commit
-    /// @param self       MatryxCommit address
-    /// @param sender     msg.sender to the Platform
-    /// @param data       All commit data on the Platform
-    /// @param newCommit  Details of the commit to be created
-    function commit(address self, address sender, LibCommit.CollaborationData storage data, LibCommit.NewCommit memory newCommit, string memory group) public {
-        Commit storage parent = data.commits[newCommit.parent];
-        require(newCommit.parent == bytes32(0) || data.groups[parent.group].hasMember[sender], "Must be in the parent commit's group to commit");
-        
+    /// @dev Creates a new root commit
+    /// @param self         MatryxCommit address
+    /// @param sender       msg.sender to the Platform
+    /// @param data         All commit data on the Platform
+    /// @param contentHash  Hash of the commits content
+    /// @param value        Author-determined value of the commit
+    /// @param group        Name of the group working on this branch
+    function initialCommit(address self, address sender, LibCommit.CollaborationData storage data, bytes32[2] memory contentHash, uint256 value, string memory group) public {
         // Create the commit!
-        initCommit(sender, data, newCommit, group);
+        bytes32 groupHash = keccak256(abi.encodePacked(group));
+        createCommit(sender, data, contentHash, value, bytes32(0), groupHash);
     }
 
-    /// @dev Forks off of an existing commit and creates a new commit
-    /// @param self       MatryxCommit address
-    /// @param sender     msg.sender to the Platform
-    /// @param info       Info struct on the Platform
-    /// @param data       All commit data on the Platform
-    /// @param newCommit  Commit to be created
-    /// @param group      Group for the new commit
-    function fork(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage platformData, LibCommit.CollaborationData storage data, LibCommit.NewCommit memory newCommit, string memory group) public {
+    /// @dev Creates a new commit off of a parent
+    /// @param self         MatryxCommit address
+    /// @param sender       msg.sender to the Platform
+    /// @param data         All commit data on the Platform
+    /// @param contentHash  Hash of the commits content
+    /// @param value        Author-determined value of the commit
+    /// @param parentHash   Parent commit hash
+    function commit(address self, address sender, LibCommit.CollaborationData storage data, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash) public {
+        Commit storage parent = data.commits[parentHash];
+        require(data.groups[parent.groupHash].hasMember[sender], "Must be in the parent commit's group to commit");
+    
+        // Create the commit!
+        createCommit(sender, data, contentHash, value, parentHash, parent.groupHash);
+    }
+
+    /// @dev Forks off of an existing commit and creates a new commit, sends MTX to all previous commit creators
+    /// @param self         MatryxCommit address
+    /// @param sender       msg.sender to the Platform
+    /// @param info         Info struct on the Platform
+    /// @param data         All commit data on the Platform
+    /// @param contentHash  Hash of the commits content
+    /// @param value        Author-determined value of the commit
+    /// @param parentHash   Parent commit hash
+    /// @param group        Name of the group working on this branch
+    function fork(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage platformData, LibCommit.CollaborationData storage data, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash, string memory group) public {
         // Buy the subtree of the forked commit and distribute to ancestors
-        allocateRoyalties(sender, info.token, platformData, data, newCommit.parent);
+        allocateRoyalties(sender, info.token, platformData, data, parentHash);
 
         // Create the commit!
-        initCommit(sender, data, newCommit, group);
+        bytes32 groupHash = keccak256(abi.encodePacked(group));
+        createCommit(sender, data, contentHash, value, parentHash, groupHash);
     }
     
-    /// @dev Withdraw available MTX balance from royalties 
-    /// @param self          MatryxCommit address
-    /// @param sender        msg.sender to the Platform
-    /// @param info          Info struct on the Platform
-    /// @param platformData  MatryxPlatform data
-    function withdrawBalance(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage platformData) public {
-        uint256 amount = platformData.balanceOf[sender];
-        platformData.balanceOf[sender] = 0;
-        require(IToken(info.token).transfer(sender, amount));
-    }
-
     /// @dev Initializes a new commit
-    /// @param creator    Creator of the commit
-    /// @param group      Hash of the name of this commit's group
-    /// @param data       All commit data on the Platform
-    /// @param newCommit  Commit to be created
-    function initCommit(address creator, LibCommit.CollaborationData storage data, LibCommit.NewCommit memory newCommit, string memory group) internal {
-        bytes32 groupHash = keccak256(abi.encodePacked(group));
-        bytes32 commitHash = keccak256(abi.encodePacked(newCommit.parent, newCommit.treeHash));
+    /// @param creator      Creator of the commit
+    /// @param data         All commit data on the Platform
+    /// @param contentHash  Hash of the commits content
+    /// @param value        Author-determined value of the commit
+    /// @param parentHash   Parent commit hash
+    /// @param groupHash    Hash of the name of the group working on this branch
+    function createCommit(address creator, LibCommit.CollaborationData storage data, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash, bytes32 groupHash) internal {
+        require(data.groups[groupHash].hasMember[creator], "Must be a part of the group");
 
-        require(data.groups[groupHash].hasMember[creator]);
+        bytes32 commitHash = keccak256(abi.encodePacked(parentHash, contentHash));
+        bytes32 lookupHash = keccak256(abi.encodePacked(contentHash));
+
+        require(data.commitHashes[lookupHash] == bytes32(0), "A commit has already been created using this content");
+        data.commitHashes[lookupHash] = commitHash;
 
         data.commits[commitHash].creator = creator;
-        data.commits[commitHash].group = groupHash;
+        data.commits[commitHash].groupHash = groupHash;
         data.commits[commitHash].commitHash = commitHash;
-        data.commits[commitHash].treeHash = newCommit.treeHash;
-        data.commits[commitHash].value = newCommit.value;
-        data.commits[commitHash].totalValue = data.commits[newCommit.parent].totalValue.add(newCommit.value);
-        data.commits[commitHash].height = data.commits[newCommit.parent].height + 1;
-        data.commits[commitHash].parent = newCommit.parent;
-
-        data.treeToCommit[newCommit.treeHash] = commitHash;
-
-        if (newCommit.parent == bytes32(0)) {
-            data.rootCommits.push(commitHash);
+        data.commits[commitHash].contentHash = contentHash;
+        data.commits[commitHash].value = value;
+        data.commits[commitHash].totalValue = data.commits[parentHash].totalValue.add(value);
+        data.commits[commitHash].height = data.commits[parentHash].height + 1;
+        data.commits[commitHash].parentHash = parentHash;
+        
+        if (parentHash == bytes32(0)) {
+            data.initialCommits.push(commitHash);
         } else {
-            data.commits[newCommit.parent].children.push(commitHash);
+            data.commits[parentHash].children.push(commitHash);
         }
 
-        emit Committed(commitHash, newCommit.treeHash);
+        emit Committed(commitHash, contentHash);
     }
 
     /// @dev Allocates MTX to all ancestor commit creators
@@ -267,14 +285,14 @@ library LibCommit {
     /// @param data          Collaboration data
     /// @param commitHash    Commit hash to begin distributing funds back from
     function allocateRoyalties(address sender, address token, MatryxPlatform.Data storage platformData, LibCommit.CollaborationData storage data, bytes32 commitHash) internal {
-        Commit storage commit = data.commits[commitHash];
+        Commit storage theCommit = data.commits[commitHash];
 
-        require(IToken(token).transferFrom(sender, address(this), commit.totalValue));
-        platformData.totalBalance = platformData.totalBalance.add(commit.totalValue);
+        require(IToken(token).transferFrom(sender, address(this), theCommit.totalValue));
+        platformData.totalBalance = platformData.totalBalance.add(theCommit.totalValue);
         
-        for (uint256 i = commit.height; i > 0; i--) {
-            platformData.balanceOf[commit.creator] = platformData.balanceOf[commit.creator].add(commit.value);
-            commit = data.commits[commit.parent];
+        for (uint256 i = theCommit.height; i > 0; i--) {
+            platformData.balanceOf[theCommit.creator] = platformData.balanceOf[theCommit.creator].add(theCommit.value);
+            theCommit = data.commits[theCommit.parentHash];
         }
     }
 }

@@ -114,13 +114,14 @@ contract MatryxPlatform {
 
             ptr2 := add(ptr, 0x04)                                              // copy of ptr for keeping track of injected params
 
-            mstore(ptr2, caller)                                                // inject msg.sender
-            mstore(add(ptr2, 0x20), address)                                    // inject platform
+            mstore(ptr2, address)                                               // inject platform
+            mstore(add(ptr2, 0x20), caller)                                     // inject msg.sender
 
             let cdOffset := 0x04                                                // calldata offset, after signature
 
             if iszero(eq(libName, libPlatform)) {                               // if coming from MatryxTrinity or MatryxUser
-                calldatacopy(add(ptr2, 0x20), 0x04, 0x20)                       // overwrite injected platform with address from forwarder
+                mstore(ptr2, caller)                                            // overwrite injected platform with sender
+                calldatacopy(add(ptr2, 0x20), 0x04, 0x20)                       // overwrite injected sender with address from forwarder
                 cdOffset := add(cdOffset, 0x40)                                 // shift calldata offset for injected address and version
             }
             ptr2 := add(ptr2, 0x40)                                             // shift ptr2 to account for injected addresses
@@ -151,6 +152,11 @@ contract MatryxPlatform {
         }
     }
 
+    modifier onlyOwner() {
+        require(msg.sender == info.owner, "Must be Platform owner");
+        _;
+    }
+
     /// @dev Gets Information about the Platform
     /// @return  Info Struct that contains system, version, token, and owner
     function getInfo() public view returns (MatryxPlatform.Info memory) {
@@ -159,17 +165,14 @@ contract MatryxPlatform {
 
     /// @dev Sets the owner of the platform
     /// @param newOwner  New owner address
-    function setOwner(address newOwner) external {
-        require(msg.sender == info.owner, "Must be Platform owner");
+    function setOwner(address newOwner) external onlyOwner {
         require(newOwner != address(0));
-
         info.owner = newOwner;
     }
 
     /// @dev Sets the Token address
     /// @param token  New token address
-    function upgradeToken(address token) external {
-        require(msg.sender == info.owner, "Must be Platform owner");
+    function upgradeToken(address token) external onlyOwner {
         IToken(info.token).upgrade(data.totalBalance);
 
         require(IToken(token).balanceOf(address(this)) == data.totalBalance, "Token address must match upgraded token");
@@ -177,16 +180,13 @@ contract MatryxPlatform {
     }
 
     /// @dev Withdraws any Ether from Platform
-    function withdrawEther() external {
-        require(msg.sender == info.owner, "Must be Platform owner");
+    function withdrawEther() external onlyOwner {
         msg.sender.transfer(address(this).balance);
     }
 
     /// @dev Withdraws any ERC20 tokens from Platform
     /// @param token  ERC20 token address to use
-    function withdrawTokens(address token) external {
-        require(msg.sender == info.owner, "Must be Platform owner");
-
+    function withdrawTokens(address token) external onlyOwner {
         uint256 balance = IToken(token).balanceOf(address(this));
 
         // if current token, check if any extraneous tokens
@@ -194,7 +194,15 @@ contract MatryxPlatform {
             balance = balance.sub(data.totalBalance);
         }
 
-        IToken(token).transfer(msg.sender, balance);
+        require(IToken(token).transfer(msg.sender, balance));
+    }
+
+    /// @dev Withdraw available MTX balance
+    function withdrawBalance() public {
+        uint256 amount = data.balanceOf[msg.sender];
+        data.balanceOf[msg.sender] = 0;
+        data.totalBalance = data.totalBalance.sub(amount);
+        require(IToken(info.token).transfer(msg.sender, amount));
     }
 }
 
@@ -204,6 +212,7 @@ interface IMatryxPlatform {
     function upgradeToken(address) external;
     function withdrawEther() external;
     function withdrawTokens(address) external;
+    function withdrawBalance() external;
 
     function isTournament(address) external view returns (bool);
     function isRound(address) external view returns (bool);
@@ -408,7 +417,7 @@ library LibPlatform {
     /// @param info      Platform storage containing version number and system address
     /// @param data      Platform storage containing all contract data and users
     /// @param category  Category to create
-    function createCategory(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category) public {
+    function createCategory(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category) public {
         require(sender == info.owner, "Must be Platform owner");
         require(!data.categoryExists[category], "Category already exists");
 
@@ -420,7 +429,7 @@ library LibPlatform {
     /// @param sender  msg.sender to Platform
     /// @param info    Platform storage containing version number and system address
     /// @param data    Platform storage containing all contract data and users
-    function enterMatryx(address sender, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+    function enterMatryx(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         require(!data.users[sender].exists, "Already entered Matryx");
         require(IToken(info.token).balanceOf(sender) > 0, "Must have MTX");
 
@@ -433,8 +442,8 @@ library LibPlatform {
     /// @param data      Platform storage containing all contract data
     /// @param tAddress  Tournament address
     /// @param category  Category name
-    function addTournamentToCategory(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress, bytes32 category) public {
-        require(sender == platform || IMatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
+    function addTournamentToCategory(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress, bytes32 category) public {
+        require(self == sender || IMatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
         require(data.categoryExists[category], "Category does not exist");
 
         data.categories[category].push(tAddress);
@@ -444,8 +453,8 @@ library LibPlatform {
     /// @dev Removes a Tournament from its current category
     /// @param data      Platform storage containing all contract data
     /// @param tAddress  Tournament address
-    function removeTournamentFromCategory(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress) public {
-        require(sender == platform || IMatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
+    function removeTournamentFromCategory(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress) public {
+        require(self == sender || IMatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
 
         uint256 version = IMatryxSystem(info.system).getVersion();
         address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
@@ -478,18 +487,18 @@ library LibPlatform {
     /// @param tDetails  Tournament details (title, category, descHash, fileHash, bounty, entryFee)
     /// @param rDetails  Round details (start, end, review, bounty)
     /// @return          Address of the created Tournament
-    function createTournament(address sender, address platform, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails, LibRound.RoundDetails memory rDetails) public returns (address) {
+    function createTournament(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails, LibRound.RoundDetails memory rDetails) public returns (address) {
         require(data.users[sender].exists, "Must have entered Matryx");
         require(tDetails.bounty > 0, "Tournament bounty must be greater than 0");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
-        require(IToken(info.token).allowance(sender, platform) >= tDetails.bounty, "Insufficient MTX");
+        require(IToken(info.token).allowance(sender, self) >= tDetails.bounty, "Insufficient MTX");
 
         uint256 version = IMatryxSystem(info.system).getVersion();
         address tAddress = address(new MatryxTournament(version, info.system));
 
         IMatryxSystem(info.system).setContractType(tAddress, uint256(LibSystem.ContractType.Tournament));
         data.allTournaments.push(tAddress);
-        addTournamentToCategory(platform, platform, info, data, tAddress, tDetails.category);
+        addTournamentToCategory(self, self, info, data, tAddress, tDetails.category);
 
         LibUser.UserData storage user = data.users[sender];
         user.tournaments.push(tAddress);
@@ -502,7 +511,7 @@ library LibPlatform {
 
         data.totalBalance = data.totalBalance.add(tDetails.bounty);
         data.balanceOf[tAddress] = tDetails.bounty;
-        require(IToken(info.token).transferFrom(sender, platform, tDetails.bounty), "Transfer failed");
+        require(IToken(info.token).transferFrom(sender, self, tDetails.bounty), "Transfer failed");
 
         address libTournament = IMatryxSystem(info.system).getContract(version, "LibTournament");
         assembly {
