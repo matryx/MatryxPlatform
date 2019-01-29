@@ -29,7 +29,7 @@ const arrayType = /\[(\d*)\]/
 const slots = {
   'MatryxPlatform.Info': 0,
   'MatryxPlatform.Data': 3,
-  'LibCommit.CollaborationData': 16
+  'LibCommit.CommitData': 16
 }
 
 const structs = {}
@@ -163,7 +163,7 @@ while ((match = libReg.exec(source))) {
     const dynParams = []
     const numDyn = nonStorage.reduce((c, type) => {
       if (!dynTypesReg.test(type)) {
-        i++
+        i += sizeof(type)
         return c
       }
 

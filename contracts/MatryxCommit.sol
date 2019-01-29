@@ -63,21 +63,24 @@ interface IMatryxCommit {
     function createGroup(string calldata group) external returns (address);
     function requestToJoinGroup(string calldata group) external;
     function addGroupMember(string calldata group, address newUser) external;
-    function initialCommit(bytes32[2] calldata contentHash, bytes32 value, string calldata group) external;
-    function commit(bytes32[2] calldata contentHash, bytes32 value, bytes32 parentHash) external;
-    function fork(bytes32[2] calldata contentHash, bytes32 value, bytes32 parentHash, string calldata group) external;
-    // function submitToTournament(bytes32 commitHash, )
+    function initialCommit(bytes32[2] calldata contentHash, uint256 value, string calldata group) external;
+    function commit(bytes32[2] calldata contentHash, uint256 value, bytes32 parentHash) external;
+    function fork(bytes32[2] calldata contentHash, uint256 value, bytes32 parentHash, string calldata group) external;
+    // function submitToTournament(bytes32 commitHash, address tournamentAddress, LibSubmission.SubmissionDetails calldata submissionDetails) external; //view returns(LibSubmission.SubmissionDetails memory);
 }
 
 library LibCommit {
     using SafeMath for uint256;
 
-    struct CollaborationData {
+    struct CommitData {
         mapping(bytes32=>Commit) commits;                                      // commit hash to commit struct mapping
         bytes32[] initialCommits;                                              // all root level commits (no parent)
         mapping(bytes32=>Group) groups;                                        // group mask hash to group struct mapping
         bytes32[] allGroups;                                                   // array of all group(name) hashes. length is new group number
         mapping(bytes32=>bytes32) commitHashes;                                // top level directory hash to commit hash mapping
+        mapping(bytes32=>uint256) commitBalances;
+        mapping(bytes32=>uint256) commitBalanceIndex;
+        uint256[] nonZeroBalances;
     }
 
     event JoinGroupRequest(string group, address user);                        // Fired when someone requests to join a group
@@ -107,7 +110,7 @@ library LibCommit {
     /// @param sender      msg.sender to the Platform
     /// @param data        All commit data on the Platform
     /// @param commitHash  Commit hash to get
-    function getCommit(address self, address sender, LibCommit.CollaborationData storage data, bytes32 commitHash) public view returns (Commit memory commit) {
+    function getCommit(address self, address sender, LibCommit.CommitData storage data, bytes32 commitHash) public view returns (Commit memory commit) {
         return data.commits[commitHash];
     }
 
@@ -116,7 +119,7 @@ library LibCommit {
     /// @param sender       msg.sender to the Platform
     /// @param data         All commit data on the Platform
     /// @param contentHash  Content hash commit was created from
-    function getCommitByContentHash(address self, address sender, LibCommit.CollaborationData storage data, bytes32[2] memory contentHash) public view returns (Commit memory commit) {
+    function getCommitByContentHash(address self, address sender, LibCommit.CommitData storage data, bytes32[2] memory contentHash) public view returns (Commit memory commit) {
         bytes32 lookupHash = keccak256(abi.encodePacked(contentHash));
         bytes32 commitHash = data.commitHashes[lookupHash];
         return data.commits[commitHash];
@@ -126,7 +129,7 @@ library LibCommit {
     /// @param self    MatryxCommit address
     /// @param sender  msg.sender to the Platform
     /// @param data    All commit data on the Platform
-    function getInitialCommits(address self, address sender, LibCommit.CollaborationData storage data) public view returns (bytes32[] memory) {
+    function getInitialCommits(address self, address sender, LibCommit.CommitData storage data) public view returns (bytes32[] memory) {
         return data.initialCommits;
     }
     
@@ -134,7 +137,7 @@ library LibCommit {
     /// @param self    MatryxCommit address
     /// @param sender  msg.sender to the Platform
     /// @param data    All commit data on the Platform
-    function getAllGroups(address self, address sender, LibCommit.CollaborationData storage data) public view returns (bytes32[] memory) {
+    function getAllGroups(address self, address sender, LibCommit.CommitData storage data) public view returns (bytes32[] memory) {
         return data.allGroups;
     }
 
@@ -143,7 +146,7 @@ library LibCommit {
     /// @param sender     msg.sender to the Platform
     /// @param data       All commit data on the Platform
     /// @param groupHash  Hash of group name
-    function getGroupName(address self, address sender, LibCommit.CollaborationData storage data, bytes32 groupHash) public view returns (string memory) {
+    function getGroupName(address self, address sender, LibCommit.CommitData storage data, bytes32 groupHash) public view returns (string memory) {
         return data.groups[groupHash].name;    
     }
 
@@ -152,7 +155,7 @@ library LibCommit {
     /// @param sender  msg.sender to the Platform
     /// @param data    All commit data on the Platform
     /// @param group   Group name
-    function getGroupMembers(address self, address sender, LibCommit.CollaborationData storage data, string memory group) public view returns (address[] memory) {
+    function getGroupMembers(address self, address sender, LibCommit.CommitData storage data, string memory group) public view returns (address[] memory) {
         bytes32 groupHash = keccak256(abi.encodePacked(group));
         require(data.groups[groupHash].exists);
         return data.groups[groupHash].members;
@@ -163,7 +166,7 @@ library LibCommit {
     /// @param sender  msg.sender to the Platform
     /// @param data    All commit data on the Platform
     /// @param group   Name of the group to create
-    function createGroup(address self, address sender, LibCommit.CollaborationData storage data, string memory group) public {
+    function createGroup(address self, address sender, LibCommit.CommitData storage data, string memory group) public {
         bytes32 groupHash = keccak256(abi.encodePacked(group));
         require(!data.groups[groupHash].exists, "Group already exists");
 
@@ -188,7 +191,7 @@ library LibCommit {
     /// @param data    All commit data on the Platform
     /// @param group   Name of the group
     /// @param member  Member to add to the group
-    function addGroupMember(address self, address sender, LibCommit.CollaborationData storage data, string memory group, address member) public {
+    function addGroupMember(address self, address sender, LibCommit.CommitData storage data, string memory group, address member) public {
         bytes32 groupHash = keccak256(abi.encodePacked(group));
         require(data.groups[groupHash].exists);
         require(data.groups[groupHash].hasMember[sender]);
@@ -205,7 +208,7 @@ library LibCommit {
     /// @param contentHash  Hash of the commits content
     /// @param value        Author-determined value of the commit
     /// @param group        Name of the group working on this branch
-    function initialCommit(address self, address sender, LibCommit.CollaborationData storage data, bytes32[2] memory contentHash, uint256 value, string memory group) public {
+    function initialCommit(address self, address sender, LibCommit.CommitData storage data, bytes32[2] memory contentHash, uint256 value, string memory group) public {
         // Create the commit!
         bytes32 groupHash = keccak256(abi.encodePacked(group));
         createCommit(sender, data, contentHash, value, bytes32(0), groupHash);
@@ -218,7 +221,7 @@ library LibCommit {
     /// @param contentHash  Hash of the commits content
     /// @param value        Author-determined value of the commit
     /// @param parentHash   Parent commit hash
-    function commit(address self, address sender, LibCommit.CollaborationData storage data, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash) public {
+    function commit(address self, address sender, LibCommit.CommitData storage data, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash) public {
         Commit storage parent = data.commits[parentHash];
         require(data.groups[parent.groupHash].hasMember[sender], "Must be in the parent commit's group to commit");
     
@@ -235,13 +238,39 @@ library LibCommit {
     /// @param value        Author-determined value of the commit
     /// @param parentHash   Parent commit hash
     /// @param group        Name of the group working on this branch
-    function fork(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage platformData, LibCommit.CollaborationData storage data, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash, string memory group) public {
+    function fork(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage platformData, LibCommit.CommitData storage data, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash, string memory group) public {
         // Buy the subtree of the forked commit and distribute to ancestors
         allocateRoyalties(sender, info.token, platformData, data, parentHash);
 
         // Create the commit!
         bytes32 groupHash = keccak256(abi.encodePacked(group));
         createCommit(sender, data, contentHash, value, parentHash, groupHash);
+    }
+
+    /// @dev Creates an initial commit and submits it to a Tournament
+    /// @param self         MatryxCommit address
+    /// @param sender       msg.sender to the Platform
+    /// @param data         All commit data on the Platform
+    /// @param tAddress     Address of Tournament to submit to
+    /// @param title        Address of Tournament to submit to
+    /// @param descHash     IPFS hash of description of the submission
+    /// @param contentHash  Hash of the commits content
+    /// @param value        Author-determined value of the commit
+    /// @param group        Name of the group for the commit
+    function commitForTournament(address self, address sender, LibCommit.CommitData storage data, address tAddress, bytes32[3] memory title, bytes32[2] memory descHash, bytes32[2] memory contentHash, uint256 value, string memory group) public {
+        bytes32 groupHash = keccak256(abi.encode(group));
+
+        if (!data.groups[groupHash].exists) {
+            createGroup(self, sender, data, group);
+        }
+
+        bytes32 commitHash = createCommit(sender, data, contentHash, value, bytes32(0), groupHash);
+        LibSubmission.SubmissionDetails memory submissionDetails;
+        submissionDetails.title = title;
+        submissionDetails.descHash = descHash;
+        submissionDetails.commitHash = commitHash;
+
+        IMatryxTournament(tAddress).createSubmission(submissionDetails);
     }
     
     /// @dev Initializes a new commit
@@ -251,7 +280,7 @@ library LibCommit {
     /// @param value        Author-determined value of the commit
     /// @param parentHash   Parent commit hash
     /// @param groupHash    Hash of the name of the group working on this branch
-    function createCommit(address creator, LibCommit.CollaborationData storage data, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash, bytes32 groupHash) internal {
+    function createCommit(address creator, LibCommit.CommitData storage data, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash, bytes32 groupHash) internal returns (bytes32) {
         require(data.groups[groupHash].hasMember[creator], "Must be a part of the group");
 
         bytes32 commitHash = keccak256(abi.encodePacked(parentHash, contentHash));
@@ -276,6 +305,7 @@ library LibCommit {
         }
 
         emit Committed(commitHash, contentHash);
+        return commitHash;
     }
 
     /// @dev Allocates MTX to all ancestor commit creators
@@ -284,14 +314,15 @@ library LibCommit {
     /// @param platformData  MatryxPlatform data
     /// @param data          Collaboration data
     /// @param commitHash    Commit hash to begin distributing funds back from
-    function allocateRoyalties(address sender, address token, MatryxPlatform.Data storage platformData, LibCommit.CollaborationData storage data, bytes32 commitHash) internal {
+    function allocateRoyalties(address sender, address token, MatryxPlatform.Data storage platformData, LibCommit.CommitData storage data, bytes32 commitHash) internal {
         Commit storage theCommit = data.commits[commitHash];
 
         require(IToken(token).transferFrom(sender, address(this), theCommit.totalValue));
         platformData.totalBalance = platformData.totalBalance.add(theCommit.totalValue);
         
         for (uint256 i = theCommit.height; i > 0; i--) {
-            platformData.balanceOf[theCommit.creator] = platformData.balanceOf[theCommit.creator].add(theCommit.value);
+            platformData.balanceOf[theCommit.creator] = platformData.balanceOf[theCommit.creator] + theCommit.value;
+            require(platformData.balanceOf[theCommit.creator] >= theCommit.value);
             theCommit = data.commits[theCommit.parentHash];
         }
     }

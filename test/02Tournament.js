@@ -94,11 +94,6 @@ contract('Open Tournament Testing', function() {
     assert.equal(count, 0, 'Number of entrants should be 0.')
   })
 
-  it('Number of positive and negative votes is 0', async function() {
-    let [pV, nV] = await t.getVotes()
-    assert.equal(pV + nV, 0, 'Number of total votes should be 0.')
-  })
-
   it("Number of submissions is 0", async function () {
     let count = await t.getSubmissionCount()
     assert.equal(count, 0, "Number of submissions should be 0.")
@@ -316,39 +311,6 @@ contract('Tournament Voting Testing', function() {
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
     assert.ok(r, 'Unable to create tournament and select submissions')
-  })
-
-  it('Positive & negative votes for the submission should be 0', async function() {
-    let [pV, nV] = await s.getVotes()
-    assert.isTrue((pV + nV) == 0, 'Submission should not have any votes')
-  })
-
-  it('Unable to judge a submission from another account', async function() {
-    try {
-      t.accountNumber = 1
-      await t.voteSubmission(s.address, true)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      t.accountNumber = 0
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
-    }
-  })
-
-  it('Able to give the submission a positive vote', async function() {
-    await t.voteSubmission(s.address, true)
-    let [pV, nV] = await s.getVotes()
-    assert.isTrue(pV == 1, 'Submission should have 1 positive vote')
-  })
-
-  it('Unable to judge the submission again', async function() {
-    try {
-      await t.voteSubmission(s.address, false)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote again')
-    }
   })
 })
 

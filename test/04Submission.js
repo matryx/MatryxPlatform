@@ -48,29 +48,9 @@ contract('Submission Testing with No Contributors and References', function() {
     assert.isFalse(exists, "This address should not exist as a submission in round")
   })
 
-  it('Only Submission Owner and Tournament Owner have Download Permissions', async function() {
-    let permitted = await s.getViewers()
-    let tOwner = await t.getOwner()
-    let sOwner = await s.getOwner()
-
-    let allTrue = permitted.some(x => x == tOwner) && permitted.some(x => x == sOwner)
-
-    assert.isTrue(allTrue && permitted.length == 2, 'Permissions are not correct')
-  })
-
-  it('Submission has no References', async function() {
-    let ref = await s.getReferences()
-    assert.equal(ref.length, 0, 'References are not correct')
-  })
-
   it('Submission has no Contributors', async function() {
     let contribs = await s.getContributors()
     assert.equal(contribs.length, 0, 'Contributors are not correct')
-  })
-
-  it('Able to get Reward Distribution', async function() {
-    let crd = await s.getDistribution()
-    assert.equal(crd.length, 1, 'Reward distribution incorrect')
   })
 
   it('Able to get tournament address', async function() {
@@ -111,80 +91,6 @@ contract('Submission Testing with No Contributors and References', function() {
     let ut = await s.getTimeUpdated().then(Number)
     assert.isTrue(ut > st, 'Update Time is not correct')
   })
-
-  it('Any Matryx entrant able to request download permissions', async function() {
-    //switch to accounts[1]
-    s2.accountNumber = 1
-    await waitUntilInReview(r)
-
-    //unlock the s2 files from accounts[1]
-    await s2.unlockFile()
-
-    let permitted = await s2.getViewers()
-    let p2 = permitted.some(x => x == accounts[1])
-
-    assert.isTrue(p2, 'Permissions are not correct')
-  })
-
-  it('Non Matryx entrant unable to request download permissions', async function() {
-    try {
-      s.accountNumber = 4
-      await s.unlockFile()
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      // switch back
-      s.accountNumber = 1
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to view files')
-    }
-  })
-
-  it('Able to flag a submission for missing a reference', async function() {
-    // switch to accounts[2]
-    s.accountNumber = 2
-    await s.flagMissingReference(s2.address);
-    s.accountNumber = 1
-    users = Contract(MatryxUser.address, IMatryxUser, 0)
-    let [v, n] = await users.getVotes(accounts[1])
-    assert.equal(n, 1, "Submission owner user should have 1 negative vote")
-  })
-
-  it('Unable to flag same missing reference twice', async function() {
-    try {
-      s.accountNumber = 2
-      await s.flagMissingReference(s2.address)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      s.accountNumber = 1
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to flag submission')
-    }
-  })
-
-  it('Unable to flag missing reference from an account that doesn\'t own the reference', async function() {
-    try {
-      s.accountNumber = 3
-      await s.flagMissingReference(s2.address)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      s.accountNumber = 1
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to flag submission from this account')
-    }
-  })
-
-  it('Unable to flag missing reference if submission owner does not have file download permissions', async function() {
-    try {
-      s.accountNumber = 3
-      await s.flagMissingReference(s3.address)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      s.accountNumber = 1
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to flag submission')
-    }
-  })
-
 })
 
 contract('Submission Testing with Contributors', function() {
@@ -208,20 +114,6 @@ contract('Submission Testing with Contributors', function() {
     s2 = Contract(s2.address, IMatryxSubmission, 2)
 
     assert.ok(s.address, 'Submission is not valid.')
-  })
-
-  it('Submission and Tournament owners have Download Permissions', async function() {
-    let permitted = await s.getViewers()
-
-    //check tournament owner has download permissions
-    let tOwner = await t.getOwner()
-    let allTrue = permitted.some(x => x == tOwner)
-
-    //check submission owner has download permissions
-    let sOwner = await s.getOwner()
-    allTrue = allTrue && permitted.some(x => x == sOwner)
-
-    assert.isTrue(allTrue, 'Submission and Tournament owners should have Download Permissions')
   })
 
   it('Contributors have Download Permissions', async function() {

@@ -41,7 +41,7 @@ contract MatryxPlatform {
 
     Info info;                              // slot 0
     Data data;                              // slot 3
-    LibCommit.CollaborationData collabData; // slot 16
+    LibCommit.CommitData collabData; // slot 16
 
     constructor(address system, address token) public {
         info.system = system;

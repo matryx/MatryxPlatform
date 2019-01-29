@@ -56,30 +56,23 @@ contract MatryxUser {
 interface IMatryxUser {
     function getData(address user) external view returns (LibUser.UserData memory);
     function getTimeInMatryx(address user) external view returns (uint256);
-    function getVotes(address user) external view returns (uint256, uint256);
     function getTotalSpent(address user) external view returns (uint256);
     function getTotalWinnings(address user) external view returns (uint256);
     function getTournaments(address user) external view returns (address[] memory);
     function getTournamentsEntered(address user) external view returns (address[] memory);
     function getSubmissions(address user) external view returns (address[] memory);
     function getSubmissionsByTournament(address user, address tAddress) external view returns (address[] memory);
-    function getContributedTo(address user) external view returns (address[] memory);
-    function getUnlockedFiles(address user) external view returns (address[] memory);
 }
 
 library LibUser {
     struct UserData {
         bool      exists;
         uint256   timeEntered;
-        uint256   positiveVotes;
-        uint256   negativeVotes;
         uint256   totalSpent;
         uint256   totalWinnings;
         address[] tournaments;
         address[] tournamentsEntered;
         address[] submissions;
-        address[] contributedTo;
-        address[] unlockedFiles;
     }
 
     function getData(address, address, MatryxPlatform.Data storage data, address user) public view returns (LibUser.UserData memory) {
@@ -88,10 +81,6 @@ library LibUser {
 
     function getTimeInMatryx(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
         return now - data.users[user].timeEntered;
-    }
-
-    function getVotes(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256, uint256) {
-        return (data.users[user].positiveVotes, data.users[user].negativeVotes);
     }
 
     function getTotalSpent(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
@@ -135,13 +124,4 @@ library LibUser {
 
         return tSubs;
     }
-
-    function getContributedTo(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[] memory) {
-        return data.users[user].contributedTo;
-    }
-
-    function getUnlockedFiles(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[] memory) {
-        return data.users[user].unlockedFiles;
-    }
-
 }

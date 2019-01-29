@@ -121,30 +121,6 @@ contract('Open Round Testing', function() {
     assert.ok(s && s2, 'Unable to make submissions')
   })
 
-  it('Unable to judge submissions while the round is still open', async function() {
-    try {
-      await t.voteSubmission(s.address, true)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
-    }
-  })
-
-  it('Entrants unable to vote open round', async function() {
-    try {
-      //switch account
-      t.accountNumber = 1
-      await t.voteRound(r.address, true)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      //switch back
-      t.accountNumber = 0
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
-    }
-  })
-
   it('Able to exit the tournament', async function() {
     // Switch to accounts[1]
     t.accountNumber = 1
@@ -241,12 +217,6 @@ contract('In Review Round Testing', function() {
       assert(revertFound, 'Should not have been able to vote')
     }
   })
-
-  it('Tournament owner able to judge submissions while In Review', async function() {
-    await t.voteSubmission(s.address, true)
-    let [v, n] = await s.getVotes()
-    assert.equal(v, 1, 'Was not able to judge submission')
-  })
 })
 
 contract('Closed Round Testing', function() {
@@ -323,54 +293,6 @@ contract('Closed Round Testing', function() {
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to make a submission while In Review')
-    }
-  })
-
-  it('Tournament entrant able to vote on last closed round', async function() {
-    //switch accounts
-    t.accountNumber = 1
-    await t.voteRound(r.address, true)
-    //switch back
-    t.accountNumber = 0
-    let [pV, nV] = await t.getVotes()
-    assert.equal(pV, 1, "Tournament should have 1 positive vote")
-  })
-
-  it('Tournament entrant cannot vote twice', async function() {
-    try {
-      //switch accounts
-      t.accountNumber = 1
-      await t.voteRound(r.address, false)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      //switch back
-      t.accountNumber = 0
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
-    }
-  })
-
-  it('Tournament owner cannot vote on their own tournament', async function() {
-    try {
-      await t.voteRound(r.address, true)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
-    }
-  })
-
-  it('Non-entrant should not be able to vote', async function() {
-    try {
-      //switch accounts
-      t.accountNumber = 2
-      await t.voteRound(r.address, true)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      //switch back
-      t.accountNumber = 0
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
     }
   })
 })
@@ -613,23 +535,6 @@ contract('Unfunded Round Testing', function() {
   it('Round should now be Open', async function() {
     let state = await ur.getState()
     assert.equal(state, 2, 'Round is not Open')
-  })
-
-  it('Entrants able to vote newest round as well as past rounds', async function() {
-    // Create submission & winner selection
-    await createSubmission(t, false, 1)
-    let submissions = await ur.getSubmissions(0, 0)
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
-
-    // switch accounts to vote
-    t.accountNumber = 1
-    await t.voteRound(r.address, true)
-    await t.voteRound(ur.address, false)
-    // switch back
-    t.accountNumber = 0
-
-    let [pV, nV] = await t.getVotes()
-    assert.isTrue(pV == 1 && nV == 1, "Tournament should have 1 positive & 1 negative vote")
   })
 })
 
