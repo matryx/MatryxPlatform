@@ -15,11 +15,10 @@ contract('Platform Testing', function() {
     bounty: web3.toWei(5)
   }
 
-  it('Platform initialized correctly', async function() {
+  before(async function() {
     let contracts = await init()
     platform = contracts.platform
     token = contracts.token
-    assert.equal(platform.address, MatryxPlatform.address, 'Platform address was not set correctly.')
   })
 
   it('Able to get platform info', async function() {
@@ -53,12 +52,12 @@ contract('Platform Testing', function() {
 
   it('Platform has 0 tournaments', async function() {
     let count = await platform.getTournamentCount()
-    let tournaments = await platform.getTournaments(0, 0)
+    let tournaments = await platform.getTournaments()
     assert.isTrue(count == 0 && tournaments.length == 0, 'Tournament count should be 0 and tournaments array should be empty.')
   })
 
   it('Platform has 6 preloaded categories', async function() {
-    let cat = await platform.getCategories(0, 0)
+    let cat = await platform.getCategories()
     assert.isTrue(cat.length == 6, 'Platform should only contain 6 categories.')
   })
 
@@ -75,13 +74,13 @@ contract('Platform Testing', function() {
 
   it('Able to get tournaments by category', async function() {
     let cat = await t.getCategory()
-    let tourCat = await platform.getTournamentsByCategory(cat, 0, 0)
+    let tourCat = await platform.getTournamentsByCategory(cat, )
     assert.isTrue(tourCat[0] == t.address, 'Unable to get tournaments by category.')
   })
 
   it('Able to create a new category', async function() {
     await platform.createCategory(stb('music'))
-    let cat = await platform.getCategories(0, 0)
+    let cat = await platform.getCategories()
     assert.isTrue(cat.length == 7, 'Platform should contain 7 categories.')
   })
 
@@ -129,7 +128,7 @@ contract('Platform Testing', function() {
   })
 
   it('Able to get all users in the platform', async function() {
-    let users = await platform.getUsers(0, 0)
+    let users = await platform.getUsers()
     let isTrue = users[0] == accounts[0] && users[1] == accounts[1]
     assert.isTrue(isTrue, 'Platform should have 2 users')
   })

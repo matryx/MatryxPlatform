@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-contract MatryxTrinity {
+contract MatryxForwarder {
     struct Info {
         uint256 version;
         address system;

@@ -6,11 +6,11 @@ import "./LibGlobals.sol";
 
 import "./MatryxSystem.sol";
 import "./MatryxPlatform.sol";
-import "./MatryxTrinity.sol";
+import "./MatryxForwarder.sol";
 import "./MatryxTournament.sol";
 
-contract MatryxRound is MatryxTrinity {
-    constructor (uint256 _version, address _system) MatryxTrinity(_version, _system) public {}
+contract MatryxRound is MatryxForwarder {
+    constructor (uint256 _version, address _system) MatryxForwarder(_version, _system) public {}
 }
 
 interface IMatryxRound {
@@ -21,11 +21,11 @@ interface IMatryxRound {
     function getReview() external view returns (uint256);
     function getBounty() external view returns (uint256);
     function getBalance() external view returns (uint256);
-    function getSubmissions(uint256, uint256) external view returns (address[] memory);
+    function getSubmissions() external view returns (bytes32[] memory);
     function getData() external view returns (LibRound.RoundReturnData memory);
 
     function getSubmissionCount() external view returns (uint256);
-    function getWinningSubmissions() external view returns (address[] memory);
+    function getWinningSubmissions() external view returns (bytes32[] memory);
 
     function getState() external view returns (uint256);
 }
@@ -37,14 +37,13 @@ library LibRound {
     struct RoundInfo {
         uint256 version;
         address tournament;
-        address[] submissions;
+        bytes32[] submissions;
         LibRound.WinnersData winners;
         bool closed;
     }
 
     // All information needed for creation of Round
     struct RoundDetails {
-        // bytes32[2] pKHash;
         uint256 start;
         uint256 end;
         uint256 review;
@@ -53,8 +52,7 @@ library LibRound {
 
     // All information needed to choose winning submissions
     struct WinnersData {
-        // bytes32[2] sKHash;
-        address[] submissions;
+        bytes32[] submissions;
         uint256[] distribution;
         uint256 action;
     }
@@ -63,10 +61,8 @@ library LibRound {
         LibRound.RoundInfo info;
         LibRound.RoundDetails details;
 
-        mapping(address=>bool) isSubmission;
-        address[] judgedSubmissions;
-        mapping(address=>bool) judgedSubmission;
-        mapping(address=>bool) judgedRound;
+        mapping(bytes32=>bool) isSubmission;
+        mapping(bytes32=>LibTournament.SubmissionData) submissions;
     }
 
     // All state data and details of Round
@@ -110,37 +106,14 @@ library LibRound {
         return data.balanceOf[self];
     }
 
-    /// @dev Returns all Submissions of this Round or a given subset of them
-    /// @param self        Address of this Round
-    /// @param info        Info struct on Platform
-    /// @param data        Data struct on Platform
-    /// @param startIndex  Starting index of subset of Submissions to return
-    /// @param count       Number of Submissions to return from startIndex
-    function getSubmissions(address self, address, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 startIndex, uint256 count) public returns (address[] memory) {
-        uint256 version = IMatryxSystem(info.system).getVersion();
-        address LibUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
-        address[] storage submissions = data.rounds[self].info.submissions;
-
-        assembly {
-            let offset := 0x100000000000000000000000000000000000000000000000000000000
-            let ptr := mload(0x40)
-
-            mstore(ptr, mul(0xe79eda2c, offset))                                // getSubArray(bytes32[] storage,uint256,uint256)
-            mstore(add(ptr, 0x04), submissions_slot)                            // data.rounds[self].info.submissions
-            mstore(add(ptr, 0x24), startIndex)                                  // arg 0 - startIndex
-            mstore(add(ptr, 0x44), count)                                       // arg 1 - count
-
-            let res := delegatecall(gas, LibUtils, ptr, 0x64, 0, 0)             // call LibUtils.getSubArray
-            if iszero(res) { revert(0, 0) }                                     // safety check
-
-            returndatacopy(ptr, 0, returndatasize)                              // copy result into mem
-            return(ptr, returndatasize)                                         // return result
-        }
+    /// @dev Returns all Submissions of this Round
+    function getSubmissions(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[] memory) {
+        return data.rounds[self].info.submissions;
     }
 
     /// @dev Returns the data struct of this Round
     function getData(address self, address, MatryxPlatform.Data storage data) public view returns (LibRound.RoundReturnData memory) {
-        RoundReturnData memory round;
+        LibRound.RoundReturnData memory round;
         round.info = data.rounds[self].info;
         round.details = data.rounds[self].details;
         return round;
@@ -152,7 +125,7 @@ library LibRound {
     }
 
     /// @dev Returns the addresses of all winning Submissions of this Round
-    function getWinningSubmissions(address self, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
+    function getWinningSubmissions(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[] memory) {
         return data.rounds[self].info.winners.submissions;
     }
 

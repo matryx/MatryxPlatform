@@ -6,12 +6,13 @@ import "./LibGlobals.sol";
 
 import "./MatryxSystem.sol";
 import "./MatryxPlatform.sol";
-import "./MatryxTrinity.sol";
+import "./MatryxForwarder.sol";
 import "./MatryxRound.sol";
-import "./MatryxSubmission.sol";
+import "./IToken.sol";
+import "./MatryxCommit.sol";
 
-contract MatryxTournament is MatryxTrinity {
-    constructor (uint256 _version, address _system) MatryxTrinity(_version, _system) public {}
+contract MatryxTournament is MatryxForwarder {
+    constructor (uint256 _version, address _system) MatryxForwarder(_version, _system) public {}
 }
 
 interface IMatryxTournament {
@@ -37,7 +38,7 @@ interface IMatryxTournament {
 
     function enter() external;
     function exit() external;
-    function createSubmission(LibSubmission.SubmissionDetails calldata) external returns (address);
+    function createSubmission(bytes32[3] calldata title, bytes32[2] calldata descHash, bytes32 commitHash) external;
 
     function updateDetails(LibTournament.TournamentDetails calldata) external;
     function addFunds(uint256) external;
@@ -60,7 +61,7 @@ library LibTournament {
     uint256 constant MAX_ROUND_LENGTH = 365 days;
 
     event RoundCreated(address roundAddress);
-    event SubmissionCreated(address submissionAddress);
+    event SubmissionCreated(address roundAddress, bytes32 commitHash);
 
     struct TournamentInfo {
         uint256 version;
@@ -92,6 +93,12 @@ library LibTournament {
 
         mapping(address=>bool) hasWithdrawn;
         bool hasBeenWithdrawnFrom;
+    }
+
+    struct SubmissionData {
+        bytes32[3] title;
+        bytes32[2] descHash;
+        uint256 reward;
     }
 
     /// @dev Returns the Version of this Tournament
@@ -250,42 +257,33 @@ library LibTournament {
     }
 
     /// @dev Creates a new Submission
-    /// @param self      Address of this Tournament
-    /// @param sender    msg.sender to the Tournament
-    /// @param info      Info struct on Platform
-    /// @param data      Data struct on Platform
-    /// @param sDetails  Submission details (title, descHash, fileHash)
-    /// @return          Address of the created Submission
-    function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibSubmission.SubmissionDetails memory sDetails) public returns (address) {
+    /// @param self        Address of this Tournament
+    /// @param sender      msg.sender to the Tournament
+    /// @param info        Info struct on Platform
+    /// @param data        Data struct on Platform
+    /// @param title       Title of submission
+    /// @param descHash    IPFS hash for description of submission
+    /// @param commitHash  Commit hash to submit
+    /// @return            Address of the created Submission
+    function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32[3] memory title, bytes32[2] memory descHash, bytes32 commitHash) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
-        require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
+        LibCommit.Commit storage commit = data.commits[commitHash];
 
+        require(tournament.entryFeePaid[sender].exists, "Must have paid entry fee");
+        require(commit.owner == sender, "Must be owner of commit");
+        
         (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Open), "Round must be Open");
 
         LibRound.RoundData storage round = data.rounds[rAddress];
 
-        address sAddress = address(new MatryxSubmission(tournament.info.version, info.system));
+        data.users[sender].submissions.push(commitHash);
+        data.commitToRounds[commitHash].push(rAddress);
 
-        IMatryxSystem(info.system).setContractType(sAddress, uint256(LibSystem.ContractType.Submission));
-        data.allSubmissions.push(sAddress);
-        data.users[sender].submissions.push(sAddress);
+        round.info.submissions.push(commitHash);
+        round.isSubmission[commitHash] = true;
 
-        round.info.submissions.push(sAddress);
-        round.isSubmission[sAddress] = true;
-
-        LibSubmission.SubmissionData storage submission = data.submissions[sAddress];
-        submission.info.version = tournament.info.version;
-        submission.info.owner = sender;
-        submission.info.tournament = self;
-        submission.info.round = rAddress;
-        submission.info.timeSubmitted = now;
-        submission.info.timeUpdated = now;
-        submission.details = sDetails;
-        submission.commitVarToRenameLater = sDetails.commitHash;
-
-        emit SubmissionCreated(sAddress);
-        return sAddress;
+        emit SubmissionCreated(rAddress, commitHash);
     }
 
     /// @dev Updates the details of this tournament
@@ -329,7 +327,6 @@ library LibTournament {
         uint256 rState = IMatryxRound(rAddress).getState();
         require(rState <= uint256(LibGlobals.RoundState.InReview), "Cannot transfer after winners selected");
 
-
         data.rounds[rAddress].details.bounty = data.rounds[rAddress].details.bounty.add(amount);
 
         data.balanceOf[self] = data.balanceOf[self].sub(amount);
@@ -341,7 +338,8 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param rAddress  Address of the current round
     function transferToWinners(MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address rAddress) internal {
-        LibRound.WinnersData storage wData = data.rounds[rAddress].info.winners;
+        LibRound.RoundData storage round = data.rounds[rAddress];
+        LibRound.WinnersData storage wData = round.info.winners;
 
         uint256 distTotal = 0;
         for (uint256 i = 0; i < wData.submissions.length; i++) {
@@ -350,14 +348,14 @@ library LibTournament {
 
         uint256 bounty = data.balanceOf[rAddress];
         for (uint256 i = 0; i < wData.submissions.length; i++) {
-            address winner = wData.submissions[i];
+            bytes32 winner = wData.submissions[i];
             uint256 reward = wData.distribution[i].mul(bounty).div(distTotal);
 
             data.balanceOf[rAddress] = data.balanceOf[rAddress].sub(reward);
-            data.balanceOf[winner] = data.balanceOf[winner].add(reward);
+            data.commitBalance[winner] = data.commitBalance[winner].add(reward);
 
-            reward = reward.add(data.submissions[winner].info.reward);
-            data.submissions[winner].info.reward = reward;
+            reward = reward.add(round.submissions[winner].reward);
+            round.submissions[winner].reward = reward;
         }
     }
 
@@ -393,7 +391,6 @@ library LibTournament {
             // create new round but don't start
             bounty = bounty < round.details.bounty ? bounty : round.details.bounty;
 
-            // newRound.pKHash = rDetails.pKHash;
             newRound.start = round.details.end.add(round.details.review);
             newRound.end = newRound.start.add(round.details.end.sub(round.details.start));
             newRound.review = round.details.review;
@@ -406,7 +403,6 @@ library LibTournament {
             // create new round and start immediately
             round.info.closed = true;
 
-            // newRound.pKHash = rDetails.pKHash;
             newRound.start = now;
             newRound.end = rDetails.end;
             newRound.review = rDetails.review;
@@ -487,8 +483,7 @@ library LibTournament {
         uint256 share = tBalance.mul(10**18).div(entrantCount).div(10**18);
 
         tournament.hasWithdrawn[sender] = true;
-        data.users[sender].totalWinnings = data.users[sender].totalWinnings.add(share);
-
+        
         data.totalBalance = data.totalBalance.sub(share);
         data.balanceOf[self] = data.balanceOf[self].sub(share);
         IToken(info.token).transfer(sender, share);

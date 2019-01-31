@@ -62,7 +62,7 @@ contract('NotYetOpen Round Testing', function() {
   })
 
   it('Round should not have any submissions', async function() {
-    let sub = await r.getSubmissions(0, 0)
+    let sub = await r.getSubmissions()
     assert.equal(sub.length, 0, 'Round should not have submissions')
   })
 
@@ -116,8 +116,9 @@ contract('Open Round Testing', function() {
 
   it('Able to enter the tournament and make submissions', async function() {
     // Create submissions
-    s = await createSubmission(t, false, 1)
-    s2 = await createSubmission(t, false, 2)
+    s = await createSubmission(t, 1)
+    s2 = await createSubmission(t, 2)
+
     assert.ok(s && s2, 'Unable to make submissions')
   })
 
@@ -171,8 +172,8 @@ contract('In Review Round Testing', function() {
     r = Contract(roundAddress, IMatryxRound, 0)
 
     //Create submissions
-    s = await createSubmission(t, false, 1)
-    s2 = await createSubmission(t, false, 2)
+    s = await createSubmission(t, 1)
+    s2 = await createSubmission(t, 2)
     await waitUntilInReview(r)
 
     assert.ok(r.address, 'Round is not valid.')
@@ -196,25 +197,11 @@ contract('In Review Round Testing', function() {
 
   it('Unable to make submissions while the round is in review', async function() {
     try {
-      await createSubmission(t, false, 1)
+      await createSubmission(t, 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to make a submission while In Review')
-    }
-  })
-
-  it('Entrants unable to vote round while in review', async function() {
-    try {
-      //switch account
-      t.accountNumber = 1
-      await t.voteRound(r.address, false)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      //switch back
-      t.accountNumber = 0
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
     }
   })
 })
@@ -237,23 +224,19 @@ contract('Closed Round Testing', function() {
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
-    //Create submissions
-    s = await createSubmission(t, false, 1)
+    // Create submissions
+    s = await createSubmission(t, 1)
 
-    let submissions = await r.getSubmissions(0, 0)
+    let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
 
-    assert.ok(s.address, 'Submission is not valid.')
+    let state = await r.getState()
+    assert.equal(state, 5, 'Round is not Closed')
   })
 
   it('Tournament should be closed', async function() {
     let state = await t.getState()
     assert.equal(state, 3, 'Tournament is not Closed')
-  })
-
-  it('Round should be closed', async function() {
-    let state = await r.getState()
-    assert.equal(state, 5, 'Round is not Closed')
   })
 
   it('Unable to allocate more tournament bounty to a closed round', async function() {
@@ -278,17 +261,7 @@ contract('Closed Round Testing', function() {
 
   it('Unable to make submissions while the round is closed', async function() {
     try {
-      await createSubmission(t, false, 1)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to make a submission while In Review')
-    }
-  })
-
-  it('Tournament entrant able to vote on last closed round', async function() {
-    try {
-      await createSubmission(t, false, 1)
+      await createSubmission(t, 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -316,8 +289,8 @@ contract('Abandoned Round Testing', function() {
     r = Contract(roundAddress, IMatryxRound, 0)
 
     // Create a submission
-    s = await createSubmission(t, false, 1)
-    s = await createSubmission(t, false, 2)
+    s = await createSubmission(t, 1)
+    s = await createSubmission(t, 2)
 
     // Wait for the round to become Abandoned
     await waitUntilClose(r)
@@ -473,13 +446,13 @@ contract('Unfunded Round Testing', function() {
     r = Contract(roundAddress, IMatryxRound, 0)
 
     //Create submissions
-    s = await createSubmission(t, false, 1)
+    s = await createSubmission(t, 1)
 
-    let submissions = await r.getSubmissions(0, 0)
+    let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
     await waitUntilClose(r)
 
-    assert.ok(s.address, 'Submission is not valid.')
+    assert.ok(s, 'Submission is not valid.')
   })
 
   it('Tournament should be Open', async function() {
@@ -505,13 +478,13 @@ contract('Unfunded Round Testing', function() {
   })
 
   it('Round should not have any submissions', async function() {
-    let sub = await ur.getSubmissions(0, 0)
+    let sub = await ur.getSubmissions()
     assert.equal(sub.length, 0, 'Round should not have submissions')
   })
 
   it('Unable to make submissions while the round is Unfunded', async function() {
     try {
-      await createSubmission(t, false, 1)
+      await createSubmission(t, 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -556,11 +529,11 @@ contract('Ghost Round Testing', function() {
     t = await createTournament('first tournament', 'math', web3.toWei(15), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
-    s = await createSubmission(t, false, 1)
-    let submissions = await r.getSubmissions(0, 0)
+    s = await createSubmission(t, 1)
+    let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
-    assert.ok(s.address, 'Submission is not valid.')
+    assert.ok(s, 'Submission is not valid.')
   })
 
   it('Tournament should be Open', async function() {

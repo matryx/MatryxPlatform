@@ -1,5 +1,5 @@
 const fs = require('fs')
-const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('../truffle/utils')
+const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes, Contract } = require('../truffle/utils')
 
 const toWei = n => web3.utils.toWei(n.toString())
 web3.toWei = toWei
@@ -12,7 +12,6 @@ module.exports = function (artifacts, web3) {
   const IMatryxPlatform = artifacts.require("IMatryxPlatform")
   const IMatryxTournament = artifacts.require("IMatryxTournament")
   const IMatryxRound = artifacts.require("IMatryxRound")
-  const IMatryxSubmission = artifacts.require("IMatryxSubmission")
   const MatryxToken = artifacts.require("MatryxToken")
   const MatryxUser = artifacts.require("MatryxUser")
   const IMatryxUser = artifacts.require("IMatryxUser")
@@ -24,9 +23,8 @@ module.exports = function (artifacts, web3) {
   const LibPlatform = artifacts.require('LibPlatform')
   const LibTournament = artifacts.require('LibTournament')
   const LibRound = artifacts.require('LibRound')
-  const LibSubmission = artifacts.require('LibSubmission')
 
-  let token, platform, wallet
+  let token, platform, commit, wallet
 
   async function init() {
     const contract = Contract
@@ -38,6 +36,7 @@ module.exports = function (artifacts, web3) {
     // console.log("token:", network.tokenAddress)
     const data = await setup(artifacts, web3, 0, true)
     platform = data.platform
+    commit = data.commit
     token = data.token
     return { platform, token }
   }
@@ -46,9 +45,9 @@ module.exports = function (artifacts, web3) {
     const { platform } = await setup(artifacts, web3, accountNumber, true)
 
     const category = stringToBytes(_category)
-    const title = stringToBytes32(_title, 3)
-    const descHash = stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2)
-    const fileHash = stringToBytes32('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2)
+    const title = stringToBytes(_title, 3)
+    const descHash = stringToBytes('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2)
+    const fileHash = stringToBytes('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2)
     const tournamentData = {
       category,
       title,
@@ -61,7 +60,7 @@ module.exports = function (artifacts, web3) {
     let tx = await platform.createTournament(tournamentData, roundData)
     await getMinedTx(tx.hash)
 
-    const address = (await platform.getTournaments(0, 0)).pop()
+    const address = (await platform.getTournaments()).pop()
     const tournament = Contract(address, IMatryxTournament, accountNumber)
 
     return tournament
@@ -93,80 +92,37 @@ module.exports = function (artifacts, web3) {
     await sleep(timeTilRoundInReview * 1000)
   }
 
-  async function createSubmission(tournament, contribs, accountNumber) {
+  async function createSubmission(tournament, accountNumber) {
     const tAccount = tournament.accountNumber
     const pAccount = platform.accountNumber
+    const cAccount = commit.accountNumber
     const tokAccount = token.accountNumber
 
     tournament.accountNumber = accountNumber
     platform.accountNumber = accountNumber
+    commit.accountNumber = accountNumber
     token.accountNumber = accountNumber
 
     await enterTournament(tournament, accountNumber)
 
-    const title = stringToBytes32('A submission ' + genId(6), 3)
-    const descHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
-    const fileHash = stringToBytes32('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g', 2)
+    const title = stringToBytes('A submission ' + genId(6), 3)
+    const descHash = stringToBytes('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
+    const fileHash = stringToBytes(genId(32), 2)
 
-    const submissionData = {
-      title,
-      descHash,
-      fileHash
-    }
-
-    const noContribsAndRefs = {
-      contributors: new Array(0).fill(0).map(r => genAddress()),
-      distribution: new Array(1).fill(1),
-      references: new Array(0).fill(0).map(r => genAddress())
-    }
-
-    const contribsAndRefs = {
-      contributors: new Array(10).fill(0).map(r => genAddress()),
-      distribution: new Array(11).fill(1),
-      references: new Array(10).fill(0).map(r => genAddress())
-    }
-
-    if (contribs) {
-      let tx = await tournament.createSubmission({ ...submissionData, ...contribsAndRefs }, {gasLimit: 3e6})
-      await getMinedTx(tx.hash)
-    } else {
-      let tx = await tournament.createSubmission({ ...submissionData, ...noContribsAndRefs })
-      await getMinedTx(tx.hash)
-    }
+    let tx = await commit.submitToTournament(tournament.address, title, descHash, fileHash, toWei(2), '0x00', genId(5))
+    await getMinedTx(tx.hash)
 
     const [_, roundAddress] = await tournament.getCurrentRound()
     const round = Contract(roundAddress, IMatryxRound)
-    const submissions = await round.getSubmissions(0, 0)
-    const submissionAddress = submissions[submissions.length - 1]
-    const submission = Contract(
-      submissionAddress,
-      IMatryxSubmission,
-      accountNumber
-    )
+    const submissions = await round.getSubmissions()
+    const submission = submissions[submissions.length - 1]
 
     tournament.accountNumber = tAccount
     platform.accountNumber = pAccount
+    commit.accountNumber = cAccount
     token.accountNumber = tokAccount
 
     return submission
-  }
-
-  async function updateSubmission(submission) {
-    const modData = {
-      title: stringToBytes32('AAAAAA', 3),
-      descHash: stringToBytes32('BBBBBB', 2),
-      fileHash: stringToBytes32('CCCCCC', 2)
-    }
-    let tx
-
-    tx = await submission.updateDetails(modData)
-    await getMinedTx(tx.hash)
-
-    const contribs = new Array(3).fill(0).map(() => genAddress())
-    const distribution = new Array(3).fill(1)
-
-    tx = await submission.addContributorsAndReferences(contribs, distribution, [])
-    await getMinedTx(tx.hash)
   }
 
   async function selectWinnersWhenInReview(tournament, winners, rewardDistribution, roundData, selectWinnerAction) {
@@ -215,6 +171,90 @@ module.exports = function (artifacts, web3) {
     return isEnt
   }
 
+  async function createCommit (contentHash, value, parent, account) {
+    const cAccount = commit.accountNumber
+    commit.accountNumber = account
+    await commit.commit(contentHash, value, parent)
+    commit.accountNumber = cAccount
+
+    // return the newly created commit hash
+    const parentCommit = await commit.getCommit(parent)
+    return parentCommit.children[parentCommit.children.length - 1]
+  }
+
+  async function initCommit (contentHash, value, group, account) {
+    const cAccount = commit.accountNumber
+    commit.accountNumber = account
+    await commit.initialCommit(contentHash, value, group)
+    commit.accountNumber = cAccount
+
+    const theCommit = await commit.getCommitByContentHash(contentHash)
+    return theCommit.commitHash
+  }
+
+  async function commitChildren (commitHash) {
+    const theCommit = await commit.getCommit(commitHash)
+    const children = theCommit.children
+    return children
+  }
+
+  async function addToGroup (member, group, newMember) {
+    const cAccount = commit.accountNumber
+    commit.accountNumber = member
+
+    await commit.addGroupMember(group, newMember)
+
+    commit.accountNumber = cAccount
+  }
+
+  async function submitToTournament (tAddress, title, descHash, contentHash, value, parent, account) {
+    const tournament = Contract(tAddress, IMatryxTournament)
+    const cAccount = commit.accountNumber
+
+    commit.accountNumber = account
+
+    // random group if no parent
+    let group = genId(5) 
+    if (parent != '0x00') {
+      const parentCommit = await commit.getCommit(parent)
+      group = parentCommit.groupHash
+    }
+
+    await commit.submitToTournament(tAddress, title, descHash, contentHash, value, parent, group)
+    const round = Contract((await tournament.getCurrentRound())[1], IMatryxRound)
+    commit.accountNumber = cAccount
+
+    const submissions = await round.getSubmissions()
+    return submissions[submissions.length-1]
+  }
+
+  async function commitCongaLine (root, length, account) {
+    const congaLine = [root]
+
+    let parent = root
+    for (let i = 0; i < length; i++) {
+      parent = await createCommit(stringToBytes(genId(34), 2), toWei(1), parent, account)
+      congaLine.push(parent)
+    }
+
+    return congaLine
+  }
+
+  async function forkCommit (contentHash, value, parent, accountNumber) {
+    const lastAccount = commit.accountNumber
+    commit.accountNumber = accountNumber
+
+    const group = "group " + genId(5)
+    await commit.createGroup(group)
+    await commit.fork(contentHash, value, parent, group, { gasLimit: 8e6 })
+
+    const parentCommit = await commit.getCommit(parent)
+    const commitHash = parentCommit.children[parentCommit.children.length - 1]
+
+    commit.accountNumber = lastAccount
+    return commitHash
+  }
+
   return {
     init,
     createTournament,
@@ -222,8 +262,15 @@ module.exports = function (artifacts, web3) {
     waitUntilOpen,
     waitUntilInReview,
     createSubmission,
-    updateSubmission,
     selectWinnersWhenInReview,
-    enterTournament
+    enterTournament,
+    
+    createCommit,
+    initCommit,
+    commitChildren,
+    addToGroup,
+    submitToTournament,
+    commitCongaLine,
+    forkCommit
   }
 }

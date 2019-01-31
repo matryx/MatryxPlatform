@@ -5,7 +5,7 @@ const generate = require('./generate')
 const version = process.argv[3] || 1
 const batch = process.argv[2] === 'true'
 
-const ignore = ['LibUtils', 'LibTrinity', 'LibTournamentHelper']
+const ignore = ['LibUtils', 'LibTournamentHelper']
 
 const st = Date.now()
 const files = fs.readdirSync('../contracts')
@@ -28,8 +28,7 @@ const arrayType = /\[(\d*)\]/
 
 const slots = {
   'MatryxPlatform.Info': 0,
-  'MatryxPlatform.Data': 3,
-  'LibCommit.CommitData': 16
+  'MatryxPlatform.Data': 3
 }
 
 const structs = {}
@@ -42,10 +41,10 @@ const sizeof = type => {
   if (structs[type] !== undefined) {
     return structs[type].words
   }
-  
+
   if (wordTypesReg.test(type)) return 1
   if (type.includes('mapping')) return 1
-  
+
   let match = arrayType.exec(type)
   if (!match) throw new Error('wtf happened: ' + type)
   return +match[1] || 1

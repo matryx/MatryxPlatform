@@ -5,7 +5,7 @@ const IMatryxUser = artifacts.require('IMatryxUser')
 let platform
 let users
 
-const { setup, stringToBytes32, stringToBytes, bytesToString, Contract } = require('../truffle/utils')
+const { setup, stringToBytes, bytesToString, Contract } = require('../truffle/utils')
 const { init, createTournament, waitUntilClose, waitUntilOpen, createSubmission, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
@@ -121,10 +121,10 @@ contract('Open Tournament Testing', function() {
 
   it('Able to edit the tournament data', async function() {
     modData = {
-      title: stringToBytes32('new', 3),
+      title: stringToBytes('new', 3),
       category: stringToBytes(''),
-      descHash: stringToBytes32('new', 2),
-      fileHash: stringToBytes32('new', 2),
+      descHash: stringToBytes('new', 2),
+      fileHash: stringToBytes('new', 2),
       bounty: 0,
       entryFee: web3.toWei(1)
     }
@@ -139,10 +139,10 @@ contract('Open Tournament Testing', function() {
 
   it('Able to change the tournament category', async function() {
     modData = {
-      title: stringToBytes32('new', 3),
-      category: stringToBytes32('science'),
-      descHash: stringToBytes32('new', 2),
-      fileHash: stringToBytes32('new', 2),
+      title: stringToBytes('new', 3),
+      category: stringToBytes('science'),
+      descHash: stringToBytes('new', 2),
+      fileHash: stringToBytes('new', 2),
       bounty: 0,
       entryFee: web3.toWei(1)
     }
@@ -162,9 +162,9 @@ contract('Open Tournament Testing', function() {
     }
     let tData = {
       category: stringToBytes('math'),
-      title: stringToBytes32('title 1', 3),
-      descHash: stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2),
-      fileHash: stringToBytes32('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2),
+      title: stringToBytes('title 1', 3),
+      descHash: stringToBytes('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2),
+      fileHash: stringToBytes('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2),
       bounty: 0,
       entryFee: web3.toWei(2)
     }
@@ -192,7 +192,6 @@ contract('Open Tournament Testing', function() {
   })
 })
 
-
 contract('On Hold Tournament Testing', function() {
   let t //tournament
   let r //round
@@ -214,8 +213,8 @@ contract('On Hold Tournament Testing', function() {
 
     // Set up ghost round
     await waitUntilOpen(r)
-    s = await createSubmission(t, false, 1)
-    let submissions = await r.getSubmissions(0, 0)
+    s = await createSubmission(t, 1)
+    let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
     let rounds = await t.getRounds()
@@ -255,13 +254,13 @@ contract('On Hold Tournament Testing', function() {
   })
 
   it('New round should not have any submissions', async function() {
-    let sub = await gr.getSubmissions(0, 0)
+    let sub = await gr.getSubmissions()
     assert.equal(sub.length, 0, 'Round should not have submissions')
   })
 
   it('Unable to make a submission while On Hold', async function() {
     try {
-      await createSubmission(t, false, 1)
+      await createSubmission(t, 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -283,34 +282,6 @@ contract('On Hold Tournament Testing', function() {
   it('Round should be open', async function() {
     let state = await gr.getState()
     assert.equal(state, 2, 'Round should be open')
-  })
-})
-
-contract('Tournament Voting Testing', function() {
-  let t //tournament
-  let r //round
-  let s //submission
-
-  it('Able to create the tournament and select submissions', async function() {
-    await init()
-    roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30,
-      review: 50,
-      bounty: web3.toWei(5)
-    }
-
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-
-    // Setup
-    await waitUntilOpen(r)
-    s = await createSubmission(t, false, 1)
-    let submissions = await r.getSubmissions(0, 0)
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
-
-    assert.ok(r, 'Unable to create tournament and select submissions')
   })
 })
 

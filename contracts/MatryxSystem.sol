@@ -11,7 +11,7 @@ contract MatryxSystem is Ownable() {
         bytes32[] allContracts;
     }
 
-    // Used to transform calls on a MatryxTrinity to its relevant library
+    // Used to transform calls on a MatryxForwarder to its relevant library
     struct FnData {
         bytes32 modifiedSelector; // modified fn selector
         uint256[] injectedParams; // what storage slots to insert
@@ -179,5 +179,5 @@ interface IMatryxSystem {
 }
 
 library LibSystem {
-    enum ContractType { Unknown, Platform, User, Commit, Tournament, Round, Submission }
+    enum ContractType { Unknown, Platform, User, Commit, Tournament, Round }
 }
