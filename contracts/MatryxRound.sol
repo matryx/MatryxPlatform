@@ -21,6 +21,7 @@ interface IMatryxRound {
     function getReview() external view returns (uint256);
     function getBounty() external view returns (uint256);
     function getBalance() external view returns (uint256);
+    function getSubmission(bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory submissionData);
     function getSubmissions() external view returns (bytes32[] memory);
     function getData() external view returns (LibRound.RoundReturnData memory);
 
@@ -104,6 +105,10 @@ library LibRound {
     /// @dev Returns the MTX balance of this Round
     function getBalance(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.balanceOf[self];
+    }
+
+    function getSubmission(address self, address, MatryxPlatform.Data storage data, bytes32 submissionHash) public view returns (LibTournament.SubmissionData memory submissionData) {
+        return data.rounds[self].submissions[submissionHash];
     }
 
     /// @dev Returns all Submissions of this Round

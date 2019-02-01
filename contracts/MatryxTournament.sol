@@ -95,6 +95,7 @@ library LibTournament {
         bytes32[3] title;
         bytes32[2] descHash;
         uint256 reward;
+        uint256 timeSubmitted;
     }
 
     /// @dev Returns the Version of this Tournament
@@ -273,6 +274,7 @@ library LibTournament {
         LibTournament.SubmissionData storage submission = round.submissions[commitHash];
         submission.title = title;
         submission.descHash = descHash;
+        submission.timeSubmitted = now;
 
         round.info.allSubmissions.push(commitHash);
         round.isSubmission[commitHash] = true;
