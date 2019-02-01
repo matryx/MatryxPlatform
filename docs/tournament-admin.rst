@@ -17,7 +17,6 @@ Where ``TournamentData`` and ``RoundData`` are stuctured as follows:
     struct TournamentData
     {
         bytes32[3] title;
-        bytes32 category;
         bytes32[2] descHash;
         bytes32[2] fileHash;
         uint256 bounty;

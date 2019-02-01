@@ -1,12 +1,9 @@
-Diving into Matryx
-==================
+Entering Matryx
+================
 
-Matryx is a bounty-based platform that enables and incentivizes decentralized scientific collaboration in the form of tournaments and submissions, where all users participating in a tournament receive credit for their collaborations, and the tournament bounty is rightfully distributed among the chosen winners.
+Matryx is a decentralized application for solving difficult scientific problems. The Matryx’s commit system allows you to timestamp and value your work on the Ethereum blockchain, providing you with immutable proof of ownership over your content. The Matryx platform enables bounties to be placed on scientific problems and for their creative solutions to be awarded. This system allows people to build up chains of work and be rewarded for their contributions.
 
 Welcome!
-
-Entering Matryx
-^^^^^^^^^^^^^^^
 
 To start using the platform, you first need to enter Matryx with the Ethereum address that you intend to use on the platform. Entering Matryx is as simple as running the following:
 
@@ -46,4 +43,3 @@ The value returned here is the Wei equivalent of MTX, so a sinlge MTX has 1e18 d
 
 Congratulations! You have now entered your first Matryx tournament. Assemble a team; let's get solving!
 
-.. _diving_in

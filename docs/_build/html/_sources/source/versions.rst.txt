@@ -1,4 +1,4 @@
 Versions
 ========
 
-Stay tuned...
+Stay tuned!
