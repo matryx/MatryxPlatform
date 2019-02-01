@@ -37,7 +37,7 @@ library LibRound {
     struct RoundInfo {
         uint256 version;
         address tournament;
-        bytes32[] submissions;
+        bytes32[] allSubmissions;
         LibRound.WinnersData winners;
         bool closed;
     }
@@ -108,7 +108,7 @@ library LibRound {
 
     /// @dev Returns all Submissions of this Round
     function getSubmissions(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[] memory) {
-        return data.rounds[self].info.submissions;
+        return data.rounds[self].info.allSubmissions;
     }
 
     /// @dev Returns the data struct of this Round
@@ -121,7 +121,7 @@ library LibRound {
 
     /// @dev Returns the total number of Submissions in this Round
     function getSubmissionCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return data.rounds[self].info.submissions.length;
+        return data.rounds[self].info.allSubmissions.length;
     }
 
     /// @dev Returns the addresses of all winning Submissions of this Round
@@ -146,7 +146,7 @@ library LibRound {
             if (round.info.closed) {
                 return uint256(LibGlobals.RoundState.Closed);
             }
-            else if (round.info.submissions.length == 0) {
+            else if (round.info.allSubmissions.length == 0) {
                 return uint256(LibGlobals.RoundState.Abandoned);
             }
             else if (round.info.winners.submissions.length > 0) {

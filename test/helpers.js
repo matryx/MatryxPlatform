@@ -19,7 +19,6 @@ module.exports = function (artifacts, web3) {
   const MatryxCommit = artifacts.require("MatryxCommit")
   const IMatryxCommit = artifacts.require("IMatryxCommit")
   const LibCommit = artifacts.require('LibCommit')
-  const LibUtils = artifacts.require('LibUtils')
   const LibPlatform = artifacts.require('LibPlatform')
   const LibTournament = artifacts.require('LibTournament')
   const LibRound = artifacts.require('LibRound')
@@ -41,15 +40,13 @@ module.exports = function (artifacts, web3) {
     return { platform, token }
   }
 
-  async function createTournament(_title, _category, bounty, roundData, accountNumber) {
+  async function createTournament(_title, bounty, roundData, accountNumber) {
     const { platform } = await setup(artifacts, web3, accountNumber, true)
 
-    const category = stringToBytes(_category)
     const title = stringToBytes(_title, 3)
     const descHash = stringToBytes('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2)
     const fileHash = stringToBytes('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2)
     const tournamentData = {
-      category,
       title,
       descHash,
       fileHash,

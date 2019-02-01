@@ -28,13 +28,10 @@ contract MatryxPlatform {
         mapping(address=>LibTournament.TournamentData) tournaments;  // maps tournament addresses to tournament structs
         mapping(address=>LibRound.RoundData) rounds;                 // maps round addresses to round structs
         mapping(address=>LibUser.UserData) users;                    // maps user addresses to user structs
-        mapping(bytes32=>address[]) categories;                      // makes category hash to all tournaments in category
-        mapping(bytes32=>bool) categoryExists;                       // maps category hash to whether or not category exists
 
         address[] allTournaments;                                    // all matryx tournament addresses
         address[] allRounds;                                         // all round addresses to matryx tournaments
         address[] allUsers;                                          // all matryx user addresses
-        bytes32[] allCategories;                                     // all categories tournaments have been made in
 
         mapping(bytes32=>LibCommit.Commit) commits;                  // maps commit hashes to commits
         mapping(bytes32=>LibCommit.Group) groups;                    // maps group hashes to group structs
@@ -164,8 +161,8 @@ contract MatryxPlatform {
         _;
     }
 
-    /// @dev Gets Information about the Platform
-    /// @return  Info Struct that contains system, version, token, and owner
+    /// @dev Gets information about the Platform
+    /// @return  Info Struct that contains system, token, and owner
     function getInfo() public view returns (MatryxPlatform.Info memory) {
         return info;
     }
@@ -225,15 +222,9 @@ interface IMatryxPlatform {
     function getTournamentCount() external view returns (uint256);
     function getUserCount() external view returns (uint256);
     function getTournaments() external view returns (address[] memory);
-    function getTournamentsByCategory(bytes32) external view returns (address[] memory);
     function getUsers() external view returns (address[] memory);
-    function getCategories() external view returns (bytes32[] memory);
-
-    function createCategory(bytes32) external;
 
     function enterMatryx() external;
-    function addTournamentToCategory(address, bytes32) external;
-    function removeTournamentFromCategory(address) external;
     function createTournament(LibTournament.TournamentDetails calldata, LibRound.RoundDetails calldata) external returns (address);
 
     function setCommitDistributionDepth(uint256 depth) external;
@@ -259,104 +250,80 @@ library LibPlatform {
     }
 
     /// @dev Return if user has entered Matryx
-    /// @param data  Platform storage containing all contract data
-    /// @return      If user has entered Matryx
+    /// @param data      Platform data struct
+    /// @param uAddress  User address
+    /// @return          true if user has entered Matryx
     function hasEnteredMatryx(address, address, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
         return data.users[uAddress].exists;
     }
 
     /// @dev Return total MTX in Platform
-    /// @param data  Platform storage containing all contract data
+    /// @param data  Platform data struct
     /// @return      Total MTX in Platform
     function getTotalBalance(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.totalBalance;
     }
 
     /// @dev Return balance of a Tournament, Round, or user address
-    /// @param data      Platform storage containing all contract data
-    /// @param cAddress  Address of the contract we get the balance of
-    /// @return          Balance of the Forwarder contract
+    /// @param data      Platform data struct
+    /// @param cAddress  Address to get the balance of
+    /// @return          Address balance on Platform
     function getBalanceOf(address, address, MatryxPlatform.Data storage data, address cAddress) public view returns (uint256) {
         return data.balanceOf[cAddress];
     }
 
     /// @dev Return balance of a Commit
-    /// @param data        Platform storage containing all contract data
-    /// @param commitHash  Hash of the commit we get the balance of
-    /// @return            Balance of the Forwarder contract
+    /// @param data        Platform data struct
+    /// @param commitHash  Commit hash to get the balance of
+    /// @return            Balance of the commit
     function getCommitBalance(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (uint256) {
         return data.commitBalance[commitHash];
     }
 
     /// @dev Return total number of Tournaments
-    /// @param data  Platform storage containing all contract data
+    /// @param data  Platform data struct
     /// @return      Number of Tournaments on Platform
     function getTournamentCount(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.allTournaments.length;
     }
 
     /// @dev Return total number of Users
-    /// @param data  Platform storage containing all contract data
+    /// @param data  Platform data struct
     /// @return      Number of Users on Platform
     function getUserCount(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.allUsers.length;
     }
 
-    /// @dev Return all Tournaments
-    /// @param data  Platform storage containing all contract data
+    /// @dev Return all Tournaments addresses
+    /// @param data  Platform data struct
     /// @return      Array of Tournament addresses
     function getTournaments(address, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
         return data.allTournaments;
     }
 
-    /// @dev Return all Tournaments for a category
-    /// @param data      Platform storage containing all contract data
-    /// @param category  Category name to get
-    /// @return          Array of Tournament addresses for given category
-    function getTournamentsByCategory(address, address, MatryxPlatform.Data storage data, bytes32 category) public view returns (address[] memory) {
-        return data.categories[category];
-    }
-
-    /// @dev Return all Users
-    /// @param data        Platform storage containing all contract data
-    /// @return            Array of User addresses
+    /// @dev Return all Users addresses
+    /// @param data  Platform data struct
+    /// @return      Array of User addresses
     function getUsers(address, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
         return data.allUsers;
     }
 
-    /// @dev Return all Categories
-    /// @param data        Platform storage containing all contract data
-    /// @return            Array of Categories
-    function getCategories(address, address, MatryxPlatform.Data storage data) public view returns (bytes32[] memory) {
-        return data.allCategories;
-    }
-
     /// @dev Withdraw available MTX balance
-    function withdrawBalance(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+    /// @param sender  msg.sender to Platform
+    /// @param info    Platform info struct
+    /// @param data    Platform data struct
+    function withdrawBalance(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         uint256 amount = data.balanceOf[sender];
         data.balanceOf[sender] = 0;
         data.totalBalance = data.totalBalance.sub(amount);
-        data.users[sender].totalCashedOut = data.users[sender].totalCashedOut.add(amount);
+        data.users[sender].totalWithdrawn = data.users[sender].totalWithdrawn.add(amount);
         require(IToken(info.token).transfer(sender, amount));
-    }
-
-    /// @dev Creates a category
-    /// @param sender    msg.sender to Platform
-    /// @param info      Platform storage containing version number and system address
-    /// @param data      Platform storage containing all contract data and users
-    /// @param category  Category to create
-    function createCategory(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 category) public {
-        require(sender == info.owner, "Must be Platform owner");
-        require(!data.categoryExists[category], "Category already exists");
-
-        data.allCategories.push(category);
-        data.categoryExists[category] = true;
     }
 
     /// @dev Enter Matryx
     /// @param sender  msg.sender to Platform
-    /// @param info    Platform storage containing version number and system address
-    /// @param data    Platform storage containing all contract data and users
+    /// @param info    Platform info struct
+    /// @param data    Platform data struct
     function enterMatryx(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         require(!data.users[sender].exists, "Already entered Matryx");
         require(IToken(info.token).balanceOf(sender) > 0, "Must have MTX");
@@ -366,67 +333,24 @@ library LibPlatform {
         data.allUsers.push(sender);
     }
 
-    /// @dev Adds a Tournament to a category
-    /// @param data      Platform storage containing all contract data
-    /// @param tAddress  Tournament address
-    /// @param category  Category name
-    function addTournamentToCategory(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress, bytes32 category) public {
-        require(sender == address(this) || IMatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
-        require(data.categoryExists[category], "Category does not exist");
-
-        data.categories[category].push(tAddress);
-        data.tournaments[tAddress].details.category = category;
-    }
-
-    /// @dev Removes a Tournament from its current category
-    /// @param data      Platform storage containing all contract data
-    /// @param tAddress  Tournament address
-    function removeTournamentFromCategory(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress) public {
-        require(sender == address(this) || IMatryxSystem(info.system).getContractType(sender) == uint256(LibSystem.ContractType.Tournament), "Must come from Platform or Tournament");
-
-        uint256 version = IMatryxSystem(info.system).getVersion();
-        address libUtils = IMatryxSystem(info.system).getContract(version, "LibUtils");
-
-        bytes32 category = data.tournaments[tAddress].details.category;
-        address[] storage categoryList = data.categories[category];
-        uint256 index;
-
-        for (index = 0; index < categoryList.length; index++) {
-            if (categoryList[index] == tAddress) break;
-        }
-
-        assembly {
-            let offset := 0x100000000000000000000000000000000000000000000000000000000
-            let ptr := mload(0x40)
-
-            mstore(ptr, mul(0x4a71ede8, offset))                        // removeArrayElement(bytes32[] storage,uint256)
-            mstore(add(ptr, 0x04), categoryList_slot)                   // arg 0 - data.categories[tournament.category]
-            mstore(add(ptr, 0x24), index)                               // arg 1 - index
-
-            let res := delegatecall(gas, libUtils, ptr, 0x44, 0, 0)     // call LibUtils.removeArrayElement
-            if iszero(res) { revert(0, 0) }                             // safety check
-        }
-    }
-
     /// @dev Creates a Tournament
     /// @param sender    msg.sender to Platform
-    /// @param info      Platform storage containing version number and system address
-    /// @param data      Platform storage containing all contract data and users
-    /// @param tDetails  Tournament details (title, category, descHash, fileHash, bounty, entryFee)
+    /// @param info      Platform info struct
+    /// @param data      Platform data struct
+    /// @param tDetails  Tournament details (title, descHash, fileHash, bounty, entryFee)
     /// @param rDetails  Round details (start, end, review, bounty)
     /// @return          Address of the created Tournament
-    function createTournament(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails, LibRound.RoundDetails memory rDetails) public returns (address) {
+    function createTournament(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails, LibRound.RoundDetails memory rDetails) public returns (address) {
         require(data.users[sender].exists, "Must have entered Matryx");
         require(tDetails.bounty > 0, "Tournament bounty must be greater than 0");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
-        require(IToken(info.token).allowance(sender, self) >= tDetails.bounty, "Insufficient MTX");
+        require(IToken(info.token).allowance(sender, address(this)) >= tDetails.bounty, "Insufficient MTX");
 
         uint256 version = IMatryxSystem(info.system).getVersion();
         address tAddress = address(new MatryxTournament(version, info.system));
 
         IMatryxSystem(info.system).setContractType(tAddress, uint256(LibSystem.ContractType.Tournament));
         data.allTournaments.push(tAddress);
-        addTournamentToCategory(self, self, info, data, tAddress, tDetails.category);
 
         LibUser.UserData storage user = data.users[sender];
         user.tournaments.push(tAddress);
@@ -439,7 +363,7 @@ library LibPlatform {
 
         data.totalBalance = data.totalBalance.add(tDetails.bounty);
         data.balanceOf[tAddress] = tDetails.bounty;
-        require(IToken(info.token).transferFrom(sender, self, tDetails.bounty), "Transfer failed");
+        require(IToken(info.token).transferFrom(sender, address(this), tDetails.bounty), "Transfer failed");
 
         address libTournament = IMatryxSystem(info.system).getContract(version, "LibTournament");
         assembly {
@@ -462,7 +386,12 @@ library LibPlatform {
         return tAddress;
     }
 
-    function setCommitDistributionDepth(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 depth) public {
+    /// @dev Sets commitDistributionDepth for how many ancestor commits value propagates to
+    /// @param sender  msg.sender to Platform 
+    /// @param info    Platform info struct
+    /// @param data    Platform data struct
+    /// @param depth   New commitDistributionDepth
+    function setCommitDistributionDepth(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 depth) public {
         require(sender == info.owner, "Must be Platform owner");
         data.commitDistributionDepth = depth;
     }

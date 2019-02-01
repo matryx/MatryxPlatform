@@ -29,7 +29,7 @@ contract('Singleton Commit, Close Tournament', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     s = await createSubmission(t, 1)
@@ -151,7 +151,7 @@ contract('Singleton Commit, Start Next Round', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(15), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(15), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     s = await createSubmission(t, 1)
@@ -259,7 +259,7 @@ contract('Singleton Commit, Do Nothing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(15), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(15), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     s = await createSubmission(t, 1)
@@ -356,7 +356,7 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     s = await createSubmission(t, 1)
@@ -453,7 +453,7 @@ contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(15), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(15), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     s = await createSubmission(t, 1)

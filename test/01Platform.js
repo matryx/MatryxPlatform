@@ -56,13 +56,8 @@ contract('Platform Testing', function() {
     assert.isTrue(count == 0 && tournaments.length == 0, 'Tournament count should be 0 and tournaments array should be empty.')
   })
 
-  it('Platform has 6 preloaded categories', async function() {
-    let cat = await platform.getCategories()
-    assert.isTrue(cat.length == 6, 'Platform should only contain 6 categories.')
-  })
-
   it('Able to create a tournament', async function() {
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let count = +(await platform.getTournamentCount())
     assert.isTrue(count == 1, 'Tournament count should be 1.')
   })
@@ -70,40 +65,6 @@ contract('Platform Testing', function() {
   it('Platform can recognize the tournament address as a tournament', async function() {
     isT = await platform.isTournament(t.address)
     assert.isTrue(isT, 'Should be a tournament.')
-  })
-
-  it('Able to get tournaments by category', async function() {
-    let cat = await t.getCategory()
-    let tourCat = await platform.getTournamentsByCategory(cat, )
-    assert.isTrue(tourCat[0] == t.address, 'Unable to get tournaments by category.')
-  })
-
-  it('Able to create a new category', async function() {
-    await platform.createCategory(stb('music'))
-    let cat = await platform.getCategories()
-    assert.isTrue(cat.length == 7, 'Platform should contain 7 categories.')
-  })
-
-  it('Able to create second tournament in first category', async function() {
-    t = await createTournament('second tournament', 'math', web3.toWei(10), roundData, 0)
-    let count = +(await platform.getTournamentCount())
-    assert.isTrue(count == 2, 'Tournament count should be 2.')
-  })
-
-  it('Able to create first tournament in second category', async function() {
-    t = await createTournament('third tournament', 'science', web3.toWei(10), roundData, 0)
-    let count = +(await platform.getTournamentCount())
-    assert.isTrue(count == 3, 'Tournament count should be 3.')
-  })
-
-  it('Unable to create tournament in nonexistent category', async function() {
-    try {
-      await createTournament('tournament', 'not a category', web3.toWei(10), roundData, 0)
-      assert.fail('I should not be able to create a tournament in nonexistent category')
-    } catch (error) {
-      const revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Successfully unable to create tournament in nonexistent category')
-    }
   })
 
   it('Tournament owner cannot enter own tournament', async function() {

@@ -30,7 +30,6 @@ const report = msg => {
 
 const createTournament = async (accountNumber) => {
   const tournamentData = {
-    category: stringToBytes('math'),
     title: stringToBytes32('Benchmark Tournament', 3),
     descHash: stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2),
     fileHash: stringToBytes32('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2),

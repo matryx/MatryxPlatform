@@ -33,18 +33,10 @@ contract('MatryxCommit', async () => {
     const tx = commit.createGroup('account 1 group')
     await shouldFail.reverting(tx)
   })
-  
+
   it('Cannot create a commit until in Matryx', async () => {
     commit.accountNumber = 1
     const tx = commit.initialCommit(randContent(), toWei(1), 'new group')
-    await shouldFail.reverting(tx)
-  })
-
-  it('Cannot create the same group twice', async () => {
-    await setup(artifacts, web3, 1, true)
-    commit.accountNumber = 1
-    await commit.createGroup('duplicate group')
-    const tx = commit.createGroup('duplicate group')
     await shouldFail.reverting(tx)
   })
 
@@ -54,6 +46,23 @@ contract('MatryxCommit', async () => {
     // hash name of group
     const returnedName = await commit.getGroupName(web3.utils.keccak256(groupNameTwo))
     assert.equal(returnedName, groupNameTwo, 'Unable to create a new group')
+  })
+
+  it('Groups are persistent', async () => {
+    let groupsBefore = await commit.getAllGroups()
+    await commit.createGroup('group A')
+    await commit.createGroup('group B')
+    let groupsAfter = await commit.getAllGroups()
+
+    assert.equal(groupsAfter.length - groupsBefore.length, 2, 'Commit system should contain 2 more groups')
+  })
+
+  it('Cannot create the same group twice', async () => {
+    await setup(artifacts, web3, 1, true)
+    commit.accountNumber = 1
+    await commit.createGroup('duplicate group')
+    const tx = commit.createGroup('duplicate group')
+    await shouldFail.reverting(tx)
   })
 
   it('Group members are persistent', async () => {
@@ -70,7 +79,7 @@ contract('MatryxCommit', async () => {
     const tx = commit.addGroupMember(groupName, accounts[1])
     await shouldFail.reverting(tx)
   })
-  
+
   it('Cannot add user to nonexistent group', async () => {
     const tx = commit.addGroupMember('not a real group', accounts[1])
     await shouldFail.reverting(tx)
@@ -83,27 +92,10 @@ contract('MatryxCommit', async () => {
     await shouldFail.reverting(tx)
   })
 
-  it('Groups are persistent', async () => {
-    let groupsBefore = await commit.getAllGroups()
-    await commit.createGroup('group A')
-    await commit.createGroup('group B')
-    let groupsAfter = await commit.getAllGroups()
-
-    assert.equal(groupsAfter.length - groupsBefore.length, 2, 'Commit system should contain 2 more groups')
-  })
-
-  it('Able to make a commit', async () => {
-    const commitsBefore = await commit.getInitialCommits()
-    await commit.initialCommit(randContent(), toWei(1), groupName)
-    const commitsAfter = await commit.getInitialCommits()
-
-    assert.equal(commitsAfter.length - commitsBefore.length, 1, 'New commit should exist')
-  })
-
   it('Cannot create commit if not in group', async () => {
     commit.accountNumber = 1
     const tx = commit.initialCommit(randContent(), toWei(1), groupName)
-    
+
     await shouldFail.reverting(tx)
   })
 
@@ -115,9 +107,17 @@ contract('MatryxCommit', async () => {
     await shouldFail.reverting(tx)
   })
 
+  it('Able to make a commit', async () => {
+    const commitsBefore = await commit.getInitialCommits()
+    await commit.initialCommit(randContent(), toWei(1), groupName)
+    const commitsAfter = await commit.getInitialCommits()
+
+    assert.equal(commitsAfter.length - commitsBefore.length, 1, 'New commit should exist')
+  })
+
   it('Able to fork from commit', async () => {
     const parentHash = await initCommit(randContent(), toWei(1), groupName, 0)
-    
+
     commit.accountNumber = 1
     const contentHash = randContent()
     await commit.fork(contentHash, toWei(1), parentHash, 'group 4')

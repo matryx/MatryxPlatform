@@ -20,7 +20,6 @@ interface IMatryxTournament {
     function getOwner() external view returns (address);
 
     function getTitle() external view returns (bytes32[3] memory);
-    function getCategory() external view returns (bytes32);
     function getDescriptionHash() external view returns (bytes32[2] memory);
     function getBounty() external view returns (uint256);
     function getEntryFee() external view returns (uint256);
@@ -73,14 +72,11 @@ library LibTournament {
     // All information needed for creation of Tournament
     struct TournamentDetails {
         bytes32[3] title;
-        bytes32 category;
         bytes32[2] descHash;
         bytes32[2] fileHash;
         uint256 bounty;
         uint256 entryFee;
     }
-    // bytes32[2] publicKey;
-    // bytes32 privateKey;
 
     // All state data and details of Tournament
     struct TournamentData {
@@ -114,11 +110,6 @@ library LibTournament {
     /// @dev Returns the title of this Tournament
     function getTitle(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32[3] memory) {
         return data.tournaments[self].details.title;
-    }
-
-    /// @dev Returns the category of this Tournament
-    function getCategory(address self, address, MatryxPlatform.Data storage data) public view returns (bytes32) {
-        return data.tournaments[self].details.category;
     }
 
     /// @dev Returns the description hash of this Tournament
@@ -259,13 +250,12 @@ library LibTournament {
     /// @dev Creates a new Submission
     /// @param self        Address of this Tournament
     /// @param sender      msg.sender to the Tournament
-    /// @param info        Info struct on Platform
     /// @param data        Data struct on Platform
     /// @param title       Title of submission
     /// @param descHash    IPFS hash for description of submission
     /// @param commitHash  Commit hash to submit
     /// @return            Address of the created Submission
-    function createSubmission(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32[3] memory title, bytes32[2] memory descHash, bytes32 commitHash) public {
+    function createSubmission(address self, address sender, MatryxPlatform.Data storage data, bytes32[3] memory title, bytes32[2] memory descHash, bytes32 commitHash) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         LibCommit.Commit storage commit = data.commits[commitHash];
 
@@ -280,7 +270,11 @@ library LibTournament {
         data.users[sender].submissions.push(commitHash);
         data.commitToRounds[commitHash].push(rAddress);
 
-        round.info.submissions.push(commitHash);
+        LibTournament.SubmissionData storage submission = round.submissions[commitHash];
+        submission.title = title;
+        submission.descHash = descHash;
+
+        round.info.allSubmissions.push(commitHash);
         round.isSubmission[commitHash] = true;
 
         emit SubmissionCreated(rAddress, commitHash);
@@ -578,7 +572,7 @@ library LibTournamentHelper {
         uint256 count = 0;
 
         for (uint256 i = 0; i < rounds.length; i++) {
-            count += data.rounds[rounds[i]].info.submissions.length;
+            count += data.rounds[rounds[i]].info.allSubmissions.length;
         }
 
         return count;
@@ -626,13 +620,6 @@ library LibTournamentHelper {
 
         if (tDetails.title[0] != 0x0) {
             tournament.details.title = tDetails.title;
-        }
-        if (tDetails.category != 0x0) {
-            // get platform address
-            uint256 version = IMatryxSystem(info.system).getVersion();
-            address platform = IMatryxSystem(info.system).getContract(version, "MatryxPlatform");
-            IMatryxPlatform(platform).removeTournamentFromCategory(self);
-            IMatryxPlatform(platform).addTournamentToCategory(self, tDetails.category);
         }
         if (tDetails.descHash[0] != 0x0) {
             tournament.details.descHash = tDetails.descHash;
@@ -709,7 +696,7 @@ library LibTournamentHelper {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         (,address rAddress) = getCurrentRound(self, sender, data);
         require(IMatryxRound(rAddress).getState() == uint256(LibGlobals.RoundState.Abandoned), "Tournament must be abandoned");
-        require(data.rounds[rAddress].info.submissions.length == 0, "Must have 0 submissions");
+        require(data.rounds[rAddress].info.allSubmissions.length == 0, "Must have 0 submissions");
         require(!tournament.hasWithdrawn[sender], "Already withdrawn");
 
         uint256 funds = data.balanceOf[self].add(data.balanceOf[rAddress]);

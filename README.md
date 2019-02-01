@@ -73,7 +73,7 @@ We set up the **Matryx** system like this to enable upgradeability, as well as t
     ```
     p.enterMatryx()
     token.approve(p.address, toWei(100))
-    tData = [stb('title', 3), stb('category'), stb('descHash', 2), stb('fileHash', 2), toWei(100), toWei(2)]
+    tData = [stb('title', 3), stb('descHash', 2), stb('fileHash', 2), toWei(100), toWei(2)]
     rData = [1, 2, 3, toWei(10)]
     p.createTournament(tData, rData)
     p.getTournaments().then(ts => t = contract(ts.pop(), IMatryxTournament));0

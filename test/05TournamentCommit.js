@@ -26,7 +26,7 @@ contract('MatryxCommit', async () => {
       review: 60,
       bounty: toWei(100)
     }
-    tournament = await createTournament('tournament', 'math', toWei(100), roundData, 0)
+    tournament = await createTournament('tournament', toWei(100), roundData, 0)
     tournament.accountNumber = 1
     await tournament.enter()
   })
@@ -118,7 +118,7 @@ contract('MatryxCommit', async () => {
       review: 60,
       bounty: toWei(100)
     }
-    tournament = await createTournament('tournament', 'math', toWei(100), roundData, 0)
+    tournament = await createTournament('tournament', toWei(100), roundData, 0)
     
     await enterTournament(tournament, 2)
     tournament.accountNumber = 2

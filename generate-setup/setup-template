@@ -13,7 +13,6 @@ q.push("system.setContractType(MatryxUser.address, 2)")
 q.push("system.setContract($VERSION, stb('MatryxCommit'), MatryxCommit.address)")
 q.push("system.setContractType(MatryxCommit.address, 3)")
 
-q.push("system.setContract($VERSION, stb('LibUtils'), LibUtils.address)")
 q.push("system.setContract($VERSION, stb('LibPlatform'), LibPlatform.address)")
 q.push("system.setContract($VERSION, stb('LibUser'), LibUser.address)")
 q.push("system.setContract($VERSION, stb('LibCommit'), LibCommit.address)")
@@ -31,12 +30,6 @@ $COMMANDS
 
 q.push("c = contract(MatryxCommit.address, IMatryxCommit)")
 q.push("p = contract(MatryxPlatform.address, IMatryxPlatform)")
-q.push("p.createCategory(stb('art'))")
-q.push("p.createCategory(stb('environment'))")
-q.push("p.createCategory(stb('health'))")
-q.push("p.createCategory(stb('math'))")
-q.push("p.createCategory(stb('science'))")
-q.push("p.createCategory(stb('technology'))")
 
 q.push("token = contract(network.tokenAddress, MatryxToken)")
 q.push("token.setReleaseAgent(network.accounts[0])")

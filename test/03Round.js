@@ -19,7 +19,7 @@ contract('NotYetOpen Round Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
@@ -102,7 +102,7 @@ contract('Open Round Testing', function() {
       review: 60,
       bounty: web3.toWei(5)
     }
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
@@ -167,7 +167,7 @@ contract('In Review Round Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
@@ -220,7 +220,7 @@ contract('Closed Round Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
@@ -283,7 +283,7 @@ contract('Abandoned Round Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
 
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
@@ -381,7 +381,7 @@ contract('Abandoned Round due to No Submissions', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
 
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
@@ -441,7 +441,7 @@ contract('Unfunded Round Testing', function() {
       bounty: web3.toWei(10)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
@@ -526,7 +526,7 @@ contract('Ghost Round Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(15), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(15), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     s = await createSubmission(t, 1)
@@ -671,7 +671,7 @@ contract('Round Timing Restrictions Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
@@ -686,7 +686,7 @@ contract('Round Timing Restrictions Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
@@ -703,7 +703,7 @@ contract('Round Timing Restrictions Testing', function() {
 
     try {
       t.accountNumber = 1
-      await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+      await createTournament('tournament', web3.toWei(10), roundData, 0)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -719,7 +719,7 @@ contract('Round Timing Restrictions Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
@@ -736,7 +736,7 @@ contract('Round Timing Restrictions Testing', function() {
 
     try {
       t.accountNumber = 1
-      await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+      await createTournament('tournament', web3.toWei(10), roundData, 0)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0

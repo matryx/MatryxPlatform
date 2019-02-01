@@ -1,4 +1,3 @@
-const LibUtils = artifacts.require('LibUtils')
 const LibPlatform = artifacts.require('LibPlatform')
 const LibUser = artifacts.require('LibUser')
 const LibCommit = artifacts.require('LibCommit')
@@ -7,7 +6,6 @@ const LibTournamentHelper = artifacts.require('LibTournamentHelper')
 const LibRound = artifacts.require('LibRound')
 
 module.exports = function (deployer) {
-  deployer.deploy(LibUtils, { gas: 8e6, overwrite: false })
   deployer.deploy(LibPlatform, { gas: 8e6, overwrite: false })
   deployer.deploy(LibUser, { gas: 8e6, overwrite: false })
   deployer.deploy(LibTournamentHelper, { gas: 8e6, overwrite: false })

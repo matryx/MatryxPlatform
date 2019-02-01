@@ -5,7 +5,7 @@ const generate = require('./generate')
 const version = process.argv[3] || 1
 const batch = process.argv[2] === 'true'
 
-const ignore = ['LibUtils', 'LibTournamentHelper']
+const ignore = ['LibTournamentHelper']
 
 const st = Date.now()
 const files = fs.readdirSync('../contracts')

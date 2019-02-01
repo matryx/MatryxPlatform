@@ -204,7 +204,7 @@ library LibCommit {
     /// @dev Forks off of an existing commit and creates a new commit, sends MTX to all previous commit owners
     /// @param self         MatryxCommit address
     /// @param sender       msg.sender to the Platform
-    /// @param info         Info struct on the Platform
+    /// @param info         Platform info struct
     /// @param data         Platform data struct
     /// @param contentHash  Hash of the commits content
     /// @param value        Author-determined value of the commit
@@ -224,22 +224,21 @@ library LibCommit {
         // Create the commit!
         bytes32 commitHash = createCommit(sender, data, contentHash, value, parentHash, groupHash);
 
-        emit Fork(parentHash, commitHash, sender)
+        emit Fork(parentHash, commitHash, sender);
     }
 
     /// @dev Creates an initial commit and submits it to a Tournament
     /// @param self         MatryxCommit address
     /// @param sender       msg.sender to the Platform
-    /// @param info         Platform info struct
     /// @param data         Platform data struct
-    /// @param tAddress     Address of Tournament to submit to
-    /// @param title        Title of the submission
-    /// @param descHash     IPFS hash of description of the submission
-    /// @param contentHash  Hash of the commits content
-    /// @param value        Author-determined value of the commit
+    /// @param tAddress     Tournament address to submit to
+    /// @param title        Submission title
+    /// @param descHash     Submission description IPFS hash
+    /// @param contentHash  Commit content IPFS hash
+    /// @param value        Author-determined commit value
     /// @param parentHash   Parent commit hash
-    /// @param group        Name of the group for the commit
-    function submitToTournament(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress, bytes32[3] memory title, bytes32[2] memory descHash, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash, string memory group) public {
+    /// @param group        Group name for the commit
+    function submitToTournament(address self, address sender, MatryxPlatform.Data storage data, address tAddress, bytes32[3] memory title, bytes32[2] memory descHash, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash, string memory group) public {
         bytes32 groupHash = keccak256(abi.encodePacked(group));
 
         if (!data.groups[groupHash].exists) {
@@ -247,16 +246,16 @@ library LibCommit {
         }
 
         bytes32 commitHash = createCommit(sender, data, contentHash, value, parentHash, groupHash);
-        LibTournament.createSubmission(tAddress, sender, info, data, title, descHash, commitHash);
+        LibTournament.createSubmission(tAddress, sender, data, title, descHash, commitHash);
     }
 
     /// @dev Initializes a new commit
     /// @param owner        Owner of the commit
     /// @param data         Platform data struct
-    /// @param contentHash  Hash of the commits content
-    /// @param value        Author-determined value of the commit
-    /// @param parentHash   Hash of the parent commit
-    /// @param groupHash    Hash of the name of the group working on this branch
+    /// @param contentHash  Commit content IPFS hash
+    /// @param value        Author-determined commit value
+    /// @param parentHash   Parent commit hash
+    /// @param groupHash    Group name hash
     function createCommit(address owner, MatryxPlatform.Data storage data, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash, bytes32 groupHash) internal returns (bytes32) {
         require(data.groups[groupHash].hasMember[owner], "Must be a part of the group");
 
@@ -290,7 +289,7 @@ library LibCommit {
     /// @param sender      msg.sender to the Platform
     /// @param info        Platform info struct
     /// @param data        Platform data struct
-    /// @param commitHash  Hash of the commit that stores the bounty
+    /// @param commitHash  Commit hash
     function distributeReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 commitHash) public {
         uint256 reward = data.commitBalance[commitHash];
         require(reward != 0, "No reward to distribute");
@@ -300,7 +299,7 @@ library LibCommit {
     }
 
     /// @dev Distributes MTX (up to maxDepth) to all commit owners in the chain
-    /// @param sender        Address to withdraw funds from
+    /// @param sender        Address to withdraw funds from if fork
     /// @param token         Token address
     /// @param data          Platform data struct
     /// @param commitHash    Commit hash to begin distributing funds back from

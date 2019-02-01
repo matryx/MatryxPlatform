@@ -12,7 +12,7 @@ interface IMatryxUser {
     function getData(address user) external view returns (LibUser.UserData memory);
     function getTimeInMatryx(address user) external view returns (uint256);
     function getTotalSpent(address user) external view returns (uint256);
-    function getTotalCashedOut(address user) external view returns (uint256);
+    function getTotalWithdrawn(address user) external view returns (uint256);
     function getTournaments(address user) external view returns (address[] memory);
     function getTournamentsEntered(address user) external view returns (address[] memory);
     function getSubmissions(address user) external view returns (bytes32[] memory);
@@ -24,7 +24,7 @@ library LibUser {
         bool      exists;
         uint256   timeEntered;
         uint256   totalSpent;
-        uint256   totalCashedOut;
+        uint256   totalWithdrawn;
         address[] tournaments;
         address[] tournamentsEntered;
         bytes32[] submissions;
@@ -42,8 +42,8 @@ library LibUser {
         return data.users[user].totalSpent;
     }
 
-    function getTotalCashedOut(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
-        return data.users[user].totalCashedOut;
+    function getTotalWithdrawn(address, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
+        return data.users[user].totalWithdrawn;
     }
 
     function getTournaments(address, address, MatryxPlatform.Data storage data, address user) public view returns (address[] memory) {

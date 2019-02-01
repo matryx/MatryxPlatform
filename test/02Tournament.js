@@ -22,7 +22,7 @@ contract('Open Tournament Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let count = +(await platform.getTournamentCount())
     assert.isTrue(count == 1, 'Tournament count should be 1.')
   })
@@ -40,7 +40,7 @@ contract('Open Tournament Testing', function() {
 
   it('Able to get tournament title', async function() {
     let title = await t.getTitle().then(bytesToString)
-    assert.equal(title, 'first tournament', 'Unable to get title.')
+    assert.equal(title, 'tournament', 'Unable to get title.')
   })
 
   it('Able to get tournament description', async function() {
@@ -84,11 +84,6 @@ contract('Open Tournament Testing', function() {
     assert.equal(allr[0], r, 'Unable to get current round.')
   })
 
-  it('Able to get category', async function() {
-    let cat = await t.getCategory().then(bytesToString)
-    assert.equal(cat, 'math', 'Unable to get category.')
-  })
-
   it('Number of entrants is 0', async function() {
     let count = await t.getEntrantCount()
     assert.equal(count, 0, 'Number of entrants should be 0.')
@@ -122,7 +117,6 @@ contract('Open Tournament Testing', function() {
   it('Able to edit the tournament data', async function() {
     modData = {
       title: stringToBytes('new', 3),
-      category: stringToBytes(''),
       descHash: stringToBytes('new', 2),
       fileHash: stringToBytes('new', 2),
       bounty: 0,
@@ -137,22 +131,6 @@ contract('Open Tournament Testing', function() {
     assert.isTrue(allNew, 'Tournament data not updated correctly.')
   })
 
-  it('Able to change the tournament category', async function() {
-    modData = {
-      title: stringToBytes('new', 3),
-      category: stringToBytes('science'),
-      descHash: stringToBytes('new', 2),
-      fileHash: stringToBytes('new', 2),
-      bounty: 0,
-      entryFee: web3.toWei(1)
-    }
-
-    await t.updateDetails(modData)
-    let cat = await t.getCategory().then(bytesToString)
-
-    assert.equal(cat, 'science', 'Tournament category not updated correctly.')
-  })
-
   it('Unable to create a tournament with 0 bounty', async function() {
     let rData = {
       start: Math.floor(Date.now() / 1000) + 10,
@@ -161,7 +139,6 @@ contract('Open Tournament Testing', function() {
       bounty: 0
     }
     let tData = {
-      category: stringToBytes('math'),
       title: stringToBytes('title 1', 3),
       descHash: stringToBytes('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2),
       fileHash: stringToBytes('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2),
@@ -207,7 +184,7 @@ contract('On Hold Tournament Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
@@ -300,7 +277,7 @@ contract('Abandoned Tournament due to No Submissions Testing', function() {
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     // Wait for the round to become Abandoned
