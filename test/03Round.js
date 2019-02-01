@@ -1,4 +1,6 @@
 const IMatryxRound = artifacts.require('IMatryxRound')
+const MatryxUser = artifacts.require('MatryxUser')
+const IMatryxUser = artifacts.require('IMatryxUser')
 
 const { Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, waitUntilInReview, waitUntilClose, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
@@ -120,6 +122,11 @@ contract('Open Round Testing', function() {
     s2 = await createSubmission(t, 2)
 
     assert.ok(s && s2, 'Unable to make submissions')
+  })
+
+  it('Submissions should be gettable from a round', async function() {
+    const submission = await r.getSubmission(s)
+    assert.ok(submission, "Unable to get user submission back from round")
   })
 
   it('Able to exit the tournament', async function() {

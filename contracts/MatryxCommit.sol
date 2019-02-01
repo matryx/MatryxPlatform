@@ -263,6 +263,7 @@ library LibCommit {
         bytes32 lookupHash = keccak256(abi.encodePacked(contentHash));
 
         require(data.commitHashes[lookupHash] == bytes32(0), "A commit has already been created using this content");
+        require(value > 0, "Cannot create a zero-value commit.");
         data.commitHashes[lookupHash] = commitHash;
 
         data.commits[commitHash].owner = owner;

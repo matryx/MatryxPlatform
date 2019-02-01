@@ -3,16 +3,16 @@ The Matryx Bounty System
 
 The Matryx Bounty system enables and incentivizes decentralized scientific collaboration in the form of tournaments and submissions, where all users participating in a tournament receive credit for their contributions, and the tournament bounty is rightfully distributed among the chosen winners.
 
-Tournament and round states
+Tournament and Round States
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each tournament in Matryx is subdivided into rounds. In each round, tournament participants make submissions to the tournament, and at the end of each round one or multiple submissions are selected by the tournament owner to be the winners of the round. The round winners then receive the allocated round reward.
+Each tournament in Matryx is subdivided into rounds. In each round, tournament participants make submissions to the tournament. At the end of each round, one or multiple submissions are chosen by the tournament owner to be the winners of the round. Those winners then receive the allocated round reward.
 
-A tournament can be in one of five possible states: NotYetOpen, OnHold, Open, Closed, or Abandoned.
+A tournament can be in one of five possible states: ``NotYetOpen``, ``OnHold``, ``Open``, ``Closed``, or ``Abandoned``.
 
-If a tournament is NotYetOpen, then its first round has not started yet. If it is OnHold, that means that the tournament has already started but the next upcoming round has yet to begin. Open tournaments are the ones that are currently active: submissions are being made or reviewed. Closed tournaments are no longer active; the tournament owner has decided to end the tournament, and all of the tournament’s bounty has been distributed among the various rounds’ winners. Lastly, a tournament becomes Abandoned if a round ends without receiving any submissions, or if the tournament owner fails to select winners before the end of the round’s review period.
+If a tournament is ``NotYetOpen``, then its first round has not started yet. If it is ``OnHold``, that means that the tournament has already started but the next upcoming round has yet to begin. Open tournaments are the ones that are currently active: submissions are being made or reviewed. Closed tournaments are no longer active; the tournament owner has decided to end the tournament, and all of the tournament’s bounty has been distributed among the various rounds’ winners. Lastly, a tournament becomes ``Abandoned`` if a round ends without receiving any submissions, or if the tournament owner fails to select winners before the end of the round’s review period.
 
-You can check the state of any tournament at any time by calling
+You can check the state of a tournament at any time by calling
 
 .. code-block:: Solidity
   tournament.getState()
@@ -26,15 +26,15 @@ You can check the state of any round at any time by calling
 .. code-block:: Solidity
   round.getState()
 
-Creating your own tournament
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Creating a Tournament
+^^^^^^^^^^^^^^^^^^^^^
 
-To create a tournament, you can call the createTournament function on the platform as follows:
+To create a tournament, call:
 
 .. code-block:: Solidity
   platform.createTournament(tournamentData, roundData)
 
-Where ``TournamentData`` and ``RoundData`` are structured as follows:
+Where ``TournamentData`` and ``RoundData`` are:
 
 .. code-block:: Solidity
   struct TournamentData
@@ -55,14 +55,14 @@ Where ``TournamentData`` and ``RoundData`` are structured as follows:
       uint256 bounty;
   }
 
-These structs contain all the information we need about the tournament that you are about to create and the first round that will kick off when the tournament begins. You can add more funds to the tournament bounty at any point, but you cannot remove funds from it after you make the createTournament call, so choose your initial bounty wisely!
+These structs contain all the necessary information to begin a tournament. The round data passed contains the parameters of the first round to be opened on the tournament. Tournament bounties are additive only; You can increase the tournament bounty at any time but cannot decrease it once it has been increased. Choose your bounty wisely!
 
 Similarly, you cannot remove funds from the share of the tournament bounty you assign to the first round, and you won’t be able to edit the round details after the round has started. Be sure to enter a reasonable amount of time (in seconds) for the round’s start and end time, as well as its review period. You’ll need some time to look over the submissions and choose your round winners before the review period ends!
 
 Note: The tournament and round bounty will be visible to any users looking to enter your tournament, as well as the tournament and round details.
 
-Updating tournament details
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Editing A Tournament
+^^^^^^^^^^^^^^^^^^^^
 
 To edit the data of your tournament, you can call the updateDetails function as follows:
 
@@ -71,9 +71,9 @@ To edit the data of your tournament, you can call the updateDetails function as 
 
 Where ``tournamentData`` is the same data struct used to create the tournament originally. The bounty field, however, will not change when you try to modify the tournament’s data.
 
-Adding funds to a tournament
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Suppose you wanted to add funds to a tournament’s bounty. You can call the addFunds function as follows:
+Increasing the Tournament Bounty
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Suppose you wanted to add MTX to a tournament’s bounty. You can call the addFunds function as follows:
 
 .. code-block:: Solidity
   tournament.addFunds(1)
@@ -87,10 +87,10 @@ The added funds will now also be distributed to this round’s winners when it i
 
 Warning: Remember that you cannot remove funds from a tournament’s bounty after you’ve added them or remove funds from a round after it has already started.
 
-Choosing tournament winners
+Choosing Tournament Winners
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To get all the submissions made to this round, you can call
+To get all the submissions made to this round, you can call:
 
 .. code-block:: Solidity
   round.getSubmissions()
@@ -100,7 +100,7 @@ To choose your round winners, you can call selectWinners on the tournament as fo
 .. code-block:: Solidity
   tournament.selectWinners(winnersData, roundData)
 
-Where winnersData is:
+Where ``winnersData`` is:
 
 .. code-block:: Solidity
   struct WinnersData
@@ -165,8 +165,8 @@ If a tournament you are currently participating in happens to become ``Abandoned
 .. code-block:: Solidity
   tournament.withdrawFromAbandoned()
 
-Making your first submission
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Making A Submission
+^^^^^^^^^^^^^^^^^^^
 
 To create a submission, you must first enter the tournament that you want to participate in. You can create a submission in two ways: 
 
@@ -189,18 +189,18 @@ Parameters include:
 ``parentHash``:         Parent commit hash
 ``group``:              Name of the group for the commit
 
-Checking the balance of your commits
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Checking Commit Balances
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 If a commit receives some amount of MTX, the funds will initially be stored on the Matryx platform. To check the current allocated balance of any commit on the platform, you can call:
 
 .. code-block:: Solidity
   platform.getCommitBalance(commitHash)
 
-Collecting your reward
-^^^^^^^^^^^^^^^^^^^^^^
+Collecting MTX
+^^^^^^^^^^^^^^^
 
-When a commit receives a reward from winning a Tournament, someone must first call ``distributeReward`` to make the funds available to the commit owner and the owners of the commit’s ancestors: 
+When a commit receives an MTX reward from winning a Tournament, someone must first call ``distributeReward`` to make the funds available to the commit owner and the owners of the commit’s ancestors: 
 
 .. code-block:: Solidity
   commit.distributeReward(commitHash)

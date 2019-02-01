@@ -87,14 +87,14 @@
 <li class="toctree-l1"><a class="reference internal" href="entering-matryx.html">Entering Matryx</a></li>
 <li class="toctree-l1"><a class="reference internal" href="commit-system.html">The Commit System</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">The Matryx Bounty System</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#tournament-and-round-states">Tournament and round states</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#creating-your-own-tournament">Creating your own tournament</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#updating-tournament-details">Updating tournament details</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#adding-funds-to-a-tournament">Adding funds to a tournament</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#choosing-tournament-winners">Choosing tournament winners</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#making-your-first-submission">Making your first submission</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#checking-the-balance-of-your-commits">Checking the balance of your commits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#collecting-your-reward">Collecting your reward</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tournament-and-round-states">Tournament and Round States</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-a-tournament">Creating a Tournament</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#editing-a-tournament">Editing A Tournament</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#increasing-the-tournament-bounty">Increasing the Tournament Bounty</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#choosing-tournament-winners">Choosing Tournament Winners</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#making-a-submission">Making A Submission</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#checking-commit-balances">Checking Commit Balances</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#collecting-mtx">Collecting MTX</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="marketplace.html">Matryx Marketplace</a></li>
@@ -168,40 +168,40 @@
 <h1>The Matryx Bounty System<a class="headerlink" href="#the-matryx-bounty-system" title="Permalink to this headline">¶</a></h1>
 <p>The Matryx Bounty system enables and incentivizes decentralized scientific collaboration in the form of tournaments and submissions, where all users participating in a tournament receive credit for their contributions, and the tournament bounty is rightfully distributed among the chosen winners.</p>
 <div class="section" id="tournament-and-round-states">
-<h2>Tournament and round states<a class="headerlink" href="#tournament-and-round-states" title="Permalink to this headline">¶</a></h2>
-<p>Each tournament in Matryx is subdivided into rounds. In each round, tournament participants make submissions to the tournament, and at the end of each round one or multiple submissions are selected by the tournament owner to be the winners of the round. The round winners then receive the allocated round reward.</p>
-<p>A tournament can be in one of five possible states: NotYetOpen, OnHold, Open, Closed, or Abandoned.</p>
-<p>If a tournament is NotYetOpen, then its first round has not started yet. If it is OnHold, that means that the tournament has already started but the next upcoming round has yet to begin. Open tournaments are the ones that are currently active: submissions are being made or reviewed. Closed tournaments are no longer active; the tournament owner has decided to end the tournament, and all of the tournament’s bounty has been distributed among the various rounds’ winners. Lastly, a tournament becomes Abandoned if a round ends without receiving any submissions, or if the tournament owner fails to select winners before the end of the round’s review period.</p>
-<p>You can check the state of any tournament at any time by calling</p>
+<h2>Tournament and Round States<a class="headerlink" href="#tournament-and-round-states" title="Permalink to this headline">¶</a></h2>
+<p>Each tournament in Matryx is subdivided into rounds. In each round, tournament participants make submissions to the tournament. At the end of each round, one or multiple submissions are chosen by the tournament owner to be the winners of the round. Those winners then receive the allocated round reward.</p>
+<p>A tournament can be in one of five possible states: <code class="docutils literal notranslate"><span class="pre">NotYetOpen</span></code>, <code class="docutils literal notranslate"><span class="pre">OnHold</span></code>, <code class="docutils literal notranslate"><span class="pre">Open</span></code>, <code class="docutils literal notranslate"><span class="pre">Closed</span></code>, or <code class="docutils literal notranslate"><span class="pre">Abandoned</span></code>.</p>
+<p>If a tournament is <code class="docutils literal notranslate"><span class="pre">NotYetOpen</span></code>, then its first round has not started yet. If it is <code class="docutils literal notranslate"><span class="pre">OnHold</span></code>, that means that the tournament has already started but the next upcoming round has yet to begin. Open tournaments are the ones that are currently active: submissions are being made or reviewed. Closed tournaments are no longer active; the tournament owner has decided to end the tournament, and all of the tournament’s bounty has been distributed among the various rounds’ winners. Lastly, a tournament becomes <code class="docutils literal notranslate"><span class="pre">Abandoned</span></code> if a round ends without receiving any submissions, or if the tournament owner fails to select winners before the end of the round’s review period.</p>
+<p>You can check the state of a tournament at any time by calling</p>
 <p>A round can be in one of seven possible states: <code class="docutils literal notranslate"><span class="pre">NotYetOpen</span></code>, <code class="docutils literal notranslate"><span class="pre">Unfunded</span></code>, <code class="docutils literal notranslate"><span class="pre">Open</span></code>, <code class="docutils literal notranslate"><span class="pre">InReview</span></code>, <code class="docutils literal notranslate"><span class="pre">HasWinners</span></code>, <code class="docutils literal notranslate"><span class="pre">Closed</span></code>, or <code class="docutils literal notranslate"><span class="pre">Abandoned</span></code>.</p>
 <p>Rounds that have not started yet are <code class="docutils literal notranslate"><span class="pre">NotYetOpen</span></code>. A round is <code class="docutils literal notranslate"><span class="pre">Unfunded</span></code> if it has already started but the tournament owner has not added any funds to its bounty yet. <code class="docutils literal notranslate"><span class="pre">Open</span></code> rounds are currently active; you can enter the round and make new submissions. If a round is <code class="docutils literal notranslate"><span class="pre">InReview</span></code>, you can no longer make any more submissions (you’re going to have to wait until the next round!). This is the time when the tournament owner reviews all the submissions made to the round and selects the winners. A round is <code class="docutils literal notranslate"><span class="pre">Closed</span></code> after the <code class="docutils literal notranslate"><span class="pre">InReview</span></code> period ends. Lastly, a round becomes <code class="docutils literal notranslate"><span class="pre">Abandoned</span></code> if it reaches the end of its Open state without receiving any submissions.</p>
 <p>You can check the state of any round at any time by calling</p>
 </div>
-<div class="section" id="creating-your-own-tournament">
-<h2>Creating your own tournament<a class="headerlink" href="#creating-your-own-tournament" title="Permalink to this headline">¶</a></h2>
-<p>To create a tournament, you can call the createTournament function on the platform as follows:</p>
-<p>Where <code class="docutils literal notranslate"><span class="pre">TournamentData</span></code> and <code class="docutils literal notranslate"><span class="pre">RoundData</span></code> are structured as follows:</p>
-<p>These structs contain all the information we need about the tournament that you are about to create and the first round that will kick off when the tournament begins. You can add more funds to the tournament bounty at any point, but you cannot remove funds from it after you make the createTournament call, so choose your initial bounty wisely!</p>
+<div class="section" id="creating-a-tournament">
+<h2>Creating a Tournament<a class="headerlink" href="#creating-a-tournament" title="Permalink to this headline">¶</a></h2>
+<p>To create a tournament, call:</p>
+<p>Where <code class="docutils literal notranslate"><span class="pre">TournamentData</span></code> and <code class="docutils literal notranslate"><span class="pre">RoundData</span></code> are:</p>
+<p>These structs contain all the necessary information to begin a tournament. The round data passed contains the parameters of the first round to be opened on the tournament. Tournament bounties are additive only; You can increase the tournament bounty at any time but cannot decrease it once it has been increased. Choose your bounty wisely!</p>
 <p>Similarly, you cannot remove funds from the share of the tournament bounty you assign to the first round, and you won’t be able to edit the round details after the round has started. Be sure to enter a reasonable amount of time (in seconds) for the round’s start and end time, as well as its review period. You’ll need some time to look over the submissions and choose your round winners before the review period ends!</p>
 <p>Note: The tournament and round bounty will be visible to any users looking to enter your tournament, as well as the tournament and round details.</p>
 </div>
-<div class="section" id="updating-tournament-details">
-<h2>Updating tournament details<a class="headerlink" href="#updating-tournament-details" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="editing-a-tournament">
+<h2>Editing A Tournament<a class="headerlink" href="#editing-a-tournament" title="Permalink to this headline">¶</a></h2>
 <p>To edit the data of your tournament, you can call the updateDetails function as follows:</p>
 <p>Where <code class="docutils literal notranslate"><span class="pre">tournamentData</span></code> is the same data struct used to create the tournament originally. The bounty field, however, will not change when you try to modify the tournament’s data.</p>
 </div>
-<div class="section" id="adding-funds-to-a-tournament">
-<h2>Adding funds to a tournament<a class="headerlink" href="#adding-funds-to-a-tournament" title="Permalink to this headline">¶</a></h2>
-<p>Suppose you wanted to add funds to a tournament’s bounty. You can call the addFunds function as follows:</p>
+<div class="section" id="increasing-the-tournament-bounty">
+<h2>Increasing the Tournament Bounty<a class="headerlink" href="#increasing-the-tournament-bounty" title="Permalink to this headline">¶</a></h2>
+<p>Suppose you wanted to add MTX to a tournament’s bounty. You can call the addFunds function as follows:</p>
 <p>This function transfers funds to the specified tournament. To allocate these new funds to the current round, you can call the transferToRound function.</p>
 <p>The added funds will now also be distributed to this round’s winners when it is time to reward their submissions.</p>
 <p>Warning: Remember that you cannot remove funds from a tournament’s bounty after you’ve added them or remove funds from a round after it has already started.</p>
 </div>
 <div class="section" id="choosing-tournament-winners">
-<h2>Choosing tournament winners<a class="headerlink" href="#choosing-tournament-winners" title="Permalink to this headline">¶</a></h2>
-<p>To get all the submissions made to this round, you can call</p>
+<h2>Choosing Tournament Winners<a class="headerlink" href="#choosing-tournament-winners" title="Permalink to this headline">¶</a></h2>
+<p>To get all the submissions made to this round, you can call:</p>
 <p>To choose your round winners, you can call selectWinners on the tournament as follows:</p>
-<p>Where winnersData is:</p>
+<p>Where <code class="docutils literal notranslate"><span class="pre">winnersData</span></code> is:</p>
 <p>Here, action represents an enumerated value from the following enum:</p>
 <p>and <code class="docutils literal notranslate"><span class="pre">RoundData</span></code> is the following struct:</p>
 <p>In <code class="docutils literal notranslate"><span class="pre">winnersData</span></code>, you can specify which submissions get rewarded and how much MTX is assigned to each one; the first parameter contains all the winning submissions’ hashes, and the second contains the reward each one will get, respectively, expressed as a percentage or a proportion of the total round bounty.</p>
@@ -225,8 +225,8 @@
 </div>
 <p>If a tournament you are currently participating in happens to become <code class="docutils literal notranslate"><span class="pre">Abandoned</span></code>, you can collect your share of the remaining tournament bounty, as well as your original entry fee, with the following call:</p>
 </div>
-<div class="section" id="making-your-first-submission">
-<h2>Making your first submission<a class="headerlink" href="#making-your-first-submission" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="making-a-submission">
+<h2>Making A Submission<a class="headerlink" href="#making-a-submission" title="Permalink to this headline">¶</a></h2>
 <p>To create a submission, you must first enter the tournament that you want to participate in. You can create a submission in two ways:</p>
 <p>Where <code class="docutils literal notranslate"><span class="pre">title</span></code> is the title of your submission, <code class="docutils literal notranslate"><span class="pre">descriptionHash</span></code> is an IPFS hash with text content for the description of your submission, and <code class="docutils literal notranslate"><span class="pre">commitHash</span></code> is a commit on the Matryx commit system.</p>
 <p>Additionally, you can create a new commit and submit it to a tournament by calling:</p>
@@ -239,13 +239,13 @@
 <code class="docutils literal notranslate"><span class="pre">parentHash</span></code>:         Parent commit hash
 <code class="docutils literal notranslate"><span class="pre">group</span></code>:              Name of the group for the commit</p>
 </div>
-<div class="section" id="checking-the-balance-of-your-commits">
-<h2>Checking the balance of your commits<a class="headerlink" href="#checking-the-balance-of-your-commits" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="checking-commit-balances">
+<h2>Checking Commit Balances<a class="headerlink" href="#checking-commit-balances" title="Permalink to this headline">¶</a></h2>
 <p>If a commit receives some amount of MTX, the funds will initially be stored on the Matryx platform. To check the current allocated balance of any commit on the platform, you can call:</p>
 </div>
-<div class="section" id="collecting-your-reward">
-<h2>Collecting your reward<a class="headerlink" href="#collecting-your-reward" title="Permalink to this headline">¶</a></h2>
-<p>When a commit receives a reward from winning a Tournament, someone must first call <code class="docutils literal notranslate"><span class="pre">distributeReward</span></code> to make the funds available to the commit owner and the owners of the commit’s ancestors:</p>
+<div class="section" id="collecting-mtx">
+<h2>Collecting MTX<a class="headerlink" href="#collecting-mtx" title="Permalink to this headline">¶</a></h2>
+<p>When a commit receives an MTX reward from winning a Tournament, someone must first call <code class="docutils literal notranslate"><span class="pre">distributeReward</span></code> to make the funds available to the commit owner and the owners of the commit’s ancestors:</p>
 <p>This calculates and allocates the reward to each commit owner, proportional to the total value of the commits that they created. The balance of the commit becomes 0 after calling this function, since the calculated value has now been allocated to each individual user address instead.</p>
 <p>To get the balance that is allocated to each user address, you can call:</p>
 <p>Finally, to have the tokens transferred to your account, call:</p>

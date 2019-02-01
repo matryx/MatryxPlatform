@@ -29,7 +29,7 @@ To send a join group request, call:
 Where ``groupName`` is the name of the group you would like to join. This will generate an event that members of the group will be able to see. Once this event has been noticed by members of the group, those members will have the opportunity to add you to the group.
 Once you become a part of the group, you will be able to make new commits along the same commit chain without having to pay your group members the value of their commits.
 
-.. warning: Group members cannot be removed from the group after you have added them.
+.. warning:: Group members cannot be removed from the group once you have added them.
 
 Forking Commits
 ^^^^^^^^^^^^^^^
