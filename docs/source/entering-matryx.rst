@@ -1,7 +1,7 @@
 Entering Matryx
 ================
 
-Matryx is a decentralized application for solving difficult scientific problems. The Matryx’s commit system allows you to timestamp and value your work on the Ethereum blockchain, providing you with immutable proof of ownership over your content. The Matryx platform enables bounties to be placed on scientific problems and for their creative solutions to be awarded. This system allows people to build up chains of work and be rewarded for their contributions.
+Matryx is a decentralized application for solving difficult scientific problems. The Matryx’s commit system allows you to timestamp and value your work on the Ethereum blockchain, providing you with immutable proof of ownership over your content. The Matryx bounty system enables users to place bounties on scientific problems and to award creative solutions, allowing people to build up chains of work and be rewarded for their contributions.
 
 Welcome!
 
@@ -39,7 +39,7 @@ Whenever you enter a tournament, you will have to pay the tournament entry fee d
 
 	tournament.getEntryFee()
 
-The value returned here is the Wei equivalent of MTX, so a sinlge MTX has 1e18 digit precision. This fee is incurred solely to prevent malicious actors from attemping a cross-tournament Sybil attack, and it will be returned to you at the end of the tournament (or whenever you choose to exit the tournament).
+The value returned here is the Wei equivalent of MTX, so a single MTX has 1e18 digit precision. This fee is incurred solely to prevent malicious actors from attempting a cross-tournament Sybil attack, and it will be returned to you at the end of the tournament (or whenever you choose to exit the tournament).
 
 Congratulations! You have now entered your first Matryx tournament. Assemble a team; let's get solving!
 
