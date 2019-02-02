@@ -190,7 +190,7 @@ contract('On Hold Tournament Testing', function() {
 
     // Set up ghost round
     await waitUntilOpen(r)
-    s = await createSubmission(t, 1)
+    s = await createSubmission(t, '0x00',  false, 1)
     let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
@@ -237,7 +237,7 @@ contract('On Hold Tournament Testing', function() {
 
   it('Unable to make a submission while On Hold', async function() {
     try {
-      await createSubmission(t, 1)
+      await createSubmission(t, '0x00',  false, 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0

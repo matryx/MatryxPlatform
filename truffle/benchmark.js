@@ -116,7 +116,7 @@ const benchmarkSubmissions = async () => {
 
   gasUsed = []
   for (let i = 0; i < 10; i++) {
-    const txr = await createSubmission(t, 1, 0, 0)
+    const txr = await createSubmission(t, '0x00',  false, 1, 0, 0)
     gasUsed.push(+txr.gasUsed)
   }
 
@@ -127,7 +127,7 @@ const benchmarkSubmissions = async () => {
 
   gasUsed = []
   for (let i = 0; i < 5; i++) {
-    const txr = await createSubmission(t, 1, 5, 0)
+    const txr = await createSubmission(t, '0x00',  false, 1, 5, 0)
     gasUsed.push(+txr.gasUsed)
   }
 
@@ -136,7 +136,7 @@ const benchmarkSubmissions = async () => {
 
   gasUsed = []
   for (let i = 0; i < 5; i++) {
-    const txr = await createSubmission(t, 1, 0, 5)
+    const txr = await createSubmission(t, '0x00',  false, 1, 0, 5)
     gasUsed.push(+txr.gasUsed)
   }
 
@@ -145,7 +145,7 @@ const benchmarkSubmissions = async () => {
 
   gasUsed = []
   for (let i = 0; i < 5; i++) {
-    const txr = await createSubmission(t, 1, 5, 5)
+    const txr = await createSubmission(t, '0x00',  false, 1, 5, 5)
     gasUsed.push(+txr.gasUsed)
   }
 

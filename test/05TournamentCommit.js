@@ -57,7 +57,7 @@ contract('MatryxCommit', async () => {
     const parentHash = await initCommit(stb(genId(32), 2), toWei(1), group, 1)
     
     const content = stb(genId(32), 2)
-    const commitHash = await submitToTournament(tournament.address, stb('submission', 3), stb(genId(32), 2), content, toWei(1), parentHash, 1)
+    const commitHash = await submitToTournament(tournament.address, toWei(1), parentHash, 1)
     
     const commitChild = (await commitChildren(parentHash))[0]
     assert.equal(commitChild, commitHash, 'Child commit should be same as what was submitted')
@@ -72,7 +72,7 @@ contract('MatryxCommit', async () => {
     let congaLine = await commitCongaLine(commitHash, 4, 1)
     let lastCommit = congaLine[congaLine.length - 1]
 
-    await addToGroup(1, group, accounts[2])
+    await addToGroup(1, group, network.accounts[2])
     
     // next 80 from account 2
     congaLine = await commitCongaLine(lastCommit, 5, 2)
@@ -105,7 +105,7 @@ contract('MatryxCommit', async () => {
     let congaLine = await commitCongaLine(commitHash, 14, 1)
     let lastCommit = congaLine[congaLine.length - 1]
 
-    await addToGroup(1, group, accounts[2])
+    await addToGroup(1, group, network.accounts[2])
     
     // next 80 from account 2
     congaLine = await commitCongaLine(lastCommit, 10, 2)

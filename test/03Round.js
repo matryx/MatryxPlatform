@@ -118,8 +118,8 @@ contract('Open Round Testing', function() {
 
   it('Able to enter the tournament and make submissions', async function() {
     // Create submissions
-    s = await createSubmission(t, 1)
-    s2 = await createSubmission(t, 2)
+    s = await createSubmission(t, '0x00',  false, 1)
+    s2 = await createSubmission(t, '0x00',  false, 2)
 
     assert.ok(s && s2, 'Unable to make submissions')
   })
@@ -179,8 +179,8 @@ contract('In Review Round Testing', function() {
     r = Contract(roundAddress, IMatryxRound, 0)
 
     //Create submissions
-    s = await createSubmission(t, 1)
-    s2 = await createSubmission(t, 2)
+    s = await createSubmission(t, '0x00',  false, 1)
+    s2 = await createSubmission(t, '0x00',  false, 2)
     await waitUntilInReview(r)
 
     assert.ok(r.address, 'Round is not valid.')
@@ -204,7 +204,7 @@ contract('In Review Round Testing', function() {
 
   it('Unable to make submissions while the round is in review', async function() {
     try {
-      await createSubmission(t, 1)
+      await createSubmission(t, '0x00',  false, 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -232,7 +232,7 @@ contract('Closed Round Testing', function() {
     r = Contract(roundAddress, IMatryxRound, 0)
 
     // Create submissions
-    s = await createSubmission(t, 1)
+    s = await createSubmission(t, '0x00',  false, 1)
 
     let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
@@ -268,7 +268,7 @@ contract('Closed Round Testing', function() {
 
   it('Unable to make submissions while the round is closed', async function() {
     try {
-      await createSubmission(t, 1)
+      await createSubmission(t, '0x00',  false, 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -296,8 +296,8 @@ contract('Abandoned Round Testing', function() {
     r = Contract(roundAddress, IMatryxRound, 0)
 
     // Create a submission
-    s = await createSubmission(t, 1)
-    s = await createSubmission(t, 2)
+    s = await createSubmission(t, '0x00',  false, 1)
+    s = await createSubmission(t, '0x00',  false, 2)
 
     // Wait for the round to become Abandoned
     await waitUntilClose(r)
@@ -453,7 +453,7 @@ contract('Unfunded Round Testing', function() {
     r = Contract(roundAddress, IMatryxRound, 0)
 
     //Create submissions
-    s = await createSubmission(t, 1)
+    s = await createSubmission(t, '0x00',  false, 1)
 
     let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
@@ -491,7 +491,7 @@ contract('Unfunded Round Testing', function() {
 
   it('Unable to make submissions while the round is Unfunded', async function() {
     try {
-      await createSubmission(t, 1)
+      await createSubmission(t, '0x00',  false, 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -536,7 +536,7 @@ contract('Ghost Round Testing', function() {
     t = await createTournament('tournament', web3.toWei(15), roundData, 0)
     let [_, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
-    s = await createSubmission(t, 1)
+    s = await createSubmission(t, '0x00',  false, 1)
     let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 

@@ -21,7 +21,7 @@ contract MatryxPlatform {
     }
 
     struct Data {
-        uint256 totalBalance;                                        // total mtx balance of the platform
+        uint256 totalBalance;                                        // total allocated mtx balance of the platform
         mapping(address=>uint256) balanceOf;                         // maps user addresses to user balances
         mapping(bytes32=>uint256) commitBalance;                     // maps commit hashes to commit mtx balances
 
@@ -30,7 +30,7 @@ contract MatryxPlatform {
         mapping(address=>LibUser.UserData) users;                    // maps user addresses to user structs
 
         address[] allTournaments;                                    // all matryx tournament addresses
-        address[] allRounds;                                         // all round addresses to matryx tournaments
+        address[] allRounds;                                         // all matryx round addresses
         address[] allUsers;                                          // all matryx user addresses
 
         mapping(bytes32=>LibCommit.Commit) commits;                  // maps commit hashes to commits
@@ -38,9 +38,9 @@ contract MatryxPlatform {
         mapping(bytes32=>bytes32) commitHashes;                      // maps content hashes to commit hashes
         mapping(bytes32=>address[]) commitToRounds;                  // maps commits to rounds they've been submitted to
 
-        bytes32[] allGroups;                                         // all group hashes. length is new group number
+        bytes32[] allGroups;                                         // all group hashes; length is new group number
         bytes32[] initialCommits;                                    // all commits without parents
-        uint256 commitDistributionDepth;
+        uint256 commitDistributionDepth;                             // max depth to traverse to distribute commit funds
     }
 
     Info info;                                                       // slot 0
@@ -188,7 +188,7 @@ contract MatryxPlatform {
         msg.sender.transfer(address(this).balance);
     }
 
-    /// @dev Withdraws any ERC20 tokens from Platform
+    /// @dev Withdraws any unallocated ERC20 tokens from Platform
     /// @param token  ERC20 token address to use
     function withdrawTokens(address token) external onlyOwner {
         uint256 balance = IToken(token).balanceOf(address(this));
@@ -226,7 +226,7 @@ interface IMatryxPlatform {
 
     function enterMatryx() external;
     function createTournament(LibTournament.TournamentDetails calldata, LibRound.RoundDetails calldata) external returns (address);
-
+    
     function setCommitDistributionDepth(uint256 depth) external;
 }
 
@@ -236,6 +236,7 @@ library LibPlatform {
     event TournamentCreated(address _tournamentAddress);
 
     /// @dev Return if a Tournament exists
+    /// @param data      Platform data struct
     /// @param tAddress  Tournament address
     /// @return          true if Tournament exists
     function isTournament(address, address, MatryxPlatform.Data storage data, address tAddress) public view returns (bool) {
@@ -243,6 +244,7 @@ library LibPlatform {
     }
 
     /// @dev Return if a Round exists
+    /// @param data      Platform data struct
     /// @param rAddress  Round address
     /// @return          true if Round exists
     function isRound(address, address, MatryxPlatform.Data storage data, address rAddress) public view returns (bool) {
@@ -257,9 +259,9 @@ library LibPlatform {
         return data.users[uAddress].exists;
     }
 
-    /// @dev Return total MTX in Platform
+    /// @dev Return total allocated MTX in Platform
     /// @param data  Platform data struct
-    /// @return      Total MTX in Platform
+    /// @return      Total allocated MTX in Platform
     function getTotalBalance(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.totalBalance;
     }
@@ -275,7 +277,7 @@ library LibPlatform {
     /// @dev Return balance of a Commit
     /// @param data        Platform data struct
     /// @param commitHash  Commit hash to get the balance of
-    /// @return            Balance of the commit
+    /// @return            Balance of the commit on Platform
     function getCommitBalance(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (uint256) {
         return data.commitBalance[commitHash];
     }

@@ -17,6 +17,7 @@ interface IMatryxCommit {
     function getAllGroups() external view returns (bytes32[] memory);
     function getGroupName(bytes32 groupHash) external view returns (string memory);
     function getGroupMembers(string calldata group) external view returns (address[] memory);
+    function getRoundsSubmittedTo(bytes32 commitHash) external view returns (address[] memory);
 
     function createGroup(string calldata group) external returns (address);
     function requestToJoinGroup(string calldata group) external;
@@ -55,16 +56,16 @@ library LibCommit {
         address[] members;
     }
 
-    /// @dev Returns commit data for hash
+    /// @dev Returns commit data for the given hash
     /// @param self        MatryxCommit address
     /// @param sender      msg.sender to the Platform
     /// @param data        Platform data struct
-    /// @param commitHash  Commit hash to get
+    /// @param commitHash  Hash of the commit to return
     function getCommit(address self, address sender, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (Commit memory commit) {
         return data.commits[commitHash];
     }
 
-    /// @dev Returns commit data for content hash
+    /// @dev Returns commit data for the given content hash
     /// @param self         MatryxCommit address
     /// @param sender       msg.sender to the Platform
     /// @param data         Platform data struct
@@ -91,7 +92,7 @@ library LibCommit {
         return data.allGroups;
     }
 
-    /// @dev Returns group name for hash
+    /// @dev Returns group name for given hash
     /// @param self       MatryxCommit address
     /// @param sender     msg.sender to the Platform
     /// @param data       Platform data struct
@@ -115,7 +116,7 @@ library LibCommit {
     /// @param self        MatryxCommit address
     /// @param sender      msg.sender to the Platform
     /// @param data        Platform data struct
-    /// @param commitHash  Commit hash to get
+    /// @param commitHash  Hash of the commit to return the rounds of
     function getRoundsSubmittedTo(address self, address sender, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (address[] memory) {
         return data.commitToRounds[commitHash];
     }
@@ -227,7 +228,7 @@ library LibCommit {
         emit Fork(parentHash, commitHash, sender);
     }
 
-    /// @dev Creates an initial commit and submits it to a Tournament
+    /// @dev Creates a commit and submits it to a Tournament
     /// @param self         MatryxCommit address
     /// @param sender       msg.sender to the Platform
     /// @param data         Platform data struct
@@ -240,6 +241,10 @@ library LibCommit {
     /// @param group        Group name for the commit
     function submitToTournament(address self, address sender, MatryxPlatform.Data storage data, address tAddress, bytes32[3] memory title, bytes32[2] memory descHash, bytes32[2] memory contentHash, uint256 value, bytes32 parentHash, string memory group) public {
         bytes32 groupHash = keccak256(abi.encodePacked(group));
+
+        if (parentHash != bytes32(0)) {
+            require(data.commits[parentHash].groupHash == groupHash);
+        }
 
         if (!data.groups[groupHash].exists) {
             createGroup(self, sender, data, group);
@@ -290,7 +295,7 @@ library LibCommit {
     /// @param sender      msg.sender to the Platform
     /// @param info        Platform info struct
     /// @param data        Platform data struct
-    /// @param commitHash  Commit hash
+    /// @param commitHash  Commit hash to begin distributing funds back from
     function distributeReward(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 commitHash) public {
         uint256 reward = data.commitBalance[commitHash];
         require(reward != 0, "No reward to distribute");
