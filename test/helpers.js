@@ -212,31 +212,6 @@ module.exports = function (artifacts, web3) {
     commit.accountNumber = cAccount
   }
 
-  async function submitToTournament (tAddress, value, parent, account) {
-    const tournament = Contract(tAddress, IMatryxTournament)
-    const cAccount = commit.accountNumber
-
-    commit.accountNumber = account
-
-    // random group if no parent
-    let group = genId(5) 
-    if (parent != '0x00') {
-      const parentCommit = await commit.getCommit(parent)
-      group = parentCommit.groupHash
-    }
-
-    const title = stb(genId(32), 3)
-    const contentHash = stb(genId(32), 2)
-    const descHash = stb(genId(32), 2)
-
-    await commit.submitToTournament(tAddress, title, descHash, contentHash, value, parent, group)
-    const round = Contract((await tournament.getCurrentRound())[1], IMatryxRound)
-    commit.accountNumber = cAccount
-
-    const submissions = await round.getSubmissions()
-    return submissions[submissions.length-1]
-  }
-
   async function commitCongaLine (root, length, account) {
     const congaLine = [root]
 
@@ -278,7 +253,6 @@ module.exports = function (artifacts, web3) {
     initCommit,
     commitChildren,
     addToGroup,
-    submitToTournament,
     commitCongaLine,
     forkCommit
   }

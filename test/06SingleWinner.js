@@ -116,25 +116,7 @@ contract('Singleton Commit, Close Tournament', function() {
 })
 
 //
-// TODO: Case 2
-//
-contract('Winning Commit has Parent Commits, Close Tournament', function() {
-
-  // check everyone's reward distribution
-  
-})
-
-//
-// TODO: Case 3
-//
-contract('Winning Commit is Fork, Close Tournament', function() {
-
-  // check everyone's reward distribution
-
-})
-
-//
-// Case 4
+// Case 2
 //
 contract('Singleton Commit, Start Next Round', function() {
   let t  //tournament
@@ -242,8 +224,7 @@ contract('Singleton Commit, Start Next Round', function() {
 
 })
 
-
-// Case 5
+// Case 3
 
 contract('Singleton Commit, Do Nothing', function() {
   let t //tournament
@@ -339,7 +320,7 @@ contract('Singleton Commit, Do Nothing', function() {
 })
 
 //
-// Case 6
+// Case 4
 //
 contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
   let t //tournament
@@ -436,7 +417,7 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
 })
 
 //
-// Case 7
+// Case 5
 //
 contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
   let t //tournament
