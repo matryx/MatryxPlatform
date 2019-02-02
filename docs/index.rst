@@ -2,7 +2,9 @@
 Matryx Platform
 ================
 
-This documentation details the features of the Matryx Platform Smart Contract system. 
+This documentation details the features of the Matryx Platform Smart Contract system. You can check out the Matryx Platform source code here_.
+
+.. _here: https://github.com/matryx/MatryxPlatform
 
 .. _api-docs:
 
