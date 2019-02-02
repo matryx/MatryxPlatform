@@ -133,7 +133,7 @@ library LibTournament {
         return data.tournaments[self].info.rounds;
     }
 
-    /// @dev Returns the data struct of this Tournament
+    /// @dev Returns the details struct of this Tournament
     function getDetails(address self, address, MatryxPlatform.Data storage data) public view returns (LibTournament.TournamentDetails memory) {
         return data.tournaments[self].details;
     }
@@ -707,7 +707,6 @@ library LibTournamentHelper {
         data.rounds[rAddress].info.closed = true;
         // update data
         tournament.hasWithdrawn[sender] = true;
-
         data.users[sender].totalSpent = data.users[sender].totalSpent.sub(funds);
 
         // recover remaining tournament and round funds

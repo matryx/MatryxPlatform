@@ -89,7 +89,7 @@ module.exports = function (artifacts, web3) {
     await sleep(timeTilRoundInReview * 1000)
   }
 
-  async function createSubmission(tournament, accountNumber) {
+  async function createSubmission(tournament, parent, useParentGroup, accountNumber) {
     const tAccount = tournament.accountNumber
     const pAccount = platform.accountNumber
     const cAccount = commit.accountNumber
@@ -106,7 +106,15 @@ module.exports = function (artifacts, web3) {
     const descHash = stringToBytes('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
     const fileHash = stringToBytes(genId(32), 2)
 
-    let tx = await commit.submitToTournament(tournament.address, title, descHash, fileHash, toWei(2), '0x00', genId(5))
+    let group
+    if(!useParentGroup) {
+      group = genId(5)
+    } else {
+      const parentGroupHash = (await commit.getCommit(parent)).groupHash
+      group = await commit.getGroupName(parentGroupHash)
+    }
+
+    let tx = await commit.submitToTournament(tournament.address, title, descHash, fileHash, toWei(2), parent, group)
     await getMinedTx(tx.hash)
 
     const [_, roundAddress] = await tournament.getCurrentRound()
@@ -204,7 +212,7 @@ module.exports = function (artifacts, web3) {
     commit.accountNumber = cAccount
   }
 
-  async function submitToTournament (tAddress, title, descHash, contentHash, value, parent, account) {
+  async function submitToTournament (tAddress, value, parent, account) {
     const tournament = Contract(tAddress, IMatryxTournament)
     const cAccount = commit.accountNumber
 
@@ -216,6 +224,10 @@ module.exports = function (artifacts, web3) {
       const parentCommit = await commit.getCommit(parent)
       group = parentCommit.groupHash
     }
+
+    const title = stb(genId(32), 3)
+    const contentHash = stb(genId(32), 2)
+    const descHash = stb(genId(32), 2)
 
     await commit.submitToTournament(tAddress, title, descHash, contentHash, value, parent, group)
     const round = Contract((await tournament.getCurrentRound())[1], IMatryxRound)

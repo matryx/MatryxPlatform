@@ -26,12 +26,12 @@ contract MatryxForwarder {
             let version := sload(info_slot)
             let system := sload(add(info_slot, 1))
 
-            // prepare for lookup platform from MSC
+            // prepare for lookup platform from Matryx System
             mstore(ptr, mul(0xc53cfd9a, offset))                                // getContract(uint256,bytes32)
             mstore(add(ptr, 0x04), version)                                     // arg 0 - version of this forwarder
             mstore(add(ptr, 0x24), platform)                                    // arg 1 - 'MatryxPlatform'
 
-            // call getContract to get MatryxPlatform from MSC
+            // call getContract to get MatryxPlatform from Matryx System
             let res := call(gas, system, 0, ptr, 0x44, 0, 0x20)                 // call MatryxSystem.getContract
             if iszero(res) { revert(0, 0) }                                     // safety check
             platform := mload(0)                                                // load platform address

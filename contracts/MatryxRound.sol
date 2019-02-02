@@ -102,11 +102,13 @@ library LibRound {
         return data.rounds[self].details.bounty;
     }
 
-    /// @dev Returns the MTX balance of this Round
+    /// @dev Returns the MTX balance allocated to this Round
     function getBalance(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.balanceOf[self];
     }
 
+    /// @dev Returns a Submission of this Round
+    /// @param submissionHash The hash of the Submission to return
     function getSubmission(address self, address, MatryxPlatform.Data storage data, bytes32 submissionHash) public view returns (LibTournament.SubmissionData memory submissionData) {
         return data.rounds[self].submissions[submissionHash];
     }

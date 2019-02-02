@@ -162,14 +162,14 @@
   <div class="section" id="the-commit-system">
 <h1>The Commit System<a class="headerlink" href="#the-commit-system" title="Permalink to this headline">¶</a></h1>
 <p>The commit system is a collaborative content and IP tracking tool that allows value to be assigned and distributed across sequences of innovation.</p>
-<p>Commits consist of an IPFS content hash, a value, and a group. Groups are used to allow people to team up and work freely off of each other’s commits. In order to make a commit off of a parent commit, you must either be in the parent commit’s group, or pay the value of the commit chain to fork off of it and start working with a new group.</p>
+<p>Commits consist of an IPFS content hash, a value, and a group. Groups are used to allow people to work freely off of each other; in order to make a commit as a child of another one, you must either be in the parent commit’s group, or you can pay to fork off of it and start work with a new group.</p>
 <div class="section" id="creating-your-first-commit">
 <h2>Creating your first Commit<a class="headerlink" href="#creating-your-first-commit" title="Permalink to this headline">¶</a></h2>
 <p>To create your first commit, call:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>commit.initialCommit(content, value, groupName)
 </pre></div>
 </div>
-<p>Where <code class="docutils literal notranslate"><span class="pre">content</span></code> is the IPFS hash of your content, <code class="docutils literal notranslate"><span class="pre">value</span></code> is an 18-decimal-precision MTX amount that indicates how much your commit is worth, and <code class="docutils literal notranslate"><span class="pre">groupName</span></code> is the name of the work group that you would like to begin this work with.</p>
+<p>Where <code class="docutils literal notranslate"><span class="pre">content</span></code> is the IPFS hash of your content, <code class="docutils literal notranslate"><span class="pre">value</span></code> is an 18-decimal-precision MTX amount and <code class="docutils literal notranslate"><span class="pre">groupName</span></code> is the name of the work group that you would like to begin this work with.</p>
 </div>
 <div class="section" id="commit-groups">
 <h2>Commit Groups<a class="headerlink" href="#commit-groups" title="Permalink to this headline">¶</a></h2>
@@ -187,11 +187,9 @@ Once you become a part of the group, you will be able to make new commits along 
 <div class="section" id="forking-commits">
 <h2>Forking Commits<a class="headerlink" href="#forking-commits" title="Permalink to this headline">¶</a></h2>
 <p>Forking a commit incurs the cost of the commit chain’s total value in MTX. If the chain is longer than the platform’s current maximum distribution depth, only the chain’s MTX value from the forked commit to that depth will be withdrawn.</p>
-<p>To fork off from a commit, call:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>commit.fork(contentHash, value, parentHash, group)
-</pre></div>
-</div>
-<p>Unlike creating an initial commit, when you fork from a previous commit you must provide <code class="docutils literal notranslate"><span class="pre">parentHash</span></code>, the hash of the parent commit that this commit will fork from. Additionally, forking allows you to select an alternate group to work with.</p>
+<p>To fork off from a commit, call:
+commit.fork(contentHash, value, parentHash, group)</p>
+<p>Unlike creating an initial commit, forking from a previous commit entails providing <code class="docutils literal notranslate"><span class="pre">parentHash</span></code>: the hash of the commit that this commit will fork from. Additionally, forking allows you to select an alternate group to work with.</p>
 </div>
 </div>
 
@@ -215,7 +213,7 @@ Once you become a part of the group, you will be able to make new commits along 
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Max Howard, Sam Hessenauer.
+        &copy; Copyright 2018, Max Howard, Sam Hessenauer
 
     </p>
   </div>
@@ -234,21 +232,14 @@ Once you become a part of the group, you will be able to make new commits along 
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'0.2',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
 
   
 
