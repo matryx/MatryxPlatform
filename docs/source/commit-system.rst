@@ -26,15 +26,14 @@ To send a join group request, call:
 
 	commit.requestToJoinGroup(groupName)
 
-Where ``groupName`` is the name of the group you would like to join. This will generate an event that members of the group will be able to see. Once this event has been noticed by members of the group, those members will have the opportunity to add you to the group.
-Once you become a part of the group, you will be able to make new commits along the same commit chain without having to pay your group members the value of their commits.
+Where ``groupName`` is the name of the group you would like to join. This will generate an event that members of the group will be able to see. Those members will then have the opportunity to add you to the group, allowing you to freely make commits off of the chain.
 
-.. warning:: Group members cannot be removed from the group once you have added them.
+.. warning:: Group members cannot be removed from a group after being added.
 
 Forking Commits
 ^^^^^^^^^^^^^^^
 
-Forking a commit incurs the cost of the commit chain’s total value in MTX. If the chain is longer than the platform’s current maximum distribution depth, only the chain’s MTX value from the forked commit to that depth will be withdrawn.
+Forking a commit costs the total MTX value of the commit chain. If the chain is longer than the platform’s current maximum distribution depth, only the chain’s MTX value from the forked commit to that depth will be withdrawn.
 
 To fork off from a commit, call:
 
@@ -42,4 +41,4 @@ To fork off from a commit, call:
 
 	commit.fork(contentHash, value, parentHash, group)
 
-Unlike creating an initial commit, when you fork from a previous commit you must provide ``parentHash``, the hash of the parent commit that this commit will fork from. Additionally, forking allows you to select an alternate group to work with.
+Unlike creating an initial commit, when forking from a previous commit you must provide ``parentHash``, the hash of the parent commit that the new commit will fork from. Additionally, forking allows you to select an alternate group to work with.
