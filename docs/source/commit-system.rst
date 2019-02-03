@@ -35,7 +35,7 @@ Forking Commits
 
 Forking a commit costs the total MTX value of the commit chain. If the chain is longer than the platform’s current maximum distribution depth, only the chain’s MTX value from the forked commit to that depth will be withdrawn.
 
-To fork off from a commit, call:
+To fork from a commit, call:
 
 .. code-block:: Solidity
 
