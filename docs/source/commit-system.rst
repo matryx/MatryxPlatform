@@ -6,10 +6,10 @@ The commit system is a collaborative content and IP tracking tool that allows va
 Commits consist of an IPFS content hash, a value, and a group. Groups are used to allow people to team up and work freely off of each other's commits. In order to make a commit off of a parent commit, you must either be in the parent commit’s group, or pay the value of the commit chain to fork off of it and start working with a new group.
 
 
-Creating your first Commit
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Committing Your Work
+^^^^^^^^^^^^^^^^^^^^^
 
-To create your first commit, call:
+To create a commit, call:
 
 .. code-block:: Solidity
 
