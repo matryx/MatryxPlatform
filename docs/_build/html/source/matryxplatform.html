@@ -177,7 +177,7 @@ contract MatryxPlatform {
     }
 
     struct Data {
-        uint256 totalBalance;                                        // total mtx balance of the platform
+        uint256 totalBalance;                                        // total allocated mtx balance of the platform
         mapping(address=&gt;uint256) balanceOf;                         // maps user addresses to user balances
         mapping(bytes32=&gt;uint256) commitBalance;                     // maps commit hashes to commit mtx balances
 
@@ -186,7 +186,7 @@ contract MatryxPlatform {
         mapping(address=&gt;LibUser.UserData) users;                    // maps user addresses to user structs
 
         address[] allTournaments;                                    // all matryx tournament addresses
-        address[] allRounds;                                         // all round addresses to matryx tournaments
+        address[] allRounds;                                         // all matryx round addresses
         address[] allUsers;                                          // all matryx user addresses
 
         mapping(bytes32=&gt;LibCommit.Commit) commits;                  // maps commit hashes to commits
@@ -194,9 +194,9 @@ contract MatryxPlatform {
         mapping(bytes32=&gt;bytes32) commitHashes;                      // maps content hashes to commit hashes
         mapping(bytes32=&gt;address[]) commitToRounds;                  // maps commits to rounds they&#39;ve been submitted to
 
-        bytes32[] allGroups;                                         // all group hashes. length is new group number
+        bytes32[] allGroups;                                         // all group hashes; length is new group number
         bytes32[] initialCommits;                                    // all commits without parents
-        uint256 commitDistributionDepth;
+        uint256 commitDistributionDepth;                             // max depth to traverse to distribute commit funds
     }
 
     Info info;                                                       // slot 0
@@ -344,7 +344,7 @@ contract MatryxPlatform {
         msg.sender.transfer(address(this).balance);
     }
 
-    /// @dev Withdraws any ERC20 tokens from Platform
+    /// @dev Withdraws any unallocated ERC20 tokens from Platform
     /// @param token  ERC20 token address to use
     function withdrawTokens(address token) external onlyOwner {
         uint256 balance = IToken(token).balanceOf(address(this));
@@ -382,7 +382,7 @@ interface IMatryxPlatform {
 
     function enterMatryx() external;
     function createTournament(LibTournament.TournamentDetails calldata, LibRound.RoundDetails calldata) external returns (address);
-
+    
     function setCommitDistributionDepth(uint256 depth) external;
 }
 
@@ -392,6 +392,7 @@ library LibPlatform {
     event TournamentCreated(address _tournamentAddress);
 
     /// @dev Return if a Tournament exists
+    /// @param data      Platform data struct
     /// @param tAddress  Tournament address
     /// @return          true if Tournament exists
     function isTournament(address, address, MatryxPlatform.Data storage data, address tAddress) public view returns (bool) {
@@ -399,6 +400,7 @@ library LibPlatform {
     }
 
     /// @dev Return if a Round exists
+    /// @param data      Platform data struct
     /// @param rAddress  Round address
     /// @return          true if Round exists
     function isRound(address, address, MatryxPlatform.Data storage data, address rAddress) public view returns (bool) {
@@ -413,9 +415,9 @@ library LibPlatform {
         return data.users[uAddress].exists;
     }
 
-    /// @dev Return total MTX in Platform
+    /// @dev Return total allocated MTX in Platform
     /// @param data  Platform data struct
-    /// @return      Total MTX in Platform
+    /// @return      Total allocated MTX in Platform
     function getTotalBalance(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.totalBalance;
     }
@@ -431,7 +433,7 @@ library LibPlatform {
     /// @dev Return balance of a Commit
     /// @param data        Platform data struct
     /// @param commitHash  Commit hash to get the balance of
-    /// @return            Balance of the commit
+    /// @return            Balance of the commit on Platform
     function getCommitBalance(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (uint256) {
         return data.commitBalance[commitHash];
     }
@@ -567,7 +569,7 @@ library LibPlatform {
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Max Howard, Sam Hessenauer.
+        &copy; Copyright 2018, Max Howard, Sam Hessenauer
 
     </p>
   </div>
@@ -586,21 +588,14 @@ library LibPlatform {
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'0.2',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
 
   
 
