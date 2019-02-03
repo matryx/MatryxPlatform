@@ -15,7 +15,7 @@ To create a commit, call:
 
 	commit.initialCommit(content, value, groupName)
 
-Where ``content`` is the IPFS hash of your content, ``value`` is an 18-decimal-precision MTX amount that indicates how much your commit is worth, and ``groupName`` is the name of the work group that you would like to begin this work with.
+Where ``content`` is the IPFS hash of your content, ``value`` is an 18-decimal-precision MTX amount that indicates how much your commit is worth, and ``groupName`` is the name of the group that you would like to begin this work with.
 
 Commit Groups
 ^^^^^^^^^^^^^
