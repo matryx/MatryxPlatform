@@ -20,7 +20,8 @@ interface IMatryxUser {
 
 library LibUser {
     struct UserData {
-        bool      exists;
+        bool      entered;
+        bool      banned;
         uint256   timeEntered;
         uint256   totalSpent;
         uint256   totalWithdrawn;

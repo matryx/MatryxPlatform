@@ -127,15 +127,14 @@ contract('MatryxCommit', async () => {
   })
 
   it('Commit value transferred from fork owner to commit owner', async () => {
-    const balanceBefore = await platform.getBalanceOf(accounts[0]).then(fromWei)
-
     const parentHash = await initCommit(randContent(), toWei(1), groupName, 0)
-
+    const balanceBefore = await platform.getCommitBalance(parentHash).then(fromWei)
+    
     commit.accountNumber = 1
     await commit.fork(randContent(), toWei(1), parentHash, 'group 5')
 
-    const balanceAfter = await platform.getBalanceOf(accounts[0]).then(fromWei)
+    const balanceAfter = await platform.getCommitBalance(parentHash).then(fromWei)
 
-    assert.equal(balanceAfter - balanceBefore, 1, 'Account 0 balance should increase by 1 after fork')
+    assert.equal(balanceAfter - balanceBefore, 1, 'Commit balance should increase by 1 after fork')
   })
 })

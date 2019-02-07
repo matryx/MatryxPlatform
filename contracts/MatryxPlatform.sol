@@ -37,10 +37,12 @@ contract MatryxPlatform {
         mapping(bytes32=>LibCommit.Group) groups;                    // maps group hashes to group structs
         mapping(bytes32=>bytes32) commitHashes;                      // maps content hashes to commit hashes
         mapping(bytes32=>address[]) commitToRounds;                  // maps commits to rounds they've been submitted to
+        mapping(bytes32=>LibCommit.CommitWithdrawalStats) commitWithdrawalStats; // maps commit hash to withdrawal stats
 
         bytes32[] allGroups;                                         // all group hashes; length is new group number
         bytes32[] initialCommits;                                    // all commits without parents
         uint256 commitDistributionDepth;                             // max depth to traverse to distribute commit funds
+        mapping(bytes32=>uint256) commitClaims;                      // timestamp of content hash claim
     }
 
     Info info;                                                       // slot 0
@@ -198,7 +200,7 @@ contract MatryxPlatform {
             balance = balance.sub(data.totalBalance);
         }
 
-        require(IToken(token).transfer(msg.sender, balance));
+        require(IToken(token).transfer(msg.sender, balance), "Transfer failed");
     }
 }
 
@@ -256,7 +258,7 @@ library LibPlatform {
     /// @param uAddress  User address
     /// @return          true if user has entered Matryx
     function hasEnteredMatryx(address, address, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
-        return data.users[uAddress].exists;
+        return data.users[uAddress].entered;
     }
 
     /// @dev Return total allocated MTX in Platform
@@ -327,10 +329,11 @@ library LibPlatform {
     /// @param info    Platform info struct
     /// @param data    Platform data struct
     function enterMatryx(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-        require(!data.users[sender].exists, "Already entered Matryx");
+        require(!data.users[sender].entered, "Already entered Matryx");
+        require(!data.users[sender].banned, "User has been banned");
         require(IToken(info.token).balanceOf(sender) > 0, "Must have MTX");
 
-        data.users[sender].exists = true;
+        data.users[sender].entered = true;
         data.users[sender].timeEntered = now;
         data.allUsers.push(sender);
     }
@@ -343,7 +346,7 @@ library LibPlatform {
     /// @param rDetails  Round details (start, end, review, bounty)
     /// @return          Address of the created Tournament
     function createTournament(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails, LibRound.RoundDetails memory rDetails) public returns (address) {
-        require(data.users[sender].exists, "Must have entered Matryx");
+        require(data.users[sender].entered, "Must have entered Matryx");
         require(tDetails.bounty > 0, "Tournament bounty must be greater than 0");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
         require(IToken(info.token).allowance(sender, address(this)) >= tDetails.bounty, "Insufficient MTX");

@@ -118,11 +118,6 @@ library LibTournament {
         return data.tournaments[self].details.descHash;
     }
 
-    /// @dev Returns the bounty of this Tournament
-    function getBounty(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return data.tournaments[self].details.bounty;
-    }
-
     /// @dev Returns the current entry fee of this Tournament
     function getEntryFee(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.tournaments[self].details.entryFee;
@@ -482,7 +477,7 @@ library LibTournament {
         
         data.totalBalance = data.totalBalance.sub(share);
         data.balanceOf[self] = data.balanceOf[self].sub(share);
-        IToken(info.token).transfer(sender, share);
+        require(IToken(info.token).transfer(sender, share), "Transfer failed");
 
         exit(self, sender, info, data);
     }
@@ -584,13 +579,13 @@ library LibTournamentHelper {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         uint256 entryFee = tournament.details.entryFee;
 
-        require(data.users[sender].exists, "Must have entered Matryx");
+        require(data.users[sender].entered, "Must have entered Matryx");
         require(sender != tournament.info.owner, "Cannot enter own Tournament");
         require(!tournament.entryFeePaid[sender].exists, "Cannot enter Tournament more than once");
         require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Cannot enter closed or abandoned Tournament");
 
         data.totalBalance = data.totalBalance.add(entryFee);
-        IToken(info.token).transferFrom(sender, address(this), entryFee);
+        require(IToken(info.token).transferFrom(sender, address(this), entryFee), "Transfer failed");
 
         tournament.entryFeePaid[sender].exists = true;
         tournament.entryFeePaid[sender].value = entryFee;
@@ -609,7 +604,7 @@ library LibTournamentHelper {
             tournament.totalEntryFees = tournament.totalEntryFees.sub(entryFeePaid);
 
             data.totalBalance = data.totalBalance.sub(entryFeePaid);
-            IToken(info.token).transfer(sender, entryFeePaid);
+            require(IToken(info.token).transfer(sender, entryFeePaid), "Transfer failed");
         }
 
         tournament.entryFeePaid[sender].exists = false;
@@ -713,6 +708,6 @@ library LibTournamentHelper {
         data.totalBalance = data.totalBalance.sub(funds);
         data.balanceOf[self] = 0;
         data.balanceOf[rAddress] = 0;
-        IToken(info.token).transfer(sender, funds);
+        require(IToken(info.token).transfer(sender, funds), "Transfer failed");
     }
 }

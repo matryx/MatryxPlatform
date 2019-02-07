@@ -152,16 +152,14 @@ contract('MatryxCommit', async () => {
 
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
 
-    await commit.distributeReward(s1)
-    await commit.distributeReward(s2)
+    let user0Bal = await commit.getAvailableRewardForUser(s1, accounts[0]).then(fromWei)
+    user0Bal += await commit.getAvailableRewardForUser(s2, accounts[0]).then(fromWei)
+    let user1Bal = await commit.getAvailableRewardForUser(s1, accounts[1]).then(fromWei)
+    let user2Bal = await commit.getAvailableRewardForUser(s2, accounts[2]).then(fromWei)
 
-    let user0Bal = await platform.getBalanceOf(accounts[0]).then(fromWei)
-    let user1Bal= await platform.getBalanceOf(accounts[1]).then(fromWei)
-    let user2Bal = await platform.getBalanceOf(accounts[2]).then(fromWei)
-
-    assert.equal(user0Bal, 4, "Parent commit balance does not match reward distribution")
-    assert.equal(user1Bal, 1, "Submission 1 payout doesn't match reward distribution")
-    assert.equal(user2Bal, 1, "Submission 2 payout doesn't match reward distribution")
+    assert.equal(user0Bal, 4, "Parent owner available reward doesn't match reward distribution")
+    assert.equal(user1Bal, 1, "s1 owner available reward doesn't match reward distribution")
+    assert.equal(user2Bal, 1, "s2 owner available reward doesn't match reward distribution")
   })
 
   it('Able to withdraw reward from commit with height less than commit chain max length', async () => {
@@ -187,56 +185,11 @@ contract('MatryxCommit', async () => {
     // select winners of tournament and distribute reward
     await selectWinnersWhenInReview(tournament, [lastCommit], [1], [0, 0, 0, 0], 0)
     
-    const balBefore1 = await platform.getBalanceOf(accounts[1]).then(fromWei)
-    const balBefore2 = await platform.getBalanceOf(accounts[2]).then(fromWei)
-    await commit.distributeReward(lastCommit)
-    const balAfter1 = await platform.getBalanceOf(accounts[1]).then(fromWei)
-    const balAfter2 = await platform.getBalanceOf(accounts[2]).then(fromWei)
+    let bal1 = await commit.getAvailableRewardForUser(lastCommit, accounts[1]).then(fromWei)
+    let bal2 = await commit.getAvailableRewardForUser(lastCommit, accounts[2]).then(fromWei)
 
-    assert.equal(balAfter1 - balBefore1, 50, "Account 1 did not get correct reward")
-    assert.equal(balAfter2 - balBefore2, 50, "Account 2 did not get correct reward")
-  })
-  
-  it('Able to withdraw reward from commit with height greater than commit chain max length', async () => {
-    // create conga line of commits from account 1
-    const group = genId(5)
-    let commitHash = await initCommit(stb(genId(32), 2), toWei(1), group, 1)
-
-    // first 15 from account 1
-    let congaLine = await commitCongaLine(commitHash, 14, 1)
-    let lastCommit = congaLine[congaLine.length - 1]
-
-    await addToGroup(1, group, network.accounts[2])
-    
-    // next 10 from account 2
-    congaLine = await commitCongaLine(lastCommit, 10, 2)
-    lastCommit = congaLine[congaLine.length - 1]
-
-    // create a tournament from account 0
-    const roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 40,
-      review: 60,
-      bounty: toWei(100)
-    }
-    tournament = await createTournament('tournament', toWei(100), roundData, 0)
-    
-    await enterTournament(tournament, 2)
-    tournament.accountNumber = 2
-    await tournament.createSubmission(stb('submission', 3), stb(genId(32), 2), lastCommit)
-    tournament.accountNumber = 0
-
-    // select winners of tournament and distribute reward
-    await selectWinnersWhenInReview(tournament, [lastCommit], [1], [0, 0, 0, 0], 0)
-    
-    const balBefore1 = await platform.getBalanceOf(accounts[1]).then(fromWei)
-    const balBefore2 = await platform.getBalanceOf(accounts[2]).then(fromWei)
-    await commit.distributeReward(lastCommit)
-    const balAfter1 = await platform.getBalanceOf(accounts[1]).then(fromWei)
-    const balAfter2 = await platform.getBalanceOf(accounts[2]).then(fromWei)
-
-    assert.equal(balAfter1 - balBefore1, 50, "Account 1 did not get correct reward")
-    assert.equal(balAfter2 - balBefore2, 50, "Account 2 did not get correct reward")
+    assert.equal(bal1, 50, "Account 1 does not have correct available reward in lastCommit")
+    assert.equal(bal2, 50, "Account 2 does not have correct available reward in lastCommit")
   })
 
   it('Correct reward distribution when submitting a fork to the tournament', async () => {
@@ -244,7 +197,13 @@ contract('MatryxCommit', async () => {
     const group = genId(5)
     const commitHash = await initCommit(stb(genId(32), 2), toWei(1), group, 1)
 
+    // fork lasat commit in conga line
     const fork = await forkCommit(stb(genId(32), 2), toWei(3), commitHash, 2)
+
+    // withdraw funds from the fork
+    commit.accountNumber = 1
+    await commit.withdrawAvailableReward(commitHash)
+    commit.accountNumber = 0
 
     await enterTournament(tournament, 2)
     tournament.accountNumber = 2
@@ -254,13 +213,10 @@ contract('MatryxCommit', async () => {
     // select winners of tournament and distribute reward
     await selectWinnersWhenInReview(tournament, [fork], [1], [0, 0, 0, 0], 0)
     
-    const balBefore1 = await platform.getBalanceOf(accounts[1]).then(fromWei)
-    const balBefore2 = await platform.getBalanceOf(accounts[2]).then(fromWei)
-    await commit.distributeReward(fork)
-    const balAfter1 = await platform.getBalanceOf(accounts[1]).then(fromWei)
-    const balAfter2 = await platform.getBalanceOf(accounts[2]).then(fromWei)
+    let bal1 = await commit.getAvailableRewardForUser(fork, accounts[1]).then(fromWei)
+    let bal2 = await commit.getAvailableRewardForUser(fork, accounts[2]).then(fromWei)
 
-    assert.equal(balAfter1 - balBefore1, 25, "Account 1 did not get correct reward")
-    assert.equal(balAfter2 - balBefore2, 75, "Account 2 did not get correct reward")
+    assert.equal(bal1, 25, "Account 1 does not have correct available reward in fork commit")
+    assert.equal(bal2, 75, "Account 2 does not have correct available reward in fork commit")
   })
 })
