@@ -190,7 +190,7 @@ module.exports = function (artifacts, web3) {
   async function initCommit (contentHash, value, group, account) {
     const cAccount = commit.accountNumber
     commit.accountNumber = account
-    await commit.initialCommit(contentHash, value, group)
+    await commit.commit(contentHash, value, '0x00', group)
     commit.accountNumber = cAccount
 
     const theCommit = await commit.getCommitByContentHash(contentHash)
