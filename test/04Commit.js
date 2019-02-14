@@ -1,7 +1,7 @@
-const { shouldFail } = require('openzeppelin-test-helpers');
+const { shouldFail } = require('openzeppelin-test-helpers')
 
 const { setup, genId, stringToBytes, Contract } = require('../truffle/utils')
-const { init, initCommit } = require('./helpers')(artifacts, web3)
+const { init, createCommit } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 const MatryxCommit = artifacts.require('MatryxCommit')
@@ -15,128 +15,84 @@ contract('MatryxCommit', async () => {
   before(async () => {
     platform = (await init()).platform
     commit = Contract(MatryxCommit.address, IMatryxCommit)
+    await setup(artifacts, web3, 1, true)
+    await setup(artifacts, web3, 3, true)
   })
 
   beforeEach(async () => {
     commit.accountNumber = 0
-    groupName = genId(5)
-    await commit.createGroup(groupName)
-  })
-
-  // reset contract accounts
-  afterEach(() => {
-    commit.accountNumber = 0
-  })
-
-  it('Cannot create a group until in Matryx', async () => {
-    commit.accountNumber = 1
-    const tx = commit.createGroup('account 1 group')
-    await shouldFail.reverting(tx)
-  })
-
-  it('Cannot create a commit until in Matryx', async () => {
-    commit.accountNumber = 1
-    const tx = commit.commit(randContent(), toWei(1), '0x00', 'new group')
-    await shouldFail.reverting(tx)
-  })
-
-  it('Able to create a group', async () => {
-    let groupNameTwo = 'group 2'
-    await commit.createGroup('group 2')
-    // hash name of group
-    const returnedName = await commit.getGroupName(web3.utils.keccak256(groupNameTwo))
-    assert.equal(returnedName, groupNameTwo, 'Unable to create a new group')
-  })
-
-  it('Groups are persistent', async () => {
-    let groupsBefore = await commit.getAllGroups()
-    await commit.createGroup('group A')
-    await commit.createGroup('group B')
-    let groupsAfter = await commit.getAllGroups()
-
-    assert.equal(groupsAfter.length - groupsBefore.length, 2, 'Commit system should contain 2 more groups')
-  })
-
-  it('Cannot create the same group twice', async () => {
-    await setup(artifacts, web3, 1, true)
-    commit.accountNumber = 1
-    await commit.createGroup('duplicate group')
-    const tx = commit.createGroup('duplicate group')
-    await shouldFail.reverting(tx)
-  })
-
-  it('Group members are persistent', async () => {
-    await commit.addGroupMember(groupName, accounts[1])
-    await commit.addGroupMember(groupName, accounts[2])
-
-    let members = await commit.getGroupMembers(groupName)
-    let includesAllMembers = accounts.slice(0, 3).every(acc => members.includes(acc))
-    assert.isTrue(includesAllMembers, 'Did not add more group members successfully')
-  })
-
-  it('Cannot add user to a group twice', async () => {
-    await commit.addGroupMember(groupName, accounts[1])
-    const tx = commit.addGroupMember(groupName, accounts[1])
-    await shouldFail.reverting(tx)
-  })
-
-  it('Cannot add user to nonexistent group', async () => {
-    const tx = commit.addGroupMember('not a real group', accounts[1])
-    await shouldFail.reverting(tx)
-  })
-
-  it('Cannot add group member if not in group', async () => {
-    await setup(artifacts, web3, 3, true)
-    commit.accountNumber = 3
-    const tx = commit.addGroupMember(groupName, accounts[2])
-    await shouldFail.reverting(tx)
-  })
-
-  it('Cannot create commit if not in group', async () => {
-    const tx = initCommit(randContent(), toWei(1), groupName, 1)
-
-    await shouldFail.reverting(tx)
-  })
-
-  it('Cannot fork commit until in Matryx', async () => {
-    const parentHash = await initCommit(randContent(), toWei(1), groupName, 0)
-
-    commit.accountNumber = 2
-    const tx = commit.fork(randContent(), toWei(1), parentHash, 'fork group name')
-    await shouldFail.reverting(tx)
   })
 
   it('Able to make a commit', async () => {
-    const commitsBefore = await commit.getInitialCommits()
-    await initCommit(randContent(), toWei(1), groupName, 0)
-    const commitsAfter = await commit.getInitialCommits()
+    let commitsBefore = await commit.getInitialCommits()
+    await createCommit('0x00', randContent(), toWei(1), 0)
+    let commitsAfter = await commit.getInitialCommits()
 
     assert.equal(commitsAfter.length - commitsBefore.length, 1, 'New commit should exist')
   })
 
-  it('Able to fork from commit', async () => {
-    const parentHash = await initCommit(randContent(), toWei(1), groupName, 0)
-    commit.accountNumber = 1
-    const contentHash = randContent()
-    await commit.fork(contentHash, toWei(1), parentHash, 'group 4')
-    // let returnCommit = await commit.getCommitByContentHash(contentHash)
-
-    // console.log(`return commit: ${returnCommit}`)
-    // assert.equal(returnCommit.parentHash, parentHash, 'Fork parent should be first commit')
-    // assert.equal(returnCommit.owner, accounts[1], 'Fork owner should be first account')
+  it('Group members are persistent', async () => {
+    let commitHash = await createCommit('0x00', randContent(), toWei(1), 0)
+    await commit.addGroupMember(commitHash, accounts[1])
+    await commit.addGroupMember(commitHash, accounts[2])
+    
+    let members = await commit.getGroupMembers(commitHash)
+    let includesAllMembers = accounts.slice(0, 3).every(acc => members.includes(acc))
+    assert.isTrue(includesAllMembers, 'Did not add more group members successfully')
+    assert.isTrue(true, 'Did not add more group members successfully')
+  })
+  
+  it('Cannot add user to a group twice', async () => {
+    let commitHash = await createCommit('0x00', randContent(), toWei(1), 0)
+    await commit.addGroupMember(commitHash, accounts[1])
+    let tx = commit.addGroupMember(commitHash, accounts[1])
+    
+    await shouldFail.reverting(tx)
   })
 
-  it('Commit value transferred from fork owner to commit owner', async () => {
-    const parentHash = await initCommit(randContent(), toWei(1), groupName, 0)
-    const balanceBefore = await platform.getCommitBalance(parentHash).then(fromWei)
+  it('Cannot add user for nonexistent commit', async () => {
+    let tx = commit.addGroupMember(stb(''), accounts[1])
+    await shouldFail.reverting(tx)
+  })
+
+  it('Cannot add group member if not in group', async () => {
+    let commitHash = await createCommit('0x00', randContent(), toWei(1), 1)
+    commit.accountNumber = 0
+    let tx = commit.addGroupMember(commitHash, accounts[2])
+    await shouldFail.reverting(tx)
+  })
+  
+  it('Cannot create commit if not in group', async () => {
+    let commitHash = await createCommit('0x00', randContent(), toWei(1), 0)
+    commit.accountNumber = 1
+    let tx = commit.commit(commitHash, randContent(), toWei(1))
+
+    await shouldFail.reverting(tx)
+  })
+  
+  it('Able to fork from commit', async () => {
+    let parentHash = await createCommit('0x00', randContent(), toWei(1), 0)
+    commit.accountNumber = 1
+    let contentHash = randContent()
+    await commit.fork(parentHash, contentHash, toWei(1))
+    let returnCommit = await commit.getCommitByContentHash(contentHash)
+
+    assert.equal(returnCommit.parentHash, parentHash, 'Fork parent should be first commit')
+    assert.equal(returnCommit.owner, accounts[1], 'Fork owner should be first account')
+  })
+
+  it('Commit value transferred from fork owner to commit', async () => {
+    let parentHash = await createCommit('0x00', randContent(), toWei(1), 0)
+    let balanceBefore = await platform.getCommitBalance(parentHash).then(fromWei)
     
     commit.accountNumber = 1
-    await commit.fork(randContent(), toWei(1), parentHash, 'group 5')
+    await commit.fork(parentHash, randContent(), toWei(1))
 
-    const balanceAfter = await platform.getCommitBalance(parentHash).then(fromWei)
+    let balanceAfter = await platform.getCommitBalance(parentHash).then(fromWei)
 
     assert.equal(balanceAfter - balanceBefore, 1, 'Commit balance should increase by 1 after fork')
   })
 
   // TODO: test new fork funds distribution, test all frontrunning cases
+  // it('Correct distribution on fork', )
 })

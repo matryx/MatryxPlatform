@@ -1,6 +1,4 @@
-const IMatryxRound = artifacts.require('IMatryxRound')
-const MatryxUser = artifacts.require('MatryxUser')
-const IMatryxUser = artifacts.require('IMatryxUser')
+const { shouldFail } = require('openzeppelin-test-helpers')
 
 const { Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, waitUntilInReview, waitUntilClose, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
@@ -10,78 +8,49 @@ let platform
 
 contract('NotYetOpen Round Testing', function() {
   let t //tournament
-  let r //round
+  let roundData
 
   it('Able to create a tournament with a valid round', async function() {
     platform = (await init()).platform
     roundData = {
       start: Math.floor(Date.now() / 1000) + 60,
-      end: Math.floor(Date.now() / 1000) + 120,
+      duration: 120,
       review: 60,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-
-    assert.ok(r.address, 'Round is not valid.')
+    let roundIndex = await t.getCurrentRoundIndex()
+    
+    assert.equal(roundIndex, 0, 'Round is not valid.')
   })
-
-  it('Able to get tournament from round', async function() {
-    let tournament = await r.getTournament()
-    assert.equal(tournament, t.address, 'Unable to get tournament from round.')
+  
+  it('Able to get round details', async function() {
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { start, duration, review, bounty } = await t.getRoundDetails(roundIndex)
+    assert.equal(start, roundData.start, 'Incorrect round start')
+    assert.equal(duration, roundData.duration, 'Incorrect round duration')
+    assert.equal(review, roundData.review, 'Incorrect round review')
+    assert.equal(bounty, roundData.bounty, 'Incorrect round bounty')
   })
-
-  it('Able to get round start time', async function() {
-    let time = await r.getStart()
-    assert.isTrue(time > Math.floor(Date.now() / 1000), 'Unable to get start time.')
-  })
-
-  it('Able to get round end time', async function() {
-    let time = await r.getEnd()
-    assert.isTrue(time > Math.floor(Date.now() / 1000), 'Unable to get end time.')
-  })
-
-  it('Able to get round review period duration', async function() {
-    let review = await r.getReview()
-    assert.equal(review, 60, 'Unable to get review period duration.')
-  })
-
-  it('Able to get round bounty', async function() {
-    let b = await r.getBounty()
-    assert.equal(b, web3.toWei(5), 'Unable to get bounty.')
-  })
-
-  it('Able to get round balance', async function() {
-    let b = await platform.getBalanceOf(r.address)
-    assert.equal(b, web3.toWei(5), 'Unable to get balance.')
-  })
-
+  
   it('Round state is Not Yet Open', async function() {
-    let state = await r.getState()
+    let roundIndex = await t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
     assert.equal(state, 0, 'Round State should be NotYetOpen')
   })
 
   it('Round should not have any submissions', async function() {
-    let sub = await r.getSubmissions()
-    assert.equal(sub.length, 0, 'Round should not have submissions')
-  })
-
-  it('Submission count should be zero', async function() {
-    let num = await r.getSubmissionCount()
-    assert.equal(num, 0, 'Submission count should be 0')
-  })
-
-  it('Round winning submissions should be empty', async function() {
-    let sub = await r.getWinningSubmissions()
-    assert.equal(sub.length, 0, 'Round should not have winning submissions')
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { submissions } = await t.getRoundInfo(roundIndex)
+    assert.equal(submissions.length, 0, 'Round should not have submissions')
   })
 
   it('Able to add bounty to a round', async function() {
     await t.transferToRound(web3.toWei(1))
-    let b = await r.getBounty().then(fromWei)
-    assert.equal(b, 6, 'Bounty was not added')
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { bounty } = await t.getRoundDetails(roundIndex)
+    assert.equal(bounty, 6, 'Bounty was not added')
   })
 
   it('Able to enter tournament with Not Yet Open round', async function() {
@@ -93,33 +62,31 @@ contract('NotYetOpen Round Testing', function() {
 
 contract('Open Round Testing', function() {
   let t //tournament
-  let r //round
   let s //submission
-
   it('Able to create a tournament with a Open round', async function() {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 120,
+      duration: 120,
       review: 60,
       bounty: web3.toWei(5)
     }
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-
-    assert.ok(r.address, 'Round is not valid.')
+    let roundIndex = await t.getCurrentRoundIndex()
+    
+    assert.equal(roundIndex, 0, 'Round is not valid.')
   })
 
   it('Round state is Open', async function() {
-    let state = await r.getState()
+    let roundIndex = t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
     assert.equal(state, 2, 'Round State should be Open')
   })
 
   it('Able to enter the tournament and make submissions', async function() {
     // Create submissions
-    s = await createSubmission(t, '0x00',  false, 1)
-    s2 = await createSubmission(t, '0x00',  false, 2)
+    s = await createSubmission(t, '0x00', 1)
+    s2 = await createSubmission(t, '0x00', 2)
 
     assert.ok(s && s2, 'Unable to make submissions')
   })
@@ -139,14 +106,9 @@ contract('Open Round Testing', function() {
   })
 
   it('Unable to exit tournament multiple times', async function() {
-    try {
-      t.accountNumber = 1
-      await t.exit()
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to exit again')
-    }
+    t.accountNumber = 1
+    let tx = t.exit()
+    await shouldFail.reverting(tx)
   })
 
   it('Number of entrants should now be 0', async function() {
@@ -162,28 +124,27 @@ contract('Open Round Testing', function() {
 
 contract('In Review Round Testing', function() {
   let t //tournament
-  let r //round
   let s //submission
 
   it('Able to create a round In Review', async function() {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30,
+      duration: 30,
       review: 60,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
+    
+    assert.equal(roundIndex, 0, 'Round is not valid.')
 
     //Create submissions
-    s = await createSubmission(t, '0x00',  false, 1)
-    s2 = await createSubmission(t, '0x00',  false, 2)
+    s = await createSubmission(t, '0x00', 1)
+    s2 = await createSubmission(t, '0x00', 2)
     await waitUntilInReview(r)
 
-    assert.ok(r.address, 'Round is not valid.')
   })
 
   it('Round state is In Review', async function() {
@@ -204,7 +165,7 @@ contract('In Review Round Testing', function() {
 
   it('Unable to make submissions while the round is in review', async function() {
     try {
-      await createSubmission(t, '0x00',  false, 1)
+      await createSubmission(t, '0x00', 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -215,24 +176,23 @@ contract('In Review Round Testing', function() {
 
 contract('Closed Round Testing', function() {
   let t //tournament
-  let r //round
   let s //submission
 
   it('Able to create a closed round', async function() {
-    await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 20,
+      duration: 20,
       review: 60,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
+    
+    assert.equal(roundIndex, 0, 'Round is not valid.')
 
     // Create submissions
-    s = await createSubmission(t, '0x00',  false, 1)
+    s = await createSubmission(t, '0x00', 1)
 
     let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
@@ -268,7 +228,7 @@ contract('Closed Round Testing', function() {
 
   it('Unable to make submissions while the round is closed', async function() {
     try {
-      await createSubmission(t, '0x00',  false, 1)
+      await createSubmission(t, '0x00', 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -279,25 +239,23 @@ contract('Closed Round Testing', function() {
 
 contract('Abandoned Round Testing', function() {
   let t //tournament
-  let r //round
 
   it('Able to create an Abandoned round', async function() {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 20,
+      duration: 20,
       review: 1,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
+    
+    assert.equal(roundIndex, 0, 'Round is not valid.')
 
     // Create a submission
-    s = await createSubmission(t, '0x00',  false, 1)
-    s = await createSubmission(t, '0x00',  false, 2)
+    s = await createSubmission(t, '0x00', 1)
+    s = await createSubmission(t, '0x00', 2)
 
     // Wait for the round to become Abandoned
     await waitUntilClose(r)
@@ -377,21 +335,19 @@ contract('Abandoned Round Testing', function() {
 
 contract('Abandoned Round due to No Submissions', function() {
   let t //tournament
-  let r //round
 
   it('Able to create an Abandoned round', async function() {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 5,
       review: 1,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
+    
+    assert.equal(roundIndex, 0, 'Round is not valid.')
 
     // Wait for the round to become Abandoned
     await waitUntilClose(r)
@@ -434,26 +390,27 @@ contract('Abandoned Round due to No Submissions', function() {
 
 contract('Unfunded Round Testing', function() {
   let t //tournament
-  let r //round
   let ur //unfunded round
   let s //submission
   let token
 
   it('Able to create an Unfunded round', async function() {
     token = (await init()).token
+
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 35,
+      duration: 35,
       review: 80,
       bounty: web3.toWei(10)
     }
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
+    
+    assert.equal(roundIndex, 0, 'Round is not valid.')
 
     //Create submissions
-    s = await createSubmission(t, '0x00',  false, 1)
+    s = await createSubmission(t, '0x00', 1)
 
     let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
@@ -468,7 +425,7 @@ contract('Unfunded Round Testing', function() {
   })
 
   it('Round should be Unfunded', async function() {
-    let [_, roundAddress] = await t.getCurrentRound()
+    let [, roundAddress] = await t.getCurrentRound()
     ur = Contract(roundAddress, IMatryxRound, 0)
     let state = await ur.getState()
     assert.equal(state, 1, 'Round is not Unfunded')
@@ -491,7 +448,7 @@ contract('Unfunded Round Testing', function() {
 
   it('Unable to make submissions while the round is Unfunded', async function() {
     try {
-      await createSubmission(t, '0x00',  false, 1)
+      await createSubmission(t, '0x00', 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -520,23 +477,21 @@ contract('Unfunded Round Testing', function() {
 
 contract('Ghost Round Testing', function() {
   let t //tournament
-  let r //round
-  let gr //ghost round
   let s //submission
 
   it('Able to create a ghost round', async function() {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30,
-      review: 20,
-      bounty: web3.toWei(5)
+      duration: 30,
     }
 
-    t = await createTournament('tournament', web3.toWei(15), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-    s = await createSubmission(t, '0x00',  false, 1)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
+    
+    assert.equal(roundIndex, 0, 'Round is not valid.')
+
+    s = await createSubmission(t, '0x00', 1)
     let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
@@ -583,7 +538,7 @@ contract('Ghost Round Testing', function() {
   it('Able to edit ghost round, review period duration updated correctly', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000) + 60,
-      end: Math.floor(Date.now() / 1000) + 80,
+      duration: 80,
       review: 40,
       bounty: web3.toWei(5)
     }
@@ -608,7 +563,7 @@ contract('Ghost Round Testing', function() {
   it('Able to edit ghost round, send more MTX to the round', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000) + 200,
-      end: Math.floor(Date.now() / 1000) + 220,
+      duration: 220,
       review: 40,
       bounty: web3.toWei(8)
     }
@@ -637,7 +592,7 @@ contract('Ghost Round Testing', function() {
   it('Able to edit ghost round, send MTX from round back to tournament', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000) + 300,
-      end: Math.floor(Date.now() / 1000) + 320,
+      duration: 320,
       review: 40,
       bounty: web3.toWei(2)
     }
@@ -667,19 +622,17 @@ contract('Ghost Round Testing', function() {
 /*
 contract('Round Timing Restrictions Testing', function() {
   let t //tournament
-  let r //round
 
   it('Able to create a round with duration: 1 day', async function() {
     await init()
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 86400,
+      duration: 86400,
       review: 5,
       bounty: web3.toWei(5)
     }
-
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
+    let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
     assert.ok(r.address, 'Round not created successfully.')
@@ -688,13 +641,13 @@ contract('Round Timing Restrictions Testing', function() {
   it('Able to create a round with duration: 1 year', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 31536000,
+      duration: 31536000,
       review: 5,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
+    let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
     assert.ok(r.address, 'Round not created successfully.')
@@ -703,7 +656,7 @@ contract('Round Timing Restrictions Testing', function() {
   it('Unable to create a round with duration: 1 year + 1 second', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 31536001,
+      duration: 31536001,
       review: 5,
       bounty: web3.toWei(5)
     }
@@ -721,13 +674,13 @@ contract('Round Timing Restrictions Testing', function() {
   it('Able to create a round review period duration: 1 year', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      duration: 10,
       review: 31536000,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
+    let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
     assert.ok(r.address, 'Round not created successfully.')
@@ -736,7 +689,7 @@ contract('Round Timing Restrictions Testing', function() {
   it('Unable to create a round with duration: 1 year + 1 second', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      duration: 10,
       review: 31536001,
       bounty: web3.toWei(5)
     }

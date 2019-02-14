@@ -144,14 +144,10 @@ async function setup(artifacts, web3, accountNum, silent) {
   const MatryxPlatform = artifacts.require('MatryxPlatform')
   const IMatryxPlatform = artifacts.require('IMatryxPlatform')
   const MatryxToken = artifacts.require('MatryxToken')
-  const MatryxUser = artifacts.require('MatryxUser')
-  const IMatryxUser = artifacts.require('IMatryxUser')
   const MatryxCommit = artifacts.require('MatryxCommit')
   const IMatryxCommit = artifacts.require('IMatryxCommit')
   const MatryxTournament = artifacts.require('MatryxTournament')
   const IMatryxTournament = artifacts.require('IMatryxTournament')
-  const MatryxRound = artifacts.require('MatryxRound')
-  const IMatryxRound = artifacts.require('IMatryxRound')
 
   const account = network.accounts[accountNum]
 
@@ -186,23 +182,19 @@ async function setup(artifacts, web3, accountNum, silent) {
     await this.getMinedTx(hash)
   }
 
-  const hasEnteredMatryx = await platform.hasEnteredMatryx(account)
-  if (!hasEnteredMatryx) {
-    let { hash } = await platform.enterMatryx()
-    await this.getMinedTx(hash)
-  }
+  // const hasEnteredMatryx = await platform.hasEnteredMatryx(account)
+  // if (!hasEnteredMatryx) {
+  //   let { hash } = await platform.enterMatryx()
+  //   await this.getMinedTx(hash)
+  // }
 
   log(`Account ${accountNum} setup complete!\n`)
 
   return {
     MatryxPlatform,
     MatryxToken,
-    MatryxUser,
-    IMatryxUser,
     MatryxTournament,
     IMatryxTournament,
-    MatryxRound,
-    IMatryxRound,
     platform,
     commit,
     token

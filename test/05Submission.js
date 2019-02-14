@@ -1,7 +1,7 @@
 const { expectEvent, shouldFail } = require('openzeppelin-test-helpers');
 
 const { genId, setup, stringToBytes, Contract } = require('../truffle/utils')
-const { init, enterTournament, createTournament, selectWinnersWhenInReview, initCommit, commitChildren, addToGroup, commitCongaLine, forkCommit, createSubmission } = require('./helpers')(artifacts, web3)
+const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitChildren, addToGroup, commitCongaLine, forkCommit, createSubmission } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 const MatryxCommit = artifacts.require('MatryxCommit')
@@ -11,9 +11,9 @@ const IMatryxRound = artifacts.require('IMatryxRound')
 let platform, commit, tournament
 
 contract('MatryxCommit', async () => {
-  let t //tournament
-  let r //round
-  let s //submission
+  let t // tournament
+  
+  let s // submission
 
   before(async () => {
     platform = (await init()).platform
@@ -26,7 +26,7 @@ contract('MatryxCommit', async () => {
     // create a tournament from account 0
     const roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 60,
+      duration: 60,
       review: 60,
       bounty: toWei(100)
     }
@@ -59,16 +59,16 @@ contract('MatryxCommit', async () => {
   it('Able to get submission details', async () => {
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 45,
+      duration: 45,
       review: 60,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(6), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
+    let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     
-    sHash = await createSubmission(t, '0x00', false, 1)
+    sHash = await createSubmission(t, '0x00', 1)
 
     s = await r.getSubmission(sHash)
     
@@ -77,21 +77,20 @@ contract('MatryxCommit', async () => {
   })
 
   it('Able to create commit with parent for a tournament', async () => {
-    const group = genId(5)
-    const parentHash = await initCommit(stb(genId(32), 2), toWei(1), group, 1)
+    const parentHash = await createCommit('0x00', stb(genId(32), 2), toWei(1), 1)
 
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 60,
+      duration: 60,
       review: 60,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(6), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
+    let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     
-    const commitHash = await createSubmission(t, parentHash, true, 1)
+    const commitHash = await createSubmission(t, parentHash, 1)
     
     const commitChild = (await commitChildren(parentHash))[0]
     assert.equal(commitChild, commitHash, 'Child commit should be same as what was submitted')
@@ -100,18 +99,18 @@ contract('MatryxCommit', async () => {
   it('Correct winning submission rewards on round', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 45,
+      duration: 45,
       review: 60,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(6), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
+    let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     // create first submission
-    s1 = await createSubmission(t, '0x00', false, 1)
+    s1 = await createSubmission(t, '0x00', 1)
     // create a second submission off of it from another account
-    s2 = await createSubmission(t, '0x00', false, 2)
+    s2 = await createSubmission(t, '0x00', 2)
 
     submissions = [s1, s2]
 
@@ -126,27 +125,27 @@ contract('MatryxCommit', async () => {
   it('Correct user balances for winning submissions with a common parent', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 45,
+      duration: 45,
       review: 60,
       bounty: web3.toWei(5)
     }
 
     t = await createTournament('tournament', web3.toWei(6), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
+    let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
     // initial parent commit
     commit.accountNumber = 1
     const parentContent = stb(genId(32), 2)
     const groupName = 'multiple winner group'
-    let p = await initCommit(parentContent, toWei(4), groupName, 0)
+    let p = await createCommit(parentContent, toWei(4), groupName, 0)
     // create submission off of it
     await addToGroup(0, groupName, accounts[1])
     
-    s1 = await createSubmission(t, p, true, 1)
+    s1 = await createSubmission(t, p, 1)
     // create a second submission off of it from another account
     await addToGroup(0, groupName, accounts[2])
     
-    s2 = await createSubmission(t, p, true, 2)
+    s2 = await createSubmission(t, p, 2)
 
     submissions = [s1, s2]
 

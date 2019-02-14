@@ -4,16 +4,16 @@ pragma experimental ABIEncoderV2;
 import "../MatryxPlatform.sol";
 
 interface IPlatformUpgraded {
-    function getTwo() external view returns (uint256);
-    function getBalanceOf(address user) external returns (uint256);
+    function getTwo() external pure returns (uint256);
+    function getBalanceOf(address user) external pure returns (uint256);
 }
 
 library LibPlatformUpgraded {
-    function getTwo(address self, address sender, MatryxPlatform.Info storage info) public view returns (uint256 number) {
+    function getTwo(address, address, MatryxPlatform.Info storage) public pure returns (uint256 number) {
         return 2;
     }
 
-    function getBalanceOf(address self, address sender, MatryxPlatform.Data storage data, address user) public view returns (uint256 balance) {
+    function getBalanceOf(address, address, MatryxPlatform.Data storage, address) public pure returns (uint256 balance) {
         return 99000000000000000000;
     }
 }
