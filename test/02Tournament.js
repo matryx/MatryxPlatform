@@ -24,9 +24,11 @@ contract('Open Tournament Testing', function() {
     assert.isTrue(count == 1, 'Tournament count should be 1.')
   })
 
-  it('Able to get tournament owner', async function() {
+  it('Able to get tournament owner and version', async function() {
     let { owner } = await t.getInfo()
+    let { version } = await t.getInfo()
     assert.equal(owner, accounts[0], 'Unable to get owner.')
+    assert.equal(version, 1, 'Unable to get version.')
   })
 
   it('Able to get tournament details', async () => {
@@ -144,7 +146,7 @@ contract('On Hold Tournament Testing', function() {
 
     // Set up ghost round
     await waitUntilOpen(t, roundIndex)
-    s = await createSubmission(t, '0x00', 1)
+    s = await createSubmission(t, '0x00', toWei(1), 1)
     let { submissions } = await t.getRoundInfo(roundIndex)
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
@@ -176,7 +178,7 @@ contract('On Hold Tournament Testing', function() {
 
   it('Unable to make a submission while On Hold', async function() {
     try {
-      await createSubmission(t, '0x00', 1)
+      await createSubmission(t, '0x00', toWei(1), 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -272,8 +274,8 @@ contract('Abandoned Tournament due to No Submissions Testing', function() {
   })
 
   it("Tournament balance is 0", async function () {
-      let tB = await platform.getBalanceOf(t.address)
-      assert.isTrue(tB == 0, "Tournament balance should be 0")
+    let tB = await platform.getBalanceOf(t.address)
+    assert.isTrue(tB == 0, "Tournament balance should be 0")
   })
 
 })

@@ -32,7 +32,7 @@ module.exports = function (artifacts, web3) {
     platform = data.platform
     commit = data.commit
     token = data.token
-    return { platform, token }
+    return { platform, commit, token }
   }
 
   async function createTournament(content, bounty, roundData, accountNumber) {
@@ -71,7 +71,7 @@ module.exports = function (artifacts, web3) {
     await sleep(time * 1000)
   }
 
-  async function createSubmission(tournament, parent, accountNumber) {
+  async function createSubmission(tournament, parent, value, accountNumber) {
     const tAccount = tournament.accountNumber
     const pAccount = platform.accountNumber
     const cAccount = commit.accountNumber
@@ -94,7 +94,7 @@ module.exports = function (artifacts, web3) {
     await getMinedTx(tx.hash)
     
     const content = genId(10)
-    tx = await commit.createSubmission(tournament.address, content, parent, false, contentHash, toWei(2))
+    tx = await commit.createSubmission(tournament.address, content, parent, false, contentHash, value)
     await getMinedTx(tx.hash)
 
     const roundIndex = await tournament.getCurrentRoundIndex()
@@ -117,7 +117,7 @@ module.exports = function (artifacts, web3) {
     await getMinedTx(tx.hash)
   }
 
-  async function enterTournament (tournament, accountNumber) {
+  async function enterTournament(tournament, accountNumber) {
     await setup(artifacts, web3, accountNumber, true)
     const tAccount = tournament.accountNumber
     const pAccount = platform.accountNumber
@@ -149,10 +149,27 @@ module.exports = function (artifacts, web3) {
     return isEnt
   }
 
-  async function createCommit (parent, contentHash, value, account) {
+  async function claimCommit(salt, contentHash, account) {
     const cAccount = commit.accountNumber
     commit.accountNumber = account
-    await commit.commit(parent, contentHash, value)
+
+    let commitHash = web3.utils.soliditySha3(commit.wallet.address, { t:'bytes32', v:salt }, contentHash)
+    
+    let tx = await commit.claimCommit(commitHash)
+    await getMinedTx(tx.hash)
+    
+    commit.accountNumber = cAccount
+  }
+  
+  async function createCommit(parent, isFork, contentHash, value, account) {
+    const cAccount = commit.accountNumber
+    commit.accountNumber = account
+
+    const salt = stringToBytes('NaCl')
+    await claimCommit(salt, contentHash, account)
+    tx = await commit.createCommit(parent, isFork, salt, contentHash, value)
+    await getMinedTx(tx.hash)
+
     commit.accountNumber = cAccount
 
     // return the newly created commit hash
@@ -165,40 +182,16 @@ module.exports = function (artifacts, web3) {
     return theCommit.children
   }
 
-  async function addToGroup (member, group, newMember) {
-    const cAccount = commit.accountNumber
-    commit.accountNumber = member
-
-    await commit.addGroupMember(group, newMember)
-
-    commit.accountNumber = cAccount
-  }
-
   async function commitCongaLine (root, length, account) {
     const congaLine = [root]
 
     let parent = root
     for (let i = 0; i < length; i++) {
-      parent = await createCommit(stringToBytes(genId(34), 2), toWei(1), parent, account)
+      parent = await createCommit(parent, false, genId(10), toWei(1), account)
       congaLine.push(parent)
     }
 
     return congaLine
-  }
-
-  async function forkCommit (contentHash, value, parent, accountNumber) {
-    const lastAccount = commit.accountNumber
-    commit.accountNumber = accountNumber
-
-    const group = "group " + genId(5)
-    await commit.createGroup(group)
-    await commit.fork(contentHash, value, parent, group, { gasLimit: 8e6 })
-
-    const parentCommit = await commit.getCommit(parent)
-    const commitHash = parentCommit.children[parentCommit.children.length - 1]
-
-    commit.accountNumber = lastAccount
-    return commitHash
   }
 
   return {
@@ -211,10 +204,9 @@ module.exports = function (artifacts, web3) {
     selectWinnersWhenInReview,
     enterTournament,
     
+    claimCommit,
     createCommit,
     commitChildren,
-    addToGroup,
-    commitCongaLine,
-    forkCommit
+    commitCongaLine
   }
 }

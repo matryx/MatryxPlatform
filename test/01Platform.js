@@ -28,8 +28,8 @@ contract('Platform Testing', () => {
   })
 
   it('Able to get platform info', async () => {
-    let info = await platform.getInfo()
-    assert.equal(info.owner, accounts[0], 'Unable to get platform info')
+    let { owner } = await platform.getInfo()
+    assert.equal(owner, accounts[0], 'Unable to get platform owner')
   })
 
   it('Unable to set platform token from another account', async () => {

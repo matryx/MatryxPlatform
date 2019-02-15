@@ -32,7 +32,7 @@ contract('Singleton Commit, Close Tournament', function() {
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
-    s = await createSubmission(t, '0x00', 1)
+    s = await createSubmission(t, '0x00', toWei(1), 1)
 
     assert.ok(s, 'Submission is not valid.')
   })
@@ -136,7 +136,7 @@ contract('Singleton Commit, Start Next Round', function() {
     t = await createTournament('tournament', web3.toWei(15), roundData, 0)
     let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
-    s = await createSubmission(t, '0x00', 1)
+    s = await createSubmission(t, '0x00', toWei(1), 1)
 
     assert.ok(s, 'Submission is not valid.')
   })
@@ -198,7 +198,7 @@ contract('Singleton Commit, Start Next Round', function() {
   })
 
   it('Able to make a submission to the new round', async function() {
-    let s2 = await createSubmission(t, '0x00', 1)
+    let s2 = await createSubmission(t, '0x00', toWei(1), 1)
     assert.ok(s2, 'Unable to make submissions to the new round.')
   })
 
@@ -243,7 +243,7 @@ contract('Singleton Commit, Do Nothing', function() {
     t = await createTournament('tournament', web3.toWei(15), roundData, 0)
     let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
-    s = await createSubmission(t, '0x00', 1)
+    s = await createSubmission(t, '0x00', toWei(1), 1)
 
     assert.ok(s, 'Submission is not valid.')
   })
@@ -339,7 +339,7 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
-    s = await createSubmission(t, '0x00', 1)
+    s = await createSubmission(t, '0x00', toWei(1), 1)
     let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
@@ -435,7 +435,7 @@ contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
     t = await createTournament('tournament', web3.toWei(15), roundData, 0)
     let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
-    s = await createSubmission(t, '0x00', 1)
+    s = await createSubmission(t, '0x00', toWei(1), 1)
     let submissions = await r.getSubmissions()
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 

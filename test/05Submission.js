@@ -1,38 +1,35 @@
-const { expectEvent, shouldFail } = require('openzeppelin-test-helpers');
-
+const { expectEvent, shouldFail } = require('openzeppelin-test-helpers')
 const { genId, setup, stringToBytes, Contract } = require('../truffle/utils')
-const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitChildren, addToGroup, commitCongaLine, forkCommit, createSubmission } = require('./helpers')(artifacts, web3)
+const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitChildren, addToGroup, commitCongaLine, createCommit, createSubmission } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
-const MatryxCommit = artifacts.require('MatryxCommit')
-const IMatryxCommit = artifacts.require('IMatryxCommit')
-const IMatryxRound = artifacts.require('IMatryxRound')
-
-let platform, commit, tournament
+let platform, commit
 
 contract('MatryxCommit', async () => {
   let t // tournament
-  
   let s // submission
 
   before(async () => {
-    platform = (await init()).platform
-    commit = Contract(MatryxCommit.address, IMatryxCommit)
+    let data = await init()
+    platform = data.platform
+    commit = data.commit
+
     await setup(artifacts, web3, 1, true)
     await setup(artifacts, web3, 2, true)
   })
 
   beforeEach(async () => {
     // create a tournament from account 0
-    const roundData = {
+    let roundData = {
       start: Math.floor(Date.now() / 1000),
       duration: 60,
-      review: 60,
+      review: 10,
       bounty: toWei(100)
     }
-    tournament = await createTournament('tournament', toWei(100), roundData, 0)
-    tournament.accountNumber = 1
-    await tournament.enter()
+    t = await createTournament('tournament', toWei(100), roundData, 0)
+    t.accountNumber = 1
+    await t.enter()
+    t.accountNumber = 0
   })
 
   // reset contract accounts
@@ -41,149 +38,91 @@ contract('MatryxCommit', async () => {
   })
 
   it('Able to create a new initial commit for a tournament', async () => {
-    await setup(artifacts, web3, 1, true)
-    
-    // submit to tournament from account 1
-    commit.accountNumber = 1
-    
-    const initialCommitsBefore = await commit.getInitialCommits()
-    await commit.submitToTournament(tournament.address, stb('submission', 3), stb(genId(32), 2), stb(genId(32), 2), toWei(1), '0x00', 'new group')
-    const initialCommitsAfter = await commit.getInitialCommits()
+    let commitsBefore = await commit.getInitialCommits()
+    await createSubmission(t, '0x00', toWei(1), 1)
+    let commitsAfter = await commit.getInitialCommits()
 
-    const groupName = await commit.getGroupName(keccak('new group'))
-    assert.equal(groupName, 'new group', 'New group exists')
-    
-    assert.equal(initialCommitsBefore.length+1, initialCommitsAfter.length, 'Commit creation for tournament should increase initial commit list size')
+    assert.equal(commitsBefore.length + 1, commitsAfter.length, 'Commit creation for tournament should increase initial commit list size')
   })
 
   it('Able to get submission details', async () => {
-    roundData = {
-      start: Math.floor(Date.now() / 1000),
-      duration: 45,
-      review: 60,
-      bounty: web3.toWei(5)
-    }
+    let sHash = await createSubmission(t, '0x00', toWei(1), 1)
+    let s = await platform.getSubmission(sHash)
 
-    t = await createTournament('tournament', web3.toWei(6), roundData, 0)
-    let [, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-    
-    sHash = await createSubmission(t, '0x00', 1)
-
-    s = await r.getSubmission(sHash)
-    
-    assert.isTrue(bts(s.title).includes("A submission"), "Submission title incorrect")
-    assert.isTrue(bts(s.descHash).includes("Qm"), "Incorrect description hash")
+    assert.equal(s.tournament, t.address, "Submission tournament incorrect")
   })
 
   it('Able to create commit with parent for a tournament', async () => {
-    const parentHash = await createCommit('0x00', stb(genId(32), 2), toWei(1), 1)
+    let parentHash = await createCommit('0x00', false, genId(10), toWei(1), 1)
+    let submissionHash = await createSubmission(t, parentHash, toWei(1), 1)
+    let { commitHash } = await platform.getSubmission(submissionHash)
 
-    roundData = {
-      start: Math.floor(Date.now() / 1000),
-      duration: 60,
-      review: 60,
-      bounty: web3.toWei(5)
-    }
-
-    t = await createTournament('tournament', web3.toWei(6), roundData, 0)
-    let [, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-    
-    const commitHash = await createSubmission(t, parentHash, 1)
-    
-    const commitChild = (await commitChildren(parentHash))[0]
+    let commitChild = (await commitChildren(parentHash))[0]
     assert.equal(commitChild, commitHash, 'Child commit should be same as what was submitted')
   })
 
   it('Correct winning submission rewards on round', async function() {
-    roundData = {
-      start: Math.floor(Date.now() / 1000),
-      duration: 45,
-      review: 60,
-      bounty: web3.toWei(5)
-    }
-
-    t = await createTournament('tournament', web3.toWei(6), roundData, 0)
-    let [, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-    // create first submission
-    s1 = await createSubmission(t, '0x00', 1)
-    // create a second submission off of it from another account
-    s2 = await createSubmission(t, '0x00', 2)
-
-    submissions = [s1, s2]
-
+    let s1 = await createSubmission(t, '0x00', toWei(1), 1)
+    let s2 = await createSubmission(t, '0x00', toWei(1), 2)
+    let c1 = await platform.getSubmission(s1)
+    let c2 = await platform.getSubmission(s2)
+    let submissions = [s1, s2]
+    
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
-    let s1Reward = await platform.getCommitBalance(s1).then(fromWei)
-    let s2Reward = await platform.getCommitBalance(s2).then(fromWei)
-
-    assert.equal(s1Reward, 3, "Submission 1 reward doesn't match reward distribution")
-    assert.equal(s2Reward, 3, "Submission 2 reward doesn't match reward distribution")
+    let s1Reward = await platform.getCommitBalance(c1.commitHash).then(fromWei)
+    let s2Reward = await platform.getCommitBalance(c2.commitHash).then(fromWei)
+    
+    assert.equal(s1Reward, 50, "Submission 1 reward doesn't match reward distribution")
+    assert.equal(s2Reward, 50, "Submission 2 reward doesn't match reward distribution")
   })
-
+  
   it('Correct user balances for winning submissions with a common parent', async function() {
-    roundData = {
-      start: Math.floor(Date.now() / 1000),
-      duration: 45,
-      review: 60,
-      bounty: web3.toWei(5)
-    }
-
-    t = await createTournament('tournament', web3.toWei(6), roundData, 0)
-    let [, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-    // initial parent commit
-    commit.accountNumber = 1
-    const parentContent = stb(genId(32), 2)
-    const groupName = 'multiple winner group'
-    let p = await createCommit(parentContent, toWei(4), groupName, 0)
-    // create submission off of it
-    await addToGroup(0, groupName, accounts[1])
+    let parentHash = await createCommit('0x00', false, genId(10), toWei(4), 0)
+    await commit.addGroupMember(parentHash, accounts[1])
+    await commit.addGroupMember(parentHash, accounts[2])
     
-    s1 = await createSubmission(t, p, 1)
-    // create a second submission off of it from another account
-    await addToGroup(0, groupName, accounts[2])
-    
-    s2 = await createSubmission(t, p, 2)
-
-    submissions = [s1, s2]
+    let s1 = await createSubmission(t, parentHash, toWei(1), 1)
+    let s2 = await createSubmission(t, parentHash, toWei(1), 2)
+    let c1 = await platform.getSubmission(s1)
+    let c2 = await platform.getSubmission(s2)
+    let submissions = [s1, s2]
 
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
 
-    let user0Bal = await commit.getAvailableRewardForUser(s1, accounts[0]).then(fromWei)
-    user0Bal += await commit.getAvailableRewardForUser(s2, accounts[0]).then(fromWei)
-    let user1Bal = await commit.getAvailableRewardForUser(s1, accounts[1]).then(fromWei)
-    let user2Bal = await commit.getAvailableRewardForUser(s2, accounts[2]).then(fromWei)
+    let user0Bal = await commit.getAvailableRewardForUser(c1.commitHash, accounts[0]).then(fromWei)
+    user0Bal += await commit.getAvailableRewardForUser(c2.commitHash, accounts[0]).then(fromWei)
+    let user1Bal = await commit.getAvailableRewardForUser(c1.commitHash, accounts[1]).then(fromWei)
+    let user2Bal = await commit.getAvailableRewardForUser(c2.commitHash, accounts[2]).then(fromWei)
 
-    assert.equal(user0Bal, 4, "Parent owner available reward doesn't match reward distribution")
-    assert.equal(user1Bal, 1, "s1 owner available reward doesn't match reward distribution")
-    assert.equal(user2Bal, 1, "s2 owner available reward doesn't match reward distribution")
+    assert.equal(user0Bal, 80, "Parent owner available reward doesn't match reward distribution")
+    assert.equal(user1Bal, 10, "s1 owner available reward doesn't match reward distribution")
+    assert.equal(user2Bal, 10, "s2 owner available reward doesn't match reward distribution")
   })
 
-  it('Able to withdraw reward from commit with height less than commit chain max length', async () => {
-    // create conga line of commits from account 1
-    const group = genId(5)
-    let commitHash = await initCommit(stb(genId(32), 2), toWei(1), group, 1)
-
-    // first 20 from account 1
-    let congaLine = await commitCongaLine(commitHash, 4, 1)
+  it('Able to withdraw reward from commit', async () => {
+    // first 5 from account 1
+    let congaLine = await commitCongaLine('0x00', 5, 1)
     let lastCommit = congaLine[congaLine.length - 1]
 
-    await addToGroup(1, group, network.accounts[2])
-    
-    // next 80 from account 2
+    commit.accountNumber = 1
+    await commit.addGroupMember(lastCommit, accounts[2])
+
+    // next 5 from account 2
     congaLine = await commitCongaLine(lastCommit, 5, 2)
     lastCommit = congaLine[congaLine.length - 1]
-    
-    await enterTournament(tournament, 2)
-    tournament.accountNumber = 2
-    await tournament.createSubmission(stb('submission', 3), stb(genId(32), 2), lastCommit)
-    tournament.accountNumber = 0
+
+    await enterTournament(t, 2)
+    t.accountNumber = 2
+    await t.createSubmission('submission', lastCommit)
+    t.accountNumber = 0
+
+    const roundIndex = await t.getCurrentRoundIndex()
+    const { submissions } = await t.getRoundInfo(roundIndex)
+    const submission = submissions[submissions.length - 1]
 
     // select winners of tournament and distribute reward
-    await selectWinnersWhenInReview(tournament, [lastCommit], [1], [0, 0, 0, 0], 0)
-    
+    await selectWinnersWhenInReview(t, [submission], [1], [0, 0, 0, 0], 0)
+
     let bal1 = await commit.getAvailableRewardForUser(lastCommit, accounts[1]).then(fromWei)
     let bal2 = await commit.getAvailableRewardForUser(lastCommit, accounts[2]).then(fromWei)
 
@@ -192,26 +131,29 @@ contract('MatryxCommit', async () => {
   })
 
   it('Correct reward distribution when submitting a fork to the tournament', async () => {
-    // create conga line of commits from account 1
-    const group = genId(5)
-    const commitHash = await initCommit(stb(genId(32), 2), toWei(1), group, 1)
+    let commitHash = await createCommit('0x00', false, genId(32), toWei(1), 1)
+    let fork = await createCommit(commitHash, true, genId(32), toWei(3), 2)
 
-    // fork lasat commit in conga line
-    const fork = await forkCommit(stb(genId(32), 2), toWei(3), commitHash, 2)
-
+    let forkPayment = await commit.getAvailableRewardForUser(commitHash, accounts[1]).then(fromWei)
+    assert.equal(forkPayment, 1, "Fork reward not available to parent")
+    
     // withdraw funds from the fork
     commit.accountNumber = 1
     await commit.withdrawAvailableReward(commitHash)
     commit.accountNumber = 0
 
-    await enterTournament(tournament, 2)
-    tournament.accountNumber = 2
-    await tournament.createSubmission(stb('submission', 3), stb(genId(32), 2), fork)
-    tournament.accountNumber = 0
+    await enterTournament(t, 2)
+    t.accountNumber = 2
+    await t.createSubmission('submission', fork)
+    t.accountNumber = 0
+
+    const roundIndex = await t.getCurrentRoundIndex()
+    const { submissions } = await t.getRoundInfo(roundIndex)
+    const submission = submissions[submissions.length - 1]
 
     // select winners of tournament and distribute reward
-    await selectWinnersWhenInReview(tournament, [fork], [1], [0, 0, 0, 0], 0)
-    
+    await selectWinnersWhenInReview(t, [submission], [1], [0, 0, 0, 0], 0)
+
     let bal1 = await commit.getAvailableRewardForUser(fork, accounts[1]).then(fromWei)
     let bal2 = await commit.getAvailableRewardForUser(fork, accounts[2]).then(fromWei)
 

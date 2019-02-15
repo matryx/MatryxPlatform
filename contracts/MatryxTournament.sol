@@ -83,7 +83,7 @@ library LibTournament {
         uint256 totalEntryFees;
 
         mapping(address=>bool) hasWithdrawn;
-        bool hasBeenWithdrawnFrom;
+        uint256 numWithdrawn;
     }
 
     struct RoundInfo {
@@ -330,11 +330,13 @@ library LibTournament {
         LibTournament.RoundData storage round = tournament.rounds[roundIndex];
 
         require(sender == tournament.info.owner, "Must be owner");
-        require(amount <= data.balanceOf[self], "Tournament does not have the funds");
         uint256 rState = getRoundState(self, sender, data, roundIndex);
         require(rState <= uint256(LibGlobals.RoundState.InReview), "Cannot transfer after winners selected");
 
-        round.details.bounty = round.details.bounty.add(amount);
+        uint256 newBounty = round.details.bounty.add(amount);
+        require(newBounty <= data.balanceOf[self], "Tournament does not have the funds");
+
+        round.details.bounty = newBounty;
     }
 
     /// @dev Transfers the round reward to its winning submissions during the winner selection process
@@ -470,16 +472,16 @@ library LibTournament {
         require(round.hasSubmitted[sender], "Must be submission owner in latest round");
         require(!tournament.hasWithdrawn[sender], "Already withdrawn");
 
-        if (!tournament.hasBeenWithdrawnFrom) {
-            tournament.hasBeenWithdrawnFrom = true;
+        if (tournament.numWithdrawn == 0) {
             round.info.closed = true;
         }
 
         uint256 tBalance = data.balanceOf[self];
-        uint256 submitterCount = round.info.submitterCount;
+        uint256 submitterCount = round.info.submitterCount.sub(tournament.numWithdrawn);
         uint256 share = tBalance.div(submitterCount);
 
         tournament.hasWithdrawn[sender] = true;
+        tournament.numWithdrawn++;
 
         data.totalBalance = data.totalBalance.sub(share);
         data.balanceOf[self] = data.balanceOf[self].sub(share);
@@ -696,7 +698,7 @@ library LibTournamentHelper {
     function recoverFunds(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
-        require(!tournament.hasBeenWithdrawnFrom, "Already withdrawn");
+        require(tournament.numWithdrawn == 0, "Already withdrawn");
 
         uint256 roundIndex = getCurrentRoundIndex(self, sender, data);
         LibTournament.RoundData storage round = tournament.rounds[roundIndex];
@@ -707,7 +709,7 @@ library LibTournamentHelper {
         uint256 funds = data.balanceOf[self];
 
         round.info.closed = true;
-        tournament.hasBeenWithdrawnFrom = true;
+        tournament.numWithdrawn = 1;
 
         // recover remaining tournament and round funds
         data.totalBalance = data.totalBalance.sub(funds);

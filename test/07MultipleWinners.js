@@ -35,10 +35,10 @@ contract('Multiple Commits and Close Tournament', function() {
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
-    s1 = await createSubmission(t, '0x00', 1)
-    s2 = await createSubmission(t, '0x00', 2)
-    s3 = await createSubmission(t, '0x00', 3)
-    s4 = await createSubmission(t, '0x00', 4)
+    s1 = await createSubmission(t, '0x00', toWei(1), 1)
+    s2 = await createSubmission(t, '0x00', toWei(1), 2)
+    s3 = await createSubmission(t, '0x00', toWei(1), 3)
+    s4 = await createSubmission(t, '0x00', toWei(1), 4)
 
     assert.ok(s1 && s2 && s3 && s4, 'Unable to create submissions.')
   })
@@ -121,10 +121,10 @@ contract('Multiple Commits and Start Next Round', function() {
     r = Contract(roundAddress, IMatryxRound, 0)
 
     //Create submission with no contributors
-    s1 = await createSubmission(t, '0x00', 1)
-    s2 = await createSubmission(t, '0x00', 2)
-    s3 = await createSubmission(t, '0x00', 3)
-    s4 = await createSubmission(t, '0x00', 4)
+    s1 = await createSubmission(t, '0x00', toWei(1), 1)
+    s2 = await createSubmission(t, '0x00', toWei(1), 2)
+    s3 = await createSubmission(t, '0x00', toWei(1), 3)
+    s4 = await createSubmission(t, '0x00', toWei(1), 4)
 
     assert.ok(s1 && s2 && s3 && s4, 'Unable to create submissions.')
   })
@@ -187,7 +187,7 @@ contract('Multiple Commits and Start Next Round', function() {
   })
 
   it('Able to make a submission to the new round', async function() {
-    let s2 = await createSubmission(t, '0x00', 1)
+    let s2 = await createSubmission(t, '0x00', toWei(1), 1)
     assert.ok(s2, 'Submission is not valid.')
   })
 
@@ -224,10 +224,10 @@ contract('Multiple Commits and Do Nothing', function() {
     r = Contract(roundAddress, IMatryxRound, 0)
 
     //Create submission with no contributors
-    s1 = await createSubmission(t, '0x00', 1)
-    s2 = await createSubmission(t, '0x00', 2)
-    s3 = await createSubmission(t, '0x00', 3)
-    s4 = await createSubmission(t, '0x00', 4)
+    s1 = await createSubmission(t, '0x00', toWei(1), 1)
+    s2 = await createSubmission(t, '0x00', toWei(1), 2)
+    s3 = await createSubmission(t, '0x00', toWei(1), 3)
+    s4 = await createSubmission(t, '0x00', toWei(1), 4)
 
     assert.ok(s1 && s2 && s3 && s4, 'Unable to create submissions.')
   })
