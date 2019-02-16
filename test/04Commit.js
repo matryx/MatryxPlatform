@@ -1,6 +1,6 @@
 const { shouldFail } = require('openzeppelin-test-helpers')
 
-const { setup, genId, stringToBytes, Contract } = require('../truffle/utils')
+const { setup, genId, stringToBytes } = require('../truffle/utils')
 const { init, createCommit, claimCommit } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
@@ -12,7 +12,7 @@ contract('MatryxCommit', async () => {
     platform = data.platform
     commit = data.commit
     token = data.token
-    
+
     await setup(artifacts, web3, 1, true)
     await setup(artifacts, web3, 3, true)
   })
@@ -33,12 +33,12 @@ contract('MatryxCommit', async () => {
     let commitHash = await createCommit('0x00', false, genId(16), toWei(1), 0)
     await commit.addGroupMember(commitHash, accounts[1])
     await commit.addGroupMember(commitHash, accounts[2])
-    
+
     let members = await commit.getGroupMembers(commitHash)
     let includesAllMembers = accounts.slice(0, 3).every(acc => members.includes(acc))
     assert.isTrue(includesAllMembers, 'Did not add more group members successfully')
   })
-  
+
   it('Cannot add user to a group twice', async () => {
     let commitHash = await createCommit('0x00', false, genId(16), toWei(1), 0)
     await commit.addGroupMember(commitHash, accounts[1])
@@ -58,10 +58,10 @@ contract('MatryxCommit', async () => {
     let tx = commit.addGroupMember(commitHash, accounts[2])
     await shouldFail.reverting(tx)
   })
-  
+
   it('Cannot create commit if not in group', async () => {
     let parentHash = await createCommit('0x00', false, genId(16), toWei(1), 0)
-    
+
     let salt = stringToBytes('NaCl')
     let content = genId(16)
     await claimCommit(salt, content, 1)
@@ -70,10 +70,10 @@ contract('MatryxCommit', async () => {
     let tx = commit.createCommit(parentHash, false, salt, content, toWei(1))
     await shouldFail.reverting(tx)
   })
-  
+
   it('Able to fork from commit', async () => {
     let parentHash = await createCommit('0x00', false, genId(16), toWei(1), 0)
-    
+
     let balanceBefore = await token.balanceOf(network.accounts[1]).then(fromWei)
     let commitHash = await createCommit(parentHash, true, genId(16), toWei(1), 1)
     let returnCommit = await commit.getCommit(commitHash)
@@ -87,7 +87,7 @@ contract('MatryxCommit', async () => {
   it('Commit value transferred from fork owner to commit', async () => {
     let parentHash = await createCommit('0x00', false, genId(16), toWei(1), 0)
     let balanceBefore = await platform.getCommitBalance(parentHash).then(fromWei)
-    
+
     // fork
     await createCommit(parentHash, true, genId(16), toWei(1), 1)
     let balanceAfter = await platform.getCommitBalance(parentHash).then(fromWei)

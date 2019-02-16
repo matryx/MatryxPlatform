@@ -1,6 +1,5 @@
-const { expectEvent, shouldFail } = require('openzeppelin-test-helpers')
-const { genId, setup, stringToBytes, Contract } = require('../truffle/utils')
-const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitChildren, addToGroup, commitCongaLine, createCommit, createSubmission } = require('./helpers')(artifacts, web3)
+const { genId, setup } = require('../truffle/utils')
+const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitChildren, commitCongaLine, createCommit, createSubmission } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 let platform, commit
@@ -67,20 +66,20 @@ contract('MatryxCommit', async () => {
     let c1 = await platform.getSubmission(s1)
     let c2 = await platform.getSubmission(s2)
     let submissions = [s1, s2]
-    
+
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
     let s1Reward = await platform.getCommitBalance(c1.commitHash).then(fromWei)
     let s2Reward = await platform.getCommitBalance(c2.commitHash).then(fromWei)
-    
+
     assert.equal(s1Reward, 50, "Submission 1 reward doesn't match reward distribution")
     assert.equal(s2Reward, 50, "Submission 2 reward doesn't match reward distribution")
   })
-  
+
   it('Correct user balances for winning submissions with a common parent', async function() {
     let parentHash = await createCommit('0x00', false, genId(10), toWei(4), 0)
     await commit.addGroupMember(parentHash, accounts[1])
     await commit.addGroupMember(parentHash, accounts[2])
-    
+
     let s1 = await createSubmission(t, parentHash, toWei(1), 1)
     let s2 = await createSubmission(t, parentHash, toWei(1), 2)
     let c1 = await platform.getSubmission(s1)
@@ -136,7 +135,7 @@ contract('MatryxCommit', async () => {
 
     let forkPayment = await commit.getAvailableRewardForUser(commitHash, accounts[1]).then(fromWei)
     assert.equal(forkPayment, 1, "Fork reward not available to parent")
-    
+
     // withdraw funds from the fork
     commit.accountNumber = 1
     await commit.withdrawAvailableReward(commitHash)

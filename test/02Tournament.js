@@ -1,6 +1,6 @@
 const { shouldFail } = require('openzeppelin-test-helpers')
 
-const { setup, Contract } = require('../truffle/utils')
+const { setup } = require('../truffle/utils')
 const { init, createTournament, waitUntilClose, waitUntilOpen, createSubmission, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
@@ -46,11 +46,6 @@ contract('Open Tournament Testing', function() {
   it('Able to get tournament state', async function() {
     let s = await t.getState()
     assert.equal(s, 0, 'Unable to get state.')
-  })
-
-  it('Able to get tournament details', async function() {
-    let d = await t.getDetails()
-    assert.ok(d, 'Unable to get tournament details.')
   })
 
   it('Able to get current round', async function() {
@@ -122,7 +117,7 @@ contract('Open Tournament Testing', function() {
   it('Able to exit the tournament', async function() {
     t.accountNumber = 1
     await t.exit()
-    
+
     let isEnt = await t.isEntrant(accounts[1])
     assert.isFalse(isEnt, 'Unable to exit the tournament.')
   })
@@ -156,7 +151,7 @@ contract('On Hold Tournament Testing', function() {
       review: 40,
       bounty: web3.toWei(5)
     }
-    
+
     await t.updateNextRound(roundData)
     await waitUntilClose(t, roundIndex)
 

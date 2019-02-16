@@ -1,6 +1,4 @@
 const { shouldFail } = require('openzeppelin-test-helpers')
-
-const { Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, waitUntilInReview, waitUntilClose, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
@@ -21,10 +19,10 @@ contract('NotYetOpen Round Testing', function() {
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let roundIndex = await t.getCurrentRoundIndex()
-    
+
     assert.equal(roundIndex, 0, 'Round is not valid.')
   })
-  
+
   it('Able to get round details', async function() {
     let roundIndex = await t.getCurrentRoundIndex()
     let { start, duration, review, bounty } = await t.getRoundDetails(roundIndex)
@@ -33,7 +31,7 @@ contract('NotYetOpen Round Testing', function() {
     assert.equal(review, roundData.review, 'Incorrect round review')
     assert.equal(bounty, roundData.bounty, 'Incorrect round bounty')
   })
-  
+
   it('Round state is Not Yet Open', async function() {
     let roundIndex = await t.getCurrentRoundIndex()
     let state = await t.getRoundState(roundIndex)
@@ -73,7 +71,7 @@ contract('Open Round Testing', function() {
     }
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let roundIndex = await t.getCurrentRoundIndex()
-    
+
     assert.equal(roundIndex, 0, 'Round is not valid.')
   })
 
@@ -90,7 +88,7 @@ contract('Open Round Testing', function() {
 
     assert.ok(s && s2, 'Unable to make submissions')
   })
-  
+
   it('Number of submissions should be 2', async function() {
     let roundIndex = await t.getCurrentRoundIndex()
     let { submissions } = await t.getRoundInfo(roundIndex)
@@ -113,7 +111,7 @@ contract('In Review Round Testing', function() {
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let roundIndex = await t.getCurrentRoundIndex()
-    
+
     assert.equal(roundIndex, 0, 'Round is not valid.')
 
     //Create submissions
@@ -163,7 +161,7 @@ contract('Closed Round Testing', function() {
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let roundIndex = await t.getCurrentRoundIndex()
-    
+
     assert.equal(roundIndex, 0, 'Round is not valid.')
 
     // Create submissions
@@ -221,7 +219,7 @@ contract('Abandoned Round Testing', function() {
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let roundIndex = await t.getCurrentRoundIndex()
-    
+
     assert.equal(roundIndex, 0, 'Round is not valid.')
 
     // Create a submission
@@ -306,7 +304,7 @@ contract('Abandoned Round due to No Submissions', function() {
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let roundIndex = await t.getCurrentRoundIndex()
-    
+
     // Wait for the round to become Abandoned
     await waitUntilClose(t, roundIndex)
 
@@ -318,7 +316,7 @@ contract('Abandoned Round due to No Submissions', function() {
     let state = await t.getRoundState(roundIndex)
     assert.equal(+state, 6, 'Round State should be Abandoned')
   })
-  
+
   it('Able to recover funds and mark the round as closed', async function() {
     await t.recoverFunds()
     let roundIndex = await t.getCurrentRoundIndex()
@@ -436,7 +434,7 @@ contract('Ghost Round Testing', function() {
 
     t = await createTournament('tournament', web3.toWei(20), roundData, 0)
     let roundIndex = await t.getCurrentRoundIndex()
-    
+
     assert.equal(roundIndex, 0, 'Round is not valid.')
 
     s = await createSubmission(t, '0x00', toWei(1), 1)

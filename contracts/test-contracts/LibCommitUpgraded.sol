@@ -4,13 +4,11 @@ pragma experimental ABIEncoderV2;
 import "../MatryxPlatform.sol";
 
 interface IMatryxCommitUpgraded {
-    function getGroupMembers(bytes32 commitHash) external pure returns (address[] memory);
+    function getAvailableRewardForUser(bytes32, address) external pure returns (uint256);
 }
 
 library LibCommitUpgraded {
-    function getGroupMembers(address self, address, MatryxPlatform.Data storage, bytes32) public pure returns (address[] memory) {
-        address[] memory array = new address[](1);
-        array[0] = self;
-        return array;
+    function getAvailableRewardForUser(address self, address, MatryxPlatform.Data storage, bytes32 commitHash, address user) public pure returns (uint256) {
+        return 42;
     }
 }

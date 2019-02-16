@@ -364,7 +364,6 @@ library LibTournament {
             data.submissions[winner].reward = reward;
         }
 
-        data.totalBalance = data.totalBalance.sub(round.details.bounty);
         data.balanceOf[self] = data.balanceOf[self].sub(round.details.bounty);
     }
 

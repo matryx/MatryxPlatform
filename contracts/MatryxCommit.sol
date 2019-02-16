@@ -130,7 +130,7 @@ library LibCommit {
     function addGroupMember(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 commitHash, address user) public {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         require(data.commits[commitHash].owner != address(0), "Invalid commit");
-        
+
         bytes32 groupHash = data.commits[commitHash].groupHash;
         require(data.groups[groupHash].hasMember[sender], "Only group members can add a new member");
         require(!data.groups[groupHash].hasMember[user], "User is already a group member");
@@ -156,7 +156,7 @@ library LibCommit {
         for(uint256 i = 0; i < users.length; i++) {
             address user = users[i];
             if (data.groups[groupHash].hasMember[user]) continue;
-            
+
             data.groups[groupHash].hasMember[user] = true;
             data.groups[groupHash].members.push(user);
 
@@ -172,7 +172,7 @@ library LibCommit {
     function claimCommit(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 commitHash) public {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         require(data.commitClaims[commitHash] == uint256(0), "Commit hash already claimed");
-        
+
         data.commitClaims[commitHash] = now;
         emit CommitClaimed(commitHash);
     }
@@ -189,7 +189,7 @@ library LibCommit {
     function createCommit(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 parentHash, bool isFork, bytes32 salt, string memory contentHash, uint256 value) public {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         bytes32 commitHash = keccak256(abi.encodePacked(sender, salt, contentHash));
-        
+
         uint256 claimTime = data.commitClaims[commitHash];
         require(claimTime != uint256(0), "Commit must be claimed first");
 
@@ -312,6 +312,7 @@ library LibCommit {
     /// @param commitHash  Commit hash to look up the available reward
     function withdrawAvailableReward(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 commitHash) public {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
+        require(data.commits[commitHash].owner != address(0), "Commit does not exist");
         uint256 userShare = getAvailableRewardForUser(sender, sender, data, commitHash, sender);
         require(userShare > 0, "No reward available");
 

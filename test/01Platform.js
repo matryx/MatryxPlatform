@@ -1,9 +1,7 @@
 const { shouldFail } = require('openzeppelin-test-helpers')
 
-const { init, createTournament, enterTournament } = require('./helpers')(artifacts, web3)
+const { init, createTournament } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
-
-const MatryxPlatform = artifacts.require('MatryxPlatform')
 
 let platform
 let token
