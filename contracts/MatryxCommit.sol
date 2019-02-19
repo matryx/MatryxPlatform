@@ -12,6 +12,7 @@ contract MatryxCommit is MatryxForwarder {
 
 interface IMatryxCommit {
     function getCommit(bytes32 commitHash) external view returns (LibCommit.Commit memory commit);
+    function getBalance(bytes32 commitHash) external view returns (uint256);
     function getCommitByContentHash(string calldata contentHash) external view returns (LibCommit.Commit memory commit);
     function getInitialCommits() external view returns (bytes32[] memory);
     function getGroupMembers(bytes32 commitHash) external view returns (address[] memory);
@@ -66,6 +67,13 @@ library LibCommit {
     /// @param commitHash  Hash of the commit to return
     function getCommit(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (Commit memory commit) {
         return data.commits[commitHash];
+    }
+
+    /// @dev Returns commit data for the given hash
+    /// @param data        Platform data struct
+    /// @param commitHash  Commit hash
+    function getBalance(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (uint256) {
+        return data.commitBalance[commitHash];
     }
 
     /// @dev Returns commit data for the given content hash
@@ -300,7 +308,7 @@ library LibCommit {
         uint256 balance = data.commitBalance[commitHash];
         uint256 totalBalance = balance.add(stats.totalWithdrawn);
 
-        uint256 userShare = totalBalance.mul(userValue).div(totalValue).sub(stats.amountWithdrawn[sender]);
+        uint256 userShare = totalBalance.mul(userValue).div(totalValue).sub(stats.amountWithdrawn[user]);
 
         return userShare;
     }
