@@ -120,7 +120,7 @@ library LibTournament {
         bytes32 commitHash;
         string content;
         uint256 reward;
-        uint256 timeSubmitted;
+        uint256 timestamp;
     }
 
     /// @dev Returns Tournament Info
@@ -135,7 +135,7 @@ library LibTournament {
 
     /// @dev Returns the MTX balance of the Tournament
     function getBalance(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return data.balanceOf[self];
+        return data.tournamentBalance[self];
     }
 
     /// @dev Returns the state of this Tournament
@@ -232,7 +232,7 @@ library LibTournament {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
 
         require(sender == address(this), "Must be called by platform");
-        require(data.balanceOf[self] >= rDetails.bounty, "Insufficient funds for Round");
+        require(data.tournamentBalance[self] >= rDetails.bounty, "Insufficient funds for Round");
 
         require(rDetails.duration >= MIN_ROUND_LENGTH, "Round too short");
         require(rDetails.duration <= MAX_ROUND_LENGTH, "Round too long");
@@ -273,7 +273,7 @@ library LibTournament {
         require(getRoundState(self, sender, data, index) == uint256(LibGlobals.RoundState.Open), "Round must be Open");
 
         bytes32 submissionHash = keccak256(abi.encodePacked(self, commitHash, index));
-        require(data.submissions[submissionHash].timeSubmitted == 0, "Commit has already been submitted to this round");
+        require(data.submissions[submissionHash].timestamp == 0, "Commit has already been submitted to this round");
 
         LibTournament.RoundData storage round = tournament.rounds[index];
 
@@ -282,7 +282,7 @@ library LibTournament {
         submission.roundIndex = index;
         submission.commitHash = commitHash;
         submission.content = content;
-        submission.timeSubmitted = now;
+        submission.timestamp = now;
 
         data.commitToSubmissions[commitHash].push(submissionHash);
         round.info.submissions.push(submissionHash);
@@ -315,7 +315,7 @@ library LibTournament {
         require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Tournament must be active");
 
         data.totalBalance = data.totalBalance.add(amount);
-        data.balanceOf[self] = data.balanceOf[self].add(amount);
+        data.tournamentBalance[self] = data.tournamentBalance[self].add(amount);
         require(IToken(info.token).transferFrom(sender, address(this), amount), "Transfer failed");
     }
 
@@ -334,7 +334,7 @@ library LibTournament {
         require(rState <= uint256(LibGlobals.RoundState.InReview), "Cannot transfer after winners selected");
 
         uint256 newBounty = round.details.bounty.add(amount);
-        require(newBounty <= data.balanceOf[self], "Tournament does not have the funds");
+        require(newBounty <= data.tournamentBalance[self], "Tournament does not have the funds");
 
         round.details.bounty = newBounty;
     }
@@ -364,7 +364,7 @@ library LibTournament {
             data.submissions[winner].reward = reward;
         }
 
-        data.balanceOf[self] = data.balanceOf[self].sub(round.details.bounty);
+        data.tournamentBalance[self] = data.tournamentBalance[self].sub(round.details.bounty);
     }
 
     /// @dev Select winners of the current round
@@ -399,7 +399,7 @@ library LibTournament {
         if (wData.action == uint256(LibGlobals.SelectWinnerAction.CloseTournament)) {
             // transfer rest of tournament balance to round and close tournament
             round.info.closed = true;
-            round.details.bounty = data.balanceOf[self];
+            round.details.bounty = data.tournamentBalance[self];
             _transferToWinners(self, data, roundIndex);
         }
 
@@ -407,7 +407,7 @@ library LibTournament {
             _transferToWinners(self, data, roundIndex);
 
             // create new round but don't start
-            uint256 bounty = data.balanceOf[self];
+            uint256 bounty = data.tournamentBalance[self];
             bounty = bounty < round.details.bounty ? bounty : round.details.bounty;
 
             newRound.start = round.details.start.add(round.details.duration).add(round.details.review);
@@ -475,7 +475,7 @@ library LibTournament {
             round.info.closed = true;
         }
 
-        uint256 tBalance = data.balanceOf[self];
+        uint256 tBalance = data.tournamentBalance[self];
         uint256 submitterCount = round.info.submitterCount.sub(tournament.numWithdrawn);
         uint256 share = tBalance.div(submitterCount);
 
@@ -483,7 +483,7 @@ library LibTournament {
         tournament.numWithdrawn++;
 
         data.totalBalance = data.totalBalance.sub(share);
-        data.balanceOf[self] = data.balanceOf[self].sub(share);
+        data.tournamentBalance[self] = data.tournamentBalance[self].sub(share);
         require(IToken(info.token).transfer(sender, share), "Transfer failed");
 
         exit(self, sender, info, data);
@@ -504,7 +504,7 @@ library LibTournament {
 
         // close round
         round.info.closed = true;
-        round.details.bounty = data.balanceOf[self];
+        round.details.bounty = data.tournamentBalance[self];
 
         // then transfer all to winners of that Round
         _transferToWinners(self, data, roundIndex);
@@ -662,8 +662,9 @@ library LibTournamentHelper {
                 LibTournament.RoundDetails storage currentDetails = tournament.rounds[roundIndex - 1].details;
                 require(rDetails.start >= currentDetails.start.add(currentDetails.duration).add(currentDetails.review), "Round cannot start before end of review");
             }
-
-            details.start = rDetails.start;
+            else {
+                details.start = rDetails.start < now ? now : rDetails.start;
+            }
         }
 
         if (rDetails.duration > 0) {
@@ -675,7 +676,7 @@ library LibTournamentHelper {
         }
 
         if (rDetails.bounty > 0) {
-            require(rDetails.bounty <= data.balanceOf[self]);
+            require(rDetails.bounty <= data.tournamentBalance[self]);
             details.bounty = rDetails.bounty;
         }
     }
@@ -705,14 +706,14 @@ library LibTournamentHelper {
         require(getRoundState(self, data, roundIndex) == uint256(LibGlobals.RoundState.Abandoned), "Tournament must be abandoned");
         require(round.info.submissions.length == 0, "Must have 0 submissions");
 
-        uint256 funds = data.balanceOf[self];
+        uint256 funds = data.tournamentBalance[self];
 
         round.info.closed = true;
         tournament.numWithdrawn = 1;
 
         // recover remaining tournament and round funds
         data.totalBalance = data.totalBalance.sub(funds);
-        data.balanceOf[self] = 0;
+        data.tournamentBalance[self] = 0;
         require(IToken(info.token).transfer(sender, funds), "Transfer failed");
     }
 }

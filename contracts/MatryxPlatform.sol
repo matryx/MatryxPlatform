@@ -20,7 +20,7 @@ contract MatryxPlatform {
 
     struct Data {
         uint256 totalBalance;                                        // total allocated mtx balance of the platform
-        mapping(address=>uint256) balanceOf;                         // maps user addresses to user balances
+        mapping(address=>uint256) tournamentBalance;                 // maps tournament addresses to tournament balances
         mapping(bytes32=>uint256) commitBalance;                     // maps commit hashes to commit mtx balances
 
         mapping(address=>LibTournament.TournamentData) tournaments;  // maps tournament addresses to tournament structs
@@ -136,7 +136,7 @@ contract MatryxPlatform {
 
             res := delegatecall(gas, libAddress, ptr, size, 0, 0)               // delegatecall to library
             returndatacopy(ptr, 0, returndatasize)                              // copy return data into ptr for returning
-            
+
             if iszero(res) { revert(ptr, returndatasize) }                        // safety check
             return(ptr, returndatasize)                                         // return forwarded call returndata
         }
@@ -184,16 +184,15 @@ interface IMatryxPlatform {
 
     function getInfo() external view returns (MatryxPlatform.Info memory);
     function isTournament(address) external view returns (bool);
+    function isCommit(bytes32) external view returns (bool);
+    function isSubmission(bytes32) external view returns (bool);
 
     function getTotalBalance() external view returns (uint256);
-    function getBalanceOf(address) external view returns (uint256);
-    function getCommitBalance(bytes32) external view returns (uint256);
 
     function getTournamentCount() external view returns (uint256);
     function getTournaments() external view returns (address[] memory);
     function getSubmission(bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory);
 
-    function withdrawBalance() external;
     function createTournament(LibTournament.TournamentDetails calldata, LibTournament.RoundDetails calldata) external returns (address);
 }
 
@@ -229,27 +228,27 @@ library LibPlatform {
         return data.tournaments[tAddress].info.owner != address(0);
     }
 
+    /// @dev Return if a Commit exists
+    /// @param data      Platform data struct
+    /// @param cHash     Commit hash
+    /// @return          true if Commit exists
+    function isCommit(address, address, MatryxPlatform.Data storage data, bytes32 cHash) public view returns (bool){
+        return data.commits[cHash].owner != address(0);
+    }
+
+    /// @dev Return if a Submission exists
+    /// @param data      Platform data struct
+    /// @param sHash     Submission hash
+    /// @return          true if Submission exists
+    function isSubmission(address, address, MatryxPlatform.Data storage data, bytes32 sHash) public view returns (bool){
+        return data.submissions[sHash].tournament != address(0);
+    }
+
     /// @dev Return total allocated MTX in Platform
     /// @param data  Platform data struct
     /// @return      Total allocated MTX in Platform
     function getTotalBalance(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         return data.totalBalance;
-    }
-
-    /// @dev Return balance of a Tournament or user address
-    /// @param data      Platform data struct
-    /// @param cAddress  Address to get the balance of
-    /// @return          Address balance on Platform
-    function getBalanceOf(address, address, MatryxPlatform.Data storage data, address cAddress) public view returns (uint256) {
-        return data.balanceOf[cAddress];
-    }
-
-    /// @dev Return balance of a Commit
-    /// @param data        Platform data struct
-    /// @param commitHash  Commit hash to get the balance of
-    /// @return            Balance of the commit on Platform
-    function getCommitBalance(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (uint256) {
-        return data.commitBalance[commitHash];
     }
 
     /// @dev Return total number of Tournaments
@@ -270,17 +269,6 @@ library LibPlatform {
         return data.submissions[submissionHash];
     }
 
-    /// @dev Withdraw available MTX balance
-    /// @param sender  msg.sender to Platform
-    /// @param info    Platform info struct
-    /// @param data    Platform data struct
-    function withdrawBalance(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-        uint256 amount = data.balanceOf[sender];
-        data.balanceOf[sender] = 0;
-        data.totalBalance = data.totalBalance.sub(amount);
-        require(IToken(info.token).transfer(sender, amount));
-    }
-
     /// @dev Creates a Tournament
     /// @param sender    msg.sender to Platform
     /// @param info      Platform info struct
@@ -290,7 +278,7 @@ library LibPlatform {
     /// @return          Address of the created Tournament
     function createTournament(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails, LibTournament.RoundDetails memory rDetails) public returns (address) {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
-        
+
         require(tDetails.bounty > 0, "Tournament bounty must be greater than 0");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
         require(IToken(info.token).allowance(sender, address(this)) >= tDetails.bounty, "Insufficient MTX");
@@ -307,7 +295,7 @@ library LibPlatform {
         tournament.details = tDetails;
 
         data.totalBalance = data.totalBalance.add(tDetails.bounty);
-        data.balanceOf[tAddress] = tDetails.bounty;
+        data.tournamentBalance[tAddress] = tDetails.bounty;
         require(IToken(info.token).transferFrom(sender, address(this), tDetails.bounty), "Transfer failed");
 
         LibTournament.createRound(tAddress, address(this), info, data, rDetails);
