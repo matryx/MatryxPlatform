@@ -35,7 +35,7 @@ interface IMatryxTournament {
     function createSubmission(string calldata content, bytes32 commitHash) external;
 
     function updateDetails(LibTournament.TournamentDetails calldata) external;
-    function addFunds(uint256) external;
+    function addToBounty(uint256) external;
     function transferToRound(uint256) external;
 
     function selectWinners(LibTournament.WinnersData calldata, LibTournament.RoundDetails calldata) external;
@@ -44,7 +44,7 @@ interface IMatryxTournament {
     function closeTournament() external;
 
     function withdrawFromAbandoned() external;
-    function recoverFunds() external;
+    function recoverBounty() external;
 }
 
 library LibTournament {
@@ -310,7 +310,7 @@ library LibTournament {
     /// @param info      Info struct on Platform
     /// @param data      Data struct on Platform
     /// @param amount    Amount of MTX to add
-    function addFunds(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 amount) public {
+    function addToBounty(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 amount) public {
         require(IToken(info.token).allowance(sender, address(this)) >= amount, "Must approve funds first");
         require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Tournament must be active");
 
@@ -518,8 +518,8 @@ library LibTournament {
     /// @param sender  msg.sender to the Tournament
     /// @param info    Info struct on Platform
     /// @param data    Data struct on Platform
-    function recoverFunds(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-        LibTournamentHelper.recoverFunds(self, sender, info, data);
+    function recoverBounty(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+        LibTournamentHelper.recoverBounty(self, sender, info, data);
     }
 }
 
@@ -661,6 +661,7 @@ library LibTournamentHelper {
             if (tournament.rounds.length > 1) {
                 LibTournament.RoundDetails storage currentDetails = tournament.rounds[roundIndex - 1].details;
                 require(rDetails.start >= currentDetails.start.add(currentDetails.duration).add(currentDetails.review), "Round cannot start before end of review");
+                details.start = rDetails.start;
             }
             else {
                 details.start = rDetails.start < now ? now : rDetails.start;
@@ -695,7 +696,7 @@ library LibTournamentHelper {
         tournament.rounds[roundIndex].details.start = now;
     }
 
-    function recoverFunds(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+    function recoverBounty(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
         require(tournament.numWithdrawn == 0, "Already withdrawn");
