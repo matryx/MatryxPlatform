@@ -81,11 +81,11 @@ contract('Platform version upgrade', function() {
     platform = (await init()).platform
     system = Contract(MatryxSystem.address, IMatryxSystem)
 
-    const balanceBefore = await platform.getBalanceOf(accounts[0]).then(fromWei)
+    const balanceBefore = await platform.getTournamentCount().then(fromWei)
     await system.createVersion(2)
     await system.setContract(2, stb("LibPlatform"), LibPlatformUpgraded.address)
-    await system.addContractMethod(2, stb("LibPlatform"), selector('getBalanceOf(address)'), [selector('getBalanceOf(address,address,MatryxPlatform.Data storage,address)'), [3],[]])
-    const balanceAfter = await platform.getBalanceOf(accounts[0]).then(fromWei)
+    await system.addContractMethod(2, stb("LibPlatform"), selector('getTournamentCount()'), [selector('getTournamentCount(address,address,MatryxPlatform.Data storage)'), [3],[]])
+    const balanceAfter = await platform.getTournamentCount().then(fromWei)
     assert.equal(balanceBefore, balanceAfter, "Balances were not the same despite upgrade")
   })
 

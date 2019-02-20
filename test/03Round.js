@@ -11,7 +11,7 @@ contract('NotYetOpen Round Testing', function() {
   it('Able to create a tournament with a valid round', async function() {
     platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000) + 60,
+      start: Math.floor(Date.now() / 1000) + 80,
       duration: 120,
       review: 60,
       bounty: web3.toWei(5)
@@ -51,54 +51,85 @@ contract('NotYetOpen Round Testing', function() {
     assert.equal(fromWei(bounty), 6, 'Bounty was not added')
   })
 
+  it('Unable to transfer to round more funds than are available', async function() {
+    let tx = t.transferToRound(web3.toWei(100))
+    await shouldFail.reverting(tx)
+  })
+
   it('Able to enter tournament with Not Yet Open round', async function() {
     await enterTournament(t, 2)
     let isEnt = await t.isEntrant(accounts[2])
     assert.isTrue(isEnt, 'Could not enter tournament')
   })
+
+  it('Able to edit a Not Yet Open round', async function() {
+    roundData = {
+      start: 1,
+      duration: 80,
+      review: 40,
+      bounty: web3.toWei(1)
+    }
+
+    await t.updateNextRound(roundData)
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { start, duration, review, bounty } = await t.getRoundDetails(roundIndex)
+
+    assert.isTrue(start != 1, 'Start not updated correctly')
+    assert.equal(duration, 80, 'Duration not updated correctly')
+    assert.equal(review, 40, 'Review period not updated correctly')
+    assert.equal(fromWei(bounty), 1, 'Bounty not updated correctly')
+  })
 })
 
 contract('Open Round Testing', function() {
   let t //tournament
-  let s //submission
+
   it('Able to create a tournament with a Open round', async function() {
-    await init()
+    platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 120,
       review: 60,
       bounty: web3.toWei(5)
     }
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let roundIndex = await t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
 
     assert.equal(roundIndex, 0, 'Round is not valid.')
-  })
-
-  it('Round state is Open', async function() {
-    let roundIndex = await t.getCurrentRoundIndex()
-    let state = await t.getRoundState(roundIndex)
     assert.equal(state, 2, 'Round State should be Open')
   })
 
   it('Able to enter the tournament and make submissions', async function() {
-    // Create submissions
-    s = await createSubmission(t, '0x00', toWei(1), 1)
-    s2 = await createSubmission(t, '0x00', toWei(1), 2)
+    // Create submission
+    let sHash = await createSubmission(t, '0x00', toWei(1), 1)
+    sHash = await platform.isSubmission(sHash)
 
-    assert.ok(s && s2, 'Unable to make submissions')
+    assert.isTrue(sHash, 'Unable to make submissions')
   })
 
   it('Number of submissions should be 2', async function() {
+    await createSubmission(t, '0x00', toWei(1), 1)
+
     let roundIndex = await t.getCurrentRoundIndex()
     let { submissions } = await t.getRoundInfo(roundIndex)
     assert.equal(submissions.length, 2, 'Number of Submissions should be 2')
   })
+
+  it('Unable to start next round during open round', async function() {
+    let tx = t.startNextRound()
+    await shouldFail.reverting(tx)
+  })
+
+  it('Unable to close tournament during open round', async function() {
+    let tx = t.closeTournament()
+    await shouldFail.reverting(tx)
+  })
+
 })
 
 contract('In Review Round Testing', function() {
   let t //tournament
-  let s //submission
 
   it('Able to create a round In Review', async function() {
     await init()
@@ -114,9 +145,8 @@ contract('In Review Round Testing', function() {
 
     assert.equal(roundIndex, 0, 'Round is not valid.')
 
-    //Create submissions
-    s = await createSubmission(t, '0x00', toWei(1), 1)
-    s2 = await createSubmission(t, '0x00', toWei(1), 2)
+    //Create submission
+    await createSubmission(t, '0x00', toWei(1), 1)
     await waitUntilInReview(t, roundIndex)
 
     let state = await t.getRoundState(roundIndex)
@@ -168,7 +198,7 @@ contract('Closed Round Testing', function() {
     s = await createSubmission(t, '0x00', toWei(1), 1)
 
     let { submissions } = await t.getRoundInfo(roundIndex)
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
+    await selectWinnersWhenInReview(t, submissions, [1], [0, 0, 0, 0], 2)
 
     let state = await t.getRoundState(roundIndex)
     assert.equal(state, 5, 'Round is not Closed')
@@ -284,7 +314,7 @@ contract('Abandoned Round Testing', function() {
   })
 
   it('Tournament balance is 0', async function() {
-    let tB = await platform.getBalanceOf(t.address)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(fromWei(tB), 0, 'Tournament balance should be 0')
   })
 
@@ -318,28 +348,31 @@ contract('Abandoned Round due to No Submissions', function() {
   })
 
   it('Able to recover funds and mark the round as closed', async function() {
-    await t.recoverFunds()
+    await t.recoverBounty()
     let roundIndex = await t.getCurrentRoundIndex()
     let { closed } = await t.getRoundInfo(roundIndex)
     assert.isTrue(closed, 'Round should be closed after owner recovers funds')
   })
 
   it('Unable to recover funds multiple times', async function() {
-    let tx = t.recoverFunds()
+    let tx = t.recoverBounty()
     await shouldFail.reverting(tx)
   })
 
   it('Tournament balance is 0', async function() {
-    let tB = await platform.getBalanceOf(t.address)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(fromWei(tB), 0, 'Tournament balance should be 0')
   })
 })
 
 contract('Unfunded Round Testing', function() {
   let t //tournament
-  let ur //unfunded round
-  let s //submission
   let token
+
+  // reset contract accounts
+  afterEach(() => {
+    t.accountNumber = 0
+  })
 
   it('Able to create an Unfunded round', async function() {
     token = (await init()).token
@@ -354,11 +387,9 @@ contract('Unfunded Round Testing', function() {
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let roundIndex = await t.getCurrentRoundIndex()
 
-    s = await createSubmission(t, '0x00', toWei(1), 1)
+    let s = await createSubmission(t, '0x00', toWei(1), 1)
 
-    let { submissions } = await t.getRoundInfo(roundIndex)
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
-
+    await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
     await waitUntilClose(t, roundIndex)
 
     let state = await t.getState()
@@ -378,7 +409,7 @@ contract('Unfunded Round Testing', function() {
   })
 
   it('Balance of tournament is 0', async function() {
-    let tB = await platform.getBalanceOf(t.address)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 0, 'Tournament balance should be 0')
   })
 
@@ -399,13 +430,12 @@ contract('Unfunded Round Testing', function() {
   })
 
   it('Able to transfer more MTX to the tournament', async function () {
-    await t.addFunds(toWei(2))
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    await t.addToBounty(toWei(2))
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 2, 'Funds not transferred')
   })
 
   it('Able to transfer tournament funds to the Unfunded round', async function() {
-    t.accountNumber = 0
     await t.transferToRound(toWei(2))
     let roundIndex = await t.getCurrentRoundIndex()
     let { bounty } = await t.getRoundDetails(roundIndex)
@@ -488,7 +518,7 @@ contract('Ghost Round Testing', function() {
     assert.equal(fromWei(bounty), 5, 'Incorrect ghost round bounty')
   })
 
-  // Tournament can send more funds to ghost round if round is edited
+  // Able to edit ghost round and increase funds
   it('Able to edit ghost round increasing its bounty', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000) + 200,
@@ -509,7 +539,7 @@ contract('Ghost Round Testing', function() {
     assert.equal(fromWei(bounty), 8, 'Incorrect ghost round bounty')
   })
 
-  // Ghost round can send funds back to tournament upon being edited
+  // Able to edit ghost round and decrease funds
   it('Able to edit ghost round decreasing its bounty', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000) + 300,

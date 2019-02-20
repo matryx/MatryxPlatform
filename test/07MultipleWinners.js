@@ -16,7 +16,7 @@ contract('Multiple Commits and Close Tournament', function() {
     token = data.token
 
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 30,
       review: 60,
       bounty: web3.toWei(5)
@@ -46,7 +46,7 @@ contract('Multiple Commits and Close Tournament', function() {
   it('Able to choose multiple winners and close tournament', async function() {
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
 
-    let balances = await Promise.all(commits.map(c => platform.getCommitBalance(c).then(fromWei)))
+    let balances = await Promise.all(commits.map(c => commit.getBalance(c).then(fromWei)))
     let allEqual = balances.every(x => x === 10 / 4)
 
     assert.isTrue(allEqual, 'Bounty not distributed correctly among all winning submissions.')
@@ -64,7 +64,7 @@ contract('Multiple Commits and Close Tournament', function() {
   })
 
   it('Tournament balance should now be 0', async function() {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 0, 'Tournament and round balance should both be 0')
   })
 
@@ -89,7 +89,7 @@ contract('Multiple Commits and Start Next Round', function() {
   before(async function() {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 30,
       review: 60,
       bounty: web3.toWei(5)
@@ -115,7 +115,7 @@ contract('Multiple Commits and Start Next Round', function() {
 
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), newRound, 1)
 
-    let balances = await Promise.all(commits.map(c => platform.getCommitBalance(c).then(fromWei)))
+    let balances = await Promise.all(commits.map(c => commit.getBalance(c).then(fromWei)))
     let allEqual = balances.every(x => x === 5 / 4)
 
     assert.isTrue(allEqual, 'Bounty not distributed correctly among all winning submissions.')
@@ -140,7 +140,7 @@ contract('Multiple Commits and Start Next Round', function() {
   })
 
   it('Tournament balance should now be 10', async function() {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 10, 'Tournament balance should be 10')
   })
 
@@ -170,7 +170,7 @@ contract('Multiple Commits and Do Nothing', function() {
   before(async function () {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 30,
       review: 60,
       bounty: web3.toWei(5)
@@ -189,7 +189,7 @@ contract('Multiple Commits and Do Nothing', function() {
   it('Able to choose winners and do nothing', async function() {
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
-    let balances = await Promise.all(commits.map(c => platform.getCommitBalance(c).then(fromWei)))
+    let balances = await Promise.all(commits.map(c => commit.getBalance(c).then(fromWei)))
     let allEqual = balances.every(x => x === 5 / 4)
 
     assert.isTrue(allEqual, 'Bounty not distributed correctly among all winning submissions.')
@@ -207,7 +207,7 @@ contract('Multiple Commits and Do Nothing', function() {
   })
 
   it('Tournament balance should now be 10', async function() {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 10, 'Tournament balance should be 10')
   })
 

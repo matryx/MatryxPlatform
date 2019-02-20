@@ -9,9 +9,9 @@ let token
 contract('Platform Testing', () => {
   let t
   let roundData = {
-    start: Math.floor(Date.now() / 1000),
-    duration: 200,
-    review: 60,
+    start: 0,
+    duration: 20,
+    review: 10,
     bounty: web3.toWei(5)
   }
 
@@ -54,6 +54,16 @@ contract('Platform Testing', () => {
     assert.isTrue(count == 1, 'Tournament count should be 1.')
   })
 
+  it('Unable to create a tournament from account without allowance', async () => {
+    try {
+      await createTournament('tournament', web3.toWei(10), roundData, 1)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to make a tournament')
+    }
+  })
+
   it('Able to get all tournaments in platform', async () => {
     let ts = await platform.getTournaments()
     assert.equal(ts[0], t.address, 'Unable to get tournaments.')
@@ -62,16 +72,6 @@ contract('Platform Testing', () => {
   it('Platform can recognize the tournament address as a tournament', async () => {
     isT = await platform.isTournament(t.address)
     assert.isTrue(isT, 'Should be a tournament.')
-  })
-
-  it('Balance of nonexisting addresses should be 0', async () => {
-    let b = await platform.getBalanceOf(accounts[1])
-    assert.equal(0, b, 'Balance should be 0.')
-  })
-
-  it('Balance of nonexisting commit hash should be 0', async () => {
-    let b = await platform.getCommitBalance(stb('commit'))
-    assert.equal(0, b, 'Balance should be 0.')
   })
 
   it('Able to send tokens to the platform directly', async () => {
