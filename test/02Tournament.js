@@ -8,12 +8,16 @@ let platform
 
 contract('Open Tournament Testing', function() {
   let t //tournament
-  let start = Math.floor(Date.now() / 1000) + 60
+
+  // reset accounts
+  afterEach(() => {
+    t.accountNumber = 0
+  })
 
   it('Able to create a tournament', async function() {
     platform = (await init()).platform
     roundData = {
-      start: start,
+      start: 0,
       duration: 120,
       review: 60,
       bounty: web3.toWei(5)
@@ -39,13 +43,13 @@ contract('Open Tournament Testing', function() {
   })
 
   it('Able to get tournament balance', async function() {
-    let b = await platform.getBalanceOf(t.address).then(fromWei)
+    let b = await t.getBalance().then(fromWei)
     assert.equal(b, 10, 'Unable to get balance.')
   })
 
   it('Able to get tournament state', async function() {
-    let s = await t.getState()
-    assert.equal(s, 0, 'Unable to get state.')
+    let s = +(await t.getState())
+    assert.equal(s, 2, 'Tournament should be open.')
   })
 
   it('Able to get current round', async function() {
@@ -64,18 +68,25 @@ contract('Open Tournament Testing', function() {
   })
 
   it('Able to add funds to the tournament', async function() {
-    await t.addFunds(toWei(1))
+    await t.addToBounty(toWei(1))
     let b = await t.getBalance().then(fromWei)
     assert.equal(b, 11, 'Incorrect tournament balance')
   })
 
+  it('Only the tournament owner can transfer funds to a round', async function() {
+    t.accountNumber = 1
+    let tx = t.transferToRound(toWei(1))
+    await shouldFail.reverting(tx)
+  })
+
   it('Able to add funds to the tournament from another account', async function() {
     await setup(artifacts, web3, 2, true)
+
     t.accountNumber = 2
-    await t.addFunds(toWei(1))
+    await t.addToBounty(toWei(1))
     let b = await t.getBalance().then(fromWei)
+
     assert.equal(b, 12, 'Incorrect tournament balance')
-    t.accountNumber = 0
   })
 
   it('Able to edit the tournament data', async function() {
@@ -86,14 +97,16 @@ contract('Open Tournament Testing', function() {
     }
 
     await t.updateDetails(modData)
-    let details = await t.getDetails()
+    let { content, bounty, entryFee } = await t.getDetails()
 
-    assert.equal(details.content, 'new', 'Tournament data not updated correctly.')
+    assert.equal(content, 'new', 'Incorrect tournament content.')
+    assert.equal(fromWei(bounty), 10, 'Incorrect tournament bounty.')
+    assert.equal(fromWei(entryFee), 1, 'Incorrect tournament entry fee.')
   })
 
   it('Unable to create a tournament with 0 bounty', async function() {
     let rData = {
-      start: Math.floor(Date.now() / 1000) + 10,
+      start: 0,
       duration: 30,
       review: 20,
       bounty: 0
@@ -108,10 +121,38 @@ contract('Open Tournament Testing', function() {
     await shouldFail.reverting(tx)
   })
 
+  it('Unable to create a tournament with more round bounty than funds available', async function() {
+    let rData = {
+      start: 0,
+      duration: 30,
+      review: 20,
+      bounty: toWei(20)
+    }
+    let tData = {
+      content: 'content',
+      bounty: toWei(5),
+      entryFee: web3.toWei(2)
+    }
+
+    let tx = platform.createTournament(tData, rData)
+    await shouldFail.reverting(tx)
+  })
+
   it('Able to enter the tournament', async function() {
     await enterTournament(t, 1)
     let isEnt = await t.isEntrant(accounts[1])
     assert.isTrue(isEnt, 'Unable to enter the tournament.')
+  })
+
+  it('Unable to enter the tournament twice', async function() {
+    t.accountNumber = 1
+    let tx = t.enter()
+    await shouldFail.reverting(tx)
+  })
+
+  it('Entry fee paid stored correctly', async function() {
+    let e = await t.getEntryFeePaid(accounts[1]).then(fromWei)
+    assert.equal(e, 1, 'Incorrect entry fee.')
   })
 
   it('Able to exit the tournament', async function() {
@@ -121,18 +162,35 @@ contract('Open Tournament Testing', function() {
     let isEnt = await t.isEntrant(accounts[1])
     assert.isFalse(isEnt, 'Unable to exit the tournament.')
   })
+
+  it('Unable to exit the tournament twice', async function() {
+    t.accountNumber = 1
+    let tx = t.exit()
+    await shouldFail.reverting(tx)
+  })
+
+  it('Able to enter the tournament again', async function() {
+    await enterTournament(t, 1)
+    let isEnt = await t.isEntrant(accounts[1])
+    assert.isTrue(isEnt, 'Unable to enter the tournament.')
+  })
 })
 
 contract('On Hold Tournament Testing', function() {
   let t // tournament
   let s // submission
 
+  // reset accounts
+  afterEach(() => {
+    t.accountNumber = 0
+  })
+
   it('Able to make tournament on hold', async function() {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 30,
-      review: 5,
+      review: 10,
       bounty: web3.toWei(5)
     }
 
@@ -140,15 +198,13 @@ contract('On Hold Tournament Testing', function() {
     let roundIndex = await t.getCurrentRoundIndex()
 
     // Set up ghost round
-    await waitUntilOpen(t, roundIndex)
     s = await createSubmission(t, '0x00', toWei(1), 1)
-    let { submissions } = await t.getRoundInfo(roundIndex)
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
+    await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
 
     roundData = {
-      start: Math.floor(Date.now() / 1000) + 30,
+      start: Math.floor(Date.now() / 1000) + 20,
       duration: 40,
-      review: 40,
+      review: 5,
       bounty: web3.toWei(5)
     }
 
@@ -204,11 +260,16 @@ contract('Abandoned Tournament due to No Submissions Testing', function() {
   let token
   let t // tournament
 
+  // reset accounts
+  afterEach(() => {
+    t.accountNumber = 0
+  })
+
   it('Able to create an Abandoned round', async function() {
     token = (await init()).token
 
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 5,
       review: 1,
       bounty: web3.toWei(5)
@@ -239,26 +300,26 @@ contract('Abandoned Tournament due to No Submissions Testing', function() {
   })
 
   it('Unable to add funds to an Abandoned tournament', async function() {
-    let tx = t.addFunds(toWei(1))
+    let tx = t.addToBounty(toWei(1))
     await shouldFail.reverting(tx)
   })
 
   it("Only the tournament owner can attempt to recover the tournament funds", async function () {
     t.accountNumber = 1
-    let tx = t.recoverFunds()
+    let tx = t.recoverBounty()
     await shouldFail.reverting(tx)
     t.accountNumber = 0
   })
 
   it("Tournament owner is able to recover tournament funds", async function () {
     let balBefore = await token.balanceOf(accounts[0]).then(fromWei)
-    await t.recoverFunds()
+    await t.recoverBounty()
     let balAfter = await token.balanceOf(accounts[0]).then(fromWei)
     assert.equal(balAfter, balBefore + 10, "Tournament funds not transferred back to the owner")
   })
 
   it("Unable to call recover funds twice", async function () {
-    let tx = t.recoverFunds()
+    let tx = t.recoverBounty()
     await shouldFail.reverting(tx)
   })
 
@@ -269,7 +330,7 @@ contract('Abandoned Tournament due to No Submissions Testing', function() {
   })
 
   it("Tournament balance is 0", async function () {
-    let tB = await platform.getBalanceOf(t.address)
+    let tB = await t.getBalance().then(fromWei)
     assert.isTrue(tB == 0, "Tournament balance should be 0")
   })
 

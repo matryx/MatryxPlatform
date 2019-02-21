@@ -23,10 +23,13 @@ contract('MatryxCommit', async () => {
 
   it('Able to make a commit', async () => {
     let commitsBefore = await commit.getInitialCommits()
-    await createCommit('0x00', false, genId(16), toWei(1), 0)
+    let cHash = await createCommit('0x00', false, genId(16), toWei(1), 0)
     let commitsAfter = await commit.getInitialCommits()
 
     assert.equal(commitsAfter.length - commitsBefore.length, 1, 'New commit should exist')
+
+    let isC = await platform.isCommit(cHash)
+    assert.isTrue(isC, "Commit not stored in platform")
   })
 
   it('Group members are persistent', async () => {
@@ -86,15 +89,83 @@ contract('MatryxCommit', async () => {
 
   it('Commit value transferred from fork owner to commit', async () => {
     let parentHash = await createCommit('0x00', false, genId(16), toWei(1), 0)
-    let balanceBefore = await platform.getCommitBalance(parentHash).then(fromWei)
+    let balanceBefore = await commit.getBalance(parentHash).then(fromWei)
 
     // fork
     await createCommit(parentHash, true, genId(16), toWei(1), 1)
-    let balanceAfter = await platform.getCommitBalance(parentHash).then(fromWei)
+    let balanceAfter = await commit.getBalance(parentHash).then(fromWei)
 
     assert.equal(balanceAfter, balanceBefore + 1, 'Commit balance should increase by 1 after fork')
   })
 
-  // TODO: test new fork funds distribution, test all frontrunning cases
-  // it('Correct distribution on fork', )
+  it('Correct distribution when everyone withdraws after a fork', async () => {
+    // create commit chain with different owners
+    let c1 = await createCommit('0x00', false, genId(16), toWei(1), 1)
+    commit.accountNumber = 1
+    await commit.addGroupMember(c1, accounts[3])
+    let c3 = await createCommit(c1, false, genId(16), toWei(2), 3)
+
+    // fork
+    await createCommit(c3, true, genId(16), toWei(1), 1)
+    let b = await commit.getBalance(c3).then(fromWei)
+    assert.equal(b, 3, 'Incorrent commit balance after fork')
+
+    // check available rewards
+    let r1 = await commit.getAvailableRewardForUser(c3, accounts[1]).then(fromWei)
+    let r3 = await commit.getAvailableRewardForUser(c3, accounts[3]).then(fromWei)
+    assert.equal(r1, 1, "Incorrect available reward for account 1")
+    assert.equal(r3, 2, "Incorrect available reward for account 3")
+
+    // all users able to withdraw
+    let bb1 = await token.balanceOf(network.accounts[1]).then(fromWei)
+    let bb3 = await token.balanceOf(network.accounts[3]).then(fromWei)
+
+    commit.accountNumber = 1
+    await commit.withdrawAvailableReward(c3)
+    commit.accountNumber = 3
+    await commit.withdrawAvailableReward(c3)
+
+    let ba1 = await token.balanceOf(network.accounts[1]).then(fromWei)
+    let ba3 = await token.balanceOf(network.accounts[3]).then(fromWei)
+
+    assert.equal(ba1, bb1 + 1, "Account 1 withdraw incorrect")
+    assert.equal(ba3, bb3 + 2, "Account 3 withdraw incorrect")
+  })
+
+  it('Correct distribution when some users withdraw in between forks', async () => {
+    // create commit chain with different owners
+    let c1 = await createCommit('0x00', false, genId(16), toWei(1), 1)
+    commit.accountNumber = 1
+    await commit.addGroupMember(c1, accounts[3])
+    let c3 = await createCommit(c1, false, genId(16), toWei(2), 3)
+
+    // fork
+    await createCommit(c3, true, genId(16), toWei(1), 1)
+    let b = await commit.getBalance(c3).then(fromWei)
+    assert.equal(b, 3, 'Incorrent commit balance after fork')
+
+    // user 1 withdraws
+    let bb1 = await token.balanceOf(network.accounts[1]).then(fromWei)
+    await commit.withdrawAvailableReward(c3)
+    let ba1 = await token.balanceOf(network.accounts[1]).then(fromWei)
+
+    assert.equal(ba1, bb1 + 1, "Account 1 withdraw incorrect")
+
+    // another fork
+    await createCommit(c3, true, genId(16), toWei(1), 0)
+    b = await commit.getBalance(c3).then(fromWei)
+    assert.equal(b, 5, 'Incorrent commit balance after second fork')
+
+    // both users withdraw
+    bb1 = await token.balanceOf(network.accounts[1]).then(fromWei)
+    let bb3 = await token.balanceOf(network.accounts[3]).then(fromWei)
+    await commit.withdrawAvailableReward(c3)
+    commit.accountNumber = 3
+    await commit.withdrawAvailableReward(c3)
+    ba1 = await token.balanceOf(network.accounts[1]).then(fromWei)
+    let ba3 = await token.balanceOf(network.accounts[3]).then(fromWei)
+
+    assert.equal(ba1, bb1 + 1, "Account 1 withdraw incorrect")
+    assert.equal(ba3, bb3 + 4, "Account 3 withdraw incorrect")
+  })
 })

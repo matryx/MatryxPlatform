@@ -5,7 +5,7 @@ import "../MatryxPlatform.sol";
 
 interface IPlatformUpgraded {
     function getTwo() external pure returns (uint256);
-    function getBalanceOf(address user) external pure returns (uint256);
+    function getTournamentCount() external pure returns (uint256);
 }
 
 library LibPlatformUpgraded {
@@ -13,7 +13,7 @@ library LibPlatformUpgraded {
         return 2;
     }
 
-    function getBalanceOf(address, address, MatryxPlatform.Data storage, address) public pure returns (uint256 balance) {
+    function getTournamentCount(address, address, MatryxPlatform.Data storage) public pure returns (uint256 count) {
         return 99000000000000000000;
     }
 }

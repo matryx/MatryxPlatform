@@ -84,17 +84,17 @@ module.exports = function (artifacts, web3) {
 
     await enterTournament(tournament, accountNumber)
 
-    const contentHash = genId(10)
-    
+    const commitContent = genId(10)
+
     let account = tournament.wallet.address
     let salt = "mmm salty"
-    let commitHash = web3.utils.soliditySha3(account, { t: 'bytes32', v: salt }, contentHash)
-    
+    let commitHash = web3.utils.soliditySha3(account, { t: 'bytes32', v: stb(salt) }, commitContent)
+
     let tx = await commit.claimCommit(commitHash)
     await getMinedTx(tx.hash)
-    
+
     const content = genId(10)
-    tx = await commit.createSubmission(tournament.address, content, parent, false, contentHash, value)
+    tx = await commit.createSubmission(tournament.address, content, parent, false, stb(salt), commitContent, value)
     await getMinedTx(tx.hash)
 
     const roundIndex = await tournament.getCurrentRoundIndex()
@@ -149,31 +149,31 @@ module.exports = function (artifacts, web3) {
     return isEnt
   }
 
-  async function claimCommit(salt, contentHash, account) {
+  async function claimCommit(salt, content, account) {
     const cAccount = commit.accountNumber
     commit.accountNumber = account
 
-    let commitHash = web3.utils.soliditySha3(commit.wallet.address, { t:'bytes32', v:salt }, contentHash)
-    
+    let commitHash = web3.utils.soliditySha3(commit.wallet.address, { t:'bytes32', v:salt }, content)
+
     let tx = await commit.claimCommit(commitHash)
     await getMinedTx(tx.hash)
-    
+
     commit.accountNumber = cAccount
   }
-  
-  async function createCommit(parent, isFork, contentHash, value, account) {
+
+  async function createCommit(parent, isFork, content, value, account) {
     const cAccount = commit.accountNumber
     commit.accountNumber = account
 
     const salt = stringToBytes('NaCl')
-    await claimCommit(salt, contentHash, account)
-    tx = await commit.createCommit(parent, isFork, salt, contentHash, value)
+    await claimCommit(salt, content, account)
+    tx = await commit.createCommit(parent, isFork, salt, content, value)
     await getMinedTx(tx.hash)
 
     commit.accountNumber = cAccount
 
     // return the newly created commit hash
-    let theCommit = await commit.getCommitByContentHash(contentHash)
+    let theCommit = await commit.getCommitByContent(content)
     return theCommit.commitHash
   }
 
@@ -203,7 +203,7 @@ module.exports = function (artifacts, web3) {
     createSubmission,
     selectWinnersWhenInReview,
     enterTournament,
-    
+
     claimCommit,
     createCommit,
     commitChildren,

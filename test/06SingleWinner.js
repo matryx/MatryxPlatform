@@ -25,7 +25,7 @@ contract('Singleton Commit, Close Tournament', function() {
     token = data.token
 
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 30,
       review: 20,
       bounty: web3.toWei(5)
@@ -64,7 +64,7 @@ contract('Singleton Commit, Close Tournament', function() {
 
   it('Able to choose a winner and Close Tournament', async () => {
     await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 2)
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
 
     assert.equal(b, 10, 'Winner was not chosen')
   })
@@ -81,7 +81,7 @@ contract('Singleton Commit, Close Tournament', function() {
   })
 
   it('Tournament balance should now be 0', async () => {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 0, 'Tournament balance should be 0')
   })
 
@@ -92,7 +92,7 @@ contract('Singleton Commit, Close Tournament', function() {
     await commit.withdrawAvailableReward(commitHash)
     commit.accountNumber = 0
 
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
     let balAfter = await token.balanceOf(accounts[1]).then(fromWei)
 
     assert.equal(b, 0, 'Commit balance non-zero')
@@ -122,7 +122,7 @@ contract('Singleton Commit, Start Next Round', function() {
   it('Able to create a Submission without Contributors and References', async () => {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 30,
       review: 20,
       bounty: web3.toWei(5)
@@ -146,7 +146,7 @@ contract('Singleton Commit, Start Next Round', function() {
     }
 
     await selectWinnersWhenInReview(t, [s], [1], newRound, 1)
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
 
     assert.equal(b, 5, 'Winner was not chosen')
   })
@@ -178,7 +178,7 @@ contract('Singleton Commit, Start Next Round', function() {
   })
 
   it('Tournament balance should now be 5', async () => {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 5, 'Tournament balance should be 5')
   })
 
@@ -194,7 +194,7 @@ contract('Singleton Commit, Start Next Round', function() {
     await commit.withdrawAvailableReward(commitHash)
     commit.accountNumber = 0
 
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
     let balAfter = await token.balanceOf(accounts[1]).then(fromWei)
 
     assert.equal(b, 0, 'Commit balance non-zero')
@@ -223,7 +223,7 @@ contract('Singleton Commit, Do Nothing', function() {
   it('Able to create a Submission without Contributors and References', async () => {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 20,
       review: 60,
       bounty: web3.toWei(5)
@@ -240,7 +240,7 @@ contract('Singleton Commit, Do Nothing', function() {
 
   it('Able to choose a winner and DoNothing', async () => {
     await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
 
     assert.equal(b, 5, 'Winner was not chosen')
   })
@@ -266,7 +266,7 @@ contract('Singleton Commit, Do Nothing', function() {
   })
 
   it('Tournament balance should now be 10', async () => {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 10, 'Tournament balance should be 10')
   })
 
@@ -277,7 +277,7 @@ contract('Singleton Commit, Do Nothing', function() {
     await commit.withdrawAvailableReward(commitHash)
     commit.accountNumber = 0
 
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
     let balAfter = await token.balanceOf(accounts[1]).then(fromWei)
 
     assert.equal(b, 0, 'Commit balance non-zero')
@@ -307,7 +307,7 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
   it('Able to choose a winning submission and Do Nothing', async () => {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 30,
       review: 20,
       bounty: web3.toWei(5)
@@ -320,7 +320,7 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
 
     await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
 
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
     assert.equal(b, 5, 'Winner was not chosen')
   })
 
@@ -337,12 +337,12 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
   })
 
   it('Tournament balance should now be 0', async () => {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 0, 'Tournament balance should be 0')
   })
 
   it('Correct winning submission balance', async () => {
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
     assert.equal(b, 10, 'Incorrect commit balance')
   })
 
@@ -353,7 +353,7 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
     await commit.withdrawAvailableReward(commitHash)
     commit.accountNumber = 0
 
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
     let balAfter = await token.balanceOf(accounts[1]).then(fromWei)
 
     assert.equal(b, 0, 'Commit balance non-zero')
@@ -383,7 +383,7 @@ contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
   it('Able to choose a winning submission and Do Nothing', async () => {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 30,
       review: 20,
       bounty: web3.toWei(5)
@@ -396,7 +396,7 @@ contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
 
     await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
 
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
     assert.equal(b, 5, 'Winner was not chosen')
   })
 
@@ -419,12 +419,12 @@ contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
   })
 
   it('Tournament balance should be 10', async () => {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 10, 'Tournament balance should be 10')
   })
 
   it('Correct winning submission balance', async () => {
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
     assert.equal(b, 5, 'Incorrect commit balance')
   })
 
@@ -435,7 +435,7 @@ contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
     await commit.withdrawAvailableReward(commitHash)
     commit.accountNumber = 0
 
-    let b = await platform.getCommitBalance(commitHash).then(fromWei)
+    let b = await commit.getBalance(commitHash).then(fromWei)
     let balAfter = await token.balanceOf(accounts[1]).then(fromWei)
 
     assert.equal(b, 0, 'Commit balance non-zero')

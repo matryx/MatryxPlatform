@@ -5,7 +5,7 @@ const { accounts } = require('../truffle/network')
 
 let platform, commit
 
-contract('MatryxCommit', async () => {
+contract('Submissions', async () => {
   let t // tournament
   let s // submission
 
@@ -21,8 +21,8 @@ contract('MatryxCommit', async () => {
   beforeEach(async () => {
     // create a tournament from account 0
     let roundData = {
-      start: Math.floor(Date.now() / 1000),
-      duration: 60,
+      start: 0,
+      duration: 40,
       review: 10,
       bounty: toWei(100)
     }
@@ -39,10 +39,13 @@ contract('MatryxCommit', async () => {
 
   it('Able to create a new initial commit for a tournament', async () => {
     let commitsBefore = await commit.getInitialCommits()
-    await createSubmission(t, '0x00', toWei(1), 1)
+    let sHash = await createSubmission(t, '0x00', toWei(1), 1)
     let commitsAfter = await commit.getInitialCommits()
 
     assert.equal(commitsBefore.length + 1, commitsAfter.length, 'Commit creation for tournament should increase initial commit list size')
+
+    let isS = await platform.isSubmission(sHash)
+    assert.isTrue(isS, "Submission not stored in platform")
   })
 
   it('Able to get submission details', async () => {
@@ -69,8 +72,8 @@ contract('MatryxCommit', async () => {
     let submissions = [s1, s2]
 
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
-    let s1Reward = await platform.getCommitBalance(c1.commitHash).then(fromWei)
-    let s2Reward = await platform.getCommitBalance(c2.commitHash).then(fromWei)
+    let s1Reward = await commit.getBalance(c1.commitHash).then(fromWei)
+    let s2Reward = await commit.getBalance(c2.commitHash).then(fromWei)
 
     assert.equal(s1Reward, 50, "Submission 1 reward doesn't match reward distribution")
     assert.equal(s2Reward, 50, "Submission 2 reward doesn't match reward distribution")
