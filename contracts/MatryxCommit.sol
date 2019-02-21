@@ -30,13 +30,9 @@ interface IMatryxCommit {
 library LibCommit {
     using SafeMath for uint256;
 
-    event GroupMemberRequested(bytes32 commitHash, address user);                     // Someone requests to join a group
-    event GroupMemberAdded(bytes32 commitHash, address user);                         // Someone is added to a group
-    event CommitCreated(bytes32 parentHash, bytes32 commitHash, address creator);     // A new commit is created
-    event ForkCreated(bytes32 parentHash, bytes32 commitHash, address creator);       // A commit is forked off of parentHash
-    event BalanceIncreased(bytes32 commitHash);                                       // A commit balance has increased
-    event CommitClaimed(bytes32 commitHash);                                          // A commit has been claimed
-    event CommitDeleted(bytes32 commitHash);                                          // A commit is deleted
+    event GroupMemberAdded(bytes32 commitHash, address user);
+    event CommitClaimed(bytes32 commitHash);
+    event CommitCreated(bytes32 parentHash, bytes32 commitHash, address creator, bool isFork);
 
     struct Commit {
         address owner;
@@ -247,11 +243,6 @@ library LibCommit {
             data.totalBalance = data.totalBalance.add(totalValue);
             data.commitBalance[parentHash] = data.commitBalance[parentHash].add(totalValue);
             require(IToken(info.token).transferFrom(owner, address(this), totalValue));
-
-            emit BalanceIncreased(parentHash);
-            emit ForkCreated(parentHash, commitHash, owner);
-        } else {
-            emit CommitCreated(parentHash, commitHash, owner);
         }
 
         bytes32 groupHash;
@@ -293,6 +284,8 @@ library LibCommit {
         } else {
             data.commits[parentHash].children.push(commitHash);
         }
+
+        emit CommitCreated(parentHash, commitHash, owner, isFork);
     }
 
     /// @dev Returns the available reward for a user for a given commit

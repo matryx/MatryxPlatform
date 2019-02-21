@@ -20,26 +20,26 @@ interface IMatryxTournament {
 
     function getBalance() external view returns (uint256);
     function getState() external view returns (uint256);
-    function getRoundState(uint256) external view returns (uint256);
+    function getRoundState(uint256 roundIndex) external view returns (uint256);
     function getCurrentRoundIndex() external view returns (uint256);
 
     function getRoundInfo(uint256 roundIndex) external view returns (LibTournament.RoundInfo memory);
     function getRoundDetails(uint256 roundIndex) external view returns (LibTournament.RoundDetails memory);
 
     function getSubmissionCount() external view returns (uint256);
-    function getEntryFeePaid(address) external view returns (uint256);
-    function isEntrant(address) external view returns (bool);
+    function getEntryFeePaid(address user) external view returns (uint256);
+    function isEntrant(address user) external view returns (bool);
 
     function enter() external;
     function exit() external;
     function createSubmission(string calldata content, bytes32 commitHash) external;
 
-    function updateDetails(LibTournament.TournamentDetails calldata) external;
-    function addToBounty(uint256) external;
-    function transferToRound(uint256) external;
+    function updateDetails(LibTournament.TournamentDetails calldata tournamentDetails) external;
+    function addToBounty(uint256 amount) external;
+    function transferToRound(uint256 amount) external;
 
-    function selectWinners(LibTournament.WinnersData calldata, LibTournament.RoundDetails calldata) external;
-    function updateNextRound(LibTournament.RoundDetails calldata) external;
+    function selectWinners(LibTournament.WinnersData calldata winnersData, LibTournament.RoundDetails calldata roundDetails) external;
+    function updateNextRound(LibTournament.RoundDetails calldata roundDetails) external;
     function startNextRound() external;
     function closeTournament() external;
 
@@ -54,10 +54,11 @@ library LibTournament {
     uint256 constant MIN_ROUND_LENGTH = 1 seconds;
     uint256 constant MAX_ROUND_LENGTH = 365 days;
 
+    event TournamentUpdated(address tournament);
     event RoundCreated(address tournament, uint256 roundIndex);
+    event RoundUpdated(address tournament, uint256 roundIndex);
     event SubmissionCreated(address tournament, bytes32 submissionHash, address creator);
-    event TournamentEntered(address tournament, address entrant);
-    event SubmissionRewarded(bytes32 submissionHash);
+    event SubmissionsRewarded(address tournament, uint256 roundIndex);
 
     struct TournamentInfo {
         uint256 version;
@@ -144,8 +145,9 @@ library LibTournament {
     }
 
     /// @dev Returns the state of this Tournament
-    function getRoundState(address self, address sender, MatryxPlatform.Data storage data, uint256 index) public view returns (uint256) {
-        return LibTournamentHelper.getRoundState(self, data, index);
+    /// @param roundIndex   Round index
+    function getRoundState(address self, address sender, MatryxPlatform.Data storage data, uint256 roundIndex) public view returns (uint256) {
+        return LibTournamentHelper.getRoundState(self, data, roundIndex);
     }
 
     /// @dev Returns the current round number and address of this Tournament
@@ -174,20 +176,21 @@ library LibTournament {
     }
 
     /// @dev Returns the entry fee that an entrant has paid
-    /// @param self      Address of this Tournament
-    /// @param data      Data struct on Platform
-    /// @param uAddress  Address of the tournament entrant
-    /// @return          Entry fee uAddress has paid
-    function getEntryFeePaid(address self, address, MatryxPlatform.Data storage data, address uAddress) public view returns (uint256) {
-        return data.tournaments[self].entryFeePaid[uAddress].value;
+    /// @param self  Address of this Tournament
+    /// @param data  Data struct on Platform
+    /// @param user  Address of the tournament entrant
+    /// @return      Entry fee uAddress has paid
+    function getEntryFeePaid(address self, address, MatryxPlatform.Data storage data, address user) public view returns (uint256) {
+        return data.tournaments[self].entryFeePaid[user].value;
     }
 
     /// @dev Returns true if address passed has entered the Tournament
-    /// @param self     Address of this Tournament
-    /// @param data     Data struct on Platform
-    /// @param uAddress Address of some user
-    function isEntrant(address self, address, MatryxPlatform.Data storage data, address uAddress) public view returns (bool) {
-        return data.tournaments[self].entryFeePaid[uAddress].exists;
+    /// @param self  Address of this Tournament
+    /// @param data  Data struct on Platform
+    /// @param user  Address of some user
+    /// @return      If user has entered tournament
+    function isEntrant(address self, address, MatryxPlatform.Data storage data, address user) public view returns (bool) {
+        return data.tournaments[self].entryFeePaid[user].exists;
     }
 
     /// @dev Returns true if the user is allowed to use Matryx
@@ -302,6 +305,7 @@ library LibTournament {
     /// @param tDetails  New tournament details
     function updateDetails(address self, address sender, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails) public {
         LibTournamentHelper.updateDetails(self, sender, data, tDetails);
+        emit TournamentUpdated(self);
     }
 
     /// @dev Adds funds to the Tournament
@@ -318,6 +322,8 @@ library LibTournament {
         data.tournamentBalance[self] = data.tournamentBalance[self].add(amount);
         data.tournaments[self].details.bounty = data.tournaments[self].details.bounty.add(amount);
         require(IToken(info.token).transferFrom(sender, address(this), amount), "Transfer failed");
+
+        emit TournamentUpdated(self);
     }
 
     /// @dev Transfers some of Tournament MTX to current Round
@@ -326,11 +332,12 @@ library LibTournament {
     /// @param data    Data struct on Platform
     /// @param amount  Amount of MTX to transfer
     function transferToRound(address self, address sender, MatryxPlatform.Data storage data, uint256 amount) public {
-        uint256 roundIndex = getCurrentRoundIndex(self, sender, data);
         LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(sender == tournament.info.owner, "Must be owner");
+
+        uint256 roundIndex = getCurrentRoundIndex(self, sender, data);
         LibTournament.RoundData storage round = tournament.rounds[roundIndex];
 
-        require(sender == tournament.info.owner, "Must be owner");
         uint256 rState = getRoundState(self, sender, data, roundIndex);
         require(rState <= uint256(LibGlobals.RoundState.InReview), "Cannot transfer after winners selected");
 
@@ -338,10 +345,11 @@ library LibTournament {
         require(newBounty <= data.tournamentBalance[self], "Tournament does not have the funds");
 
         round.details.bounty = newBounty;
+        emit RoundUpdated(self, roundIndex);
     }
 
     /// @dev Transfers the round reward to its winning submissions during the winner selection process
-    /// @param data    Data struct on Platform
+    /// @param data        Data struct on Platform
     /// @param roundIndex  Index of the current round
     function _transferToWinners(address self, MatryxPlatform.Data storage data, uint256 roundIndex) internal {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
@@ -359,13 +367,14 @@ library LibTournament {
             uint256 reward = wData.distribution[i].mul(round.details.bounty).div(distTotal);
 
             data.commitBalance[commit] = data.commitBalance[commit].add(reward);
-            emit SubmissionRewarded(winner);
 
             reward = reward.add(data.submissions[winner].reward);
             data.submissions[winner].reward = reward;
         }
 
         data.tournamentBalance[self] = data.tournamentBalance[self].sub(round.details.bounty);
+
+        emit SubmissionsRewarded(self, roundIndex);
     }
 
     /// @dev Select winners of the current round
@@ -447,6 +456,9 @@ library LibTournament {
             require(rDetails.duration >= MIN_ROUND_LENGTH, "Round too short");
             require(rDetails.duration <= MAX_ROUND_LENGTH, "Round too long");
         }
+
+        uint256 roundIndex = data.tournaments[self].rounds.length - 1;
+        emit RoundUpdated(self, roundIndex);
     }
 
     /// @dev Starts the next Round after a SelectWinnersAction.DoNothing
@@ -526,8 +538,6 @@ library LibTournament {
 
 library LibTournamentHelper {
     using SafeMath for uint256;
-
-    event TournamentEntered(address tournament, address entrant);
 
     function getState(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
         uint256 currentRoundIndex = getCurrentRoundIndex(self, self, data);
@@ -618,8 +628,6 @@ library LibTournamentHelper {
         tournament.entryFeePaid[sender].value = entryFee;
         tournament.totalEntryFees = tournament.totalEntryFees.add(entryFee);
         tournament.allEntrants.push(sender);
-
-        emit TournamentEntered(self, sender);
     }
 
     function exit(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
@@ -678,7 +686,7 @@ library LibTournamentHelper {
         }
 
         if (rDetails.bounty > 0) {
-            require(rDetails.bounty <= data.tournamentBalance[self]);
+            require(rDetails.bounty <= data.tournamentBalance[self], "Tournament does not have the funds");
             details.bounty = rDetails.bounty;
         }
     }

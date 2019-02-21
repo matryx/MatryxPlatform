@@ -178,6 +178,20 @@ contract MatryxPlatform {
 }
 
 interface IMatryxPlatform {
+    event TournamentCreated(address tournament, address creator);
+    event TournamentUpdated(address tournament);
+
+    event RoundCreated(address tournament, uint256 roundIndex);
+    event RoundUpdated(address tournament, uint256 roundIndex);
+
+    event SubmissionCreated(address tournament, bytes32 submissionHash, address creator);
+    event SubmissionsRewarded(address tournament, uint256 roundIndex);
+
+    event GroupMemberAdded(bytes32 commitHash, address user);
+
+    event CommitClaimed(bytes32 commitHash);
+    event CommitCreated(bytes32 parentHash, bytes32 commitHash, address creator, bool isFork);
+
     function setPlatformOwner(address) external;
     function upgradeToken(address) external;
     function withdrawTokens(address) external;
