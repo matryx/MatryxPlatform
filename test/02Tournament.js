@@ -100,7 +100,6 @@ contract('Open Tournament Testing', function() {
     let { content, bounty, entryFee } = await t.getDetails()
 
     assert.equal(content, 'new', 'Incorrect tournament content.')
-    assert.equal(fromWei(bounty), 10, 'Incorrect tournament bounty.')
     assert.equal(fromWei(entryFee), 1, 'Incorrect tournament entry fee.')
   })
 

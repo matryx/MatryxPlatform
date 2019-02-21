@@ -316,6 +316,7 @@ library LibTournament {
 
         data.totalBalance = data.totalBalance.add(amount);
         data.tournamentBalance[self] = data.tournamentBalance[self].add(amount);
+        data.tournaments[self].details.bounty = data.tournaments[self].details.bounty.add(amount);
         require(IToken(info.token).transferFrom(sender, address(this), amount), "Transfer failed");
     }
 
