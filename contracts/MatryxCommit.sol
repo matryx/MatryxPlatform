@@ -95,9 +95,9 @@ library LibCommit {
         return data.groups[groupHash].members;
     }
 
-    /// @dev Returns Round addresses the commit has been submitted to
+    /// @dev Returns hashes of all Submissions that were made from this commit
     /// @param data        Platform data struct
-    /// @param commitHash  Hash of the commit to return the rounds of
+    /// @param commitHash  Commit hash used for the submissions
     function getSubmissionsForCommit(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (bytes32[] memory) {
         return data.commitToSubmissions[commitHash];
     }
@@ -228,7 +228,7 @@ library LibCommit {
     /// @param parentHash   Parent commit hash
     /// @param commitHash   Commit hash
     /// @param isFork       If commit is fork of parent
-    /// @param content  Commit content IPFS hash
+    /// @param content      Commit content IPFS hash
     /// @param value        Author-determined commit value
     function _createCommit(address owner, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 parentHash, bytes32 commitHash, bool isFork, string memory content, uint256 value) internal {
         require(value > 0, "Cannot create a zero-value commit");

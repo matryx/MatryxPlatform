@@ -192,14 +192,14 @@ interface IMatryxPlatform {
     event CommitClaimed(bytes32 commitHash);
     event CommitCreated(bytes32 parentHash, bytes32 commitHash, address creator, bool isFork);
 
-    function setPlatformOwner(address) external;
-    function upgradeToken(address) external;
-    function withdrawTokens(address) external;
+    function setPlatformOwner(address newOwner) external;
+    function upgradeToken(address token) external;
+    function withdrawTokens(address token) external;
 
     function getInfo() external view returns (MatryxPlatform.Info memory);
-    function isTournament(address) external view returns (bool);
-    function isCommit(bytes32) external view returns (bool);
-    function isSubmission(bytes32) external view returns (bool);
+    function isTournament(address tournament) external view returns (bool);
+    function isCommit(bytes32 commitHash) external view returns (bool);
+    function isSubmission(bytes32 submissionHash) external view returns (bool);
 
     function getTotalBalance() external view returns (uint256);
 
@@ -207,6 +207,7 @@ interface IMatryxPlatform {
     function getTournaments() external view returns (address[] memory);
     function getSubmission(bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory);
 
+    function blacklist(address user) external;
     function createTournament(LibTournament.TournamentDetails calldata, LibTournament.RoundDetails calldata) external returns (address);
 }
 
@@ -279,8 +280,21 @@ library LibPlatform {
         return data.allTournaments;
     }
 
+    /// @dev Returns a Submission by its hash
+    /// @param data            Platform data struct
+    /// @param submissionHash  Submission hash
+    /// @return                The submission details
     function getSubmission(address, address, MatryxPlatform.Data storage data, bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory) {
         return data.submissions[submissionHash];
+    }
+
+    /// @dev Blacklists a user address
+    /// @param info  Platform info struct
+    /// @param data  Platform data struct
+    /// @param user  User address
+    function blacklist(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address user) public {
+        require(sender == info.owner, "Must be Platform owner");
+        data.blacklist[user] = true;
     }
 
     /// @dev Creates a Tournament
