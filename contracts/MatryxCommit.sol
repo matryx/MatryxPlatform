@@ -201,10 +201,6 @@ library LibCommit {
         uint256 claimTime = data.commitClaims[commitHash];
         require(claimTime != uint256(0), "Commit must be claimed first");
 
-        bytes32 lookupHash = keccak256(abi.encodePacked(content));
-        bytes32 priorCommitHash = data.commitHashes[lookupHash];
-        LibCommit.Commit storage commit = data.commits[priorCommitHash];
-
         _createCommit(sender, info, data, parentHash, commitHash, isFork, content, value);
     }
 
@@ -241,6 +237,9 @@ library LibCommit {
     function _createCommit(address owner, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 parentHash, bytes32 commitHash, bool isFork, string memory content, uint256 value) internal {
         require(value > 0, "Cannot create a zero-value commit");
         require(data.commits[commitHash].owner == address(0), "Commit already exists");
+
+        bytes32 lookupHash = keccak256(abi.encodePacked(content));
+        require(data.commitHashes[lookupHash] == bytes32(0), "Commit already created from content");
 
         // if fork, increase balance of parent
         if (isFork) {
@@ -287,7 +286,6 @@ library LibCommit {
         data.commits[commitHash].height = data.commits[parentHash].height + 1;
         data.commits[commitHash].parentHash = parentHash;
 
-        bytes32 lookupHash = keccak256(abi.encodePacked(content));
         data.commitHashes[lookupHash] = commitHash;
 
         if (parentHash == bytes32(0)) {
