@@ -1,6 +1,6 @@
 const { shouldFail } = require('openzeppelin-test-helpers')
 
-const { setup } = require('../truffle/utils')
+const { setup, Contract } = require('../truffle/utils')
 const { init, createTournament, waitUntilClose, waitUntilOpen, createSubmission, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 

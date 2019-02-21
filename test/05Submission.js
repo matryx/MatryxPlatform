@@ -1,5 +1,6 @@
-const { genId, setup } = require('../truffle/utils')
-const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitChildren, commitCongaLine, createCommit, createSubmission } = require('./helpers')(artifacts, web3)
+const { expectEvent, shouldFail } = require('openzeppelin-test-helpers')
+const { genId, setup, stringToBytes, Contract } = require('../truffle/utils')
+const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitChildren, addToGroup, commitCongaLine, createCommit, createSubmission } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 let platform, commit

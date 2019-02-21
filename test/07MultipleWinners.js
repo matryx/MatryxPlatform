@@ -1,4 +1,10 @@
-const { init, createTournament, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
+const { expectEvent, shouldFail } = require('openzeppelin-test-helpers');
+const IMatryxRound = artifacts.require('IMatryxRound')
+const MatryxCommit = artifacts.require('MatryxCommit')
+const IMatryxCommit = artifacts.require('IMatryxCommit')
+
+const { setup, Contract, genId } = require('../truffle/utils')
+const { init, createTournament, waitUntilInReview, createSubmission, selectWinnersWhenInReview, initCommit, addToGroup } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 let platform, commit, token

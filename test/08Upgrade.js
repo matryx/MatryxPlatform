@@ -11,7 +11,7 @@ const LibCommitUpgraded = artifacts.require('LibCommitUpgraded')
 const IMatryxCommitUpgraded = artifacts.require('IMatryxCommitUpgraded')
 
 const { setup, Contract, genId } = require('../truffle/utils')
-const { init } = require('./helpers')(artifacts, web3)
+const { init, createTournament, waitUntilInReview, createSubmission, selectWinnersWhenInReview, initCommit, addToGroup } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 let platform

@@ -1,4 +1,11 @@
-const { init, createTournament, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
+const IMatryxRound = artifacts.require('IMatryxRound')
+const MatryxCommit = artifacts.require('MatryxCommit')
+const IMatryxCommit = artifacts.require('IMatryxCommit')
+const MatryxUser = artifacts.require('MatryxUser')
+const IMatryxUser = artifacts.require('IMatryxUser')
+
+const { Contract } = require('../truffle/utils')
+const { init, createTournament, waitUntilInReview, createSubmission, selectWinnersWhenInReview } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 let platform, commit, token
