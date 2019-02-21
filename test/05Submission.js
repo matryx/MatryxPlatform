@@ -1,6 +1,7 @@
-const { expectEvent, shouldFail } = require('openzeppelin-test-helpers')
-const { genId, setup, stringToBytes, Contract } = require('../truffle/utils')
-const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitChildren, addToGroup, commitCongaLine, createCommit, createSubmission } = require('./helpers')(artifacts, web3)
+const { shouldFail } = require('openzeppelin-test-helpers')
+
+const { genId, setup } = require('../truffle/utils')
+const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitChildren, commitCongaLine, createCommit, createSubmission } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 let platform, commit
@@ -22,11 +23,11 @@ contract('Submissions', async () => {
     // create a tournament from account 0
     let roundData = {
       start: 0,
-      duration: 40,
+      duration: 30,
       review: 10,
       bounty: toWei(100)
     }
-    t = await createTournament('tournament', toWei(100), roundData, 0)
+    t = await createTournament('tournament', toWei(200), roundData, 0)
     t.accountNumber = 1
     await t.enter()
     t.accountNumber = 0
@@ -71,7 +72,7 @@ contract('Submissions', async () => {
     let c2 = await platform.getSubmission(s2)
     let submissions = [s1, s2]
 
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
     let s1Reward = await commit.getBalance(c1.commitHash).then(fromWei)
     let s2Reward = await commit.getBalance(c2.commitHash).then(fromWei)
 
@@ -90,7 +91,7 @@ contract('Submissions', async () => {
     let c2 = await platform.getSubmission(s2)
     let submissions = [s1, s2]
 
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
 
     let user0Bal = await commit.getAvailableRewardForUser(c1.commitHash, accounts[0]).then(fromWei)
     user0Bal += await commit.getAvailableRewardForUser(c2.commitHash, accounts[0]).then(fromWei)
@@ -162,5 +163,38 @@ contract('Submissions', async () => {
 
     assert.equal(bal1, 25, "Account 1 does not have correct available reward in fork commit")
     assert.equal(bal2, 75, "Account 2 does not have correct available reward in fork commit")
+  })
+
+  it('Able to use the same commit hash for 2 different submissions', async () => {
+    let submissionHash = await createSubmission(t, '0x00', toWei(10), 1)
+    let { commitHash } = await platform.getSubmission(submissionHash)
+
+    // go to next round
+    let newRound = {
+      start: 0,
+      duration: 20,
+      review: 20,
+      bounty: web3.toWei(10)
+    }
+    await selectWinnersWhenInReview(t, [submissionHash], [1], newRound, 1)
+
+    t.accountNumber = 1
+    await t.createSubmission('content', commitHash)
+    const roundIndex = await t.getCurrentRoundIndex()
+    let { submissions } = await t.getRoundInfo(roundIndex)
+    let submissionHash2 = submissions[0]
+
+    submissions = await commit.getSubmissionsForCommit(commitHash)
+    assert.equal(submissions[0], submissionHash, 'Unable to get first submission from commit')
+    assert.equal(submissions[1], submissionHash2, 'Unable to get second submission from commit')
+  })
+
+  it('Unable to use the same commit hash for 2 submissions in the same round', async () => {
+    let submissionHash = await createSubmission(t, '0x00', toWei(10), 1)
+    let { commitHash } = await platform.getSubmission(submissionHash)
+
+    t.accountNumber = 1
+    let tx = t.createSubmission('content', commitHash)
+    await shouldFail.reverting(tx)
   })
 })

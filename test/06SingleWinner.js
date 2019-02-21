@@ -139,7 +139,7 @@ contract('Singleton Commit, Start Next Round', function() {
 
   it('Able to choose a winner and Start Next Round', async () => {
     let newRound = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 50,
       review: 120,
       bounty: web3.toWei(5)

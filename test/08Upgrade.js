@@ -1,4 +1,4 @@
-const { expectEvent, shouldFail } = require('openzeppelin-test-helpers');
+const { shouldFail } = require('openzeppelin-test-helpers');
 const MatryxSystem = artifacts.require('MatryxSystem')
 const IMatryxSystem = artifacts.require('IMatryxSystem')
 const MatryxPlatform = artifacts.require('MatryxPlatform')
@@ -10,8 +10,8 @@ const IMatryxCommit = artifacts.require('IMatryxCommit')
 const LibCommitUpgraded = artifacts.require('LibCommitUpgraded')
 const IMatryxCommitUpgraded = artifacts.require('IMatryxCommitUpgraded')
 
-const { setup, Contract, genId } = require('../truffle/utils')
-const { init, createTournament, waitUntilInReview, createSubmission, selectWinnersWhenInReview, initCommit, addToGroup } = require('./helpers')(artifacts, web3)
+const { Contract } = require('../truffle/utils')
+const { init } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 let platform
@@ -89,13 +89,13 @@ contract('Platform version upgrade', function() {
     assert.equal(balanceBefore, balanceAfter, "Balances were not the same despite upgrade")
   })
 
-  // TODO - everything below & moar
   it("Unable to create the same version twice", async () => {
     await system.createVersion(25)
     const tx = system.createVersion(25)
     await shouldFail.reverting(tx)
   })
 
+  // TODO - everything below & moar
   it("Setting the current version switches functionality to new version library", async () => {
     await system.createVersion(3)
     await system.setContract(3, stb("LibPlatform"), LibPlatformUpgraded.address)
