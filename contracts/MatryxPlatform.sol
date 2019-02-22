@@ -185,7 +185,7 @@ interface IMatryxPlatform {
     event RoundUpdated(address tournament, uint256 roundIndex);
 
     event SubmissionCreated(address tournament, bytes32 submissionHash, address creator);
-    event SubmissionsRewarded(address tournament, uint256 roundIndex);
+    event SubmissionRewarded(address tournament, bytes32 submissionHash);
 
     event GroupMemberAdded(bytes32 commitHash, address user);
 

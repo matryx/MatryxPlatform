@@ -58,7 +58,7 @@ library LibTournament {
     event RoundCreated(address tournament, uint256 roundIndex);
     event RoundUpdated(address tournament, uint256 roundIndex);
     event SubmissionCreated(address tournament, bytes32 submissionHash, address creator);
-    event SubmissionsRewarded(address tournament, uint256 roundIndex);
+    event SubmissionRewarded(address tournament, bytes32 submissionHash);
 
     struct TournamentInfo {
         uint256 version;
@@ -370,11 +370,11 @@ library LibTournament {
 
             reward = reward.add(data.submissions[winner].reward);
             data.submissions[winner].reward = reward;
+
+            emit SubmissionRewarded(self, winner);
         }
 
         data.tournamentBalance[self] = data.tournamentBalance[self].sub(round.details.bounty);
-
-        emit SubmissionsRewarded(self, roundIndex);
     }
 
     /// @dev Select winners of the current round
