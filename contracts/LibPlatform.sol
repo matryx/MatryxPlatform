@@ -78,8 +78,21 @@ library LibPlatform {
         return data.allTournaments;
     }
 
+    /// @dev Returns a Submission by its hash
+    /// @param data            Platform data struct
+    /// @param submissionHash  Submission hash
+    /// @return                The submission details
     function getSubmission(address, address, MatryxPlatform.Data storage data, bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory) {
         return data.submissions[submissionHash];
+    }
+
+    /// @dev Blacklists a user address
+    /// @param info  Platform info struct
+    /// @param data  Platform data struct
+    /// @param user  User address
+    function blacklist(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address user) public {
+        require(sender == info.owner, "Must be Platform owner");
+        data.blacklist[user] = true;
     }
 
     /// @dev Creates a Tournament

@@ -74,9 +74,9 @@ library LibCommit {
         return data.groups[groupHash].members;
     }
 
-    /// @dev Returns Round addresses the commit has been submitted to
+    /// @dev Returns hashes of all Submissions that were made from this commit
     /// @param data        Platform data struct
-    /// @param commitHash  Hash of the commit to return the rounds of
+    /// @param commitHash  Commit hash used for the submissions
     function getSubmissionsForCommit(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (bytes32[] memory) {
         return data.commitToSubmissions[commitHash];
     }
@@ -156,7 +156,7 @@ library LibCommit {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         require(data.commitClaims[commitHash] == uint256(0), "Commit hash already claimed");
 
-        data.commitClaims[commitHash] = block.number;
+        data.commitClaims[commitHash] = now;
         emit CommitClaimed(commitHash);
     }
 
@@ -172,6 +172,9 @@ library LibCommit {
     function createCommit(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 parentHash, bool isFork, bytes32 salt, string memory content, uint256 value) public {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         bytes32 commitHash = keccak256(abi.encodePacked(sender, salt, content));
+
+        uint256 claimTime = data.commitClaims[commitHash];
+        require(claimTime != uint256(0), "Commit must be claimed first");
 
         _createCommit(sender, info, data, parentHash, commitHash, isFork, content, value);
     }
@@ -191,6 +194,9 @@ library LibCommit {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         bytes32 commitHash = keccak256(abi.encodePacked(sender, salt, commitContent));
 
+        uint256 claimTime = data.commitClaims[commitHash];
+        require(claimTime != uint256(0), "Commit must be claimed first");
+
         _createCommit(sender, info, data, parentHash, commitHash, isFork, commitContent, value);
         LibTournament.createSubmission(tAddress, sender, info, data, content, commitHash);
     }
@@ -201,14 +207,11 @@ library LibCommit {
     /// @param parentHash   Parent commit hash
     /// @param commitHash   Commit hash
     /// @param isFork       If commit is fork of parent
-    /// @param content  Commit content IPFS hash
+    /// @param content      Commit content IPFS hash
     /// @param value        Author-determined commit value
     function _createCommit(address owner, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 parentHash, bytes32 commitHash, bool isFork, string memory content, uint256 value) internal {
         require(value > 0, "Cannot create a zero-value commit");
         require(data.commits[commitHash].owner == address(0), "Commit already exists");
-
-        uint256 claimBlock = data.commitClaims[commitHash];
-        require(claimBlock < block.number, "Commit must be claimed in a previous block");
 
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         require(data.commitHashes[lookupHash] == bytes32(0), "Commit already created from content");

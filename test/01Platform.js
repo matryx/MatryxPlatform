@@ -1,6 +1,7 @@
 const { shouldFail } = require('openzeppelin-test-helpers')
 
-const { init, createTournament, enterTournament } = require('./helpers')(artifacts, web3)
+const { setup } = require('../truffle/utils')
+const { init, createTournament } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 let platform
@@ -92,6 +93,25 @@ contract('Platform Testing', () => {
     await platform.withdrawTokens(token.address)
     let ba = await token.balanceOf(platform.address).then(fromWei)
     assert.equal(bb - 10, ba, 'Unable to withdraw tokens')
+  })
+
+  it('Able to blacklist a user address', async () => {
+    await setup(artifacts, web3, 3, true)
+    await platform.blacklist(accounts[3])
+
+    try {
+      await createTournament('tournament', web3.toWei(10), roundData, 3)
+      assert.fail('Expected revert not received')
+    } catch (error) {
+      let revertFound = error.message.search('revert') >= 0
+      assert(revertFound, 'Should not have been able to make a tournament')
+    }
+  })
+
+  it('Only the platform owner can blacklist users', async () => {
+    platform.accountNumber = 1
+    let tx = platform.blacklist(accounts[2])
+    await shouldFail.reverting(tx)
   })
 
   it('Able to set a new platform owner', async () => {

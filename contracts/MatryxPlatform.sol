@@ -182,21 +182,21 @@ interface IMatryxPlatform {
     event RoundUpdated(address tournament, uint256 roundIndex);
 
     event SubmissionCreated(address tournament, bytes32 submissionHash, address creator);
-    event SubmissionsRewarded(address tournament, uint256 roundIndex);
+    event SubmissionRewarded(address tournament, bytes32 submissionHash);
 
     event GroupMemberAdded(bytes32 commitHash, address user);
 
     event CommitClaimed(bytes32 commitHash);
     event CommitCreated(bytes32 parentHash, bytes32 commitHash, address creator, bool isFork);
 
-    function setPlatformOwner(address) external;
-    function upgradeToken(address) external;
-    function withdrawTokens(address) external;
+    function setPlatformOwner(address newOwner) external;
+    function upgradeToken(address token) external;
+    function withdrawTokens(address token) external;
 
     function getInfo() external view returns (MatryxPlatform.Info memory);
-    function isTournament(address) external view returns (bool);
-    function isCommit(bytes32) external view returns (bool);
-    function isSubmission(bytes32) external view returns (bool);
+    function isTournament(address tournament) external view returns (bool);
+    function isCommit(bytes32 commitHash) external view returns (bool);
+    function isSubmission(bytes32 submissionHash) external view returns (bool);
 
     function getTotalBalance() external view returns (uint256);
 
@@ -204,5 +204,6 @@ interface IMatryxPlatform {
     function getTournaments() external view returns (address[] memory);
     function getSubmission(bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory);
 
+    function blacklist(address user) external;
     function createTournament(LibTournament.TournamentDetails calldata, LibTournament.RoundDetails calldata) external returns (address);
 }
