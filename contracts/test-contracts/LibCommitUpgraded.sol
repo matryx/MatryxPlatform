@@ -3,7 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "../MatryxPlatform.sol";
 
-interface IMatryxCommitUpgraded {
+interface ICommitUpgraded {
     function getAvailableRewardForUser(bytes32, address) external pure returns (uint256);
 }
 
