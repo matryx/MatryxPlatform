@@ -3,11 +3,9 @@ pragma experimental ABIEncoderV2;
 
 import "truffle/Assert.sol";
 import "truffle/DeployedAddresses.sol";
-import "../contracts/MatryxPlatform.sol";
+import { MatryxPlatform, LibPlatform } from "../contracts/MatryxPlatform.sol";
 
 contract TestLibPlatform {
-
-    using LibPlatform for *;
 
     MatryxPlatform.Info info;
 
@@ -44,7 +42,7 @@ contract TestLibPlatform {
         info.token = address(this);
         info.owner = address(this);
 
-        // MatryxPlatform.Info memory info = LibPlatform.getInfo(address(this), address(this), info);
+        MatryxPlatform.Info memory info = LibPlatform.getInfo(address(this), address(this), info);
         // Assert.equal(info.system, address(this), "New system should be contract address");
         // Assert.equal(info.token, address(this), "New token should be contract address");
         // Assert.equal(info.owner, address(this), "New owner should be contract address");
@@ -63,7 +61,7 @@ contract TestLibPlatform {
     }
 }
 
-// function getInfo(address, address, MatryxPlatform.Info storage info) public view returns (MatryxPlatform.Info memory) {
+// function getInfo(address, address, LibPlatform.Info storage info) public view returns (LibPlatform.Info memory) {
 // function isTournament(address, address, MatryxPlatform.Data storage data, address tAddress) public view returns (bool) {
 // function getTotalBalance(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
 // function getBalanceOf(address, address, MatryxPlatform.Data storage data, address cAddress) public view returns (uint256) {
@@ -71,5 +69,5 @@ contract TestLibPlatform {
 // function getTournamentCount(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
 // function getTournaments(address, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
 // function getSubmission(address, address, MatryxPlatform.Data storage data, bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory) {
-// function withdrawBalance(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-// function createTournament(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails, LibTournament.RoundDetails memory rDetails) public returns (address) {
+// function withdrawBalance(address, address sender, LibPlatform.Info storage info, MatryxPlatform.Data storage data) public {
+// function createTournament(address, address sender, LibPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails, LibTournament.RoundDetails memory rDetails) public returns (address) {
