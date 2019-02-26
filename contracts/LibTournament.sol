@@ -104,18 +104,68 @@ library LibTournament {
 
     /// @dev Returns the state of this Tournament
     function getState(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return LibTournamentHelper.getState(self, sender, data);
+        uint256 currentRoundIndex = getCurrentRoundIndex(self, self, data);
+        uint256 roundState = getRoundState(self, sender, data, currentRoundIndex);
+
+        if (roundState >= uint256(LibGlobals.RoundState.Unfunded) &&
+            roundState <= uint256(LibGlobals.RoundState.HasWinners)
+        ) {
+            return uint256(LibGlobals.TournamentState.Open);
+        }
+        else if (roundState == uint256(LibGlobals.RoundState.NotYetOpen)) {
+            if (currentRoundIndex != 0) {
+                return uint256(LibGlobals.TournamentState.OnHold);
+            }
+            return uint256(LibGlobals.TournamentState.NotYetOpen);
+        }
+        else if (roundState == uint256(LibGlobals.RoundState.Closed)) {
+            return uint256(LibGlobals.TournamentState.Closed);
+        }
+        return uint256(LibGlobals.TournamentState.Abandoned);
     }
 
     /// @dev Returns the state of this Tournament
     /// @param roundIndex   Round index
     function getRoundState(address self, address sender, MatryxPlatform.Data storage data, uint256 roundIndex) public view returns (uint256) {
-        return LibTournamentHelper.getRoundState(self, data, roundIndex);
+        LibTournament.RoundData storage round = data.tournaments[self].rounds[roundIndex];
+
+        if (now < round.details.start) {
+            return uint256(LibGlobals.RoundState.NotYetOpen);
+        }
+        else if (now < round.details.start.add(round.details.duration)) {
+            if (round.details.bounty == 0) {
+                return uint256(LibGlobals.RoundState.Unfunded);
+            }
+            return uint256(LibGlobals.RoundState.Open);
+        }
+        else if (now < round.details.start.add(round.details.duration).add(round.details.review)) {
+            if (round.info.closed) {
+                return uint256(LibGlobals.RoundState.Closed);
+            }
+            else if (round.info.submissions.length == 0) {
+                return uint256(LibGlobals.RoundState.Abandoned);
+            }
+            else if (round.info.winners.submissions.length > 0) {
+                return uint256(LibGlobals.RoundState.HasWinners);
+            }
+            return uint256(LibGlobals.RoundState.InReview);
+        }
+        else if (round.info.winners.submissions.length > 0) {
+            return uint256(LibGlobals.RoundState.Closed);
+        }
+        return uint256(LibGlobals.RoundState.Abandoned);
     }
 
     /// @dev Returns the current round number and address of this Tournament
     function getCurrentRoundIndex(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return LibTournamentHelper.getCurrentRoundIndex(self, sender, data);
+        LibTournament.RoundData[] storage rounds = data.tournaments[self].rounds;
+        uint256 numRounds = rounds.length;
+
+        if (numRounds > 1 && getRoundState(self, sender, data, numRounds-2) == uint256(LibGlobals.RoundState.HasWinners)) {
+            return numRounds - 2;
+        } else {
+            return numRounds - 1;
+        }
     }
 
     /// @dev Returns the Round Info
@@ -135,7 +185,15 @@ library LibTournament {
     /// @param data  Data struct on Platform
     /// @return      Number of all Submissions in this Tournament
     function getSubmissionCount(address self, address sender, MatryxPlatform.Data storage data) public view returns (uint256) {
-        return LibTournamentHelper.getSubmissionCount(self, sender, data);
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        LibTournament.RoundData[] storage rounds = data.tournaments[self].rounds;
+        uint256 count = 0;
+
+        for (uint256 i = 0; i < rounds.length; i++) {
+            count += tournament.rounds[i].info.submissions.length;
+        }
+
+        return count;
     }
 
     /// @dev Returns the entry fee that an entrant has paid
@@ -176,7 +234,20 @@ library LibTournament {
     /// @param data    Data struct on Platform
     function enter(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
-        LibTournamentHelper.enter(self, sender, info, data);
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        uint256 entryFee = tournament.details.entryFee;
+
+        require(sender != tournament.info.owner, "Cannot enter own Tournament");
+        require(!tournament.entryFeePaid[sender].exists, "Cannot enter Tournament more than once");
+        require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Cannot enter closed or abandoned Tournament");
+
+        data.totalBalance = data.totalBalance.add(entryFee);
+        require(IToken(info.token).transferFrom(sender, address(this), entryFee), "Transfer failed");
+
+        tournament.entryFeePaid[sender].exists = true;
+        tournament.entryFeePaid[sender].value = entryFee;
+        tournament.totalEntryFees = tournament.totalEntryFees.add(entryFee);
+        tournament.allEntrants.push(sender);
     }
 
     /// @dev Exit Tournament and recover entry fee
@@ -185,7 +256,18 @@ library LibTournament {
     /// @param info    Info struct on Platform
     /// @param data    Data struct on Platform
     function exit(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-        LibTournamentHelper.exit(self, sender, info, data);
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(tournament.entryFeePaid[sender].exists, "Must be entrant");
+        uint256 entryFeePaid = tournament.entryFeePaid[sender].value;
+
+        if (entryFeePaid > 0) {
+            tournament.totalEntryFees = tournament.totalEntryFees.sub(entryFeePaid);
+
+            data.totalBalance = data.totalBalance.sub(entryFeePaid);
+            require(IToken(info.token).transfer(sender, entryFeePaid), "Transfer failed");
+        }
+
+        tournament.entryFeePaid[sender].exists = false;
     }
 
     /// @dev Creates a new Round on this Tournament
@@ -267,7 +349,16 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param tDetails  New tournament details
     function updateDetails(address self, address sender, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails) public {
-        LibTournamentHelper.updateDetails(self, sender, data, tDetails);
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(sender == tournament.info.owner, "Must be owner");
+
+        if (bytes(tDetails.content).length > 0) {
+            tournament.details.content = tDetails.content;
+        }
+        if (tDetails.entryFee != 0) {
+            tournament.details.entryFee = tDetails.entryFee;
+        }
+
         emit TournamentUpdated(self);
     }
 
@@ -412,15 +503,41 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param rDetails  New round details
     function updateNextRound(address self, address sender, MatryxPlatform.Data storage data, LibTournament.RoundDetails memory rDetails) public {
-        LibTournamentHelper.updateNextRound(self, sender, data, rDetails);
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(sender == tournament.info.owner, "Must be owner");
 
-        // ensure duration is valid
-        if (rDetails.duration > 0) {
-            require(rDetails.duration >= MIN_ROUND_LENGTH, "Round too short");
-            require(rDetails.duration <= MAX_ROUND_LENGTH, "Round too long");
+        uint256 roundIndex = tournament.rounds.length - 1;
+        require(getRoundState(self, sender, data, roundIndex) == uint256(LibGlobals.RoundState.NotYetOpen), "Cannot edit open Round");
+
+        LibTournament.RoundDetails storage details = tournament.rounds[roundIndex].details;
+
+        if (rDetails.start > 0) {
+            if (tournament.rounds.length > 1) {
+                LibTournament.RoundDetails storage currentDetails = tournament.rounds[roundIndex - 1].details;
+                require(rDetails.start >= currentDetails.start.add(currentDetails.duration).add(currentDetails.review), "Round cannot start before end of review");
+                details.start = rDetails.start;
+            }
+            else {
+                details.start = rDetails.start < now ? now : rDetails.start;
+            }
         }
 
-        uint256 roundIndex = data.tournaments[self].rounds.length - 1;
+        if (rDetails.duration > 0) {
+            // ensure duration is valid
+            require(rDetails.duration >= MIN_ROUND_LENGTH, "Round too short");
+            require(rDetails.duration <= MAX_ROUND_LENGTH, "Round too long");
+            details.duration = rDetails.duration;
+        }
+
+        if (rDetails.review > 0) { // TODO: review length restriction
+            details.review = rDetails.review;
+        }
+
+        if (rDetails.bounty > 0) {
+            require(rDetails.bounty <= data.tournamentBalance[self], "Tournament does not have the funds");
+            details.bounty = rDetails.bounty;
+        }
+
         emit RoundUpdated(self, roundIndex);
     }
 
@@ -429,7 +546,17 @@ library LibTournament {
     /// @param sender  msg.sender to the Tournament
     /// @param data    Data struct on Platform
     function startNextRound(address self, address sender, MatryxPlatform.Data storage data) public {
-        LibTournamentHelper.startNextRound(self, sender, data);
+        LibTournament.TournamentData storage tournament = data.tournaments[self];
+        require(sender == tournament.info.owner, "Must be owner");
+        require(tournament.rounds.length > 1, "No round to start");
+
+        uint256 roundIndex = getCurrentRoundIndex(self, sender, data);
+        require(getRoundState(self, sender, data, roundIndex) == uint256(LibGlobals.RoundState.HasWinners), "Must have selected winners");
+
+        tournament.rounds[roundIndex].info.closed = true;
+
+        roundIndex = roundIndex.add(1);
+        tournament.rounds[roundIndex].details.start = now;
     }
 
     /// @dev Entrant can withdraw an even share of remaining balance from abandoned Tournament
@@ -495,180 +622,6 @@ library LibTournament {
     /// @param info    Info struct on Platform
     /// @param data    Data struct on Platform
     function recoverBounty(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-        LibTournamentHelper.recoverBounty(self, sender, info, data);
-    }
-}
-
-library LibTournamentHelper {
-    using SafeMath for uint256;
-
-    function getState(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        uint256 currentRoundIndex = getCurrentRoundIndex(self, self, data);
-        uint256 roundState = getRoundState(self, data, currentRoundIndex);
-
-        if (roundState >= uint256(LibGlobals.RoundState.Unfunded) &&
-            roundState <= uint256(LibGlobals.RoundState.HasWinners)
-        ) {
-            return uint256(LibGlobals.TournamentState.Open);
-        }
-        else if (roundState == uint256(LibGlobals.RoundState.NotYetOpen)) {
-            if (currentRoundIndex != 0) {
-                return uint256(LibGlobals.TournamentState.OnHold);
-            }
-            return uint256(LibGlobals.TournamentState.NotYetOpen);
-        }
-        else if (roundState == uint256(LibGlobals.RoundState.Closed)) {
-            return uint256(LibGlobals.TournamentState.Closed);
-        }
-        return uint256(LibGlobals.TournamentState.Abandoned);
-    }
-
-    function getRoundState(address self, MatryxPlatform.Data storage data, uint256 roundIndex) public view returns (uint256) {
-        LibTournament.RoundData storage round = data.tournaments[self].rounds[roundIndex];
-
-        if (now < round.details.start) {
-            return uint256(LibGlobals.RoundState.NotYetOpen);
-        }
-        else if (now < round.details.start.add(round.details.duration)) {
-            if (round.details.bounty == 0) {
-                return uint256(LibGlobals.RoundState.Unfunded);
-            }
-            return uint256(LibGlobals.RoundState.Open);
-        }
-        else if (now < round.details.start.add(round.details.duration).add(round.details.review)) {
-            if (round.info.closed) {
-                return uint256(LibGlobals.RoundState.Closed);
-            }
-            else if (round.info.submissions.length == 0) {
-                return uint256(LibGlobals.RoundState.Abandoned);
-            }
-            else if (round.info.winners.submissions.length > 0) {
-                return uint256(LibGlobals.RoundState.HasWinners);
-            }
-            return uint256(LibGlobals.RoundState.InReview);
-        }
-        else if (round.info.winners.submissions.length > 0) {
-            return uint256(LibGlobals.RoundState.Closed);
-        }
-        return uint256(LibGlobals.RoundState.Abandoned);
-    }
-
-    function getCurrentRoundIndex(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        LibTournament.RoundData[] storage rounds = data.tournaments[self].rounds;
-        uint256 numRounds = rounds.length;
-
-        if (numRounds > 1 && getRoundState(self, data, numRounds-2) == uint256(LibGlobals.RoundState.HasWinners)) {
-            return numRounds - 2;
-        } else {
-            return numRounds - 1;
-        }
-    }
-
-    function getSubmissionCount(address self, address, MatryxPlatform.Data storage data) public view returns (uint256) {
-        LibTournament.TournamentData storage tournament = data.tournaments[self];
-        LibTournament.RoundData[] storage rounds = data.tournaments[self].rounds;
-        uint256 count = 0;
-
-        for (uint256 i = 0; i < rounds.length; i++) {
-            count += tournament.rounds[i].info.submissions.length;
-        }
-
-        return count;
-    }
-
-    function enter(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-        LibTournament.TournamentData storage tournament = data.tournaments[self];
-        uint256 entryFee = tournament.details.entryFee;
-
-        require(sender != tournament.info.owner, "Cannot enter own Tournament");
-        require(!tournament.entryFeePaid[sender].exists, "Cannot enter Tournament more than once");
-        require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Cannot enter closed or abandoned Tournament");
-
-        data.totalBalance = data.totalBalance.add(entryFee);
-        require(IToken(info.token).transferFrom(sender, address(this), entryFee), "Transfer failed");
-
-        tournament.entryFeePaid[sender].exists = true;
-        tournament.entryFeePaid[sender].value = entryFee;
-        tournament.totalEntryFees = tournament.totalEntryFees.add(entryFee);
-        tournament.allEntrants.push(sender);
-    }
-
-    function exit(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
-        LibTournament.TournamentData storage tournament = data.tournaments[self];
-        require(tournament.entryFeePaid[sender].exists, "Must be entrant");
-        uint256 entryFeePaid = tournament.entryFeePaid[sender].value;
-
-        if (entryFeePaid > 0) {
-            tournament.totalEntryFees = tournament.totalEntryFees.sub(entryFeePaid);
-
-            data.totalBalance = data.totalBalance.sub(entryFeePaid);
-            require(IToken(info.token).transfer(sender, entryFeePaid), "Transfer failed");
-        }
-
-        tournament.entryFeePaid[sender].exists = false;
-    }
-
-    function updateDetails(address self, address sender, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails) public {
-        LibTournament.TournamentData storage tournament = data.tournaments[self];
-        require(sender == tournament.info.owner, "Must be owner");
-
-        if (bytes(tDetails.content).length > 0) {
-            tournament.details.content = tDetails.content;
-        }
-        if (tDetails.entryFee != 0) {
-            tournament.details.entryFee = tDetails.entryFee;
-        }
-    }
-
-    function updateNextRound(address self, address sender, MatryxPlatform.Data storage data, LibTournament.RoundDetails memory rDetails) public {
-        LibTournament.TournamentData storage tournament = data.tournaments[self];
-        require(sender == tournament.info.owner, "Must be owner");
-
-        uint256 roundIndex = tournament.rounds.length - 1;
-        require(getRoundState(self, data, roundIndex) == uint256(LibGlobals.RoundState.NotYetOpen), "Cannot edit open Round");
-
-        LibTournament.RoundDetails storage details = tournament.rounds[roundIndex].details;
-
-        if (rDetails.start > 0) {
-            if (tournament.rounds.length > 1) {
-                LibTournament.RoundDetails storage currentDetails = tournament.rounds[roundIndex - 1].details;
-                require(rDetails.start >= currentDetails.start.add(currentDetails.duration).add(currentDetails.review), "Round cannot start before end of review");
-                details.start = rDetails.start;
-            }
-            else {
-                details.start = rDetails.start < now ? now : rDetails.start;
-            }
-        }
-
-        if (rDetails.duration > 0) {
-            details.duration = rDetails.duration;
-        }
-
-        if (rDetails.review > 0) { // TODO: review length restriction
-            details.review = rDetails.review;
-        }
-
-        if (rDetails.bounty > 0) {
-            require(rDetails.bounty <= data.tournamentBalance[self], "Tournament does not have the funds");
-            details.bounty = rDetails.bounty;
-        }
-    }
-
-    function startNextRound(address self, address sender, MatryxPlatform.Data storage data) public {
-        LibTournament.TournamentData storage tournament = data.tournaments[self];
-        require(sender == tournament.info.owner, "Must be owner");
-        require(tournament.rounds.length > 1, "No round to start");
-
-        uint256 roundIndex = getCurrentRoundIndex(self, sender, data);
-        require(getRoundState(self, data, roundIndex) == uint256(LibGlobals.RoundState.HasWinners), "Must have selected winners");
-
-        tournament.rounds[roundIndex].info.closed = true;
-
-        roundIndex = roundIndex.add(1);
-        tournament.rounds[roundIndex].details.start = now;
-    }
-
-    function recoverBounty(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
         require(tournament.numWithdrawn == 0, "Already withdrawn");
@@ -676,7 +629,7 @@ library LibTournamentHelper {
         uint256 roundIndex = getCurrentRoundIndex(self, sender, data);
         LibTournament.RoundData storage round = tournament.rounds[roundIndex];
 
-        require(getRoundState(self, data, roundIndex) == uint256(LibGlobals.RoundState.Abandoned), "Tournament must be abandoned");
+        require(getRoundState(self, sender, data, roundIndex) == uint256(LibGlobals.RoundState.Abandoned), "Tournament must be abandoned");
         require(round.info.submissions.length == 0, "Must have 0 submissions");
 
         uint256 funds = data.tournamentBalance[self];

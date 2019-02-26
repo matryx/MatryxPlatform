@@ -86,7 +86,6 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Entering Matryx</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#approving-platform-transactions">Approving Platform Transactions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#entering-a-tournament">Entering a Tournament</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="commit-system.html">The Commit System</a></li>
@@ -160,33 +159,18 @@
             
   <div class="section" id="entering-matryx">
 <h1>Entering Matryx<a class="headerlink" href="#entering-matryx" title="Permalink to this headline">¶</a></h1>
-<p>Matryx is a decentralized application for solving difficult scientific problems. The Matryx’s commit system allows you to timestamp and value your work on the Ethereum blockchain, providing you with immutable proof of ownership over your content. The Matryx bounty system enables users to place bounties on scientific problems and to award creative solutions, allowing people to build up chains of work and be rewarded for their contributions.</p>
+<p>Matryx is a decentralized application for solving difficult scientific problems.
+The Matryx’s commit system allows you to timestamp and value your work on the Ethereum blockchain, providing you with immutable proof of ownership over your content.
+The Matryx bounty system enables users to place bounties on scientific problems and to award creative solutions, allowing people to build up chains of work and be rewarded for their contributions.</p>
 <p>Welcome!</p>
-<p>To start using the platform, you first need to enter Matryx with the Ethereum address that you intend to use on the platform. Entering Matryx is as simple as running the following:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>platform.enterMatryx()
-</pre></div>
-</div>
-<p>Congrats! You have now entered the Matryx platform. We’re glad to have you on board.</p>
 <div class="section" id="approving-platform-transactions">
 <h2>Approving Platform Transactions<a class="headerlink" href="#approving-platform-transactions" title="Permalink to this headline">¶</a></h2>
-<p>To interact with the platform, you first need to tell <code class="docutils literal notranslate"><span class="pre">MatryxToken</span></code> that you approve of <code class="docutils literal notranslate"><span class="pre">MatryxPlatform</span></code>, and specify a number of <code class="docutils literal notranslate"><span class="pre">tokens</span></code> you want to approve. This is done by calling</p>
+<p>To interact with the platform, you first need to tell <code class="docutils literal notranslate"><span class="pre">MatryxToken</span></code> that you approve of <code class="docutils literal notranslate"><span class="pre">MatryxPlatform</span></code>, and specify a number of <code class="docutils literal notranslate"><span class="pre">tokens</span></code> you want to approve.
+This is done by calling</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>token.approve(MatryxPlatform.address, tokens)
 </pre></div>
 </div>
 <p>Great! Now that you know how to approve platform transactions, you can create tournaments, make submissions, and interact with other platform users.</p>
-</div>
-<div class="section" id="entering-a-tournament">
-<h2>Entering a Tournament<a class="headerlink" href="#entering-a-tournament" title="Permalink to this headline">¶</a></h2>
-<p>To enter a tournament that you’d like to participate in, you can make the following call:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.enter()
-</pre></div>
-</div>
-<p>Whenever you enter a tournament, you will have to pay the tournament entry fee designated by the tournament creator, so you need to first approve at least that many MTX tokens. To check a tournament’s entry fee before entering, you can call</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.getEntryFee()
-</pre></div>
-</div>
-<p>The value returned here is the Wei equivalent of MTX, so a single MTX has 1e18 digit precision. This fee is incurred solely to prevent malicious actors from attempting a cross-tournament Sybil attack, and it will be returned to you at the end of the tournament (or whenever you choose to exit the tournament).</p>
-<p>Congratulations! You have now entered your first Matryx tournament. Assemble a team; let’s get solving!</p>
 </div>
 </div>
 
@@ -210,7 +194,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Max Howard, Sam Hessenauer
+        &copy; Copyright 2018, Max Howard, Sam Hessenauer.
 
     </p>
   </div>
@@ -229,14 +213,21 @@
 
   
 
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-    
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.2',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

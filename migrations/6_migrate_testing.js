@@ -2,11 +2,6 @@ const network = require('../truffle/network')
 
 const LibPlatformUpgraded = artifacts.require('LibPlatformUpgraded')
 const LibCommitUpgraded = artifacts.require('LibCommitUpgraded')
-const LibTournamentUpgraded = artifacts.require('LibTournamentUpgraded')
-
-const LibPlatform = artifacts.require("LibPlatform")
-const LibTournament = artifacts.require("LibTournament")
-const LibTournamentHelper = artifacts.require("LibTournamentHelper")
 
 module.exports = function (deployer) {
   if (['develop', 'ganache'].includes(network.network)) {
