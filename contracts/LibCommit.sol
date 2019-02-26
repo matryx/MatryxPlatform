@@ -212,12 +212,14 @@ library LibCommit {
     function _createCommit(address owner, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 parentHash, bytes32 commitHash, bool isFork, string memory content, uint256 value) internal {
         require(value > 0, "Cannot create a zero-value commit");
         require(data.commits[commitHash].owner == address(0), "Commit already exists");
+        require(parentHash == bytes32(0) || data.commits[parentHash].owner != address(0), "Parent must be null or real commit");
 
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         require(data.commitHashes[lookupHash] == bytes32(0), "Commit already created from content");
 
         // if fork, increase balance of parent
         if (isFork) {
+            require(parentHash != bytes32(0), "Fork must have parent");
             uint256 totalValue = data.commits[parentHash].totalValue;
             data.totalBalance = data.totalBalance.add(totalValue);
             data.commitBalance[parentHash] = data.commitBalance[parentHash].add(totalValue);
