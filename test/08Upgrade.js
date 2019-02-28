@@ -10,6 +10,7 @@ const IPlatformUpgraded = artifacts.require('IPlatformUpgraded')
 const LibCommitUpgraded = artifacts.require('LibCommitUpgraded')
 const ICommitUpgraded = artifacts.require('ICommitUpgraded')
 const LibTournamentUpgraded = artifacts.require('LibTournamentUpgraded')
+const ITournamentUpgraded = artifacts.require('ITournamentUpgraded')
 
 const { Contract } = require('../truffle/utils')
 const { init, createTournament } = require('./helpers')(artifacts, web3)
@@ -106,6 +107,7 @@ contract('Platform version upgrade', function() {
   it("Setting the current version switches functionality to new version library", async () => {
     await system.createVersion(3)
     await system.setContract(3, stb("LibPlatform"), LibPlatformUpgraded.address)
+    await system.setContract(3, stb("MatryxPlatform"), platform.address)
     await system.addContractMethod(3, stb("LibPlatform"), selector('getTournamentCount()'), [selector('getTournamentCount(address,address,MatryxPlatform.Data storage)'), [3],[]])
     await system.setVersion(3)
 
@@ -121,21 +123,45 @@ contract('Platform version upgrade', function() {
     assert.equal(b, 10, "Incorrect tournament balance")
   })
 
-  // TODO
-  it("Newly created contracts use the current platform version", async () => {
-    // figure out how to link new libPlatform with new libTournament before attempting to create a new tournament
+  it("Unable to call functions that only exist in the previous library", async () => {
+    let tx = platform.blacklist(accounts[4])
+    await shouldFail.reverting(tx)
+  })
+
+  it("Newly created contracts use the current platform version and the updated libraries", async () => {
     await system.setContract(3, stb("LibTournament"), LibTournamentUpgraded.address)
+
+    // set new LibTournament functions
+    await system.addContractMethod(3, stb("LibTournament"), selector('getInfo()'), [selector('getInfo(address,address,MatryxPlatform.Data storage)'), [3],[]])
+    await system.addContractMethod(3, stb("LibTournament"), selector('getRounds()'), [selector('getRounds(address,address,MatryxPlatform.Data storage)'), [3],[]])
     await system.addContractMethod(3, stb("LibTournament"), selector('getBalance()'), [selector('getBalance(address,address,MatryxPlatform.Data storage)'), [3],[]])
+    await system.addContractMethod(3, stb("LibTournament"), selector('createRound()'), [selector('createRound(address,address,MatryxPlatform.Data storage)'), [3],[]])
 
-    // t2 = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    // let { version } = await t2.getInfo();
-    // assert.equal(version, 3, "Incorrect version for new tournament")
+    // set new LibPlatform functions
+    await system.addContractMethod(3, stb("LibPlatform"), selector('createTournament()'), [selector('createTournament(address,address,MatryxPlatform.Info storage,MatryxPlatform.Data storage)'), [0, 3],[]])
+    await system.addContractMethod(3, stb("LibPlatform"), selector('isTournament(address)'), [selector('isTournament(address,address,MatryxPlatform.Data storage,address)'), [3],[]])
+    await system.addContractMethod(3, stb("LibPlatform"), selector('getTournaments()'), [selector('getTournaments(address,address,MatryxPlatform.Data storage)'), [3],[]])
 
-    // let b = await t2.getBalance().then(fromWei)
-    // assert.equal(b, 99, "Incorrect tournament balance")
+    // use new interface
+    platform = Contract(platform.address, IPlatformUpgraded)
+
+    await platform.createTournament()
+
+    const address = (await platform.getTournaments()).pop()
+    t2 = Contract(address, ITournamentUpgraded, 0)
+
+    let isT = await platform.isTournament(t2.address)
+    assert.isTrue(isT, "New tournament does not exist in platform")
+
+    let { version, owner } = await t2.getInfo();
+    assert.equal(version, 3, "Incorrect version for new tournament")
+    assert.equal(owner, accounts[0], "Incorrect owner for new tournament")
+
+    let b = await t2.getBalance().then(fromWei)
+    assert.equal(b, 99, "Incorrect tournament balance")
+
+    let { start } = await t2.getRounds()
+    assert.equal(start, 12345, "Round created incorrectly")
   })
 
-  it("Able to upgrade the version of all other libraries as well", async () => {
-    // figure out how to migrate and link new libraries from within the tests
-  })
 })
