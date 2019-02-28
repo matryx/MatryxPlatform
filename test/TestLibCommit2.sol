@@ -59,7 +59,7 @@ contract TestLibCommit2 {
         bytes32 salt = bytes32(uint256(4));
         bytes32 commitHash = keccak256(abi.encodePacked(msg.sender, salt, commitContent));
         // claim commit
-        data.commitClaims[commitHash] = now;
+        data.commitClaims[commitHash] = block.number - 1;
 
         LibCommit.createSubmission(address(this), msg.sender, info, data, address(this), submissionContent, bytes32(0), false, salt, commitContent, 8);
 

@@ -247,7 +247,7 @@ contract TestLibCommit1 {
         bytes32 commitHash = keccak256(abi.encodePacked("commitHash"));
         LibCommit.claimCommit(address(this), msg.sender, info, data, commitHash);
         
-        Assert.equal(data.commitClaims[commitHash], now, "Commit claim should be now.");
+        Assert.equal(data.commitClaims[commitHash], block.number, "Commit claim should be now.");
 
         delete data.whitelist[msg.sender];
         delete data.commitClaims[commitHash];
@@ -281,7 +281,7 @@ contract TestLibCommit1 {
         bytes32 salt = bytes32(uint256(4));
         bytes32 commitHash = keccak256(abi.encodePacked(msg.sender, salt, content));
         // claim commit
-        data.commitClaims[commitHash] = now;
+        data.commitClaims[commitHash] = block.number - 1;
         // parent is part of group
         data.groups[parentGroup].hasMember[address(uint256(msg.sender) + 1)] = true;
         data.groups[parentGroup].members.push(address(uint256(msg.sender) + 1));
@@ -346,7 +346,7 @@ contract TestLibCommit1 {
         bytes32 salt = bytes32(uint256(4));
         bytes32 commitHash = keccak256(abi.encodePacked(msg.sender, salt, content));
         // claim commit
-        data.commitClaims[commitHash] = now;
+        data.commitClaims[commitHash] = block.number - 1;
         // become part of parent's group
         data.groups[parentGroup].hasMember[msg.sender] = true;
         data.groups[parentGroup].members.push(msg.sender);
@@ -392,7 +392,7 @@ contract TestLibCommit1 {
         bytes32 salt = bytes32(uint256(4));
         bytes32 commitHash = keccak256(abi.encodePacked(msg.sender, salt, content));
         // claim commit
-        data.commitClaims[commitHash] = now;
+        data.commitClaims[commitHash] = block.number - 1;
         
         LibCommit.createCommit(address(this), msg.sender, info, data, bytes32(0), false, salt, content, 7);
         
