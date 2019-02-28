@@ -156,7 +156,7 @@ library LibCommit {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         require(data.commitClaims[commitHash] == uint256(0), "Commit hash already claimed");
 
-        data.commitClaims[commitHash] = now;
+        data.commitClaims[commitHash] = block.number;
         emit CommitClaimed(commitHash);
     }
 
@@ -172,9 +172,6 @@ library LibCommit {
     function createCommit(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 parentHash, bool isFork, bytes32 salt, string memory content, uint256 value) public {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         bytes32 commitHash = keccak256(abi.encodePacked(sender, salt, content));
-
-        uint256 claimTime = data.commitClaims[commitHash];
-        require(claimTime != uint256(0), "Commit must be claimed first");
 
         _createCommit(sender, info, data, parentHash, commitHash, isFork, content, value);
     }
@@ -194,9 +191,6 @@ library LibCommit {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         bytes32 commitHash = keccak256(abi.encodePacked(sender, salt, commitContent));
 
-        uint256 claimTime = data.commitClaims[commitHash];
-        require(claimTime != uint256(0), "Commit must be claimed first");
-
         _createCommit(sender, info, data, parentHash, commitHash, isFork, commitContent, value);
         LibTournament.createSubmission(tAddress, sender, info, data, content, commitHash);
     }
@@ -213,6 +207,9 @@ library LibCommit {
         require(value > 0, "Cannot create a zero-value commit");
         require(data.commits[commitHash].owner == address(0), "Commit already exists");
         require(parentHash == bytes32(0) || data.commits[parentHash].owner != address(0), "Parent must be null or real commit");
+
+        uint256 claimBlock = data.commitClaims[commitHash];
+        require(claimBlock < block.number, "Commit must be claimed in a previous block");
 
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         require(data.commitHashes[lookupHash] == bytes32(0), "Commit already created from content");
