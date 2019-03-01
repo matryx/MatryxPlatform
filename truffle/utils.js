@@ -182,12 +182,6 @@ async function setup(artifacts, web3, accountNum, silent) {
     await this.getMinedTx(hash)
   }
 
-  // const hasEnteredMatryx = await platform.hasEnteredMatryx(account)
-  // if (!hasEnteredMatryx) {
-  //   let { hash } = await platform.enterMatryx()
-  //   await this.getMinedTx(hash)
-  // }
-
   log(`Account ${accountNum} setup complete!\n`)
 
   return {

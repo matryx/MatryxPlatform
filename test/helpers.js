@@ -1,12 +1,12 @@
 const fs = require('fs')
 const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes, Contract } = require('../truffle/utils')
 
-const toWei = n => web3.utils.toWei(n.toString())
-web3.toWei = toWei
-
 Contract.logLevel = 1
 
 module.exports = function (artifacts, web3) {
+  const toWei = n => web3.utils.toWei(n.toString())
+  web3.toWei = toWei
+
   const MatryxSystem = artifacts.require("MatryxSystem")
   const MatryxPlatform = artifacts.require("MatryxPlatform")
   const IMatryxPlatform = artifacts.require("IMatryxPlatform")
@@ -27,6 +27,10 @@ module.exports = function (artifacts, web3) {
       await eval(command)
     }
 
+    return await setupContracts()
+  }
+
+  async function setupContracts() {
     // console.log("token:", network.tokenAddress)
     const data = await setup(artifacts, web3, 0, true)
     platform = data.platform
@@ -196,6 +200,7 @@ module.exports = function (artifacts, web3) {
 
   return {
     init,
+    setupContracts,
     createTournament,
     waitUntilClose,
     waitUntilOpen,
