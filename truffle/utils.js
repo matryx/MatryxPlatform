@@ -7,13 +7,15 @@ const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * 
 
 function getMinedTx(hash) {
   return new Promise((resolve, reject) => {
-    ;(async function checkTx() {
+    async function checkTx() {
       const txr = await network.provider.getTransactionReceipt(hash)
       if (txr) {
         if (!txr.status) return reject({ message: 'revert' })
         resolve(txr)
       } else setTimeout(checkTx, 1000)
-    })()
+    }
+
+    setTimeout(checkTx, 1000)
   })
 }
 
