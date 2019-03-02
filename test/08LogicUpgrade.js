@@ -5,12 +5,12 @@ const MatryxPlatform = artifacts.require('MatryxPlatform')
 const MatryxCommit = artifacts.require('MatryxCommit')
 const IMatryxCommit = artifacts.require('IMatryxCommit')
 
-const LibPlatformUpgraded = artifacts.require('LibPlatformUpgraded')
-const IPlatformUpgraded = artifacts.require('IPlatformUpgraded')
-const LibCommitUpgraded = artifacts.require('LibCommitUpgraded')
-const ICommitUpgraded = artifacts.require('ICommitUpgraded')
-const LibTournamentUpgraded = artifacts.require('LibTournamentUpgraded')
-const ITournamentUpgraded = artifacts.require('ITournamentUpgraded')
+const LibPlatform2 = artifacts.require('LibPlatform2')
+const IPlatform2 = artifacts.require('IPlatform2')
+const LibCommit2 = artifacts.require('LibCommit2')
+const ICommit2 = artifacts.require('ICommit2')
+const LibTournament2 = artifacts.require('LibTournament2')
+const ITournament2 = artifacts.require('ITournament2')
 
 const { Contract } = require('../truffle/utils')
 const { init, createTournament } = require('./helpers')(artifacts, web3)
@@ -38,11 +38,11 @@ contract('Same Version Platform Library Code Swap', function() {
   })
 
   it('Previously nonexistent selector returns correct value after new library setup on system', async () => {
-    await system.setContract(1, stb("LibPlatform"), LibPlatformUpgraded.address)
+    await system.setContract(1, stb("LibPlatform"), LibPlatform2.address)
     await system.addContractMethod(1, stb("LibPlatform"), selector('getTwo()'), [selector('getTwo(address,address,MatryxPlatform.Info storage)'), [0],[]])
 
-    const PlatformUpgraded = Contract(MatryxPlatform.address, IPlatformUpgraded)
-    let two = await PlatformUpgraded.getTwo()
+    const Platform2 = Contract(MatryxPlatform.address, IPlatform2)
+    let two = await Platform2.getTwo()
 
     assert.equal(two, 2, "Returned incorrect value from upgraded library function")
   })
@@ -63,10 +63,10 @@ contract('Same Version Commit Library Code Swap', function() {
   })
 
   it('New library for forwarder behaves correctly', async () => {
-    await system.setContract(1, stb("LibCommit"), LibCommitUpgraded.address)
+    await system.setContract(1, stb("LibCommit"), LibCommit2.address)
     await system.addContractMethod(1, stb("LibCommit"), selector('getAvailableRewardForUser(bytes32,address)'), [selector('getAvailableRewardForUser(address,address,MatryxPlatform.Data storage,bytes32,address)'), [3], []])
 
-    const commitTwo = Contract(MatryxCommit.address, ICommitUpgraded)
+    const commitTwo = Contract(MatryxCommit.address, ICommit2)
 
     let r = await commitTwo.getAvailableRewardForUser('0x00', accounts[0])
 
@@ -92,7 +92,7 @@ contract('Platform version upgrade', function() {
 
     const countBefore = await platform.getTournamentCount().then(fromWei)
     await system.createVersion(2)
-    await system.setContract(2, stb("LibPlatform"), LibPlatformUpgraded.address)
+    await system.setContract(2, stb("LibPlatform"), LibPlatform2.address)
     await system.addContractMethod(2, stb("LibPlatform"), selector('getTournamentCount()'), [selector('getTournamentCount(address,address,MatryxPlatform.Data storage)'), [3],[]])
     const countAfter = await platform.getTournamentCount().then(fromWei)
     assert.equal(countBefore, countAfter, "Incorrect counts after upgrade")
@@ -106,7 +106,7 @@ contract('Platform version upgrade', function() {
 
   it("Setting the current version switches functionality to new version library", async () => {
     await system.createVersion(3)
-    await system.setContract(3, stb("LibPlatform"), LibPlatformUpgraded.address)
+    await system.setContract(3, stb("LibPlatform"), LibPlatform2.address)
     await system.setContract(3, stb("MatryxPlatform"), platform.address)
     await system.addContractMethod(3, stb("LibPlatform"), selector('getTournamentCount()'), [selector('getTournamentCount(address,address,MatryxPlatform.Data storage)'), [3],[]])
     await system.setVersion(3)
@@ -129,7 +129,7 @@ contract('Platform version upgrade', function() {
   })
 
   it("Newly created contracts use the current platform version and the updated libraries", async () => {
-    await system.setContract(3, stb("LibTournament"), LibTournamentUpgraded.address)
+    await system.setContract(3, stb("LibTournament"), LibTournament2.address)
 
     // set new LibTournament functions
     await system.addContractMethod(3, stb("LibTournament"), selector('getInfo()'), [selector('getInfo(address,address,MatryxPlatform.Data storage)'), [3],[]])
@@ -143,12 +143,12 @@ contract('Platform version upgrade', function() {
     await system.addContractMethod(3, stb("LibPlatform"), selector('getTournaments()'), [selector('getTournaments(address,address,MatryxPlatform.Data storage)'), [3],[]])
 
     // use new interface
-    platform = Contract(platform.address, IPlatformUpgraded)
+    platform = Contract(platform.address, IPlatform2)
 
     await platform.createTournament()
 
     const address = (await platform.getTournaments()).pop()
-    t2 = Contract(address, ITournamentUpgraded, 0)
+    t2 = Contract(address, ITournament2, 0)
 
     let isT = await platform.isTournament(t2.address)
     assert.isTrue(isT, "New tournament does not exist in platform")

@@ -135,7 +135,7 @@ contract('In Review Round Testing', function() {
   it('Able to create a round In Review', async function() {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 30,
       review: 60,
       bounty: web3.toWei(5)
@@ -184,7 +184,7 @@ contract('Closed Round Testing', function() {
   it('Able to create a closed round', async function() {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 20,
       review: 60,
       bounty: web3.toWei(5)
@@ -242,7 +242,7 @@ contract('Abandoned Round Testing', function() {
   it('Able to create an Abandoned round', async function() {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 20,
       review: 1,
       bounty: web3.toWei(5)
@@ -327,7 +327,7 @@ contract('Abandoned Round due to No Submissions', function() {
   it('Able to create an Abandoned round', async function() {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 20,
       review: 1,
       bounty: web3.toWei(5)
@@ -379,7 +379,7 @@ contract('Unfunded Round Testing', function() {
     token = (await init()).token
 
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 35,
       review: 20,
       bounty: web3.toWei(10)
@@ -457,7 +457,7 @@ contract('Ghost Round Testing', function() {
   it('Able to create a ghost round', async function() {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 30,
       review: 30,
       bounty: toWei(5)
@@ -570,7 +570,7 @@ contract('Round Timing Restrictions Testing', function() {
   it('Able to create a round with duration: 1 day', async function() {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 86400,
       review: 5,
       bounty: web3.toWei(5)
@@ -584,7 +584,7 @@ contract('Round Timing Restrictions Testing', function() {
 
   it('Able to create a round with duration: 1 year', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 31536000,
       review: 5,
       bounty: web3.toWei(5)
@@ -599,7 +599,7 @@ contract('Round Timing Restrictions Testing', function() {
 
   it('Unable to create a round with duration: 1 year + 1 second', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 31536001,
       review: 5,
       bounty: web3.toWei(5)
@@ -617,7 +617,7 @@ contract('Round Timing Restrictions Testing', function() {
 
   it('Able to create a round review period duration: 1 year', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 10,
       review: 31536000,
       bounty: web3.toWei(5)
@@ -632,7 +632,7 @@ contract('Round Timing Restrictions Testing', function() {
 
   it('Unable to create a round with duration: 1 year + 1 second', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 10,
       review: 31536001,
       bounty: web3.toWei(5)

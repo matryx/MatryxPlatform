@@ -107,7 +107,7 @@ contract('Multiple Commits and Start Next Round', function() {
 
   it('Able to choose multiple winners and start next round', async function() {
     let newRound = {
-      start: Math.floor(Date.now() / 1000),
+      start: 0,
       duration: 50,
       review: 120,
       bounty: web3.toWei(5)
