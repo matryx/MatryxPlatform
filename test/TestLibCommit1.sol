@@ -144,18 +144,19 @@ contract TestLibCommit1 {
         Assert.equal(members[0], msg.sender, "Group member incorrect.");
         Assert.equal(members[1], address(this), "Group member incorrect.");
 
+        delete data.commits[commitHash];
+        delete data.groups[groupHash].hasMember[msg.sender];
         delete data.groups[groupHash];
     }
 
     function testGetSubmissionsForCommit() public
     {
-        bytes32 submission0  = keccak256("submission0");
-        bytes32 submission1  = keccak256("submission1");
+        bytes32 submission0 = keccak256("submission0");
+        bytes32 submission1 = keccak256("submission1");
 
         // create commit
-        bytes32 commitHash  = keccak256("commit");
+        bytes32 commitHash = keccak256("commit");
         string memory content = "QmContent";
-        bytes32 contentHash = keccak256(abi.encodePacked(content));
         bytes32 groupHash = keccak256("group");
         LibCommit.Commit storage commit = data.commits[commitHash];
         commit.owner = msg.sender;
@@ -181,9 +182,8 @@ contract TestLibCommit1 {
         // sender can use matryx
         data.whitelist[msg.sender] = true;
         // create commit
-        bytes32 commitHash  = keccak256("commit");
+        bytes32 commitHash = keccak256("commit");
         string memory content = "QmContent";
-        bytes32 contentHash = keccak256(abi.encodePacked(content));
         bytes32 groupHash = keccak256("group");
         LibCommit.Commit storage commit = data.commits[commitHash];
         commit.owner = msg.sender;
@@ -201,8 +201,8 @@ contract TestLibCommit1 {
 
         delete data.whitelist[msg.sender];
         delete data.commits[commitHash];
-        data.groups[groupHash].hasMember[address(this)] = false;
-        data.groups[groupHash].hasMember[msg.sender] = false;
+        delete data.groups[groupHash].hasMember[address(this)];
+        delete data.groups[groupHash].hasMember[msg.sender];
         delete data.groups[groupHash];
     }
 
@@ -211,7 +211,7 @@ contract TestLibCommit1 {
         // sender can use matryx
         data.whitelist[msg.sender] = true;
         // create commit
-        bytes32 commitHash  = keccak256("commit");
+        bytes32 commitHash = keccak256("commit");
         string memory content = "QmContent";
         bytes32 groupHash = keccak256("group");
         LibCommit.Commit storage commit = data.commits[commitHash];
@@ -235,8 +235,8 @@ contract TestLibCommit1 {
 
         delete data.whitelist[msg.sender];
         delete data.commits[commitHash];
-        data.groups[groupHash].hasMember[newMembers[0]] = false;
-        data.groups[groupHash].hasMember[newMembers[1]] = false;
+        delete data.groups[groupHash].hasMember[newMembers[0]];
+        delete data.groups[groupHash].hasMember[newMembers[1]];
         delete data.groups[groupHash];
     }
 
@@ -283,9 +283,6 @@ contract TestLibCommit1 {
         bytes32 commitHash = keccak256(abi.encodePacked(msg.sender, salt, content));
         // claim commit
         data.commitClaims[commitHash] = now - 1;
-        // parent is part of group
-        data.groups[parentGroup].hasMember[address(uint256(msg.sender) + 1)] = true;
-        data.groups[parentGroup].members.push(address(uint256(msg.sender) + 1));
 
         LibCommit.createCommit(address(this), msg.sender, info, data, parentHash, true, salt, content, 5);
 
@@ -311,7 +308,7 @@ contract TestLibCommit1 {
         delete data.totalBalance;
         delete data.commits[parentHash];
         delete data.commitClaims[commitHash];
-        delete data.groups[parentGroup];
+        delete data.groups[commit.groupHash].hasMember[msg.sender];
         delete data.groups[commit.groupHash];
         delete data.commits[commitHash];
         delete data.commitHashes[contentHash];
@@ -333,7 +330,7 @@ contract TestLibCommit1 {
         string memory parentContent = "QmParentContent";
         LibCommit.Commit storage parent = data.commits[parentHash];
         parent.owner = address(uint256(msg.sender) + 1);
-        parent.timestamp = now;
+        parent.timestamp = now - 2;
         parent.groupHash = parentGroup;
         parent.commitHash = parentHash;
         parent.content = parentContent;
@@ -363,7 +360,7 @@ contract TestLibCommit1 {
         Assert.equal(commit.value, 3, "Commit value should be 3.");
         Assert.equal(commit.ownerTotalValue, 3, "Commit owner's totalValue should be 3.");
         Assert.equal(commit.totalValue, 23, "Commit totalValue should be 23.");
-        Assert.equal(commit.height, 4, "Commit height should be 5.");
+        Assert.equal(commit.height, 4, "Commit height should be 4.");
         Assert.equal(commit.parentHash, parentHash, "Commit parentHash should be keccak256('parent').");
 
         delete info.token;
@@ -371,7 +368,8 @@ contract TestLibCommit1 {
         delete data.totalBalance;
         delete data.commits[parentHash];
         delete data.commitClaims[commitHash];
-        delete data.groups[commit.groupHash];
+        delete data.groups[commit.groupHash].hasMember[msg.sender];
+        delete data.groups[parentGroup];
         delete data.commits[commitHash];
         delete data.commitHashes[contentHash];
         delete transferFromHappened;
@@ -405,10 +403,10 @@ contract TestLibCommit1 {
         Assert.isTrue(data.groups[commit.groupHash].hasMember[msg.sender], "Group should include sender.");
         Assert.equal(data.groups[commit.groupHash].members[0], msg.sender, "Sender should be first group member.");
         Assert.equal(commit.content, content, "Commit content should be 'QmContent'.");
-        Assert.equal(commit.value, 7, "Commit value should be 5.");
-        Assert.equal(commit.ownerTotalValue, 7, "Commit owner's totalValue should be 5.");
-        Assert.equal(commit.totalValue, 7, "Commit totalValue should be 5.");
-        Assert.equal(commit.height, 1, "Commit height should be 5.");
+        Assert.equal(commit.value, 7, "Commit value should be 7.");
+        Assert.equal(commit.ownerTotalValue, 7, "Commit owner's totalValue should be 7.");
+        Assert.equal(commit.totalValue, 7, "Commit totalValue should be 7.");
+        Assert.equal(commit.height, 1, "Commit height should be 1.");
         Assert.equal(commit.parentHash, bytes32(0), "Commit parentHash should be nussin.");
 
         delete info.token;
@@ -417,6 +415,9 @@ contract TestLibCommit1 {
         delete data.commitClaims[commitHash];
         delete data.commits[commitHash];
         delete data.commitHashes[contentHash];
+        delete data.groups[commit.groupHash];
+        delete data.groups[commit.groupHash].hasMember[msg.sender];
+        delete data.initialCommits;
         delete transferFromHappened;
         delete transferAmount;
     }
