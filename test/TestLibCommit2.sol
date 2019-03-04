@@ -20,7 +20,7 @@ contract TestLibCommit2 {
         transferAmount = value;
         return transferHappened;
     }
-    
+
     function transferFrom(address from, address to, uint256 value) public returns (bool)
     {
         transferFromHappened = true;
@@ -59,7 +59,7 @@ contract TestLibCommit2 {
         bytes32 salt = bytes32(uint256(4));
         bytes32 commitHash = keccak256(abi.encodePacked(msg.sender, salt, commitContent));
         // claim commit
-        data.commitClaims[commitHash] = block.number - 1;
+        data.commitClaims[commitHash] = now - 1;
 
         LibCommit.createSubmission(address(this), msg.sender, info, data, address(this), submissionContent, bytes32(0), false, salt, commitContent, 8);
 
@@ -137,7 +137,7 @@ contract TestLibCommit2 {
 
         uint256 availableReward = LibCommit.getAvailableRewardForUser(address(this), msg.sender, data, childHash, msg.sender);
         Assert.equal(availableReward, 40, "Available reward incorrect.");
-        
+
         delete data.whitelist[msg.sender];
         delete data.commits[commitHash];
         delete data.commitBalance[commitHash];
@@ -184,7 +184,7 @@ contract TestLibCommit2 {
 
         uint256 availableReward = LibCommit.getAvailableRewardForUser(address(this), msg.sender, data, childHash, msg.sender);
         Assert.equal(availableReward, 25, "Available reward incorrect.");
-        
+
         delete data.whitelist[msg.sender];
         delete data.commits[commitHash];
         delete data.commitWithdrawalStats[commitHash].amountWithdrawn[msg.sender];

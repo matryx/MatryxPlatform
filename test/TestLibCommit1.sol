@@ -19,7 +19,7 @@ contract TestLibCommit1 {
         transferAmount = value;
         return transferHappened;
     }
-    
+
     function transferFrom(address from, address to, uint256 value) public returns (bool)
     {
         transferFromHappened = true;
@@ -102,7 +102,7 @@ contract TestLibCommit1 {
         data.commitHashes[contentHash] = commitHash;
 
         LibCommit.Commit memory returnedCommit = LibCommit.getCommitByContent(address(this), msg.sender, data, content);
-        
+
         Assert.equal(commit.owner, returnedCommit.owner, "Returned commit's owner is incorrect");
         Assert.equal(commit.timestamp, returnedCommit.timestamp, "Returned commit's timestamp is incorrect");
         Assert.equal(commit.groupHash, returnedCommit.groupHash, "Returned commit's groupHash is incorrect");
@@ -234,6 +234,7 @@ contract TestLibCommit1 {
         Assert.equal(data.groups[groupHash].members[2], newMembers[1], "2nd group member is incorrect");
 
         delete data.whitelist[msg.sender];
+        delete data.commits[commitHash];
         data.groups[groupHash].hasMember[newMembers[0]] = false;
         data.groups[groupHash].hasMember[newMembers[1]] = false;
         delete data.groups[groupHash];
@@ -246,8 +247,8 @@ contract TestLibCommit1 {
 
         bytes32 commitHash = keccak256(abi.encodePacked("commitHash"));
         LibCommit.claimCommit(address(this), msg.sender, info, data, commitHash);
-        
-        Assert.equal(data.commitClaims[commitHash], block.number, "Commit claim should be now.");
+
+        Assert.equal(data.commitClaims[commitHash], now, "Commit claim should be now.");
 
         delete data.whitelist[msg.sender];
         delete data.commitClaims[commitHash];
@@ -281,20 +282,20 @@ contract TestLibCommit1 {
         bytes32 salt = bytes32(uint256(4));
         bytes32 commitHash = keccak256(abi.encodePacked(msg.sender, salt, content));
         // claim commit
-        data.commitClaims[commitHash] = block.number - 1;
+        data.commitClaims[commitHash] = now - 1;
         // parent is part of group
         data.groups[parentGroup].hasMember[address(uint256(msg.sender) + 1)] = true;
         data.groups[parentGroup].members.push(address(uint256(msg.sender) + 1));
-        
+
         LibCommit.createCommit(address(this), msg.sender, info, data, parentHash, true, salt, content, 5);
-        
+
         Assert.equal(data.totalBalance, 40, "Total balance should have doubled to 40.");
         Assert.equal(data.commitBalance[parentHash], 20, "Parent commit balance should be 20.");
         Assert.isTrue(transferFromHappened, "Transfer should have happened.");
         Assert.equal(transferAmount, 20, "Transfer amount should have been 20.");
         LibCommit.Commit storage commit = data.commits[commitHash];
         Assert.equal(commit.owner, msg.sender, "Owner of commit should be sender.");
-        Assert.equal(commit.timestamp, now, "Commit should have been created now.");
+        Assert.equal(commit.timestamp, now - 1, "Commit timestamp should be commit claim time.");
         Assert.notEqual(commit.groupHash, parentGroup, "Group of fork should differ from parent.");
         Assert.isTrue(data.groups[commit.groupHash].hasMember[msg.sender], "Group should include sender.");
         Assert.equal(data.groups[commit.groupHash].members[0], msg.sender, "Sender should be first group member.");
@@ -346,17 +347,17 @@ contract TestLibCommit1 {
         bytes32 salt = bytes32(uint256(4));
         bytes32 commitHash = keccak256(abi.encodePacked(msg.sender, salt, content));
         // claim commit
-        data.commitClaims[commitHash] = block.number - 1;
+        data.commitClaims[commitHash] = now - 1;
         // become part of parent's group
         data.groups[parentGroup].hasMember[msg.sender] = true;
         data.groups[parentGroup].members.push(msg.sender);
-        
+
         LibCommit.createCommit(address(this), msg.sender, info, data, parentHash, false, salt, content, 3);
-        
+
         Assert.equal(data.totalBalance, 20, "Total balance should still be 20.");
         LibCommit.Commit storage commit = data.commits[commitHash];
         Assert.equal(commit.owner, msg.sender, "Owner of commit should be sender.");
-        Assert.equal(commit.timestamp, now, "Commit should have been created now.");
+        Assert.equal(commit.timestamp, now - 1, "Commit timestamp should be commit claim time.");
         Assert.equal(commit.groupHash, parentGroup, "Commit group should match parent.");
         Assert.equal(commit.content, content, "Commit content should be 'QmContent'.");
         Assert.equal(commit.value, 3, "Commit value should be 3.");
@@ -392,14 +393,14 @@ contract TestLibCommit1 {
         bytes32 salt = bytes32(uint256(4));
         bytes32 commitHash = keccak256(abi.encodePacked(msg.sender, salt, content));
         // claim commit
-        data.commitClaims[commitHash] = block.number - 1;
-        
+        data.commitClaims[commitHash] = now - 1;
+
         LibCommit.createCommit(address(this), msg.sender, info, data, bytes32(0), false, salt, content, 7);
-        
+
         Assert.equal(data.totalBalance, 20, "Total balance should still be 20.");
         LibCommit.Commit storage commit = data.commits[commitHash];
         Assert.equal(commit.owner, msg.sender, "Owner of commit should be sender.");
-        Assert.equal(commit.timestamp, now, "Commit should have been created now.");
+        Assert.equal(commit.timestamp, now - 1, "Commit timestamp should be commit claim time.");
         Assert.notEqual(commit.groupHash, bytes32(0), "Group should exist.");
         Assert.isTrue(data.groups[commit.groupHash].hasMember[msg.sender], "Group should include sender.");
         Assert.equal(data.groups[commit.groupHash].members[0], msg.sender, "Sender should be first group member.");
