@@ -7,6 +7,8 @@ import "../MatryxTournament.sol";
 import "./LibTournamentUpgraded.sol";
 
 interface IPlatformUpgraded {
+    function getInfo() external view returns (MatryxPlatform.Info memory);
+    function setToken(address) external;
     function getTwo() external pure returns (uint256);
     function isTournament(address) external view returns (bool);
     function getTournamentCount() external pure returns (uint256);
@@ -15,12 +17,21 @@ interface IPlatformUpgraded {
 }
 
 library LibPlatformUpgraded {
+    
+    function getInfo(address, address, MatryxPlatform.Info storage info) public view returns (MatryxPlatform.Info memory) {
+        return info;
+    }
+
+    function setToken(address, address, MatryxPlatform.Info storage info, address token) public {
+        info.token = token;
+    }
+
     function getTwo(address, address, MatryxPlatform.Info storage) public pure returns (uint256 number) {
         return 2;
     }
 
     function getTournamentCount(address, address, MatryxPlatform.Data storage) public pure returns (uint256 count) {
-        return 99000000000000000000;
+        return 99;
     }
 
     function isTournament(address, address, MatryxPlatform.Data storage data, address tAddress) public view returns (bool) {
