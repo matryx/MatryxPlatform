@@ -32,11 +32,6 @@ contract TestLibTournament2 {
         return 1 ether;
     }
 
-    function deleteTournament() internal
-    {
-        delete data.tournaments[address(this)];
-    }
-
     function testCreateRound() public
     {
         data.tournamentBalance[address(this)] = 100;
@@ -49,14 +44,15 @@ contract TestLibTournament2 {
         LibTournament.createRound(address(this), address(this), info, data, rDetails);
 
         Assert.equal(data.tournaments[address(this)].rounds.length, 1, "Should be one round");
-        
+
         LibTournament.RoundData storage roundZero = data.tournaments[address(this)].rounds[0];
         Assert.equal(roundZero.details.start, now, "Start should be now.");
         Assert.equal(roundZero.details.duration, 100, "Round duration should be 100.");
         Assert.equal(roundZero.details.review, 100, "Round review should be 100.");
         Assert.equal(roundZero.details.bounty, 50, "Round bounty should be 50.");
 
-        deleteTournament();
+        delete data.tournamentBalance[address(this)];
+        delete data.tournaments[address(this)];
     }
 
     function testCreateSubmission() public
@@ -78,13 +74,16 @@ contract TestLibTournament2 {
         LibTournament.createSubmission(address(this), msg.sender, info, data, "QmSubmissionStuff", commitHash);
 
         bytes32 submissionHash = keccak256(abi.encodePacked(address(this), commitHash, uint256(0)));
-        
+
         Assert.equal(data.commitToSubmissions[commitHash][0], submissionHash, "Commit hash should be linked to submission hash.");
         Assert.equal(roundZero.info.submissions[0], submissionHash, "Submission should be in round's submissions array.");
         Assert.isTrue(roundZero.hasSubmitted[msg.sender], "hasSubmitted flag should be true for sender.");
         Assert.equal(roundZero.info.submitterCount, 1, "Round should have 1 submitter.");
 
-        deleteTournament();
+        delete data.whitelist[msg.sender];
+        delete data.tournaments[address(this)].entryFeePaid[msg.sender];
+        delete data.tournaments[address(this)];
+        delete data.submissions[submissionHash];
         delete data.commitToSubmissions[commitHash];
         delete data.commits[commitHash];
     }
@@ -102,7 +101,7 @@ contract TestLibTournament2 {
         Assert.equal(data.tournaments[address(this)].details.content, tDetails.content, "Tournament content incorrect.");
         Assert.equal(data.tournaments[address(this)].details.entryFee, tDetails.entryFee, "Tournament entryFee incorrect.");
 
-        delete data.tournaments[address(this)].details;
+        delete data.tournaments[address(this)];
     }
 
     function testAddToBounty() public
@@ -122,12 +121,13 @@ contract TestLibTournament2 {
         data.tournaments[address(this)].details.bounty = 10;
 
         LibTournament.addToBounty(address(this), msg.sender, info, data, 10);
-        
+
         Assert.equal(data.totalBalance, 20, "Total platform balance should be 20.");
-        Assert.equal(data.tournamentBalance[address(this)], 20, "Tournament balance should increase.");
+        Assert.equal(data.tournamentBalance[address(this)], 20, "Tournament balance should be 20.");
         Assert.equal(data.tournaments[address(this)].details.bounty, 20, "Tournament bounty should be 20.");
 
-        deleteTournament();
+        delete info.token;
+        delete data.tournaments[address(this)];
         delete data.totalBalance;
         delete data.tournamentBalance[address(this)];
     }
@@ -151,7 +151,7 @@ contract TestLibTournament2 {
 
         Assert.equal(roundZero.details.bounty, 20, "Round bounty should be 20.");
 
-        deleteTournament();
+        delete data.tournaments[address(this)];
         delete data.totalBalance;
         delete data.tournamentBalance[address(this)];
     }
@@ -194,9 +194,9 @@ contract TestLibTournament2 {
         Assert.equal(data.submissions[winner].reward, 10, "Full bounty not awarded to sole round winner.");
         Assert.equal(data.commitBalance[commitHash], 10, "Full bounty not allocated to sole round winner's commit.");
         Assert.equal(data.tournamentBalance[address(this)], 10, "Tournament balance should have decreased to 10.");
-        
+
         delete data.tournamentBalance[address(this)];
-        deleteTournament();
+        delete data.tournaments[address(this)];
         delete data.submissions[winner];
         delete data.commitBalance[commitHash];
     }
@@ -247,7 +247,7 @@ contract TestLibTournament2 {
         Assert.equal(data.tournaments[address(this)].rounds[1].details.bounty, 10, "New round bounty is incorrect.");
 
         delete data.tournamentBalance[address(this)];
-        deleteTournament();
+        delete data.tournaments[address(this)];
         delete data.submissions[winner];
         delete data.commitBalance[commitHash];
     }
@@ -300,7 +300,7 @@ contract TestLibTournament2 {
         Assert.equal(data.tournaments[address(this)].rounds.length, 1, "Total number of rounds incorrect.");
 
         delete data.tournamentBalance[address(this)];
-        deleteTournament();
+        delete data.tournaments[address(this)];
         delete data.submissions[winner];
         delete data.commitBalance[commitHash];
     }
@@ -333,7 +333,7 @@ contract TestLibTournament2 {
         Assert.equal(roundZero.details.bounty, 20, "Round bounty should be 20.");
 
         delete data.tournamentBalance[address(this)];
-        deleteTournament();
+        delete data.tournaments[address(this)];
     }
 
     function testStartNextRound() public
@@ -342,7 +342,7 @@ contract TestLibTournament2 {
         data.tournamentBalance[address(this)] = 20;
         // set tournament owner
         data.tournaments[address(this)].info.owner = msg.sender;
-        
+
         // round setup, first HasWinners, second is OnHold
         data.tournaments[address(this)].rounds.length = 2;
 
@@ -363,7 +363,7 @@ contract TestLibTournament2 {
         Assert.equal(data.tournaments[address(this)].rounds[1].details.start, now, "Round 1 should start now.");
 
         delete data.tournamentBalance[address(this)];
-        deleteTournament();
+        delete data.tournaments[address(this)];
     }
 
     function testWithdrawFromAbandoned() public
@@ -395,17 +395,18 @@ contract TestLibTournament2 {
         Assert.isTrue(roundZero.info.closed, "Round should have closed.");
         Assert.isTrue(data.tournaments[address(this)].hasWithdrawn[msg.sender], "Sender should have withdrawn.");
         Assert.equal(data.tournaments[address(this)].numWithdrawn, 1, "Number of users who've withdrawn should be 1.");
-        Assert.equal(data.totalBalance, 10, "Total balance should have halfed to 10.");
-        Assert.equal(data.tournamentBalance[address(this)], 10, "Tournament balance should have halfed to 10.");
+        Assert.equal(data.totalBalance, 10, "Total balance should have been 10.");
+        Assert.equal(data.tournamentBalance[address(this)], 10, "Tournament balance should have been 10.");
         Assert.isTrue(transferHappened, "Transfer should have happened.");
         Assert.equal(transferAmount, 10, "Transfer amount should have been 10.");
 
         delete info.token;
         delete data.totalBalance;
         delete data.tournamentBalance[address(this)];
-        roundZero.hasSubmitted[address(uint256(msg.sender) + 1)] = false;
-        roundZero.hasSubmitted[msg.sender] = false;
-        deleteTournament();
+        delete roundZero.hasSubmitted[msg.sender];
+        delete roundZero.hasSubmitted[address(uint256(msg.sender) + 1)];
+        delete data.tournaments[address(this)].entryFeePaid[msg.sender];
+        delete data.tournaments[address(this)];
         delete transferHappened;
         delete transferAmount;
     }
@@ -430,41 +431,24 @@ contract TestLibTournament2 {
         wData.submissions = subs;
         wData.distribution = dist;
 
-        // round setup, first is closed, second HasWinners, third is ghost
+        // round setup: first is closed, second HasWinners, third is ghost
         data.tournaments[address(this)].rounds.length = 3;
-        
-        bytes32 sHash = keccak256(abi.encodePacked("submission"));
-        LibTournament.RoundData storage roundZero = data.tournaments[address(this)].rounds[0];
-        roundZero.details.start = now - 182;
-        roundZero.details.duration = 60;
-        roundZero.details.review = 61;
-        roundZero.details.bounty = 10;
-        roundZero.info.submissions.push(sHash);
-        roundZero.info.winners = wData;
-        roundZero.info.closed = true;
-        // submission won first round
-        data.submissions[winner].reward = 10;
-        data.commitBalance[commitHash] = 10;
 
         LibTournament.RoundData storage roundOne = data.tournaments[address(this)].rounds[1];
         roundOne.details.start = now - 61;
         roundOne.details.duration = 60;
         roundOne.details.review = 60;
         roundOne.details.bounty = 10;
-        roundOne.info.submissions.push(sHash);
         roundOne.info.winners = wData;
 
         LibTournament.RoundData storage roundTwo = data.tournaments[address(this)].rounds[2];
         roundTwo.details.start = roundOne.details.start + roundOne.details.duration + roundOne.details.review;
-        roundTwo.details.duration = 60;
-        roundTwo.details.review = 60;
 
-        // submission must exist on platform
+        // submission setup
         data.submissions[winner].tournament = address(this);
         data.submissions[winner].commitHash = commitHash;
-
-        uint256 currentRound = LibTournament.getCurrentRoundIndex(address(this), msg.sender, data);
-        uint256 currentState = LibTournament.getRoundState(address(this), msg.sender, data, 1);
+        data.submissions[winner].reward = 10;
+        data.commitBalance[commitHash] = 10;
 
         LibTournament.closeTournament(address(this), msg.sender, data);
 
@@ -475,7 +459,7 @@ contract TestLibTournament2 {
 
         delete data.totalBalance;
         delete data.tournamentBalance[address(this)];
-        deleteTournament();
+        delete data.tournaments[address(this)];
         delete data.submissions[winner];
         delete data.commitBalance[commitHash];
     }
@@ -509,6 +493,6 @@ contract TestLibTournament2 {
         delete info.token;
         delete data.totalBalance;
         delete data.tournamentBalance[address(this)];
-        deleteTournament();
+        delete data.tournaments[address(this)];
     }
 }

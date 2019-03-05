@@ -97,7 +97,7 @@ contract TestLibCommit2 {
         delete transferAmount;
         // tournament state clearing
         delete roundZero.hasSubmitted[msg.sender];
-        delete data.tournaments[address(this)].entryFeePaid[msg.sender].exists;
+        delete data.tournaments[address(this)].entryFeePaid[msg.sender];
         delete data.tournaments[address(this)];
         delete data.commitToSubmissions[commitHash];
         delete data.commits[commitHash];
