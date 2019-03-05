@@ -431,18 +431,19 @@ contract TestLibTournament2 {
         wData.submissions = subs;
         wData.distribution = dist;
 
-        // round setup: first is closed, second HasWinners, third is ghost
-        data.tournaments[address(this)].rounds.length = 3;
+        // round setup: first HasWinners, second is ghost
+        data.tournaments[address(this)].rounds.length = 2;
+
+        LibTournament.RoundData storage roundZero = data.tournaments[address(this)].rounds[0];
+        roundZero.details.start = now - 61;
+        roundZero.details.duration = 60;
+        roundZero.details.review = 60;
+        roundZero.details.bounty = 10;
+        roundZero.info.winners = wData;
+        roundZero.info.submissions.push(winner);
 
         LibTournament.RoundData storage roundOne = data.tournaments[address(this)].rounds[1];
-        roundOne.details.start = now - 61;
-        roundOne.details.duration = 60;
-        roundOne.details.review = 60;
-        roundOne.details.bounty = 10;
-        roundOne.info.winners = wData;
-
-        LibTournament.RoundData storage roundTwo = data.tournaments[address(this)].rounds[2];
-        roundTwo.details.start = roundOne.details.start + roundOne.details.duration + roundOne.details.review;
+        roundOne.details.start = roundZero.details.start + roundZero.details.duration + roundZero.details.review;
 
         // submission setup
         data.submissions[winner].tournament = address(this);
@@ -455,7 +456,7 @@ contract TestLibTournament2 {
         Assert.equal(data.commitBalance[commitHash], 20, "Commit balance should be 20.");
         Assert.equal(data.submissions[winner].reward, 20, "Submission reward should be 20.");
         Assert.equal(data.tournamentBalance[address(this)], 0, "Tournament balance should be 0.");
-        Assert.equal(data.tournaments[address(this)].rounds.length, 2, "Ghost round should be gone.");
+        Assert.equal(data.tournaments[address(this)].rounds.length, 1, "Ghost round should be gone.");
 
         delete data.totalBalance;
         delete data.tournamentBalance[address(this)];

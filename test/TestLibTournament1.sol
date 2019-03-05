@@ -382,6 +382,8 @@ contract TestLibTournament1 {
 
     function testExitWithEntryFee() public
     {
+        // token transfer
+        info.token = address(this);
         // must be entrant
         data.tournaments[address(this)].entryFeePaid[msg.sender].exists = true;
         data.tournaments[address(this)].entryFeePaid[msg.sender].value = 5;
@@ -395,6 +397,7 @@ contract TestLibTournament1 {
         Assert.isTrue(transferHappened, "Token transfer should have happened.");
         Assert.equal(data.tournaments[address(this)].entryFeePaid[msg.sender].exists, false, "Entry fee should not exist.");
 
+        delete info.token;
         delete data.tournaments[address(this)].entryFeePaid[msg.sender].value;
         delete data.tournaments[address(this)];
         delete data.totalBalance;
