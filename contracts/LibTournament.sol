@@ -262,6 +262,7 @@ library LibTournament {
 
         if (entryFeePaid > 0) {
             tournament.totalEntryFees = tournament.totalEntryFees.sub(entryFeePaid);
+            tournament.entryFeePaid[sender].value = 0;
 
             data.totalBalance = data.totalBalance.sub(entryFeePaid);
             require(IToken(info.token).transfer(sender, entryFeePaid), "Transfer failed");
