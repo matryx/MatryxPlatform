@@ -20,7 +20,7 @@ contract TestLibCommit2 {
         transferAmount = value;
         return transferHappened;
     }
-    
+
     function transferFrom(address from, address to, uint256 value) public returns (bool)
     {
         transferFromHappened = true;
@@ -32,7 +32,6 @@ contract TestLibCommit2 {
     {
         return 1 ether;
     }
-
 
     function testCreateSubmission() public
     {
@@ -59,7 +58,7 @@ contract TestLibCommit2 {
         bytes32 salt = bytes32(uint256(4));
         bytes32 commitHash = keccak256(abi.encodePacked(msg.sender, salt, commitContent));
         // claim commit
-        data.commitClaims[commitHash] = block.number - 1;
+        data.commitClaims[commitHash] = now - 1;
 
         LibCommit.createSubmission(address(this), msg.sender, info, data, address(this), submissionContent, bytes32(0), false, salt, commitContent, 8);
 
@@ -67,15 +66,15 @@ contract TestLibCommit2 {
         Assert.equal(data.totalBalance, 20, "Total balance should still be 20.");
         LibCommit.Commit storage commit = data.commits[commitHash];
         Assert.equal(commit.owner, msg.sender, "Owner of commit should be sender.");
-        Assert.equal(commit.timestamp, now, "Commit should have been created now.");
+        Assert.equal(commit.timestamp, now - 1, "Commit timestamp should be commit claim time.");
         Assert.notEqual(commit.groupHash, bytes32(0), "Group should exist.");
         Assert.isTrue(data.groups[commit.groupHash].hasMember[msg.sender], "Group should include sender.");
         Assert.equal(data.groups[commit.groupHash].members[0], msg.sender, "Sender should be first group member.");
         Assert.equal(commit.content, commitContent, "Commit content should be 'QmContent'.");
-        Assert.equal(commit.value, 8, "Commit value should be 5.");
-        Assert.equal(commit.ownerTotalValue, 8, "Commit owner's totalValue should be 5.");
-        Assert.equal(commit.totalValue, 8, "Commit totalValue should be 5.");
-        Assert.equal(commit.height, 1, "Commit height should be 5.");
+        Assert.equal(commit.value, 8, "Commit value should be 8.");
+        Assert.equal(commit.ownerTotalValue, 8, "Commit owner's totalValue should be 8.");
+        Assert.equal(commit.totalValue, 8, "Commit totalValue should be 8.");
+        Assert.equal(commit.height, 1, "Commit height should be 1.");
         Assert.equal(commit.parentHash, bytes32(0), "Commit parentHash should be nussin.");
         // Submission
         bytes32 submissionHash = keccak256(abi.encodePacked(address(this), commitHash, uint256(0)));
@@ -91,26 +90,31 @@ contract TestLibCommit2 {
         delete data.commitClaims[commitHash];
         delete data.commits[commitHash];
         delete data.commitHashes[contentHash];
+        delete data.initialCommits;
+        delete data.groups[commit.groupHash].hasMember[msg.sender];
+        delete data.groups[commit.groupHash];
         delete transferFromHappened;
         delete transferAmount;
         // tournament state clearing
+        delete roundZero.hasSubmitted[msg.sender];
+        delete data.tournaments[address(this)].entryFeePaid[msg.sender];
         delete data.tournaments[address(this)];
         delete data.commitToSubmissions[commitHash];
         delete data.commits[commitHash];
+        delete data.submissions[submissionHash];
     }
 
     function testGetAvailableRewardForUserNotWithdrawn() public
     {
         // sender can use matryx
         data.whitelist[msg.sender] = true;
-       // commit
+        // commit
         string memory content = "QmContent";
         bytes32 commitHash = keccak256("commit");
         bytes32 groupHash = keccak256("group");
-        string memory parentContent = "QmContent";
         LibCommit.Commit storage commit = data.commits[commitHash];
         commit.owner = msg.sender;
-        commit.timestamp = now;
+        commit.timestamp = now - 1;
         commit.groupHash = groupHash;
         commit.commitHash = commitHash;
         commit.content = content;
@@ -137,7 +141,7 @@ contract TestLibCommit2 {
 
         uint256 availableReward = LibCommit.getAvailableRewardForUser(address(this), msg.sender, data, childHash, msg.sender);
         Assert.equal(availableReward, 40, "Available reward incorrect.");
-        
+
         delete data.whitelist[msg.sender];
         delete data.commits[commitHash];
         delete data.commitBalance[commitHash];
@@ -152,10 +156,9 @@ contract TestLibCommit2 {
         string memory content = "QmContent";
         bytes32 commitHash = keccak256("commit");
         bytes32 groupHash = keccak256("group");
-        string memory parentContent = "QmContent";
         LibCommit.Commit storage commit = data.commits[commitHash];
         commit.owner = msg.sender;
-        commit.timestamp = now;
+        commit.timestamp = now - 1;
         commit.groupHash = groupHash;
         commit.commitHash = commitHash;
         commit.content = content;
@@ -184,9 +187,10 @@ contract TestLibCommit2 {
 
         uint256 availableReward = LibCommit.getAvailableRewardForUser(address(this), msg.sender, data, childHash, msg.sender);
         Assert.equal(availableReward, 25, "Available reward incorrect.");
-        
+
         delete data.whitelist[msg.sender];
         delete data.commits[commitHash];
+        delete data.commitBalance[childHash];
         delete data.commitWithdrawalStats[commitHash].amountWithdrawn[msg.sender];
         delete data.commits[childHash];
     }
@@ -205,7 +209,7 @@ contract TestLibCommit2 {
         bytes32 groupHash = keccak256("group");
         LibCommit.Commit storage commit = data.commits[commitHash];
         commit.owner = msg.sender;
-        commit.timestamp = now;
+        commit.timestamp = now - 1;
         commit.groupHash = groupHash;
         commit.commitHash = commitHash;
         commit.content = content;
@@ -238,9 +242,10 @@ contract TestLibCommit2 {
         Assert.equal(transferAmount, 85, "Transfer value incorrect.");
 
         delete info.token;
-        delete data.totalBalance;
         delete data.whitelist[msg.sender];
+        delete data.totalBalance;
         delete data.commits[commitHash];
+        delete data.commitBalance[childHash];
         delete data.commitWithdrawalStats[commitHash].amountWithdrawn[msg.sender];
         delete data.commits[childHash];
         delete transferHappened;

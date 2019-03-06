@@ -7,7 +7,7 @@ import "truffle/DeployedAddresses.sol";
 import "../contracts/MatryxSystem.sol";
 import "../contracts/MatryxPlatform.sol";
 import "../contracts/LibPlatform.sol";
-import "../contracts/test-contracts/LibPlatformUpgraded.sol";
+import "../contracts/test-contracts/LibPlatform2.sol";
 
 contract TestUpgradePlatform {
     // System Mock
@@ -70,7 +70,7 @@ contract TestUpgradePlatform {
 
         // set LibPlatform contract
         bytes32 libraryName = bytes32("LibPlatform");
-        address libraryAddress = DeployedAddresses.LibPlatformUpgraded();
+        address libraryAddress = DeployedAddresses.LibPlatform2();
         platformByVersion[version].allContracts.push(libraryName);
         platformByVersion[version].contracts[libraryName].location = libraryAddress;
         // set type 0 and 1 contracts to LibPlatform
@@ -90,7 +90,7 @@ contract TestUpgradePlatform {
         getInfoFnData.injectedParams = new uint256[](1);
         platformByVersion[version].contracts[libraryName].fnData[getInfoSelector] = getInfoFnData;
         
-        // system.addContractMethod(1, stb('LibPlatform'), '0xdf6cee4c', ['0x74492d8f', [0], []], { gasLimit: 3e6 })
+        // add setToken function to system
         MatryxSystem.FnData memory setTokenFnData;
         bytes32 setTokenSelector;
         bytes32 setTokenModifiedSelector;
@@ -108,7 +108,7 @@ contract TestUpgradePlatform {
 
         Assert.equal(info.token, address(0), "Token should be zero before being set.");
 
-        IPlatformUpgraded newPlatform = IPlatformUpgraded(platformAddress);
+        IPlatform2 newPlatform = IPlatform2(platformAddress);
         newPlatform.setToken(msg.sender);
 
         info = newPlatform.getInfo();

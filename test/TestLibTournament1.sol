@@ -31,21 +31,16 @@ contract TestLibTournament1 {
         return 1 ether;
     }
 
-    function deleteTournament() internal
-    {
-        delete data.tournaments[address(this)];
-    }
-
     function testGetInfo() public
     {
         data.tournaments[address(this)].info.version = 1;
         data.tournaments[address(this)].info.owner = address(this);
         LibTournament.TournamentInfo memory tInfo = LibTournament.getInfo(address(this), address(this), data);
-        
+
         Assert.equal(tInfo.version, 1, "Tournament version incorrect.");
         Assert.equal(tInfo.owner, address(this), "Tournament owner incorrect.");
 
-        delete data.tournaments[address(this)].info;
+        delete data.tournaments[address(this)];
     }
 
     function testGetDetails() public
@@ -59,14 +54,14 @@ contract TestLibTournament1 {
         Assert.equal(tDetails.bounty, 5, "Tournament bounty incorrect.");
         Assert.equal(tDetails.entryFee, 2, "Tournament entryFee incorrect.");
 
-        delete data.tournaments[address(this)].details;
+        delete data.tournaments[address(this)];
     }
 
     function testGetBalance() public
     {
         data.tournamentBalance[address(this)] = 10;
         uint256 tBalance = LibTournament.getBalance(address(this), address(this), data);
-    
+
         Assert.equal(tBalance, 10, "Tournament balance incorrect.");
 
         delete data.tournamentBalance[address(this)];
@@ -81,10 +76,10 @@ contract TestLibTournament1 {
         roundZero.details.duration = 1000;
 
         uint256 tState = LibTournament.getState(address(this), address(this), data);
-        
+
         Assert.equal(tState, uint256(LibGlobals.TournamentState.NotYetOpen), "Tournament state should be NotYetOpen.");
-    
-        deleteTournament();
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetStateOnHold() public
@@ -99,11 +94,10 @@ contract TestLibTournament1 {
         data.tournaments[address(this)].rounds[1].details.duration = 1000;
 
         uint256 tState = LibTournament.getState(address(this), address(this), data);
-        
+
         Assert.equal(tState, uint256(LibGlobals.TournamentState.OnHold), "Tournament state should be OnHold.");
-    
-        delete data.tournaments[address(this)].rounds[1];
-        delete data.tournaments[address(this)].rounds[0];
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetStateOpen() public
@@ -115,10 +109,10 @@ contract TestLibTournament1 {
         roundZero.details.duration = 1000;
 
         uint256 tState = LibTournament.getState(address(this), address(this), data);
-        
+
         Assert.equal(tState, uint256(LibGlobals.TournamentState.Open), "Tournament state should be Open.");
-    
-        deleteTournament();
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetStateClosed() public
@@ -132,10 +126,10 @@ contract TestLibTournament1 {
         roundZero.info.closed = true;
 
         uint256 tState = LibTournament.getState(address(this), address(this), data);
-        
+
         Assert.equal(tState, uint256(LibGlobals.TournamentState.Closed), "Tournament state should be Closed.");
-    
-        deleteTournament();
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetStateAbandoned() public
@@ -148,10 +142,10 @@ contract TestLibTournament1 {
         roundZero.details.review = 60;
 
         uint256 tState = LibTournament.getState(address(this), address(this), data);
-        
+
         Assert.equal(tState, uint256(LibGlobals.TournamentState.Abandoned), "Tournament state should be Abandoned.");
-    
-        deleteTournament();
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetRoundStateNotYetOpen() public
@@ -163,10 +157,10 @@ contract TestLibTournament1 {
         roundZero.details.duration = 1000;
 
         uint256 tState = LibTournament.getRoundState(address(this), address(this), data, 0);
-        
+
         Assert.equal(tState, uint256(LibGlobals.RoundState.NotYetOpen), "Round state should be NotYetOpen.");
-        
-        deleteTournament();
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetRoundStateUnfunded() public
@@ -178,10 +172,10 @@ contract TestLibTournament1 {
         roundZero.details.duration = 61;
 
         uint256 tState = LibTournament.getRoundState(address(this), address(this), data, 0);
-        
+
         Assert.equal(tState, uint256(LibGlobals.RoundState.Unfunded), "Round state should be Unfunded.");
-    
-        deleteTournament();
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetRoundStateOpen() public
@@ -194,10 +188,10 @@ contract TestLibTournament1 {
         roundZero.details.bounty = 10;
 
         uint256 tState = LibTournament.getRoundState(address(this), address(this), data, 0);
-        
+
         Assert.equal(tState, uint256(LibGlobals.RoundState.Open), "Round state should be Open.");
-    
-        deleteTournament();
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetRoundStateInReview() public
@@ -213,11 +207,10 @@ contract TestLibTournament1 {
         roundZero.info.submissions[0] = keccak256(abi.encodePacked("submission"));
 
         uint256 tState = LibTournament.getRoundState(address(this), address(this), data, 0);
-        
+
         Assert.equal(tState, uint256(LibGlobals.RoundState.InReview), "Round state should be InReview.");
-    
-        deleteTournament();
-        roundZero.info.submissions.length = 0;
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetRoundStateHasWinners() public
@@ -233,10 +226,10 @@ contract TestLibTournament1 {
         roundZero.info.submissions.push(sHash);
         roundZero.info.winners.submissions.push(sHash);
         uint256 tState = LibTournament.getRoundState(address(this), address(this), data, 0);
-        
+
         Assert.equal(tState, uint256(LibGlobals.RoundState.HasWinners), "Round state should be HasWinners.");
-    
-        deleteTournament();
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetRoundStateClosed() public
@@ -252,10 +245,10 @@ contract TestLibTournament1 {
         roundZero.info.submissions.push(sHash);
         roundZero.info.winners.submissions.push(sHash);
         uint256 tState = LibTournament.getRoundState(address(this), address(this), data, 0);
-        
+
         Assert.equal(tState, uint256(LibGlobals.RoundState.Closed), "Round state should be Closed.");
-    
-        deleteTournament();
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetRoundStateAbandoned() public
@@ -268,10 +261,10 @@ contract TestLibTournament1 {
         roundZero.details.review = 60;
         roundZero.details.bounty = 10;
         uint256 tState = LibTournament.getRoundState(address(this), address(this), data, 0);
-        
+
         Assert.equal(tState, uint256(LibGlobals.RoundState.Abandoned), "Round state should be Abandoned.");
-    
-        deleteTournament();
+
+        delete data.tournaments[address(this)];
     }
 
     function testGetCurrentRoundIndex() public
@@ -300,7 +293,7 @@ contract TestLibTournament1 {
         Assert.equal(rInfo.submitterCount, 1, "Submitter count should be 1.");
         Assert.equal(rInfo.closed, true, "Round should be closed.");
 
-        deleteTournament();
+        delete data.tournaments[address(this)];
     }
 
     function testGetRoundDetails() public
@@ -319,7 +312,7 @@ contract TestLibTournament1 {
         Assert.equal(rDetails.review, 3, "Round review should be 3.");
         Assert.equal(rDetails.bounty, 4, "Round bounty should be 4.");
 
-        deleteTournament();
+        delete data.tournaments[address(this)];
     }
 
     function testGetSubmissionCount() public
@@ -330,10 +323,10 @@ contract TestLibTournament1 {
         data.tournaments[address(this)].rounds[2].info.submissions.length = 3;
 
         uint256 submissionCount = LibTournament.getSubmissionCount(address(this), address(this), data);
-        
+
         Assert.equal(submissionCount, 6, "Submission count should be 6");
 
-        deleteTournament();
+        delete data.tournaments[address(this)];
     }
 
     function testGetEntryFeePaid() public
@@ -343,7 +336,7 @@ contract TestLibTournament1 {
 
         Assert.equal(entryFeePaid, 100, "Entry fee should be 100.");
 
-        data.tournaments[address(this)].entryFeePaid[msg.sender].value = 0;
+        delete data.tournaments[address(this)].entryFeePaid[msg.sender];
     }
 
     function testIsEntrant() public
@@ -361,10 +354,6 @@ contract TestLibTournament1 {
     {
         // canEnterMatryx
         data.whitelist[msg.sender] = true;
-        // owner of tournament needs to not be this
-        data.tournaments[address(this)].info.owner = address(this);
-        // entry fee cannot have been paid
-        data.tournaments[address(this)].entryFeePaid[address(this)].exists = false;
         // tournament state open
         data.tournaments[address(this)].rounds.length = 1;
         LibTournament.RoundData storage roundZero = data.tournaments[address(this)].rounds[0];
@@ -384,12 +373,17 @@ contract TestLibTournament1 {
         Assert.equal(data.tournaments[address(this)].allEntrants[0], msg.sender, "Sender should be an entrant.");
         Assert.equal(data.totalBalance, 5, "Total platform balance should be 5.");
 
-        deleteTournament();
-        data.totalBalance = 0;
+        delete data.whitelist[msg.sender];
+        delete info.token;
+        delete data.totalBalance;
+        delete data.tournaments[address(this)].entryFeePaid[msg.sender];
+        delete data.tournaments[address(this)];
     }
 
     function testExitWithEntryFee() public
     {
+        // token transfer
+        info.token = address(this);
         // must be entrant
         data.tournaments[address(this)].entryFeePaid[msg.sender].exists = true;
         data.tournaments[address(this)].entryFeePaid[msg.sender].value = 5;
@@ -403,8 +397,9 @@ contract TestLibTournament1 {
         Assert.isTrue(transferHappened, "Token transfer should have happened.");
         Assert.equal(data.tournaments[address(this)].entryFeePaid[msg.sender].exists, false, "Entry fee should not exist.");
 
-        data.tournaments[address(this)].entryFeePaid[msg.sender].value = 0;
-        data.tournaments[address(this)].totalEntryFees = 0;
+        delete info.token;
+        delete data.tournaments[address(this)].entryFeePaid[msg.sender].value;
+        delete data.tournaments[address(this)];
         delete data.totalBalance;
         delete transferHappened;
     }
@@ -413,13 +408,11 @@ contract TestLibTournament1 {
     {
         // must be entrant
         data.tournaments[address(this)].entryFeePaid[msg.sender].exists = true;
-
         LibTournament.exit(address(this), msg.sender, info, data);
 
         Assert.equal(data.tournaments[address(this)].entryFeePaid[address(this)].exists, false, "Entry fee should not exist.");
 
-        data.tournaments[address(this)].entryFeePaid[msg.sender].exists = false;
+        delete data.tournaments[address(this)].entryFeePaid[msg.sender];
     }
 
-    
 }

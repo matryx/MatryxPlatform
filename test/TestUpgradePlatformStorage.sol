@@ -125,8 +125,8 @@ contract TestUpgradePlatformStorage {
         bytes32 upgradeCommitModifiedSelector;
         assembly {
             let offset := 0x100000000000000000000000000000000000000000000000000000000
-            upgradeCommitSelector := mul(0x8ea0cc12, offset)
-            upgradeCommitModifiedSelector := mul(0xfe0fbca3, offset)
+            upgradeCommitSelector := mul(0x8ea0cc12, offset)             // 'upgradeCommitAndAncestry(bytes32)
+            upgradeCommitModifiedSelector := mul(0xfe0fbca3, offset)     // 'upgradeCommitAndAncestry(address,address,MatryxPlatform.Data storage,bytes32)
         }
         upgradeFnData.modifiedSelector = upgradeCommitModifiedSelector;
         upgradeFnData.injectedParams = new uint256[](1);

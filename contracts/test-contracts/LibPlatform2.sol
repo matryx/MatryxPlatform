@@ -4,11 +4,11 @@ pragma experimental ABIEncoderV2;
 import "../MatryxSystem.sol";
 import "../MatryxPlatform.sol";
 import "../MatryxTournament.sol";
-import "./LibTournamentUpgraded.sol";
+import "./LibTournament2.sol";
 
-interface IPlatformUpgraded {
+interface IPlatform2 {
     function getInfo() external view returns (MatryxPlatform.Info memory);
-    function setToken(address) external;
+    function setToken(address token) external;
     function getTwo() external pure returns (uint256);
     function isTournament(address) external view returns (bool);
     function getTournamentCount() external pure returns (uint256);
@@ -16,13 +16,13 @@ interface IPlatformUpgraded {
     function getTournaments() external pure returns (address[] memory);
 }
 
-library LibPlatformUpgraded {
-    
+library LibPlatform2 {
     function getInfo(address, address, MatryxPlatform.Info storage info) public view returns (MatryxPlatform.Info memory) {
         return info;
     }
 
-    function setToken(address, address, MatryxPlatform.Info storage info, address token) public {
+    function setToken(address, address, MatryxPlatform.Info storage info, address token) public
+    {
         info.token = token;
     }
 
@@ -56,7 +56,7 @@ library LibPlatformUpgraded {
         data.totalBalance = data.totalBalance + 12345;
         data.tournamentBalance[tAddress] = 12345;
 
-        LibTournamentUpgraded.createRound(tAddress, address(this), info, data);
+        LibTournament2.createRound(tAddress, address(this), info, data);
 
         return tAddress;
     }

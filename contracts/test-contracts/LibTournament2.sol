@@ -4,14 +4,14 @@ pragma experimental ABIEncoderV2;
 import "../MatryxPlatform.sol";
 import "../LibTournament.sol";
 
-interface ITournamentUpgraded {
+interface ITournament2 {
     function getInfo() external pure returns (LibTournament.TournamentInfo memory);
     function getRounds() external view returns (LibTournament.RoundDetails memory);
     function getBalance() external pure returns (uint256);
     function createRound() external returns (uint256);
 }
 
-library LibTournamentUpgraded {
+library LibTournament2 {
 
     function getInfo(address self, address, MatryxPlatform.Data storage data) public view returns (LibTournament.TournamentInfo memory) {
         return data.tournaments[self].info;

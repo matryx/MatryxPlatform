@@ -68,6 +68,10 @@ contract MatryxSystem is Ownable() {
         return allVersions;
     }
 
+    function getPlatformContracts(uint256 version) public view returns (bytes32[] memory) {
+        return platformByVersion[version].allContracts;
+    }
+
     /// @dev Set a contract address for a contract by a given name
     /// @param version   Version of Platform this contract belongs to
     /// @param cName     Name of the contract we want to set an address for
@@ -167,6 +171,7 @@ interface IMatryxSystem {
     function setVersion(uint256 version) external;
     function getVersion() external view returns (uint256);
     function getAllVersions() external view returns (uint256[] memory);
+    function getPlatformContracts(uint256 version) external view returns (bytes32[] memory);
     function setContract(uint256 version, bytes32 cName, address cAddress) external;
     function getContract(uint256 version, bytes32 cName) external view returns (address);
     function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, MatryxSystem.FnData calldata fnData) external;

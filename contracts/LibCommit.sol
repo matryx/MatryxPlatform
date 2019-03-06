@@ -156,7 +156,7 @@ library LibCommit {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         require(data.commitClaims[commitHash] == uint256(0), "Commit hash already claimed");
 
-        data.commitClaims[commitHash] = block.number;
+        data.commitClaims[commitHash] = now;
         emit CommitClaimed(commitHash);
     }
 
@@ -208,8 +208,8 @@ library LibCommit {
         require(data.commits[commitHash].owner == address(0), "Commit already exists");
         require(parentHash == bytes32(0) || data.commits[parentHash].owner != address(0), "Parent must be null or real commit");
 
-        uint256 claimBlock = data.commitClaims[commitHash];
-        require(claimBlock < block.number, "Commit must be claimed in a previous block");
+        uint256 claimTime = data.commitClaims[commitHash];
+        require(claimTime < now, "Commit must be claimed in a previous block");
 
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         require(data.commitHashes[lookupHash] == bytes32(0), "Commit already created from content");
@@ -245,7 +245,7 @@ library LibCommit {
 
         // create commit
         data.commits[commitHash].owner = owner;
-        data.commits[commitHash].timestamp = now;
+        data.commits[commitHash].timestamp = claimTime;
         data.commits[commitHash].groupHash = groupHash;
         data.commits[commitHash].commitHash = commitHash;
         data.commits[commitHash].content = content;
