@@ -26,8 +26,6 @@ contract('Same Version Platform Library Code Swap', function() {
     data = await init()
     platform = data.platform
     system = data.system
-    const v = await system.getVersion()
-    console.log(`(${v}) for system ${system.address} `)
     const tx = system.setContract(1, stb("LibPlatform"), accounts[0])
     await shouldFail.reverting(tx)
   })
@@ -47,7 +45,7 @@ contract('Same Version Platform Library Code Swap', function() {
     let two = await Platform2.getTwo()
     
     assert.equal(two, 2, "Returned incorrect value from upgraded library function")
-  })  
+  })
 })
 
 contract('Same Version Commit Library Code Swap', function() {
