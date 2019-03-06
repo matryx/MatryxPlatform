@@ -165,5 +165,4 @@ contract('Platform version upgrade', function() {
     let { start } = await t2.getRounds()
     assert.equal(start, 12345, "Round created incorrectly")
   })
-
 })
