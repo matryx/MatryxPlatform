@@ -18,7 +18,7 @@ module.exports = function (artifacts, web3) {
   const LibPlatform = artifacts.require('LibPlatform')
   const LibTournament = artifacts.require('LibTournament')
 
-  let token, platform, commit, wallet
+  let token, system, platform, commit, wallet
 
   async function init() {
     const contract = Contract
@@ -33,10 +33,11 @@ module.exports = function (artifacts, web3) {
   async function setupContracts() {
     // console.log("token:", network.tokenAddress)
     const data = await setup(artifacts, web3, 0, true)
+    system = data.system
     platform = data.platform
     commit = data.commit
     token = data.token
-    return { platform, commit, token }
+    return { system, platform, commit, token }
   }
 
   async function createTournament(content, bounty, roundData, accountNumber) {

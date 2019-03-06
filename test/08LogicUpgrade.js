@@ -23,46 +23,48 @@ let commit
 contract('Same Version Platform Library Code Swap', function() {
 
   it('Revert when setting library that has no code', async function() {
-    platform = (await init()).platform
-    system = Contract(MatryxSystem.address, IMatryxSystem)
-
+    data = await init()
+    platform = data.platform
+    system = data.system
     const tx = system.setContract(1, stb("LibPlatform"), accounts[0])
     await shouldFail.reverting(tx)
   })
-
-  it('Revert when making a call to library with incorrect address in system', async () => {
+  
+   it('Revert when making a call to library with incorrect address in system', async function() {
     await system.setContract(1, stb("LibPlatform"), MatryxSystem.address)
     const tx = platform.getInfo()
-
+    
     await shouldFail.reverting(tx)
   })
-
-  it('Previously nonexistent selector returns correct value after new library setup on system', async () => {
+  
+  it('Previously nonexistent selector returns correct value after new library setup on system', async function() {
     await system.setContract(1, stb("LibPlatform"), LibPlatform2.address)
     await system.addContractMethod(1, stb("LibPlatform"), selector('getTwo()'), [selector('getTwo(address,address,MatryxPlatform.Info storage)'), [0],[]])
 
     const Platform2 = Contract(MatryxPlatform.address, IPlatform2)
     let two = await Platform2.getTwo()
-
+    
     assert.equal(two, 2, "Returned incorrect value from upgraded library function")
   })
-
 })
 
 contract('Same Version Commit Library Code Swap', function() {
   commit = Contract(MatryxCommit.address, IMatryxCommit)
-
-  it('Revert when making a call to library with incorrect address in system', async () => {
-    platform = (await init()).platform
+  
+  it('Revert when making a call to library with incorrect address in system', async function() {
+    data = await init()
+    platform = data.platform
     system = Contract(MatryxSystem.address, IMatryxSystem)
-
+    const versions = await system.getAllVersions()
+    const v = await system.getVersion()
+    console.log(`all versions: ${versions} (system ${system.address}) `)
     await system.setContract(1, stb("LibCommit"), MatryxSystem.address)
     const tx = commit.getInitialCommits()
 
     await shouldFail.reverting(tx)
   })
 
-  it('New library for forwarder behaves correctly', async () => {
+  it('New library for forwarder behaves correctly', async function() {
     await system.setContract(1, stb("LibCommit"), LibCommit2.address)
     await system.addContractMethod(1, stb("LibCommit"), selector('getAvailableRewardForUser(bytes32,address)'), [selector('getAvailableRewardForUser(address,address,MatryxPlatform.Data storage,bytes32,address)'), [3], []])
 
@@ -84,7 +86,7 @@ contract('Platform version upgrade', function() {
     bounty: web3.toWei(5)
   }
 
-  it('Current version functionality unaffected by new version created', async () => {
+  it('Current version functionality unaffected by new version created', async function() {
     platform = (await init()).platform
     system = Contract(MatryxSystem.address, IMatryxSystem)
 
@@ -98,24 +100,24 @@ contract('Platform version upgrade', function() {
     assert.equal(countBefore, countAfter, "Incorrect counts after upgrade")
   })
 
-  it("Unable to create the same version twice", async () => {
+  it("Unable to create the same version twice", async function() {
     await system.createVersion(25)
     const tx = system.createVersion(25)
     await shouldFail.reverting(tx)
   })
 
-  it("Setting the current version switches functionality to new version library", async () => {
+  it("Setting the current version switches functionality to new version library", async function() {
     await system.createVersion(3)
     await system.setContract(3, stb("LibPlatform"), LibPlatform2.address)
     await system.setContract(3, stb("MatryxPlatform"), platform.address)
     await system.addContractMethod(3, stb("LibPlatform"), selector('getTournamentCount()'), [selector('getTournamentCount(address,address,MatryxPlatform.Data storage)'), [3],[]])
     await system.setVersion(3)
 
-    let countAfter = await platform.getTournamentCount().then(fromWei)
+    let countAfter = await platform.getTournamentCount()
     assert.equal(countAfter, 99, "Incorrect count after upgrade")
   })
 
-  it("Contracts created before the version change still use the previous version libraries", async () => {
+  it("Contracts created before the version change still use the previous version libraries", async function() {
     let { version } = await t1.getInfo();
     assert.equal(version, 1, "Incorrect version for old tournament")
 
@@ -123,12 +125,12 @@ contract('Platform version upgrade', function() {
     assert.equal(b, 10, "Incorrect tournament balance")
   })
 
-  it("Unable to call functions that only exist in the previous library", async () => {
+  it("Unable to call functions that only exist in the previous library", async function() {
     let tx = platform.blacklist(accounts[4])
     await shouldFail.reverting(tx)
   })
 
-  it("Newly created contracts use the current platform version and the updated libraries", async () => {
+  it("Newly created contracts use the current platform version and the updated libraries", async function() {
     await system.setContract(3, stb("LibTournament"), LibTournament2.address)
 
     // set new LibTournament functions
@@ -163,5 +165,4 @@ contract('Platform version upgrade', function() {
     let { start } = await t2.getRounds()
     assert.equal(start, 12345, "Round created incorrectly")
   })
-
 })

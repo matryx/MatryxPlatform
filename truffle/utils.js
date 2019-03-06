@@ -143,6 +143,8 @@ function Contract(address, artifact, accountNumber = 0) {
 }
 
 async function setup(artifacts, web3, accountNum, silent) {
+  const MatryxSystem = artifacts.require('MatryxSystem')
+  const IMatryxSystem = artifacts.require('IMatryxSystem')
   const MatryxPlatform = artifacts.require('MatryxPlatform')
   const IMatryxPlatform = artifacts.require('IMatryxPlatform')
   const MatryxToken = artifacts.require('MatryxToken')
@@ -156,6 +158,7 @@ async function setup(artifacts, web3, accountNum, silent) {
   const platform = Contract(MatryxPlatform.address, IMatryxPlatform, accountNum)
   const commit = Contract(MatryxCommit.address, IMatryxCommit)
   const token = Contract(network.tokenAddress, MatryxToken)
+  const system = Contract(MatryxSystem.address, IMatryxSystem)
 
   const log = silent ? () => { } : console.log
 
@@ -191,6 +194,7 @@ async function setup(artifacts, web3, accountNum, silent) {
     MatryxToken,
     MatryxTournament,
     IMatryxTournament,
+    system,
     platform,
     commit,
     token

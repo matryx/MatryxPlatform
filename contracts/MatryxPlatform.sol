@@ -82,9 +82,8 @@ contract MatryxPlatform {
             mstore(add(ptr, 0x24), libName)                                     // arg 1 - library name
             calldatacopy(add(ptr, 0x44), 0, 0x04)                               // arg 2 - fn selector
             res := call(gas, system, 0, ptr, 0x64, 0, 0)                        // call system.getContractMethod
-            if iszero(res) { revert(0, 0) }                                     // safety check
-
             returndatacopy(ptr, 0, returndatasize)                              // copy fnData into ptr
+            if iszero(res) { revert(ptr, returndatasize) }                      // safety check
             let ptr2 := add(ptr, mload(ptr))                                    // ptr2 is pointer to start of fnData
 
             let m_injParams := add(ptr2, mload(add(ptr2, 0x20)))                // mem loc injected params
