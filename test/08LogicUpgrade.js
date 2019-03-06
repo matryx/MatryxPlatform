@@ -40,7 +40,7 @@ contract('Same Version Platform Library Code Swap', function() {
   it('Previously nonexistent selector returns correct value after new library setup on system', async function() {
     await system.setContract(1, stb("LibPlatform"), LibPlatform2.address)
     await system.addContractMethod(1, stb("LibPlatform"), selector('getTwo()'), [selector('getTwo(address,address,MatryxPlatform.Info storage)'), [0],[]])
-    
+
     const Platform2 = Contract(MatryxPlatform.address, IPlatform2)
     let two = await Platform2.getTwo()
     
