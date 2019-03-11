@@ -30,22 +30,21 @@ contract('Multiple Commits and Close Tournament', function() {
       submissions.push(s)
       commits.push(ch)
     }
-  })
 
-  it('Unable to choose any nonexisting submissions to win the round', async function () {
-    try {
-      let submissions = [accounts[3], accounts[1], t.address]
-      await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'This account should not have been able to choose winners')
-    }
-  })
-
-  it('Able to choose multiple winners and close tournament', async function() {
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
+  })
+  
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+  })
 
+  // reset
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    commit.accountNumber = 0
+  })
+
+  it('Commit balances are correct', async function() {
     let balances = await Promise.all(commits.map(c => commit.getBalance(c).then(fromWei)))
     let allEqual = balances.every(x => x === 10 / 4)
 
@@ -103,9 +102,7 @@ contract('Multiple Commits and Start Next Round', function() {
       submissions.push(s)
       commits.push(ch)
     }
-  })
 
-  it('Able to choose multiple winners and start next round', async function() {
     let newRound = {
       start: 0,
       duration: 50,
@@ -114,7 +111,19 @@ contract('Multiple Commits and Start Next Round', function() {
     }
 
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), newRound, 1)
+  })
 
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+  })
+
+  // reset
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    commit.accountNumber = 0
+  })
+
+  it('Correct commit balances', async function() {
     let balances = await Promise.all(commits.map(c => commit.getBalance(c).then(fromWei)))
     let allEqual = balances.every(x => x === 5 / 4)
 
@@ -184,11 +193,21 @@ contract('Multiple Commits and Do Nothing', function() {
       submissions.push(s)
       commits.push(ch)
     }
+
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
   })
 
-  it('Able to choose winners and do nothing', async function() {
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+  })
 
+  // reset
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    commit.accountNumber = 0
+  })
+
+  it('Correct commit balances', async function() {
     let balances = await Promise.all(commits.map(c => commit.getBalance(c).then(fromWei)))
     let allEqual = balances.every(x => x === 5 / 4)
 

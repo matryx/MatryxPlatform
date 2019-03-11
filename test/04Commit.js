@@ -8,7 +8,7 @@ let platform, token, commit
 
 contract('MatryxCommit', async () => {
   before(async () => {
-    let data = await init()
+    data = await init()
     platform = data.platform
     commit = data.commit
     token = data.token
@@ -18,6 +18,13 @@ contract('MatryxCommit', async () => {
   })
 
   beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    commit.accountNumber = 0
+  })
+
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
     commit.accountNumber = 0
   })
 

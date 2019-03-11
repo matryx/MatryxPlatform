@@ -4,14 +4,14 @@ const { accounts } = require('../truffle/network')
 let platform, commit, token
 
 //
-// Case 1
+// Case 0
 //
-contract('Singleton Commit, Close Tournament', function() {
-  let t //tournament
-  let s //submission
+contract('Winner Selection Permissions', function() {
+  let t
+  let s
   let commitHash
 
-  it('Able to create a Submission', async () => {
+  before(async () => {
     let data = await init()
     platform = data.platform
     commit = data.commit
@@ -25,12 +25,16 @@ contract('Singleton Commit, Close Tournament', function() {
     }
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let roundIndex = await t.getCurrentRoundIndex()
-
     s = await createSubmission(t, '0x00', toWei(1), 1)
-    commitHash = (await platform.getSubmission(s)).commitHash
+  })
+  
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+  })
 
-    assert.equal(roundIndex, 0, 'Round is not valid.')
+  // reset
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
   })
 
   it('Only the tournament owner can choose winning submissions', async () => {
@@ -54,11 +58,50 @@ contract('Singleton Commit, Close Tournament', function() {
       assert(revertFound, 'Should not have been able to choose nonexisting submission')
     }
   })
+  
+})
 
-  it('Able to choose a winner and Close Tournament', async () => {
+//
+// Case 1
+//
+contract('Singleton Commit, Close Tournament', function() {
+  let t //tournament
+  let s //submission
+  let commitHash
+
+  before(async () => {
+    let data = await init()
+    platform = data.platform
+    commit = data.commit
+    token = data.token
+
+    roundData = {
+      start: 0,
+      duration: 30,
+      review: 20,
+      bounty: web3.toWei(5)
+    }
+
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+    s = await createSubmission(t, '0x00', toWei(1), 1)
+    commitHash = (await platform.getSubmission(s)).commitHash
+
     await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 2)
-    let b = await commit.getBalance(commitHash).then(fromWei)
+  })
+  
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    commit.accountNumber = 0
+  })
 
+  // reset
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    commit.accountNumber = 0
+  })
+
+  it('Correct commit balance', async () => {
+    let b = await commit.getBalance(commitHash).then(fromWei)
     assert.equal(b, 10, 'Winner was not chosen')
   })
 
@@ -112,8 +155,12 @@ contract('Singleton Commit, Start Next Round', function() {
   let s  //submission
   let commitHash
 
-  it('Able to create a Submission without Contributors and References', async () => {
-    await init()
+  before(async () => {
+    let data = await init()
+    platform = data.platform
+    commit = data.commit
+    token = data.token
+
     roundData = {
       start: 0,
       duration: 30,
@@ -127,10 +174,6 @@ contract('Singleton Commit, Start Next Round', function() {
     s = await createSubmission(t, '0x00', toWei(1), 1)
     commitHash = (await platform.getSubmission(s)).commitHash
 
-    assert.equal(roundIndex, 0, 'Round is not valid.')
-  })
-
-  it('Able to choose a winner and Start Next Round', async () => {
     let newRound = {
       start: 0,
       duration: 50,
@@ -139,8 +182,21 @@ contract('Singleton Commit, Start Next Round', function() {
     }
 
     await selectWinnersWhenInReview(t, [s], [1], newRound, 1)
-    let b = await commit.getBalance(commitHash).then(fromWei)
+  })
+  
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    commit.accountNumber = 0
+  })
 
+  // reset
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    commit.accountNumber = 0
+  })
+
+  it('Correct commit balance', async () => {
+    let b = await commit.getBalance(commitHash).then(fromWei)
     assert.equal(b, 5, 'Winner was not chosen')
   })
 
@@ -213,28 +269,39 @@ contract('Singleton Commit, Do Nothing', function() {
   let s //submission
   let commitHash
 
-  it('Able to create a Submission without Contributors and References', async () => {
-    await init()
+  before(async () => {
+    let data = await init()
+    platform = data.platform
+    commit = data.commit
+    token = data.token
+
     roundData = {
       start: 0,
-      duration: 20,
-      review: 60,
+      duration: 30,
+      review: 20,
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('tournament', web3.toWei(15), roundData, 0)
-    let roundIndex = await t.getCurrentRoundIndex()
-
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     s = await createSubmission(t, '0x00', toWei(1), 1)
     commitHash = (await platform.getSubmission(s)).commitHash
 
-    assert.equal(roundIndex, 0, 'Round is not valid.')
+    await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
+  })
+  
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    commit.accountNumber = 0
   })
 
-  it('Able to choose a winner and DoNothing', async () => {
-    await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
-    let b = await commit.getBalance(commitHash).then(fromWei)
+  // reset
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    commit.accountNumber = 0
+  })
 
+  it('Correct commit balance', async () => {
+    let b = await commit.getBalance(commitHash).then(fromWei)
     assert.equal(b, 5, 'Winner was not chosen')
   })
 
@@ -254,13 +321,13 @@ contract('Singleton Commit, Do Nothing', function() {
     let roundIndex = await t.getCurrentRoundIndex()
     let { review, bounty } = await t.getRoundDetails(roundIndex + 1)
 
-    assert.equal(review, 60, 'Incorrect ghost round Review Period Duration')
+    assert.equal(review, 20, 'Incorrect ghost round Review Period Duration')
     assert.equal(fromWei(bounty), 5, 'Incorrect ghost round bounty')
   })
 
-  it('Tournament balance should now be 10', async () => {
+  it('Tournament balance should be 5', async () => {
     let tB = await t.getBalance().then(fromWei)
-    assert.equal(tB, 10, 'Tournament balance should be 10')
+    assert.equal(tB, 5, 'Tournament balance should be 5')
   })
 
   it('Submission owner able to withdraw reward', async () => {
@@ -297,8 +364,12 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
   let s //submission
   let commitHash
 
-  it('Able to choose a winning submission and Do Nothing', async () => {
-    await init()
+  before(async () => {
+    let data = await init()
+    platform = data.platform
+    commit = data.commit
+    token = data.token
+
     roundData = {
       start: 0,
       duration: 30,
@@ -313,12 +384,26 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
 
     await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
 
+    await t.closeTournament()
+  })
+
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    commit.accountNumber = 0
+  })
+
+  // reset
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    commit.accountNumber = 0
+  })
+
+  it('Correct commit balance', async () => {
     let b = await commit.getBalance(commitHash).then(fromWei)
-    assert.equal(b, 5, 'Winner was not chosen')
+    assert.equal(b, 10, 'Winner was not chosen')
   })
 
   it('Able to Close the tournament after selecting winners & Do Nothing', async () => {
-    await t.closeTournament()
     let state = await t.getState()
     assert.equal(state, 3, 'Tournament should be Closed')
   })
@@ -345,15 +430,18 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
     commit.accountNumber = 1
     await commit.withdrawAvailableReward(commitHash)
     commit.accountNumber = 0
-
+    
     let b = await commit.getBalance(commitHash).then(fromWei)
     let balAfter = await token.balanceOf(accounts[1]).then(fromWei)
-
+    
     assert.equal(b, 0, 'Commit balance non-zero')
     assert.equal(balAfter - balBefore, 10, 'Submission owner balance incorrect')
   })
-
+  
   it('Unable to withdraw reward twice', async () => {
+    commit.accountNumber = 1
+    await commit.withdrawAvailableReward(commitHash)
+
     try {
       await commit.withdrawAvailableReward(commitHash)
       assert.fail('Expected revert not received')
@@ -373,8 +461,12 @@ contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
   let s //submission
   let commitHash
 
-  it('Able to choose a winning submission and Do Nothing', async () => {
-    await init()
+  before(async () => {
+    let data = await init()
+    platform = data.platform
+    commit = data.commit
+    token = data.token
+
     roundData = {
       start: 0,
       duration: 30,
@@ -383,18 +475,31 @@ contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
     }
 
     t = await createTournament('tournament', web3.toWei(15), roundData, 0)
-
     s = await createSubmission(t, '0x00', toWei(1), 1)
     commitHash = (await platform.getSubmission(s)).commitHash
 
     await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
 
+    await t.startNextRound()
+  })
+  
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    commit.accountNumber = 0
+  })
+
+  // reset
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    commit.accountNumber = 0
+  })
+
+  it('Commit balance is correct', async () => {
     let b = await commit.getBalance(commitHash).then(fromWei)
     assert.equal(b, 5, 'Winner was not chosen')
   })
 
-  it('Able to start next round after selecting winners & Do Nothing', async () => {
-    await t.startNextRound()
+  it('New round should be open', async () => {
     let state = await t.getState()
     assert.equal(state, 2, 'Tournament should be Open')
   })
@@ -410,34 +515,36 @@ contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
     let state = await t.getRoundState(roundIndex)
     assert.equal(state, 2, 'New round should be Open')
   })
-
+  
   it('Tournament balance should be 10', async () => {
     let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 10, 'Tournament balance should be 10')
   })
-
+  
   it('Correct winning submission balance', async () => {
     let b = await commit.getBalance(commitHash).then(fromWei)
     assert.equal(b, 5, 'Incorrect commit balance')
   })
-
+  
   it('Submission owner able to withdraw reward', async () => {
     let balBefore = await token.balanceOf(accounts[1]).then(fromWei)
-
+    
     commit.accountNumber = 1
     await commit.withdrawAvailableReward(commitHash)
     commit.accountNumber = 0
-
+    
     let b = await commit.getBalance(commitHash).then(fromWei)
     let balAfter = await token.balanceOf(accounts[1]).then(fromWei)
-
+    
     assert.equal(b, 0, 'Commit balance non-zero')
     assert.equal(balAfter, balBefore + 5, 'Submission owner balance incorrect')
   })
-
+  
   it('Unable to withdraw reward twice', async () => {
+    commit.accountNumber = 1
+    await commit.withdrawAvailableReward(commitHash)
+
     try {
-      commit.accountNumber = 1
       await commit.withdrawAvailableReward(commitHash)
       commit.accountNumber = 0
       assert.fail('Expected revert not received')

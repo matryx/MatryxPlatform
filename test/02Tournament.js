@@ -9,21 +9,35 @@ let platform
 contract('Open Tournament Testing', function() {
   let t //tournament
 
-  // reset accounts
-  afterEach(() => {
-    t.accountNumber = 0
-  })
+  before(async () => {
+    let contracts = await init()
+    platform = contracts.platform
 
-  it('Able to create a tournament', async function() {
-    platform = (await init()).platform
+    // create the tournament
     roundData = {
       start: 0,
       duration: 120,
       review: 60,
       bounty: web3.toWei(5)
     }
-
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+
+    await setup(artifacts, web3, 1, true)
+    await setup(artifacts, web3, 2, true)
+  })
+
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
+  })
+
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
+  })
+
+  it('Able to create a tournament in platform', async function() {
     let count = +(await platform.getTournamentCount())
     assert.isTrue(count == 1, 'Tournament count should be 1.')
   })
@@ -80,10 +94,8 @@ contract('Open Tournament Testing', function() {
   })
 
   it('Able to add funds to the tournament from another account', async function() {
-    await setup(artifacts, web3, 2, true)
-
     t.accountNumber = 2
-    await t.addToBounty(toWei(1))
+    await t.addToBounty(toWei(2))
     let b = await t.getBalance().then(fromWei)
 
     assert.equal(b, 12, 'Incorrect tournament balance')
@@ -145,17 +157,22 @@ contract('Open Tournament Testing', function() {
 
   it('Unable to enter the tournament twice', async function() {
     t.accountNumber = 1
+    await t.enter()
+    // try to enter again
     let tx = t.enter()
     await shouldFail.reverting(tx)
   })
 
   it('Entry fee paid stored correctly', async function() {
+    t.accountNumber = 1
+    await t.enter()
     let e = await t.getEntryFeePaid(accounts[1]).then(fromWei)
-    assert.equal(e, 1, 'Incorrect entry fee.')
+    assert.equal(e, 2, 'Incorrect entry fee.')
   })
 
   it('Able to exit the tournament', async function() {
     t.accountNumber = 1
+    await t.enter()
     await t.exit()
 
     let isEnt = await t.isEntrant(accounts[1])
@@ -164,14 +181,21 @@ contract('Open Tournament Testing', function() {
 
   it('Unable to exit the tournament twice', async function() {
     t.accountNumber = 1
+    await t.enter()
+    await t.exit()
+    // try to exit again
     let tx = t.exit()
     await shouldFail.reverting(tx)
   })
 
-  it('Able to enter the tournament again', async function() {
+  it('Able to enter the tournament again after exiting', async function() {
+    t.accountNumber = 1
+    await t.enter()
+    await t.exit()
+    
     await enterTournament(t, 1)
     let isEnt = await t.isEntrant(accounts[1])
-    assert.isTrue(isEnt, 'Unable to enter the tournament.')
+    assert.isTrue(isEnt, 'Unable to enter the tournament again.')
   })
 })
 
@@ -179,13 +203,11 @@ contract('On Hold Tournament Testing', function() {
   let t // tournament
   let s // submission
 
-  // reset accounts
-  afterEach(() => {
-    t.accountNumber = 0
-  })
+  before(async () => {
+    let contracts = await init()
+    platform = contracts.platform
 
-  it('Able to make tournament on hold', async function() {
-    await init()
+    // create the tournament
     roundData = {
       start: 0,
       duration: 30,
@@ -209,7 +231,20 @@ contract('On Hold Tournament Testing', function() {
 
     await t.updateNextRound(roundData)
     await waitUntilClose(t, roundIndex)
+  })
 
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
+  })
+
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
+  })
+
+  it('Tournament should be On Hold', async function() {
     let state = await t.getState()
     assert.equal(+state, 1, 'Tournament is not On Hold')
   })
@@ -250,6 +285,7 @@ contract('On Hold Tournament Testing', function() {
 
   it('Round should be open', async function() {
     let roundIndex = await t.getCurrentRoundIndex()
+    await waitUntilOpen(t, roundIndex)
     let state = await t.getRoundState(roundIndex)
     assert.equal(state, 2, 'Round should be open')
   })
@@ -259,14 +295,12 @@ contract('Abandoned Tournament due to No Submissions Testing', function() {
   let token
   let t // tournament
 
-  // reset accounts
-  afterEach(() => {
-    t.accountNumber = 0
-  })
+  before(async () => {
+    let contracts = await init()
+    platform = contracts.platform
+    token = contracts.token
 
-  it('Able to create an Abandoned round', async function() {
-    token = (await init()).token
-
+    // create the tournament
     roundData = {
       start: 0,
       duration: 5,
@@ -278,8 +312,17 @@ contract('Abandoned Tournament due to No Submissions Testing', function() {
     let roundIndex = await t.getCurrentRoundIndex()
 
     await waitUntilClose(t, roundIndex)
+  })
 
-    assert.equal(roundIndex, 0, 'Round is not valid.')
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
+  })
+
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
   })
 
   it('Round state is Abandoned', async function() {
@@ -318,6 +361,8 @@ contract('Abandoned Tournament due to No Submissions Testing', function() {
   })
 
   it("Unable to call recover funds twice", async function () {
+    await t.recoverBounty()
+    // try to recover bounty again
     let tx = t.recoverBounty()
     await shouldFail.reverting(tx)
   })
@@ -328,7 +373,8 @@ contract('Abandoned Tournament due to No Submissions Testing', function() {
     await shouldFail.reverting(tx)
   })
 
-  it("Tournament balance is 0", async function () {
+  it("Tournament balance is 0 after owner recovers bounty", async function () {
+    await t.recoverBounty()
     let tB = await t.getBalance().then(fromWei)
     assert.isTrue(tB == 0, "Tournament balance should be 0")
   })

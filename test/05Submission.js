@@ -20,21 +20,23 @@ contract('Submissions', async () => {
   })
 
   beforeEach(async () => {
-    // create a tournament from account 0
+    snapshot = await network.provider.send("evm_snapshot", [])
+    
     let roundData = {
       start: 0,
-      duration: 30,
+      duration: 60,
       review: 10,
       bounty: toWei(100)
     }
     t = await createTournament('tournament', toWei(200), roundData, 0)
     t.accountNumber = 1
     await t.enter()
-    t.accountNumber = 0
+    t.accountNumber = 0    
   })
 
-  // reset contract accounts
-  afterEach(() => {
+  // reset
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
     commit.accountNumber = 0
   })
 

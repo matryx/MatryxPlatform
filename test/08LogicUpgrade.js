@@ -30,7 +30,7 @@ contract('Same Version Platform Library Code Swap', function() {
     await shouldFail.reverting(tx)
   })
   
-   it('Revert when making a call to library with incorrect address in system', async function() {
+  it('Revert when making a call to library with incorrect address in system', async function() {
     await system.setContract(1, stb("LibPlatform"), MatryxSystem.address)
     const tx = platform.getInfo()
     

@@ -6,6 +6,7 @@ const { accounts } = require('../truffle/network')
 
 let platform
 let token
+let snapshot
 
 contract('Platform Testing', () => {
   let t
@@ -22,8 +23,13 @@ contract('Platform Testing', () => {
     token = contracts.token
   })
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot")
     platform.accountNumber = 0
+  })
+
+  afterEach(async () => {
+    await network.provider.send("evm_revert", snapshot)
   })
 
   it('Able to get platform info', async () => {
@@ -66,11 +72,13 @@ contract('Platform Testing', () => {
   })
 
   it('Able to get all tournaments in platform', async () => {
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     let ts = await platform.getTournaments()
     assert.equal(ts[0], t.address, 'Unable to get tournaments.')
   })
 
   it('Platform can recognize the tournament address as a tournament', async () => {
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
     isT = await platform.isTournament(t.address)
     assert.isTrue(isT, 'Should be a tournament.')
   })
@@ -89,6 +97,7 @@ contract('Platform Testing', () => {
   })
 
   it('Platform owner able to withdraw unallocated tokens from platform', async () => {
+    await token.transfer(platform.address, toWei(10))
     let bb = await token.balanceOf(platform.address).then(fromWei)
     await platform.withdrawTokens(token.address)
     let ba = await token.balanceOf(platform.address).then(fromWei)
