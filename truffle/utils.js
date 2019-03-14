@@ -7,13 +7,15 @@ const genAddress = () => '0x' + new Array(40).fill(0).map(() => Math.floor(16 * 
 
 function getMinedTx(hash) {
   return new Promise((resolve, reject) => {
-    ;(async function checkTx() {
+    async function checkTx() {
       const txr = await network.provider.getTransactionReceipt(hash)
       if (txr) {
         if (!txr.status) return reject({ message: 'revert' })
         resolve(txr)
       } else setTimeout(checkTx, 1000)
-    })()
+    }
+
+    setTimeout(checkTx, 1000)
   })
 }
 
@@ -140,11 +142,71 @@ function Contract(address, artifact, accountNumber = 0) {
   return proxy
 }
 
+async function setup(artifacts, web3, accountNum, silent) {
+  const MatryxSystem = artifacts.require('MatryxSystem')
+  const IMatryxSystem = artifacts.require('IMatryxSystem')
+  const MatryxPlatform = artifacts.require('MatryxPlatform')
+  const IMatryxPlatform = artifacts.require('IMatryxPlatform')
+  const MatryxToken = artifacts.require('MatryxToken')
+  const MatryxCommit = artifacts.require('MatryxCommit')
+  const IMatryxCommit = artifacts.require('IMatryxCommit')
+  const MatryxTournament = artifacts.require('MatryxTournament')
+  const IMatryxTournament = artifacts.require('IMatryxTournament')
+
+  const account = network.accounts[accountNum]
+
+  const platform = Contract(MatryxPlatform.address, IMatryxPlatform, accountNum)
+  const commit = Contract(MatryxCommit.address, IMatryxCommit)
+  const token = Contract(network.tokenAddress, MatryxToken)
+  const system = Contract(MatryxSystem.address, IMatryxSystem)
+
+  const log = silent ? () => { } : console.log
+
+  log(chalk`\nSetup {yellow ${account}}`)
+  const tokenReleaseAgent = await token.releaseAgent()
+  if (tokenReleaseAgent === '0x0000000000000000000000000000000000000000') {
+    let { hash } = await token.setReleaseAgent(account)
+    await this.getMinedTx(hash)
+    await token.releaseTokenTransfer()
+    log('Token release agent set to: ' + account)
+  }
+
+  const balance = await token.balanceOf(account) / 1e18 | 0
+  log('Balance: ' + balance + ' MTX')
+  let tokens = web3.toWei(1e5)
+  if (balance == 0) {
+    let { hash } = await token.mint(account, tokens)
+    await this.getMinedTx(hash)
+  }
+
+  const allowance = await token.allowance(account, platform.address) / 1e18 | 0
+  log('Allowance: ' + allowance + ' MTX')
+  if (allowance == 0) {
+    token.accountNumber = accountNum
+    let { hash } = await token.approve(MatryxPlatform.address, tokens)
+    await this.getMinedTx(hash)
+  }
+
+  log(`Account ${accountNum} setup complete!\n`)
+
+  return {
+    MatryxPlatform,
+    MatryxToken,
+    MatryxTournament,
+    IMatryxTournament,
+    system,
+    platform,
+    commit,
+    token
+  }
+}
+
 module.exports = {
   Contract,
   genId,
   genAddress,
   getMinedTx,
+  setup,
 
   sleep(ms) {
     return new Promise(done => setTimeout(done, ms))
@@ -177,78 +239,5 @@ module.exports = {
       data.push('0x00')
     }
     return data
-  },
-
-  stringToBytes32() {
-    return this.stringToBytes.apply(this, arguments)
-  },
-
-  async setup(artifacts, web3, accountNum, silent) {
-    const MatryxPlatform = artifacts.require('MatryxPlatform')
-    const IMatryxPlatform = artifacts.require('IMatryxPlatform')
-    const MatryxToken = artifacts.require('MatryxToken')
-    const MatryxUser = artifacts.require('MatryxUser')
-    const IMatryxUser = artifacts.require('IMatryxUser')
-    const MatryxTournament = artifacts.require('MatryxTournament')
-    const IMatryxTournament = artifacts.require('IMatryxTournament')
-    const MatryxRound = artifacts.require('MatryxRound')
-    const IMatryxRound = artifacts.require('IMatryxRound')
-    const MatryxSubmission = artifacts.require('MatryxSubmission')
-    const IMatryxSubmission = artifacts.require('IMatryxSubmission')
-
-    const account = network.accounts[accountNum]
-
-    const platform = Contract(MatryxPlatform.address, IMatryxPlatform, accountNum)
-    const token = Contract(network.tokenAddress, MatryxToken)
-
-    const log = silent ? () => { } : console.log
-
-    log(chalk`\nSetup {yellow ${account}}`)
-    const tokenReleaseAgent = await token.releaseAgent()
-    if (tokenReleaseAgent === '0x0000000000000000000000000000000000000000') {
-      let { hash } = await token.setReleaseAgent(account)
-      await this.getMinedTx(hash)
-      await token.releaseTokenTransfer()
-      log('Token release agent set to: ' + account)
-    }
-
-    const balance = await token.balanceOf(account) / 1e18 | 0
-    log('Balance: ' + balance + ' MTX')
-    let tokens = web3.toWei(1e5)
-    if (balance == 0) {
-      let { hash } = await token.mint(account, tokens)
-      await this.getMinedTx(hash)
-    }
-
-    const allowance = await token.allowance(account, platform.address) / 1e18 | 0
-    log('Allowance: ' + allowance + ' MTX')
-    if (allowance == 0) {
-      token.accountNumber = accountNum
-      let { hash } = await token.approve(MatryxPlatform.address, tokens)
-      await this.getMinedTx(hash)
-    }
-
-    const hasEnteredMatryx = await platform.hasEnteredMatryx(account)
-    if (!hasEnteredMatryx) {
-      let { hash } = await platform.enterMatryx()
-      await this.getMinedTx(hash)
-    }
-
-    log(`Account ${accountNum} setup complete!\n`)
-
-    return {
-      MatryxPlatform,
-      MatryxToken,
-      MatryxUser,
-      IMatryxUser,
-      MatryxTournament,
-      IMatryxTournament,
-      MatryxRound,
-      IMatryxRound,
-      MatryxSubmission,
-      IMatryxSubmission,
-      platform,
-      token
-    }
   }
 }

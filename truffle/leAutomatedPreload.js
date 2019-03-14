@@ -28,12 +28,10 @@ const createTournament = async (bounty, roundData, accountNumber) => {
   console.log(`Currently ${count} Tournaments on Platform`)
 
   const suffix = ('0' + (count + 1)).substr(-2)
-  const category = stringToBytes('math')
   const title = stringToBytes32('Test Tournament ' + suffix, 3)
   const descriptionHash = stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2)
   const fileHash = stringToBytes32('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2)
   const tournamentData = {
-    category,
     title,
     descriptionHash,
     fileHash,

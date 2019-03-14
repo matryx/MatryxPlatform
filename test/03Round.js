@@ -1,84 +1,68 @@
-const IMatryxRound = artifacts.require('IMatryxRound')
+const { shouldFail } = require('openzeppelin-test-helpers')
 
-const { Contract } = require('../truffle/utils')
 const { init, createTournament, createSubmission, waitUntilInReview, waitUntilClose, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
+const { accounts } = require('../truffle/network')
 
 let platform
 
-contract('NotYetOpen Round Testing', function(accounts) {
+contract('NotYetOpen Round Testing', function() {
   let t //tournament
-  let r //round
+  let roundData
 
-  it('Able to create a tournament with a valid round', async function() {
+  before(async () => {
     platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000) + 60,
-      end: Math.floor(Date.now() / 1000) + 120,
+      start: Math.floor(Date.now() / 1000) + 80,
+      duration: 120,
       review: 60,
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-
-    assert.ok(r.address, 'Round is not valid.')
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+  })
+  
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
   })
 
-  it('Able to get tournament from round', async function() {
-    let tournament = await r.getTournament()
-    assert.equal(tournament, t.address, 'Unable to get tournament from round.')
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
   })
 
-  it('Able to get round start time', async function() {
-    let time = await r.getStart()
-    assert.isTrue(time > Math.floor(Date.now() / 1000), 'Unable to get start time.')
-  })
-
-  it('Able to get round end time', async function() {
-    let time = await r.getEnd()
-    assert.isTrue(time > Math.floor(Date.now() / 1000), 'Unable to get end time.')
-  })
-
-  it('Able to get round review period duration', async function() {
-    let review = await r.getReview()
-    assert.equal(review, 60, 'Unable to get review period duration.')
-  })
-
-  it('Able to get round bounty', async function() {
-    let b = await r.getBounty()
-    assert.equal(b, web3.toWei(5), 'Unable to get bounty.')
-  })
-
-  it('Able to get round balance', async function() {
-    let b = await platform.getBalanceOf(r.address)
-    assert.equal(b, web3.toWei(5), 'Unable to get balance.')
+  it('Able to get round details', async function() {
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { start, duration, review, bounty } = await t.getRoundDetails(roundIndex)
+    assert.equal(start, roundData.start, 'Incorrect round start')
+    assert.equal(duration, roundData.duration, 'Incorrect round duration')
+    assert.equal(review, roundData.review, 'Incorrect round review')
+    assert.equal(bounty, roundData.bounty, 'Incorrect round bounty')
   })
 
   it('Round state is Not Yet Open', async function() {
-    let state = await r.getState()
+    let roundIndex = await t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
     assert.equal(state, 0, 'Round State should be NotYetOpen')
   })
 
   it('Round should not have any submissions', async function() {
-    let sub = await r.getSubmissions(0, 0)
-    assert.equal(sub.length, 0, 'Round should not have submissions')
-  })
-
-  it('Submission count should be zero', async function() {
-    let num = await r.getSubmissionCount()
-    assert.equal(num, 0, 'Submission count should be 0')
-  })
-
-  it('Round winning submissions should be empty', async function() {
-    let sub = await r.getWinningSubmissions()
-    assert.equal(sub.length, 0, 'Round should not have winning submissions')
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { submissions } = await t.getRoundInfo(roundIndex)
+    assert.equal(submissions.length, 0, 'Round should not have submissions')
   })
 
   it('Able to add bounty to a round', async function() {
     await t.transferToRound(web3.toWei(1))
-    let b = await r.getBounty().then(fromWei)
-    assert.equal(b, 6, 'Bounty was not added')
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { bounty } = await t.getRoundDetails(roundIndex)
+    assert.equal(fromWei(bounty), 6, 'Bounty was not added')
+  })
+
+  it('Unable to transfer to round more funds than are available', async function() {
+    let tx = t.transferToRound(web3.toWei(100))
+    await shouldFail.reverting(tx)
   })
 
   it('Able to enter tournament with Not Yet Open round', async function() {
@@ -86,130 +70,131 @@ contract('NotYetOpen Round Testing', function(accounts) {
     let isEnt = await t.isEntrant(accounts[2])
     assert.isTrue(isEnt, 'Could not enter tournament')
   })
+
+  it('Able to edit a Not Yet Open round', async function() {
+    roundData = {
+      start: 1,
+      duration: 80,
+      review: 40,
+      bounty: web3.toWei(1)
+    }
+
+    await t.updateNextRound(roundData)
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { start, duration, review, bounty } = await t.getRoundDetails(roundIndex)
+
+    assert.isTrue(start != 1, 'Start not updated correctly')
+    assert.equal(duration, 80, 'Duration not updated correctly')
+    assert.equal(review, 40, 'Review period not updated correctly')
+    assert.equal(fromWei(bounty), 1, 'Bounty not updated correctly')
+  })
 })
 
-contract('Open Round Testing', function(accounts) {
+contract('Open Round Testing', function() {
   let t //tournament
-  let r //round
-  let s //submission
 
-  it('Able to create a tournament with a Open round', async function() {
-    await init()
+  before(async () => {
+    platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 120,
+      start: 0,
+      duration: 120,
       review: 60,
       bounty: web3.toWei(5)
     }
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
 
-    assert.ok(r.address, 'Round is not valid.')
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
   })
 
-  it('Round state is Open', async function() {
-    let state = await r.getState()
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
+  })
+
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
+  })
+
+  it('Able to create a tournament with a Open round', async function() {
+    let roundIndex = await t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
+
+    assert.equal(roundIndex, 0, 'Round is not valid.')
     assert.equal(state, 2, 'Round State should be Open')
   })
 
   it('Able to enter the tournament and make submissions', async function() {
-    // Create submissions
-    s = await createSubmission(t, false, 1)
-    s2 = await createSubmission(t, false, 2)
-    assert.ok(s && s2, 'Unable to make submissions')
+    // Create submission
+    let sHash = await createSubmission(t, '0x00', toWei(1), 1)
+    sHash = await platform.isSubmission(sHash)
+
+    assert.isTrue(sHash, 'Unable to make submissions')
   })
 
-  it('Unable to judge submissions while the round is still open', async function() {
-    try {
-      await t.voteSubmission(s.address, true)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
-    }
+  it('Number of submissions should be 2', async function() {
+    await createSubmission(t, '0x00', toWei(1), 1)
+    await createSubmission(t, '0x00', toWei(1), 1)
+
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { submissions } = await t.getRoundInfo(roundIndex)
+    assert.equal(submissions.length, 2, 'Number of Submissions should be 2')
   })
 
-  it('Entrants unable to vote open round', async function() {
-    try {
-      //switch account
-      t.accountNumber = 1
-      await t.voteRound(r.address, true)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      //switch back
-      t.accountNumber = 0
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
-    }
+  it('Unable to start next round during open round', async function() {
+    let tx = t.startNextRound()
+    await shouldFail.reverting(tx)
   })
 
-  it('Able to exit the tournament', async function() {
-    // Switch to accounts[1]
-    t.accountNumber = 1
-    let isEnt = await t.isEntrant(accounts[1])
-    await t.exit()
-    isEnt = await t.isEntrant(accounts[1])
-    assert.isFalse(isEnt, 'Unable to exit tournament')
+  it('Unable to close tournament during open round', async function() {
+    let tx = t.closeTournament()
+    await shouldFail.reverting(tx)
   })
 
-  it('Unable to exit tournament multiple times', async function() {
-    try {
-      t.accountNumber = 1
-      await t.exit()
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to exit again')
-    }
-  })
-
-  it('Number of entrants should now be 0', async function() {
-    let ent = await t.getEntrantCount()
-    assert.equal(ent, 1, 'Number of entrants should be 0')
-  })
-
-  it('Number of submissions should still be 2', async function() {
-    let num = await r.getSubmissionCount()
-    assert.equal(num, 2, 'Number of Submissions should be 2')
-  })
 })
 
-contract('In Review Round Testing', function(accounts) {
+contract('In Review Round Testing', function() {
   let t //tournament
-  let r //round
-  let s //submission
 
-  it('Able to create a round In Review', async function() {
-    await init()
+  before(async () => {
+    platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30,
+      start: 0,
+      duration: 30,
       review: 60,
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
 
-    //Create submissions
-    s = await createSubmission(t, false, 1)
-    s2 = await createSubmission(t, false, 2)
-    await waitUntilInReview(r)
-
-    assert.ok(r.address, 'Round is not valid.')
+    //Create submission
+    await createSubmission(t, '0x00', toWei(1), 1)
+    await waitUntilInReview(t, roundIndex)
   })
 
-  it('Round state is In Review', async function() {
-    let state = await r.getState()
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
+  })
+
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
+  })
+
+  it('Able to create a round In Review', async function() {
+    let roundIndex = await t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
     assert.equal(state, 3, 'Round State should be In Review')
   })
 
   it('Able to allocate more tournament bounty to a round in review', async function() {
     await t.transferToRound(web3.toWei(1))
-    let bal = await platform.getBalanceOf(r.address)
-    assert.equal(fromWei(bal), 6, 'Incorrect round balance')
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { bounty } = await t.getRoundDetails(roundIndex)
+    assert.equal(fromWei(bounty), 6, 'Incorrect round balance')
   })
 
   it('Able to enter round in review', async function() {
@@ -219,80 +204,56 @@ contract('In Review Round Testing', function(accounts) {
 
   it('Unable to make submissions while the round is in review', async function() {
     try {
-      await createSubmission(t, false, 1)
+      await createSubmission(t, '0x00', toWei(1), 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to make a submission while In Review')
     }
   })
-
-  it('Entrants unable to vote round while in review', async function() {
-    try {
-      //switch account
-      t.accountNumber = 1
-      await t.voteRound(r.address, false)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      //switch back
-      t.accountNumber = 0
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
-    }
-  })
-
-  it('Tournament owner able to judge submissions while In Review', async function() {
-    await t.voteSubmission(s.address, true)
-    let [v, n] = await s.getVotes()
-    assert.equal(v, 1, 'Was not able to judge submission')
-  })
 })
 
-contract('Closed Round Testing', function(accounts) {
+contract('Closed Round Testing', function() {
   let t //tournament
-  let r //round
   let s //submission
 
-  it('Able to create a closed round', async function() {
-    await init()
+  before(async () => {
+    platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 20,
+      start: 0,
+      duration: 20,
       review: 60,
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
 
-    //Create submissions
-    s = await createSubmission(t, false, 1)
+    // Create submissions
+    s = await createSubmission(t, '0x00', toWei(1), 1)
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { submissions } = await t.getRoundInfo(roundIndex)
+    await selectWinnersWhenInReview(t, submissions, [1], [0, 0, 0, 0], 2)
+  })
 
-    let submissions = await r.getSubmissions(0, 0)
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
+  })
 
-    assert.ok(s.address, 'Submission is not valid.')
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
   })
 
   it('Tournament should be closed', async function() {
     let state = await t.getState()
-    assert.equal(state, 3, 'Tournament is not Closed')
-  })
-
-  it('Round should be closed', async function() {
-    let state = await r.getState()
-    assert.equal(state, 5, 'Round is not Closed')
+    assert.equal(+state, 3, 'Tournament is not Closed')
   })
 
   it('Unable to allocate more tournament bounty to a closed round', async function() {
-    try {
-      await t.transferToRound(web3.toWei(1))
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to add bounty to Closed round')
-    }
+    let tx = t.transferToRound(web3.toWei(1))
+    await shouldFail.reverting(tx)
   })
 
   it('Unable to enter closed tournament', async function() {
@@ -307,124 +268,72 @@ contract('Closed Round Testing', function(accounts) {
 
   it('Unable to make submissions while the round is closed', async function() {
     try {
-      await createSubmission(t, false, 1)
+      await createSubmission(t, '0x00', toWei(1), 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
       assert(revertFound, 'Should not have been able to make a submission while In Review')
-    }
-  })
-
-  it('Tournament entrant able to vote on last closed round', async function() {
-    try {
-      await createSubmission(t, false, 1)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to make a submission while In Review')
-    }
-  })
-
-  it('Tournament entrant able to vote on last closed round', async function() {
-    //switch accounts
-    t.accountNumber = 1
-    await t.voteRound(r.address, true)
-    //switch back
-    t.accountNumber = 0
-    let [pV, nV] = await t.getVotes()
-    assert.equal(pV, 1, "Tournament should have 1 positive vote")
-  })
-
-  it('Tournament entrant cannot vote twice', async function() {
-    try {
-      //switch accounts
-      t.accountNumber = 1
-      await t.voteRound(r.address, false)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      //switch back
-      t.accountNumber = 0
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
-    }
-  })
-
-  it('Tournament owner cannot vote on their own tournament', async function() {
-    try {
-      await t.voteRound(r.address, true)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
-    }
-  })
-
-  it('Non-entrant should not be able to vote', async function() {
-    try {
-      //switch accounts
-      t.accountNumber = 2
-      await t.voteRound(r.address, true)
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      //switch back
-      t.accountNumber = 0
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to vote')
     }
   })
 })
 
-contract('Abandoned Round Testing', function(accounts) {
+contract('Abandoned Round Testing', function() {
   let t //tournament
-  let r //round
 
-  it('Able to create an Abandoned round', async function() {
-    await init()
+  before(async () => {
+    platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 20,
+      start: 0,
+      duration: 20,
       review: 1,
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
 
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    assert.equal(roundIndex, 0, 'Round is not valid.')
 
     // Create a submission
-    s = await createSubmission(t, false, 1)
-    s = await createSubmission(t, false, 2)
+    s = await createSubmission(t, '0x00', toWei(1), 1)
+    s = await createSubmission(t, '0x00', toWei(1), 2)
 
     // Wait for the round to become Abandoned
-    await waitUntilClose(r)
+    await waitUntilClose(t, roundIndex)
 
-    assert.ok(r.address, 'Round is not valid.')
+  })
+
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
+  })
+
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
   })
 
   it('Round state is Abandoned', async function() {
-    let state = await r.getState()
-    assert.equal(state, 6, 'Round State should be Abandoned')
+    let roundIndex = await t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
+    assert.equal(+state, 6, 'Round State should be Abandoned')
   })
 
   it('Tournament state is Abandoned', async function() {
     let state = await t.getState()
-    assert.equal(state, 4, 'Tournament State should be Abandoned')
+    assert.equal(+state, 4, 'Tournament State should be Abandoned')
   })
 
   it('Unable to add bounty to Abandoned round', async function() {
-    try {
-      await t.transferToRound(web3.toWei(1))
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to add bounty to Abandoned round')
-    }
+    let tx = t.transferToRound(web3.toWei(1))
+    await shouldFail.reverting(tx)
   })
 
-  it('Round is still open in round data before the first withdrawal', async function() {
-    let data = await r.getData()
-    assert.isFalse(data.info.closed, 'Round should still be set as open')
+  it('Round is still open in round data before the first withdrawal', async function () {
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { closed } = await t.getRoundInfo(roundIndex)
+    assert.isFalse(closed, 'Round should still be set as open')
   })
 
   it('First entrant is able to withdraw their share from the bounty from an abandoned round', async function() {
@@ -436,12 +345,16 @@ contract('Abandoned Round Testing', function(accounts) {
   })
 
   it('Round is set to closed after first withdrawal', async function() {
-    let data = await r.getData()
-    assert.isTrue(data.info.closed, 'Round should be closed after 1st reward withdrawal')
+    let roundIndex = await t.getCurrentRoundIndex()
+    t.accountNumber = 1
+    await t.withdrawFromAbandoned()
+    let { closed } = await t.getRoundInfo(roundIndex)
+    assert.isTrue(closed, 'Round should be closed after 1st reward withdrawal')
   })
 
   it('Second entrant also able to withdraw their share', async function() {
-    // Switch to acounts[2]
+    t.accountNumber = 1
+    await t.withdrawFromAbandoned()
     t.accountNumber = 2
     await t.withdrawFromAbandoned()
     let isEnt = await t.isEntrant(accounts[2])
@@ -449,146 +362,136 @@ contract('Abandoned Round Testing', function(accounts) {
   })
 
   it('Unable to withdraw from tournament multiple times from the same account', async function() {
-    try {
-      t.accountNumber = 1
-      await t.withdrawFromAbandoned()
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      t.accountNumber = 0
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to add bounty to Abandoned round')
-    }
+    t.accountNumber = 1
+    await t.withdrawFromAbandoned()
+    let tx = t.withdrawFromAbandoned()
+    await shouldFail.reverting(tx)
+    t.accountNumber = 0
   })
 
   it('Tournament balance is 0', async function() {
-    let tB = await platform.getBalanceOf(t.address)
-    assert.isTrue(tB == 0, 'Tournament balance should be 0')
-  })
-
-  it('Round balance is 0', async function() {
-    let rB = await platform.getBalanceOf(r.address)
-    assert.isTrue(rB == 0, 'Tournament balance should be 0')
+    t.accountNumber = 1
+    await t.withdrawFromAbandoned()
+    t.accountNumber = 2
+    await t.withdrawFromAbandoned()
+    let tB = await t.getBalance().then(fromWei)
+    assert.equal(fromWei(tB), 0, 'Tournament balance should be 0')
   })
 
 })
 
-contract('Abandoned Round due to No Submissions', function(accounts) {
+contract('Abandoned Round due to No Submissions', function() {
   let t //tournament
-  let r //round
 
-  it('Able to create an Abandoned round', async function() {
-    await init()
+  before(async () => {
+    platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 5,
+      start: 0,
+      duration: 20,
       review: 1,
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
 
     // Wait for the round to become Abandoned
-    await waitUntilClose(r)
+    await waitUntilClose(t, roundIndex)
+  })
 
-    assert.ok(r.address, 'Round is not valid.')
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
+  })
+
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
   })
 
   it('Round state is Abandoned', async function() {
-    let state = await r.getState()
-    assert.equal(state, 6, 'Round State should be Abandoned')
+    let roundIndex = await t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
+    assert.equal(+state, 6, 'Round State should be Abandoned')
   })
 
   it('Able to recover funds and mark the round as closed', async function() {
-    await t.recoverFunds()
-    let data = await r.getData()
-    assert.isTrue(data.info.closed, 'Round should be closed after 1st reward withdrawal')
+    await t.recoverBounty()
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { closed } = await t.getRoundInfo(roundIndex)
+    assert.isTrue(closed, 'Round should be closed after owner recovers funds')
+    let tB = await t.getBalance().then(fromWei)
+    assert.equal(fromWei(tB), 0, 'Tournament balance should be 0')
   })
 
   it('Unable to recover funds multiple times', async function() {
-    try {
-      await t.recoverFunds()
-      assert.fail('Expected revert not received')
-    } catch (error) {
-      let revertFound = error.message.search('revert') >= 0
-      assert(revertFound, 'Should not have been able to recover funds again')
-    }
-  })
-
-  it('Tournament balance is 0', async function() {
-    let tB = await platform.getBalanceOf(t.address)
-    assert.isTrue(tB == 0, 'Tournament balance should be 0')
-  })
-
-  it('Round balance is 0', async function() {
-    let rB = await platform.getBalanceOf(r.address)
-    assert.isTrue(rB == 0, 'Round balance should be 0')
+    await t.recoverBounty()
+    let tx = t.recoverBounty()
+    await shouldFail.reverting(tx)
   })
 
 })
 
-contract('Unfunded Round Testing', function(accounts) {
+contract('Unfunded Round Testing', function() {
   let t //tournament
-  let r //round
-  let ur //unfunded round
-  let s //submission
   let token
 
-  it('Able to create an Unfunded round', async function() {
-    token = (await init()).token
+  before(async () => {
+    platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 35,
-      review: 80,
+      start: 0,
+      duration: 35,
+      review: 20,
       bounty: web3.toWei(10)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
 
-    //Create submissions
-    s = await createSubmission(t, false, 1)
+    let s = await createSubmission(t, '0x00', toWei(1), 1)
 
-    let submissions = await r.getSubmissions(0, 0)
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
-    await waitUntilClose(r)
-
-    assert.ok(s.address, 'Submission is not valid.')
+    await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
+    await waitUntilClose(t, roundIndex)
   })
 
-  it('Tournament should be Open', async function() {
-    let state = await t.getState()
-    assert.equal(state, 2, 'Tournament is not Open')
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
+  })
+
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
   })
 
   it('Round should be Unfunded', async function() {
-    let [_, roundAddress] = await t.getCurrentRound()
-    ur = Contract(roundAddress, IMatryxRound, 0)
-    let state = await ur.getState()
+    let roundIndex = await t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
     assert.equal(state, 1, 'Round is not Unfunded')
   })
 
-  it('Balance of unfunded round is 0', async function() {
-    let urB = await platform.getBalanceOf(ur.address)
-    assert.equal(urB, 0, 'Round balance should be 0')
+  it('Bounty of unfunded round is 0', async function() {
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { bounty } = await t.getRoundDetails(roundIndex)
+    assert.equal(bounty, 0, 'Round bounty should be 0')
   })
 
   it('Balance of tournament is 0', async function() {
-    let tB = await platform.getBalanceOf(t.address)
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 0, 'Tournament balance should be 0')
   })
 
   it('Round should not have any submissions', async function() {
-    let sub = await ur.getSubmissions(0, 0)
-    assert.equal(sub.length, 0, 'Round should not have submissions')
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { submissions } = await t.getRoundInfo(roundIndex)
+    assert.equal(submissions.length, 0, 'Round should not have submissions')
   })
 
   it('Unable to make submissions while the round is Unfunded', async function() {
     try {
-      await createSubmission(t, false, 1)
+      await createSubmission(t, '0x00', toWei(1), 1)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -597,64 +500,60 @@ contract('Unfunded Round Testing', function(accounts) {
   })
 
   it('Able to transfer more MTX to the tournament', async function () {
-    await t.addFunds(toWei(2))
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
+    await t.addToBounty(toWei(2))
+    let tB = await t.getBalance().then(fromWei)
     assert.equal(tB, 2, 'Funds not transferred')
   })
 
   it('Able to transfer tournament funds to the Unfunded round', async function() {
-    t.accountNumber = 0
+    await t.addToBounty(toWei(2))
     await t.transferToRound(toWei(2))
-    let urB = await platform.getBalanceOf(ur.address).then(fromWei)
-    assert.equal(urB, 2, 'Funds not transferred')
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { bounty } = await t.getRoundDetails(roundIndex)
+    assert.equal(fromWei(bounty), 2, 'Funds not transferred')
   })
 
   it('Round should now be Open', async function() {
-    let state = await ur.getState()
+    await t.addToBounty(toWei(2))
+    await t.transferToRound(toWei(2))
+    let roundIndex = await t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
     assert.equal(state, 2, 'Round is not Open')
-  })
-
-  it('Entrants able to vote newest round as well as past rounds', async function() {
-    // Create submission & winner selection
-    await createSubmission(t, false, 1)
-    let submissions = await ur.getSubmissions(0, 0)
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
-
-    // switch accounts to vote
-    t.accountNumber = 1
-    await t.voteRound(r.address, true)
-    await t.voteRound(ur.address, false)
-    // switch back
-    t.accountNumber = 0
-
-    let [pV, nV] = await t.getVotes()
-    assert.isTrue(pV == 1 && nV == 1, "Tournament should have 1 positive & 1 negative vote")
   })
 })
 
-contract('Ghost Round Testing', function(accounts) {
+contract('Ghost Round Testing', function() {
   let t //tournament
-  let r //round
-  let gr //ghost round
   let s //submission
 
-  it('Able to create a ghost round', async function() {
-    await init()
+  before(async () => {
+    platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 30,
-      review: 20,
-      bounty: web3.toWei(5)
+      start: 0,
+      duration: 30,
+      review: 30,
+      bounty: toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(15), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
-    s = await createSubmission(t, false, 1)
-    let submissions = await r.getSubmissions(0, 0)
-    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
+    t = await createTournament('tournament', web3.toWei(20), roundData, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
 
-    assert.ok(s.address, 'Submission is not valid.')
+    assert.equal(roundIndex, 0, 'Round is not valid.')
+
+    s = await createSubmission(t, '0x00', toWei(1), 1)
+    let { submissions } = await t.getRoundInfo(roundIndex)
+    await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 0)
+  })
+
+  beforeEach(async () => {
+    snapshot = await network.provider.send("evm_snapshot", [])
+    platform.accountNumber = 0
+  })
+
+  // reset accounts
+  afterEach(async () => {
+    await network.provider.send("evm_revert", [snapshot])
+    t.accountNumber = 0
   })
 
   it('Tournament should be Open', async function() {
@@ -663,137 +562,82 @@ contract('Ghost Round Testing', function(accounts) {
   })
 
   it('Round state should be Has Winners', async function() {
-    let state = await r.getState()
+    let roundIndex = await t.getCurrentRoundIndex()
+    let state = await t.getRoundState(roundIndex)
     assert.equal(state, 4, 'Round should be in Has Winners state')
   })
 
-  it('Able to get ghost round', async function() {
-    let rounds = await t.getRounds()
-    grAddress = rounds[rounds.length - 1]
-    gr = Contract(grAddress, IMatryxRound, 0)
-    assert.isTrue(gr.address != r.address, 'Unable to get ghost round')
-  })
-
-  it('Ghost round Review Period Duration is correct', async function() {
-    let rpd = await gr.getReview()
-    assert.equal(rpd, 20, 'Incorrect ghost round review period')
-  })
-
-  it('Ghost round bounty is correct', async function() {
-    let grb = await gr.getBounty().then(fromWei)
-    assert.equal(grb, 5, 'Incorrect ghost round bounty')
-  })
-
-  it('Tournament balance is correct', async function() {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
-    assert.equal(tB, 5, 'Tournament balance incorrect')
-  })
-
-  it('Ghost Round balance should be 5', async function() {
-    let grB = await platform.getBalanceOf(gr.address).then(fromWei)
-    assert.equal(grB, 5, 'Ghost round balance should be 0')
+  it('Ghost round details are correct', async function() {
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { review, bounty } = await t.getRoundDetails(roundIndex + 1)
+    assert.equal(review, 30, 'Incorrect ghost round review period')
+    assert.equal(fromWei(bounty), 5, 'Incorrect ghost round bounty')
   })
 
   it('Able to edit ghost round, review period duration updated correctly', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000) + 60,
-      end: Math.floor(Date.now() / 1000) + 80,
+      duration: 80,
       review: 40,
       bounty: web3.toWei(5)
     }
 
     await t.updateNextRound(roundData)
-    let rpd = await gr.getReview().then(Number)
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { review, bounty } = await t.getRoundDetails(roundIndex + 1)
 
-    assert.equal(rpd, 40, 'Review period duration not updated correctly')
+    assert.equal(review, 40, 'Review period duration not updated correctly')
+    assert.equal(fromWei(bounty), 5, 'Incorrect ghost round bounty')
   })
 
-  it('Ghost round bounty is correct', async function() {
-    let grb = await gr.getBounty().then(fromWei)
-    assert.equal(grb, 5, 'Ghost round bounty should be 5')
-  })
-
-  it('Ghost Round balance is correct', async function() {
-    let grb = await platform.getBalanceOf(gr.address).then(fromWei)
-    assert.equal(grb, 5, 'Ghost round balance should be 5')
-  })
-
-  // Tournament can send more funds to ghost round if round is edited
-  it('Able to edit ghost round, send more MTX to the round', async function() {
+  // Able to edit ghost round and increase funds
+  it('Able to edit ghost round increasing its bounty', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000) + 200,
-      end: Math.floor(Date.now() / 1000) + 220,
+      duration: 220,
       review: 40,
       bounty: web3.toWei(8)
     }
     await t.updateNextRound(roundData)
-    let rpd = await gr.getReview()
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { review, bounty  } = await t.getRoundDetails(roundIndex + 1)
 
-    assert.equal(rpd, 40, 'Ghost Round not updated correctly')
+    assert.equal(review, 40, 'Ghost Round not updated correctly')
+    assert.equal(fromWei(bounty), 8, 'Incorrect ghost round bounty')
   })
 
-  it('Ghost round bounty is correct', async function() {
-    let grb = await gr.getBounty().then(fromWei)
-    assert.equal(grb, 8, 'Ghost round bounty not updated correctly')
-  })
-
-  it('Ghost Round balance should be 8', async function() {
-    let grb = await platform.getBalanceOf(gr.address).then(fromWei)
-    assert.equal(grb, 8, 'Ghost round balance incorrect')
-  })
-
-  it('Tournament balance is correct', async function() {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
-    assert.equal(tB, 2, 'Tournament balance incorrect')
-  })
-
-  // Ghost round can send funds back to tournament upon being edited
-  it('Able to edit ghost round, send MTX from round back to tournament', async function() {
+  // Able to edit ghost round and decrease funds
+  it('Able to edit ghost round decreasing its bounty', async function() {
     roundData = {
       start: Math.floor(Date.now() / 1000) + 300,
-      end: Math.floor(Date.now() / 1000) + 320,
-      review: 40,
+      duration: 320,
+      review: 50,
       bounty: web3.toWei(2)
     }
     await t.updateNextRound(roundData)
-    let rpd = await gr.getReview()
+    let roundIndex = await t.getCurrentRoundIndex()
+    let { review, bounty } = await t.getRoundDetails(roundIndex + 1)
 
-    assert.equal(rpd, 40, 'Ghost Round not updated correctly')
-  })
-
-  it('Ghost round bounty is correct', async function() {
-    let grb = await gr.getBounty().then(fromWei)
-    assert.equal(grb, 2, 'Ghost round bounty should be 2')
-  })
-
-  it('Ghost Round balance is correct', async function() {
-    let grb = await platform.getBalanceOf(gr.address).then(fromWei)
-    assert.equal(grb, 2, 'Ghost round balance should be 2')
-  })
-
-  it('Tournament balance is correct', async function() {
-    let tB = await platform.getBalanceOf(t.address).then(fromWei)
-    assert.equal(tB, 8, 'Tournament balance should be 8')
+    assert.equal(review, 50, 'Ghost Round review not updated correctly')
+    assert.equal(fromWei(bounty), 2, 'Incorrect ghost round bounty')
   })
 })
 
 //TODO - add timing restrictions
 /*
-contract('Round Timing Restrictions Testing', function(accounts) {
+contract('Round Timing Restrictions Testing', function() {
   let t //tournament
-  let r //round
 
   it('Able to create a round with duration: 1 day', async function() {
     await init()
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 86400,
+      start: 0,
+      duration: 86400,
       review: 5,
       bounty: web3.toWei(5)
     }
-
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+    let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
     assert.ok(r.address, 'Round not created successfully.')
@@ -801,14 +645,14 @@ contract('Round Timing Restrictions Testing', function(accounts) {
 
   it('Able to create a round with duration: 1 year', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 31536000,
+      start: 0,
+      duration: 31536000,
       review: 5,
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+    let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
     assert.ok(r.address, 'Round not created successfully.')
@@ -816,15 +660,15 @@ contract('Round Timing Restrictions Testing', function(accounts) {
 
   it('Unable to create a round with duration: 1 year + 1 second', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 31536001,
+      start: 0,
+      duration: 31536001,
       review: 5,
       bounty: web3.toWei(5)
     }
 
     try {
       t.accountNumber = 1
-      await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+      await createTournament('tournament', web3.toWei(10), roundData, 0)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0
@@ -834,14 +678,14 @@ contract('Round Timing Restrictions Testing', function(accounts) {
 
   it('Able to create a round review period duration: 1 year', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      start: 0,
+      duration: 10,
       review: 31536000,
       bounty: web3.toWei(5)
     }
 
-    t = await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
-    let [_, roundAddress] = await t.getCurrentRound()
+    t = await createTournament('tournament', web3.toWei(10), roundData, 0)
+    let [, roundAddress] = await t.getCurrentRound()
     r = Contract(roundAddress, IMatryxRound, 0)
 
     assert.ok(r.address, 'Round not created successfully.')
@@ -849,15 +693,15 @@ contract('Round Timing Restrictions Testing', function(accounts) {
 
   it('Unable to create a round with duration: 1 year + 1 second', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000),
-      end: Math.floor(Date.now() / 1000) + 10,
+      start: 0,
+      duration: 10,
       review: 31536001,
       bounty: web3.toWei(5)
     }
 
     try {
       t.accountNumber = 1
-      await createTournament('first tournament', 'math', web3.toWei(10), roundData, 0)
+      await createTournament('tournament', web3.toWei(10), roundData, 0)
       assert.fail('Expected revert not received')
     } catch (error) {
       let revertFound = error.message.search('revert') >= 0

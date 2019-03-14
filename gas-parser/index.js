@@ -6,14 +6,19 @@ const selectors = require('../generate-setup/selectors.json')
 
 const ganache = spawn('../ganache-local.sh')
 const tx = /Transaction: (0x[0-9a-f]+)/
+const ready = /Listening on/
 const commaSep = num => num.toString().replace(/(\d)(?=(\d{3})+$)/g, '$1,')
 
-const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
+let provider
 let totalGas = 0
 
 ganache.stdout.on('data', data => {
   const lines = data.toString().split('\n')
   lines.forEach(async line => {
+    if (!provider && ready.test(line)) {
+      provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
+    }
+
     const match = tx.exec(line)
     if (match) {
       const hash = match[1]
