@@ -20,7 +20,7 @@ contract('NotYetOpen Round Testing', function() {
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
   })
-  
+
   beforeEach(async () => {
     snapshot = await network.provider.send("evm_snapshot", [])
     platform.accountNumber = 0
@@ -344,14 +344,6 @@ contract('Abandoned Round Testing', function() {
     assert.isFalse(isEnt, 'Should no longer be an entrant')
   })
 
-  it('Round is set to closed after first withdrawal', async function() {
-    let roundIndex = await t.getCurrentRoundIndex()
-    t.accountNumber = 1
-    await t.withdrawFromAbandoned()
-    let { closed } = await t.getRoundInfo(roundIndex)
-    assert.isTrue(closed, 'Round should be closed after 1st reward withdrawal')
-  })
-
   it('Second entrant also able to withdraw their share', async function() {
     t.accountNumber = 1
     await t.withdrawFromAbandoned()
@@ -416,11 +408,8 @@ contract('Abandoned Round due to No Submissions', function() {
     assert.equal(+state, 6, 'Round State should be Abandoned')
   })
 
-  it('Able to recover funds and mark the round as closed', async function() {
+  it('Able to recover funds', async function() {
     await t.recoverBounty()
-    let roundIndex = await t.getCurrentRoundIndex()
-    let { closed } = await t.getRoundInfo(roundIndex)
-    assert.isTrue(closed, 'Round should be closed after owner recovers funds')
     let tB = await t.getBalance().then(fromWei)
     assert.equal(fromWei(tB), 0, 'Tournament balance should be 0')
   })

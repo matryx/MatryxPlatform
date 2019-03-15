@@ -352,6 +352,7 @@ library LibTournament {
     function updateDetails(address self, address sender, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails) public {
         LibTournament.TournamentData storage tournament = data.tournaments[self];
         require(sender == tournament.info.owner, "Must be owner");
+        require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Tournament must be active");
 
         if (bytes(tDetails.content).length > 0) {
             tournament.details.content = tDetails.content;
@@ -416,13 +417,21 @@ library LibTournament {
             distTotal = distTotal.add(wData.distribution[i]);
         }
 
+        uint256 rewardLeft = round.details.bounty;
         for (uint256 i = 0; i < wData.submissions.length; i++) {
             bytes32 winner = wData.submissions[i];
             bytes32 commit = data.submissions[winner].commitHash;
-            uint256 reward = wData.distribution[i].mul(round.details.bounty).div(distTotal);
+
+            // when distribution is fractional (e.g. thirds), give leftover wei to last winner
+            uint256 reward = rewardLeft;
+            if (i < wData.submissions.length - 1) {
+                reward = wData.distribution[i].mul(round.details.bounty).div(distTotal);
+            }
 
             data.commitBalance[commit] = data.commitBalance[commit].add(reward);
+            rewardLeft = rewardLeft.sub(reward);
 
+            // only case subs get rewarded twice: selectWinners with doNothing, then closeTournament
             reward = reward.add(data.submissions[winner].reward);
             data.submissions[winner].reward = reward;
 
@@ -575,10 +584,6 @@ library LibTournament {
         require(round.hasSubmitted[sender], "Must be submission owner in latest round");
         require(!tournament.hasWithdrawn[sender], "Already withdrawn");
 
-        if (tournament.numWithdrawn == 0) {
-            round.info.closed = true;
-        }
-
         uint256 tBalance = data.tournamentBalance[self];
         uint256 submitterCount = round.info.submitterCount.sub(tournament.numWithdrawn);
         uint256 share = tBalance.div(submitterCount);
@@ -635,7 +640,6 @@ library LibTournament {
 
         uint256 funds = data.tournamentBalance[self];
 
-        round.info.closed = true;
         tournament.numWithdrawn = 1;
 
         // recover remaining tournament and round funds
