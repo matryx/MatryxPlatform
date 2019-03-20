@@ -176,6 +176,7 @@ contract MatryxPlatform {
 interface IMatryxPlatform {
     event TournamentCreated(address tournament, address creator);
     event TournamentUpdated(address tournament);
+    event TournamentBountyAdded(address tournament, address donor, uint256 amount);
 
     event RoundCreated(address tournament, uint256 roundIndex);
     event RoundUpdated(address tournament, uint256 roundIndex);

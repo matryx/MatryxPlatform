@@ -18,6 +18,7 @@ library LibTournament {
     uint256 constant MAX_ROUND_LENGTH = 365 days;
 
     event TournamentUpdated(address tournament);
+    event TournamentBountyAdded(address tournament, address donor, uint256 amount);
     event RoundCreated(address tournament, uint256 roundIndex);
     event RoundUpdated(address tournament, uint256 roundIndex);
     event SubmissionCreated(address tournament, bytes32 submissionHash, address creator);
@@ -380,6 +381,7 @@ library LibTournament {
         require(IToken(info.token).transferFrom(sender, address(this), amount), "Transfer failed");
 
         emit TournamentUpdated(self);
+        emit TournamentBountyAdded(self, sender, amount);
     }
 
     /// @dev Transfers some of Tournament MTX to current Round
