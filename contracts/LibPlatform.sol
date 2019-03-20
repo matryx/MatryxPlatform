@@ -13,6 +13,7 @@ library LibPlatform {
     using SafeMath for uint256;
 
     event TournamentCreated(address tournament, address creator);
+    event TournamentBountyAdded(address tournament, address donor, uint256 amount);
 
     function _canUseMatryx(MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address user) internal returns (bool) {
         if (data.blacklist[user]) return false;
@@ -127,6 +128,8 @@ library LibPlatform {
         LibTournament.createRound(tAddress, address(this), info, data, rDetails);
 
         emit TournamentCreated(tAddress, sender);
+        emit TournamentBountyAdded(tAddress, sender, tDetails.bounty);
+
         return tAddress;
     }
 }
