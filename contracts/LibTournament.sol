@@ -421,10 +421,10 @@ library LibTournament {
 
         uint256 rewardLeft = round.details.bounty;
         for (uint256 i = 0; i < wData.submissions.length; i++) {
-            bytes32 winner = wData.submissions[i];
-            bytes32 commit = data.submissions[winner].commitHash;
+            bytes32 winningSub = wData.submissions[i];
+            bytes32 commit = data.submissions[winningSub].commitHash;
 
-            // when distribution is fractional (e.g. thirds), give leftover wei to last winner
+            // when distribution is fractional (e.g. thirds), give leftover wei to last winningSub
             uint256 reward = rewardLeft;
             if (i < wData.submissions.length - 1) {
                 reward = wData.distribution[i].mul(round.details.bounty).div(distTotal);
@@ -434,10 +434,10 @@ library LibTournament {
             rewardLeft = rewardLeft.sub(reward);
 
             // only case subs get rewarded twice: selectWinners with doNothing, then closeTournament
-            reward = reward.add(data.submissions[winner].reward);
-            data.submissions[winner].reward = reward;
+            reward = reward.add(data.submissions[winningSub].reward);
+            data.submissions[winningSub].reward = reward;
 
-            emit SubmissionRewarded(self, winner);
+            emit SubmissionRewarded(self, winningSub);
         }
 
         data.tournamentBalance[self] = data.tournamentBalance[self].sub(round.details.bounty);
