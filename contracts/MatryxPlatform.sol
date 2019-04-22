@@ -80,6 +80,7 @@ contract MatryxPlatform {
             mstore(ptr, mul(0x3b15aabf, offset))                                // getContractMethod(uint256,bytes32,bytes32)
             mstore(add(ptr, 0x04), version)                                     // arg 0 - version
             mstore(add(ptr, 0x24), libName)                                     // arg 1 - library name
+            mstore(add(ptr, 0x44), 0)                                           // zero out uninitialized data
             calldatacopy(add(ptr, 0x44), 0, 0x04)                               // arg 2 - fn selector
             res := call(gas, system, 0, ptr, 0x64, 0, 0)                        // call system.getContractMethod
             returndatacopy(ptr, 0, returndatasize)                              // copy fnData into ptr
