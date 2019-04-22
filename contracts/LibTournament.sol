@@ -17,12 +17,14 @@ library LibTournament {
     uint256 constant MIN_ROUND_LENGTH = 1 seconds;
     uint256 constant MAX_ROUND_LENGTH = 365 days;
 
-    event TournamentUpdated(address tournament);
-    event TournamentBountyAdded(address tournament, address donor, uint256 amount);
-    event RoundCreated(address tournament, uint256 roundIndex);
-    event RoundUpdated(address tournament, uint256 roundIndex);
-    event SubmissionCreated(address tournament, bytes32 submissionHash, address creator);
-    event SubmissionRewarded(address tournament, bytes32 submissionHash);
+    event TournamentUpdated(address indexed tournament);
+    event TournamentBountyAdded(address indexed tournament, address indexed donor, uint256 amount);
+
+    event RoundCreated(address indexed tournament, uint256 roundIndex);
+    event RoundUpdated(address indexed tournament, uint256 roundIndex);
+
+    event SubmissionCreated(address indexed tournament, bytes32 submissionHash, address indexed creator);
+    event SubmissionRewarded(address indexed tournament, bytes32 submissionHash);
 
     struct TournamentInfo {
         uint256 version;

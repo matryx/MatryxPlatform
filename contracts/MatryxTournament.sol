@@ -9,6 +9,15 @@ contract MatryxTournament is MatryxForwarder {
 }
 
 interface IMatryxTournament {
+    event TournamentUpdated(address indexed tournament);
+    event TournamentBountyAdded(address indexed tournament, address indexed donor, uint256 amount);
+
+    event RoundCreated(address indexed tournament, uint256 roundIndex);
+    event RoundUpdated(address indexed tournament, uint256 roundIndex);
+
+    event SubmissionCreated(address indexed tournament, bytes32 submissionHash, address indexed creator);
+    event SubmissionRewarded(address indexed tournament, bytes32 submissionHash);
+
     function getInfo() external view returns (LibTournament.TournamentInfo memory);
     function getDetails() external view returns (LibTournament.TournamentDetails memory);
 
