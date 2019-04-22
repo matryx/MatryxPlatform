@@ -153,7 +153,7 @@ contract MatryxSystem is Ownable() {
     /// @dev Associates a contract type with a library name
     /// @param cType  Contract type
     /// @param lName  Library name
-    function setLibraryName(uint256 cType, bytes32 lName) public onlyOwnerOrPlatform {
+    function setLibraryName(uint256 cType, bytes32 lName) public onlyOwner {
         contractTypeToLibraryName[cType] = lName;
     }
 
