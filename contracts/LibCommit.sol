@@ -24,7 +24,6 @@ library LibCommit {
         uint256 totalValue;
         uint256 height;
         bytes32 parentHash;
-        bytes32[] children;
     }
 
     struct CommitWithdrawalStats {
@@ -58,12 +57,6 @@ library LibCommit {
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         bytes32 commitHash = data.commitHashes[lookupHash];
         return data.commits[commitHash];
-    }
-
-    /// @dev Returns all initial commits
-    /// @param data    Platform data struct
-    function getInitialCommits(address, address, MatryxPlatform.Data storage data) public view returns (bytes32[] memory) {
-        return data.initialCommits;
     }
 
     /// @dev Returns all group members
@@ -256,12 +249,6 @@ library LibCommit {
         data.commits[commitHash].parentHash = parentHash;
 
         data.commitHashes[lookupHash] = commitHash;
-
-        if (parentHash == bytes32(0)) {
-            data.initialCommits.push(commitHash);
-        } else {
-            data.commits[parentHash].children.push(commitHash);
-        }
 
         emit CommitCreated(parentHash, commitHash, owner, isFork);
     }

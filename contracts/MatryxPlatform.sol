@@ -31,7 +31,6 @@ contract MatryxPlatform {
         mapping(bytes32=>bytes32[]) commitToSubmissions;             // maps commits to submission created from them
         mapping(bytes32=>LibCommit.CommitWithdrawalStats) commitWithdrawalStats; // maps commit hash to withdrawal stats
 
-        bytes32[] initialCommits;                                    // all commits without parents
         mapping(bytes32=>uint256) commitClaims;                      // timestamp of content hash claim
 
         mapping(address=>bool) whitelist;                            // user whitelist
