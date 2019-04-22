@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import "../MatryxSystem.sol";
@@ -28,7 +28,7 @@ library LibCommitUpgradeTransition {
 
         bytes32 loopHash = commitHash;
         for (uint256 i = commit.height; i > 0; i--) {
-            
+
             LibCommit.Commit storage commit = data.commits[loopHash];
             // set upgradeVersion to 1
             assembly { sstore(add(commit_slot, 11), 1) }
