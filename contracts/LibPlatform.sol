@@ -108,7 +108,6 @@ library LibPlatform {
 
         require(tDetails.bounty > 0, "Tournament bounty must be greater than 0");
         require(rDetails.bounty <= tDetails.bounty, "Round bounty cannot exceed Tournament bounty");
-        require(IToken(info.token).allowance(sender, address(this)) >= tDetails.bounty, "Insufficient MTX");
 
         uint256 version = IMatryxSystem(info.system).getVersion();
         address tAddress = address(new MatryxTournament(version, info.system));

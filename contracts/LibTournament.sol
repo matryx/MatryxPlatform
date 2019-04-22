@@ -372,7 +372,6 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param amount    Amount of MTX to add
     function addToBounty(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 amount) public {
-        require(IToken(info.token).allowance(sender, address(this)) >= amount, "Must approve funds first");
         require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Tournament must be active");
 
         data.totalBalance = data.totalBalance.add(amount);
