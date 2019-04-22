@@ -13,8 +13,7 @@ import "./MatryxCommit.sol";
 library LibTournament {
     using SafeMath for uint256;
 
-    // TODO: change to 1 hours
-    uint256 constant MIN_ROUND_LENGTH = 1 seconds;
+    uint256 constant MIN_ROUND_LENGTH = 1 hours;
     uint256 constant MAX_ROUND_LENGTH = 365 days;
 
     event TournamentUpdated(address tournament);
