@@ -476,6 +476,8 @@ library LibTournament {
             // transfer rest of tournament balance to round and close tournament
             round.info.closed = true;
             round.details.bounty = data.tournamentBalance[self];
+            emit RoundUpdated(self, roundIndex);
+
             _transferToWinners(self, data, roundIndex);
         }
 
@@ -616,6 +618,7 @@ library LibTournament {
         // close round
         round.info.closed = true;
         round.details.bounty = data.tournamentBalance[self];
+        emit RoundUpdated(self, roundIndex);
 
         // then transfer all to winners of that Round
         _transferToWinners(self, data, roundIndex);

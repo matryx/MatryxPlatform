@@ -100,8 +100,11 @@ library LibCommit {
     /// @param user        First user in the group
     function _createGroup(MatryxPlatform.Data storage data, bytes32 commitHash, address user) internal returns (bytes32) {
         bytes32 groupHash = keccak256(abi.encodePacked(commitHash));
+
         data.groups[groupHash].hasMember[user] = true;
         data.groups[groupHash].members.push(user);
+        emit GroupMemberAdded(commitHash, user);
+
         return groupHash;
     }
 
