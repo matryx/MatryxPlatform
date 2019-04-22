@@ -261,6 +261,8 @@ library LibTournament {
         require(tournament.entryFeePaid[sender].exists, "Must be entrant");
         uint256 entryFeePaid = tournament.entryFeePaid[sender].value;
 
+        tournament.entryFeePaid[sender].exists = false;
+
         if (entryFeePaid > 0) {
             tournament.totalEntryFees = tournament.totalEntryFees.sub(entryFeePaid);
             tournament.entryFeePaid[sender].value = 0;
@@ -268,8 +270,6 @@ library LibTournament {
             data.totalBalance = data.totalBalance.sub(entryFeePaid);
             require(IToken(info.token).transfer(sender, entryFeePaid), "Transfer failed");
         }
-
-        tournament.entryFeePaid[sender].exists = false;
     }
 
     /// @dev Creates a new Round on this Tournament

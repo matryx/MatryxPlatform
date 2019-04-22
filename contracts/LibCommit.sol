@@ -214,15 +214,6 @@ library LibCommit {
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         require(data.commitHashes[lookupHash] == bytes32(0), "Commit already created from content");
 
-        // if fork, increase balance of parent
-        if (isFork) {
-            require(parentHash != bytes32(0), "Fork must have parent");
-            uint256 totalValue = data.commits[parentHash].totalValue;
-            data.totalBalance = data.totalBalance.add(totalValue);
-            data.commitBalance[parentHash] = data.commitBalance[parentHash].add(totalValue);
-            require(IToken(info.token).transferFrom(owner, address(this), totalValue));
-        }
-
         bytes32 groupHash;
         if (isFork || parentHash == bytes32(0)) {
             // if fork or new commit, create a new group
@@ -261,6 +252,15 @@ library LibCommit {
             data.initialCommits.push(commitHash);
         } else {
             data.commits[parentHash].children.push(commitHash);
+        }
+
+        // if fork, increase balance of parent
+        if (isFork) {
+            require(parentHash != bytes32(0), "Fork must have parent");
+            uint256 totalValue = data.commits[parentHash].totalValue;
+            data.totalBalance = data.totalBalance.add(totalValue);
+            data.commitBalance[parentHash] = data.commitBalance[parentHash].add(totalValue);
+            require(IToken(info.token).transferFrom(owner, address(this), totalValue), "Transfer failed");
         }
 
         emit CommitCreated(parentHash, commitHash, owner, isFork);
