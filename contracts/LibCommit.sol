@@ -244,16 +244,17 @@ library LibCommit {
         }
 
         // create commit
-        data.commits[commitHash].owner = owner;
-        data.commits[commitHash].timestamp = claimTime;
-        data.commits[commitHash].groupHash = groupHash;
-        data.commits[commitHash].commitHash = commitHash;
-        data.commits[commitHash].content = content;
-        data.commits[commitHash].value = value;
-        data.commits[commitHash].ownerTotalValue = ownerTotalValue;
-        data.commits[commitHash].totalValue = data.commits[parentHash].totalValue.add(value);
-        data.commits[commitHash].height = data.commits[parentHash].height + 1;
-        data.commits[commitHash].parentHash = parentHash;
+        Commit storage commit = data.commits[commitHash];
+        commit.owner = owner;
+        commit.timestamp = claimTime;
+        commit.groupHash = groupHash;
+        commit.commitHash = commitHash;
+        commit.content = content;
+        commit.value = value;
+        commit.ownerTotalValue = ownerTotalValue;
+        commit.totalValue = data.commits[parentHash].totalValue.add(value);
+        commit.height = data.commits[parentHash].height + 1;
+        commit.parentHash = parentHash;
 
         data.commitHashes[lookupHash] = commitHash;
 
