@@ -127,7 +127,7 @@ contract MatryxSystem is Ownable() {
     /// @dev Gets calldata transformation information for a library name and function selector
     /// @param version   Version of Platform for the method request
     /// @param cName     Name of the contract we want an address for
-    /// @param selector  Hash of the method signature to register to the contract (keccak256)
+    /// @param selector  Hash of the method signature to lookup fnData for
     /// @return          Calldata transformation information for library delegatecall
     function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) public view returns (FnData memory) {
         address cAddress = platformByVersion[version].contracts[cName].location;
