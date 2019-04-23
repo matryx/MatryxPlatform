@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
@@ -177,18 +177,18 @@ library LibCommit {
     /// @param info         Platform info struct
     /// @param data         Platform data struct
     /// @param tAddress     Tournament address to submit to
-    /// @param content      Submission title and description IPFS hash
+    /// @param subContent   Submission title and description IPFS hash
     /// @param parentHash   Parent commit hash
     /// @param isFork       If fork
     /// @param salt         Salt that was used in claiming hash
     /// @param commitContent  Commit content IPFS hash
     /// @param value        Author-determined commit value
-    function createSubmission(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress, string memory content, bytes32 parentHash, bool isFork, bytes32 salt, string memory commitContent, uint256 value) public {
+    function createSubmission(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress, string memory subContent, bytes32 parentHash, bool isFork, bytes32 salt, string memory commitContent, uint256 value) public {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         bytes32 commitHash = keccak256(abi.encodePacked(sender, salt, commitContent));
 
         _createCommit(sender, info, data, parentHash, commitHash, isFork, commitContent, value);
-        LibTournament.createSubmission(tAddress, sender, info, data, content, commitHash);
+        LibTournament.createSubmission(tAddress, sender, info, data, subContent, commitHash);
     }
 
     /// @dev Initializes a new commit
@@ -231,16 +231,17 @@ library LibCommit {
         }
 
         // create commit
-        data.commits[commitHash].owner = owner;
-        data.commits[commitHash].timestamp = claimTime;
-        data.commits[commitHash].groupHash = groupHash;
-        data.commits[commitHash].commitHash = commitHash;
-        data.commits[commitHash].content = content;
-        data.commits[commitHash].value = value;
-        data.commits[commitHash].ownerTotalValue = ownerTotalValue;
-        data.commits[commitHash].totalValue = data.commits[parentHash].totalValue.add(value);
-        data.commits[commitHash].height = data.commits[parentHash].height + 1;
-        data.commits[commitHash].parentHash = parentHash;
+        Commit storage commit = data.commits[commitHash];
+        commit.owner = owner;
+        commit.timestamp = claimTime;
+        commit.groupHash = groupHash;
+        commit.commitHash = commitHash;
+        commit.content = content;
+        commit.value = value;
+        commit.ownerTotalValue = ownerTotalValue;
+        commit.totalValue = data.commits[parentHash].totalValue.add(value);
+        commit.height = data.commits[parentHash].height + 1;
+        commit.parentHash = parentHash;
 
         data.commitHashes[lookupHash] = commitHash;
 

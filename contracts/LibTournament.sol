@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
@@ -13,8 +13,7 @@ import "./MatryxCommit.sol";
 library LibTournament {
     using SafeMath for uint256;
 
-    // TODO: change to 1 hours
-    uint256 constant MIN_ROUND_LENGTH = 1 seconds;
+    uint256 constant MIN_ROUND_LENGTH = 1 hours;
     uint256 constant MAX_ROUND_LENGTH = 365 days;
 
     event TournamentUpdated(address indexed tournament);
@@ -374,8 +373,8 @@ library LibTournament {
     /// @param data      Data struct on Platform
     /// @param amount    Amount of MTX to add
     function addToBounty(address self, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, uint256 amount) public {
-        require(IToken(info.token).allowance(sender, address(this)) >= amount, "Must approve funds first");
         require(getState(self, sender, data) < uint256(LibGlobals.TournamentState.Closed), "Tournament must be active");
+        require(amount > 0, "Cannot add zero amount");
 
         data.totalBalance = data.totalBalance.add(amount);
         data.tournamentBalance[self] = data.tournamentBalance[self].add(amount);
@@ -423,10 +422,10 @@ library LibTournament {
 
         uint256 rewardLeft = round.details.bounty;
         for (uint256 i = 0; i < wData.submissions.length; i++) {
-            bytes32 winner = wData.submissions[i];
-            bytes32 commit = data.submissions[winner].commitHash;
+            bytes32 winningSub = wData.submissions[i];
+            bytes32 commit = data.submissions[winningSub].commitHash;
 
-            // when distribution is fractional (e.g. thirds), give leftover wei to last winner
+            // when distribution is fractional (e.g. thirds), give leftover wei to last winningSub
             uint256 reward = rewardLeft;
             if (i < wData.submissions.length - 1) {
                 reward = wData.distribution[i].mul(round.details.bounty).div(distTotal);
@@ -436,10 +435,10 @@ library LibTournament {
             rewardLeft = rewardLeft.sub(reward);
 
             // only case subs get rewarded twice: selectWinners with doNothing, then closeTournament
-            reward = reward.add(data.submissions[winner].reward);
-            data.submissions[winner].reward = reward;
+            reward = reward.add(data.submissions[winningSub].reward);
+            data.submissions[winningSub].reward = reward;
 
-            emit SubmissionRewarded(self, winner);
+            emit SubmissionRewarded(self, winningSub);
         }
 
         data.tournamentBalance[self] = data.tournamentBalance[self].sub(round.details.bounty);
