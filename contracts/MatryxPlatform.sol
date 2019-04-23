@@ -39,6 +39,7 @@ contract MatryxPlatform {
 
     Info info;                                                       // slot 0
     Data data;                                                       // slot 3
+    address pendingOwner;
 
     constructor(address system, address token) public {
         info.system = system;
@@ -143,11 +144,18 @@ contract MatryxPlatform {
         _;
     }
 
-    /// @dev Sets the owner of the platform
+    /// @dev Enables address to accept ownership of the platform
     /// @param newOwner  New owner address
-    function setPlatformOwner(address newOwner) external onlyOwner {
+    function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0));
-        info.owner = newOwner;
+        pendingOwner = newOwner;
+    }
+
+    /// @dev Accepts ownership transfer
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner);
+        info.owner = pendingOwner;
+        pendingOwner = address(0);
     }
 
     /// @dev Sets the Token address
@@ -188,7 +196,8 @@ interface IMatryxPlatform {
     event CommitClaimed(bytes32 commitHash);
     event CommitCreated(bytes32 indexed parentHash, bytes32 commitHash, address indexed creator, bool indexed isFork);
 
-    function setPlatformOwner(address newOwner) external;
+    function transferOwnership(address newOwner) external;
+    function acceptOwnership() external;
     function upgradeToken(address token) external;
     function withdrawTokens(address token) external;
 
