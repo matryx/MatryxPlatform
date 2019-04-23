@@ -203,6 +203,6 @@ interface IMatryxPlatform {
     function getTournaments() external view returns (address[] memory);
     function getSubmission(bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory);
 
-    function blacklist(address user) external;
+    function setUserBlacklisted(address user, bool isBlacklisted) external;
     function createTournament(LibTournament.TournamentDetails calldata, LibTournament.RoundDetails calldata) external returns (address);
 }
