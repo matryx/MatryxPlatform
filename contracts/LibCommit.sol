@@ -325,9 +325,9 @@ library LibCommit {
         require(value > 0, "Cannot create a zero-value commit");
         require(data.commits[commitHash].owner == address(0), "Commit already exists");
         require(parentHash == bytes32(0) || data.commits[parentHash].owner != address(0), "Parent must be null or real commit");
-        if(parentHash != bytes32(0)) 
-        {
-            require(data.commits[parentHash].height < 5000, "Commit chain limit reached.");
+
+        if (parentHash != bytes32(0)) {
+            require(data.commits[parentHash].height < 5000, "Commit chain limit reached");
         }
 
         uint256 claimTime = data.commitClaims[commitHash];
