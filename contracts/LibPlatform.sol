@@ -15,7 +15,14 @@ library LibPlatform {
     event TournamentCreated(address indexed tournament, address indexed creator);
     event TournamentBountyAdded(address indexed tournament, address indexed donor, uint256 amount);
 
-    function _canUseMatryx(MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address user) internal returns (bool) {
+    function _canUseMatryx(
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        address user
+    )
+        internal
+        returns (bool)
+    {
         if (data.blacklist[user]) return false;
         if (data.whitelist[user]) return true;
 
@@ -30,7 +37,15 @@ library LibPlatform {
     /// @dev Gets information about the Platform
     /// @param info    Platform info struct
     /// @return  Info Struct that contains system, token, and owner
-    function getInfo(address, address, MatryxPlatform.Info storage info) public view returns (MatryxPlatform.Info memory) {
+    function getInfo(
+        address,
+        address,
+        MatryxPlatform.Info storage info
+    )
+        public
+        view
+        returns (MatryxPlatform.Info memory)
+    {
         return info;
     }
 
@@ -38,7 +53,16 @@ library LibPlatform {
     /// @param data      Platform data struct
     /// @param tAddress  Tournament address
     /// @return          true if Tournament exists
-    function isTournament(address, address, MatryxPlatform.Data storage data, address tAddress) public view returns (bool) {
+    function isTournament(
+        address,
+        address,
+        MatryxPlatform.Data storage data,
+        address tAddress
+    )
+        public
+        view
+        returns (bool)
+    {
         return data.tournaments[tAddress].info.owner != address(0);
     }
 
@@ -46,7 +70,16 @@ library LibPlatform {
     /// @param data      Platform data struct
     /// @param cHash     Commit hash
     /// @return          true if Commit exists
-    function isCommit(address, address, MatryxPlatform.Data storage data, bytes32 cHash) public view returns (bool){
+    function isCommit(
+        address,
+        address,
+        MatryxPlatform.Data storage data,
+        bytes32 cHash
+    )
+        public
+        view
+        returns (bool)
+    {
         return data.commits[cHash].owner != address(0);
     }
 
@@ -54,28 +87,61 @@ library LibPlatform {
     /// @param data      Platform data struct
     /// @param sHash     Submission hash
     /// @return          true if Submission exists
-    function isSubmission(address, address, MatryxPlatform.Data storage data, bytes32 sHash) public view returns (bool){
+    function isSubmission(
+        address,
+        address,
+        MatryxPlatform.Data storage data,
+        bytes32 sHash
+    )
+        public
+        view
+        returns (bool)
+    {
         return data.submissions[sHash].tournament != address(0);
     }
 
     /// @dev Return total allocated MTX in Platform
     /// @param data  Platform data struct
     /// @return      Total allocated MTX in Platform
-    function getTotalBalance(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+    function getTotalBalance(
+        address,
+        address,
+        MatryxPlatform.Data storage data
+    )
+        public
+        view
+        returns (uint256)
+    {
         return data.totalBalance;
     }
 
     /// @dev Return total number of Tournaments
     /// @param data  Platform data struct
     /// @return      Number of Tournaments on Platform
-    function getTournamentCount(address, address, MatryxPlatform.Data storage data) public view returns (uint256) {
+    function getTournamentCount(
+        address,
+        address,
+        MatryxPlatform.Data storage data
+    )
+        public
+        view
+        returns (uint256)
+    {
         return data.allTournaments.length;
     }
 
     /// @dev Return all Tournaments addresses
     /// @param data  Platform data struct
     /// @return      Array of Tournament addresses
-    function getTournaments(address, address, MatryxPlatform.Data storage data) public view returns (address[] memory) {
+    function getTournaments(
+        address,
+        address,
+        MatryxPlatform.Data storage data
+    )
+        public
+        view
+        returns (address[] memory)
+    {
         return data.allTournaments;
     }
 
@@ -83,7 +149,16 @@ library LibPlatform {
     /// @param data            Platform data struct
     /// @param submissionHash  Submission hash
     /// @return                The submission details
-    function getSubmission(address, address, MatryxPlatform.Data storage data, bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory) {
+    function getSubmission(
+        address,
+        address,
+        MatryxPlatform.Data storage data,
+        bytes32 submissionHash
+    )
+        external
+        view
+        returns (LibTournament.SubmissionData memory)
+    {
         return data.submissions[submissionHash];
     }
 
@@ -92,7 +167,16 @@ library LibPlatform {
     /// @param data           Platform data struct
     /// @param user           User address
     /// @param isBlacklisted  true to blacklist, false to unblacklist
-    function setUserBlacklisted(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address user, bool isBlacklisted) public {
+    function setUserBlacklisted(
+        address,
+        address sender,
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        address user,
+        bool isBlacklisted
+    )
+        public
+    {
         require(sender == info.owner, "Must be Platform owner");
         data.blacklist[user] = isBlacklisted;
     }
@@ -104,7 +188,17 @@ library LibPlatform {
     /// @param tDetails  Tournament details (content, bounty, entryFee)
     /// @param rDetails  Round details (start, end, review, bounty)
     /// @return          Address of the created Tournament
-    function createTournament(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, LibTournament.TournamentDetails memory tDetails, LibTournament.RoundDetails memory rDetails) public returns (address) {
+    function createTournament(
+        address,
+        address sender,
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        LibTournament.TournamentDetails memory tDetails,
+        LibTournament.RoundDetails memory rDetails
+    )
+        public
+        returns (address)
+    {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
 
         require(tDetails.bounty > 0, "Tournament bounty must be greater than 0");

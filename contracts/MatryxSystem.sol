@@ -124,7 +124,15 @@ contract MatryxSystem is IMatryxSystem, Ownable {
     /// @param cName     Name of the contract we want an address for
     /// @param selector  Hash of the method signature to register to the contract (keccak256)
     /// @param fnData    Calldata transformation information for library delegatecall
-    function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, FnData memory fnData) public onlyOwner {
+    function addContractMethod(
+        uint256 version,
+        bytes32 cName,
+        bytes32 selector,
+        FnData memory fnData
+    )
+        public
+        onlyOwner
+    {
         require(platformByVersion[version].exists, "No such version");
         platformByVersion[version].contracts[cName].fnData[selector] = fnData;
     }
@@ -135,7 +143,16 @@ contract MatryxSystem is IMatryxSystem, Ownable {
     /// @param selectors          Hashes of the method signatures to register to the contract (keccak256)
     /// @param modifiedSelectors  Hashes of the library-specific method signatures to register to the contract (keccak256)
     /// @param fnData             Calldata transformation information for library delegatecall
-    function addContractMethods(uint256 version, bytes32 cName, bytes32[] memory selectors, bytes32[] memory modifiedSelectors, FnData memory fnData) public onlyOwner {
+    function addContractMethods(
+        uint256 version,
+        bytes32 cName,
+        bytes32[] memory selectors,
+        bytes32[] memory modifiedSelectors,
+        FnData memory fnData
+    )
+        public
+        onlyOwner
+    {
         require(platformByVersion[version].exists, "No such version");
         require(selectors.length == modifiedSelectors.length, "List of selectors must match in length");
 
@@ -150,7 +167,15 @@ contract MatryxSystem is IMatryxSystem, Ownable {
     /// @param cName     Name of the contract we want an address for
     /// @param selector  Hash of the method signature to lookup fnData for
     /// @return          Calldata transformation information for library delegatecall
-    function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) public view returns (FnData memory) {
+    function getContractMethod(
+        uint256 version,
+        bytes32 cName,
+        bytes32 selector
+    )
+        public
+        view
+        returns (FnData memory)
+    {
         address cAddress = platformByVersion[version].contracts[cName].location;
         require(isContract(cAddress), "Invalid contract address");
 
