@@ -17,7 +17,6 @@ interface IMatryxCommit {
     function getCommit(bytes32 commitHash) external view returns (LibCommit.Commit memory commit);
     function getBalance(bytes32 commitHash) external view returns (uint256);
     function getCommitByContent(string calldata content) external view returns (LibCommit.Commit memory commit);
-    function getInitialCommits() external view returns (bytes32[] memory);
     function getGroupMembers(bytes32 commitHash) external view returns (address[] memory);
     function getSubmissionsForCommit(bytes32 commitHash) external view returns (bytes32[] memory);
 
