@@ -133,7 +133,9 @@ contract MatryxSystem is Ownable() {
         address cAddress = platformByVersion[version].contracts[cName].location;
         require(isContract(cAddress), "Invalid contract address");
 
-        return platformByVersion[version].contracts[cName].fnData[selector];
+        FnData memory fnData = platformByVersion[version].contracts[cName].fnData[selector];
+        require(fnData.modifiedSelector != bytes32(0), "Function must exist");
+        return fnData;
     }
 
     /// @dev Associates a contract address with a type
