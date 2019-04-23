@@ -12,8 +12,8 @@ import "./MatryxTournament.sol";
 library LibPlatform {
     using SafeMath for uint256;
 
-    event TournamentCreated(address tournament, address creator);
-    event TournamentBountyAdded(address tournament, address donor, uint256 amount);
+    event TournamentCreated(address indexed tournament, address indexed creator);
+    event TournamentBountyAdded(address indexed tournament, address indexed donor, uint256 amount);
 
     function _canUseMatryx(MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address user) internal returns (bool) {
         if (data.blacklist[user]) return false;
@@ -87,13 +87,14 @@ library LibPlatform {
         return data.submissions[submissionHash];
     }
 
-    /// @dev Blacklists a user address
-    /// @param info  Platform info struct
-    /// @param data  Platform data struct
-    /// @param user  User address
-    function blacklist(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address user) public {
+    /// @dev Blacklists or unblacklists a user address
+    /// @param info           Platform info struct
+    /// @param data           Platform data struct
+    /// @param user           User address
+    /// @param isBlacklisted  true to blacklist, false to unblacklist
+    function setUserBlacklisted(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address user, bool isBlacklisted) public {
         require(sender == info.owner, "Must be Platform owner");
-        data.blacklist[user] = true;
+        data.blacklist[user] = isBlacklisted;
     }
 
     /// @dev Creates a Tournament

@@ -133,7 +133,9 @@ contract MatryxSystem is Ownable() {
         address cAddress = platformByVersion[version].contracts[cName].location;
         require(isContract(cAddress), "Invalid contract address");
 
-        return platformByVersion[version].contracts[cName].fnData[selector];
+        FnData memory fnData = platformByVersion[version].contracts[cName].fnData[selector];
+        require(fnData.modifiedSelector != bytes32(0), "Function must exist");
+        return fnData;
     }
 
     /// @dev Associates a contract address with a type
@@ -153,7 +155,7 @@ contract MatryxSystem is Ownable() {
     /// @dev Associates a contract type with a library name
     /// @param cType  Contract type
     /// @param lName  Library name
-    function setLibraryName(uint256 cType, bytes32 lName) public onlyOwnerOrPlatform {
+    function setLibraryName(uint256 cType, bytes32 lName) public onlyOwner {
         contractTypeToLibraryName[cType] = lName;
     }
 

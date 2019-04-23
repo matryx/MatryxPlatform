@@ -9,9 +9,9 @@ import "./MatryxTournament.sol";
 library LibCommit {
     using SafeMath for uint256;
 
-    event GroupMemberAdded(bytes32 commitHash, address user);
+    event GroupMemberAdded(bytes32 indexed commitHash, address indexed user);
     event CommitClaimed(bytes32 commitHash);
-    event CommitCreated(bytes32 parentHash, bytes32 commitHash, address creator, bool isFork);
+    event CommitCreated(bytes32 indexed parentHash, bytes32 commitHash, address indexed creator, bool indexed isFork);
 
     struct Commit {
         address owner;
@@ -24,7 +24,6 @@ library LibCommit {
         uint256 totalValue;
         uint256 height;
         bytes32 parentHash;
-        bytes32[] children;
     }
 
     struct CommitWithdrawalStats {
@@ -58,12 +57,6 @@ library LibCommit {
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         bytes32 commitHash = data.commitHashes[lookupHash];
         return data.commits[commitHash];
-    }
-
-    /// @dev Returns all initial commits
-    /// @param data    Platform data struct
-    function getInitialCommits(address, address, MatryxPlatform.Data storage data) public view returns (bytes32[] memory) {
-        return data.initialCommits;
     }
 
     /// @dev Returns all group members
@@ -100,8 +93,11 @@ library LibCommit {
     /// @param user        First user in the group
     function _createGroup(MatryxPlatform.Data storage data, bytes32 commitHash, address user) internal returns (bytes32) {
         bytes32 groupHash = keccak256(abi.encodePacked(commitHash));
+
         data.groups[groupHash].hasMember[user] = true;
         data.groups[groupHash].members.push(user);
+        emit GroupMemberAdded(commitHash, user);
+
         return groupHash;
     }
 
@@ -209,7 +205,7 @@ library LibCommit {
         require(parentHash == bytes32(0) || data.commits[parentHash].owner != address(0), "Parent must be null or real commit");
 
         uint256 claimTime = data.commitClaims[commitHash];
-        require(claimTime < now, "Commit must be claimed in a previous block");
+        require(claimTime > 0 && claimTime < now, "Commit must be claimed in a previous block");
 
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         require(data.commitHashes[lookupHash] == bytes32(0), "Commit already created from content");
@@ -247,12 +243,6 @@ library LibCommit {
         data.commits[commitHash].parentHash = parentHash;
 
         data.commitHashes[lookupHash] = commitHash;
-
-        if (parentHash == bytes32(0)) {
-            data.initialCommits.push(commitHash);
-        } else {
-            data.commits[parentHash].children.push(commitHash);
-        }
 
         // if fork, increase balance of parent
         if (isFork) {

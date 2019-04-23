@@ -10,10 +10,13 @@ contract MatryxCommit is MatryxForwarder {
 }
 
 interface IMatryxCommit {
+    event GroupMemberAdded(bytes32 indexed commitHash, address indexed user);
+    event CommitClaimed(bytes32 commitHash);
+    event CommitCreated(bytes32 indexed parentHash, bytes32 commitHash, address indexed creator, bool indexed isFork);
+
     function getCommit(bytes32 commitHash) external view returns (LibCommit.Commit memory commit);
     function getBalance(bytes32 commitHash) external view returns (uint256);
     function getCommitByContent(string calldata content) external view returns (LibCommit.Commit memory commit);
-    function getInitialCommits() external view returns (bytes32[] memory);
     function getGroupMembers(bytes32 commitHash) external view returns (address[] memory);
     function getSubmissionsForCommit(bytes32 commitHash) external view returns (bytes32[] memory);
 
