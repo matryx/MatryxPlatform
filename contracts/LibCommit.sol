@@ -209,7 +209,7 @@ library LibCommit {
         require(parentHash == bytes32(0) || data.commits[parentHash].owner != address(0), "Parent must be null or real commit");
 
         uint256 claimTime = data.commitClaims[commitHash];
-        require(claimTime < now, "Commit must be claimed in a previous block");
+        require(claimTime > 0 && claimTime < now, "Commit must be claimed in a previous block");
 
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         require(data.commitHashes[lookupHash] == bytes32(0), "Commit already created from content");
