@@ -3,7 +3,28 @@ pragma experimental ABIEncoderV2;
 
 import "./Ownable.sol";
 
-contract MatryxSystem is Ownable() {
+interface IMatryxSystem {
+    function createVersion(uint256 version) external;
+    function setVersion(uint256 version) external;
+    function getVersion() external view returns (uint256);
+    function getAllVersions() external view returns (uint256[] memory);
+    function getPlatformContracts(uint256 version) external view returns (bytes32[] memory);
+    function setContract(uint256 version, bytes32 cName, address cAddress) external;
+    function getContract(uint256 version, bytes32 cName) external view returns (address);
+    function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, MatryxSystem.FnData calldata fnData) external;
+    function addContractMethods(uint256 version, bytes32 cName, bytes32[] calldata selectors, bytes32[] calldata modifiedSelectors, MatryxSystem.FnData calldata fnData) external;
+    function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) external view returns (MatryxSystem.FnData memory);
+    function setContractType(address cAddress, uint256 cType) external;
+    function getContractType(address cAddress) external view returns (uint256);
+    function setLibraryName(uint256 cType, bytes32 lName) external;
+    function getLibraryName(address cAddress) external view returns (bytes32);
+}
+
+library LibSystem {
+    enum ContractType { Unknown, Platform, Commit, Tournament }
+}
+
+contract MatryxSystem is IMatryxSystem, Ownable {
     // Contains info for a version of Platform
     struct Platform {
         bool exists;
@@ -166,25 +187,4 @@ contract MatryxSystem is Ownable() {
         uint256 cType = contractType[cAddress];
         return contractTypeToLibraryName[cType];
     }
-}
-
-interface IMatryxSystem {
-    function createVersion(uint256 version) external;
-    function setVersion(uint256 version) external;
-    function getVersion() external view returns (uint256);
-    function getAllVersions() external view returns (uint256[] memory);
-    function getPlatformContracts(uint256 version) external view returns (bytes32[] memory);
-    function setContract(uint256 version, bytes32 cName, address cAddress) external;
-    function getContract(uint256 version, bytes32 cName) external view returns (address);
-    function addContractMethod(uint256 version, bytes32 cName, bytes32 selector, MatryxSystem.FnData calldata fnData) external;
-    function addContractMethods(uint256 version, bytes32 cName, bytes32[] calldata selectors, bytes32[] calldata modifiedSelectors, MatryxSystem.FnData calldata fnData) external;
-    function getContractMethod(uint256 version, bytes32 cName, bytes32 selector) external view returns (MatryxSystem.FnData memory);
-    function setContractType(address cAddress, uint256 cType) external;
-    function getContractType(address cAddress) external view returns (uint256);
-    function setLibraryName(uint256 cType, bytes32 lName) external;
-    function getLibraryName(address cAddress) external view returns (bytes32);
-}
-
-library LibSystem {
-    enum ContractType { Unknown, Platform, Commit, Tournament }
 }
