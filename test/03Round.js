@@ -1,5 +1,6 @@
 const { shouldFail } = require('openzeppelin-test-helpers')
 
+const { now } = require('../truffle/utils')
 const { init, createTournament, createSubmission, waitUntilInReview, waitUntilClose, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
@@ -12,8 +13,8 @@ contract('NotYetOpen Round Testing', function() {
   before(async () => {
     platform = (await init()).platform
     roundData = {
-      start: Math.floor(Date.now() / 1000) + 80,
-      duration: 120,
+      start: await now() + 80,
+      duration: 3600,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -74,7 +75,7 @@ contract('NotYetOpen Round Testing', function() {
   it('Able to edit a Not Yet Open round', async function() {
     roundData = {
       start: 1,
-      duration: 80,
+      duration: 3601,
       review: 40,
       bounty: web3.toWei(1)
     }
@@ -84,7 +85,7 @@ contract('NotYetOpen Round Testing', function() {
     let { start, duration, review, bounty } = await t.getRoundDetails(roundIndex)
 
     assert.isTrue(start != 1, 'Start not updated correctly')
-    assert.equal(duration, 80, 'Duration not updated correctly')
+    assert.equal(duration, 3601, 'Duration not updated correctly')
     assert.equal(review, 40, 'Review period not updated correctly')
     assert.equal(fromWei(bounty), 1, 'Bounty not updated correctly')
   })
@@ -97,7 +98,7 @@ contract('Open Round Testing', function() {
     platform = (await init()).platform
     roundData = {
       start: 0,
-      duration: 120,
+      duration: 3600,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -160,7 +161,7 @@ contract('In Review Round Testing', function() {
     platform = (await init()).platform
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -221,7 +222,7 @@ contract('Closed Round Testing', function() {
     platform = (await init()).platform
     roundData = {
       start: 0,
-      duration: 20,
+      duration: 3600,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -284,7 +285,7 @@ contract('Abandoned Round Testing', function() {
     platform = (await init()).platform
     roundData = {
       start: 0,
-      duration: 20,
+      duration: 3600,
       review: 1,
       bounty: web3.toWei(5)
     }
@@ -379,7 +380,7 @@ contract('Abandoned Round due to No Submissions', function() {
     platform = (await init()).platform
     roundData = {
       start: 0,
-      duration: 20,
+      duration: 3600,
       review: 1,
       bounty: web3.toWei(5)
     }
@@ -430,7 +431,7 @@ contract('Unfunded Round Testing', function() {
     platform = (await init()).platform
     roundData = {
       start: 0,
-      duration: 35,
+      duration: 3600,
       review: 20,
       bounty: web3.toWei(10)
     }
@@ -519,7 +520,7 @@ contract('Ghost Round Testing', function() {
     platform = (await init()).platform
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 30,
       bounty: toWei(5)
     }
@@ -565,8 +566,8 @@ contract('Ghost Round Testing', function() {
 
   it('Able to edit ghost round, review period duration updated correctly', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000) + 60,
-      duration: 80,
+      start: await now() + 60,
+      duration: 3600,
       review: 40,
       bounty: web3.toWei(5)
     }
@@ -582,11 +583,12 @@ contract('Ghost Round Testing', function() {
   // Able to edit ghost round and increase funds
   it('Able to edit ghost round increasing its bounty', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000) + 200,
-      duration: 220,
+      start: await now() + 60,
+      duration: 3600,
       review: 40,
       bounty: web3.toWei(8)
     }
+
     await t.updateNextRound(roundData)
     let roundIndex = await t.getCurrentRoundIndex()
     let { review, bounty  } = await t.getRoundDetails(roundIndex + 1)
@@ -598,11 +600,12 @@ contract('Ghost Round Testing', function() {
   // Able to edit ghost round and decrease funds
   it('Able to edit ghost round decreasing its bounty', async function() {
     roundData = {
-      start: Math.floor(Date.now() / 1000) + 300,
-      duration: 320,
+      start: await now() + 60,
+      duration: 3600,
       review: 50,
       bounty: web3.toWei(2)
     }
+
     await t.updateNextRound(roundData)
     let roundIndex = await t.getCurrentRoundIndex()
     let { review, bounty } = await t.getRoundDetails(roundIndex + 1)
@@ -612,8 +615,6 @@ contract('Ghost Round Testing', function() {
   })
 })
 
-//TODO - add timing restrictions
-/*
 contract('Round Timing Restrictions Testing', function() {
   let t //tournament
 
@@ -626,10 +627,9 @@ contract('Round Timing Restrictions Testing', function() {
       bounty: web3.toWei(5)
     }
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let [, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
 
-    assert.ok(r.address, 'Round not created successfully.')
+    assert.equal(roundIndex, 0, 'Round is not valid.')
   })
 
   it('Able to create a round with duration: 1 year', async function() {
@@ -641,10 +641,9 @@ contract('Round Timing Restrictions Testing', function() {
     }
 
     t = await createTournament('tournament', web3.toWei(10), roundData, 0)
-    let [, roundAddress] = await t.getCurrentRound()
-    r = Contract(roundAddress, IMatryxRound, 0)
+    let roundIndex = await t.getCurrentRoundIndex()
 
-    assert.ok(r.address, 'Round not created successfully.')
+    assert.equal(roundIndex, 0, 'Round is not valid.')
   })
 
   it('Unable to create a round with duration: 1 year + 1 second', async function() {
@@ -665,6 +664,7 @@ contract('Round Timing Restrictions Testing', function() {
     }
   })
 
+/*
   it('Able to create a round review period duration: 1 year', async function() {
     roundData = {
       start: 0,
@@ -697,5 +697,6 @@ contract('Round Timing Restrictions Testing', function() {
       assert(revertFound, 'Should not have been able to create the round')
     }
   })
-})
 */
+})
+

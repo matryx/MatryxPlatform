@@ -1,7 +1,7 @@
 const { shouldFail } = require('openzeppelin-test-helpers')
 
 const { genId, setup } = require('../truffle/utils')
-const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitChildren, commitCongaLine, createCommit, createSubmission } = require('./helpers')(artifacts, web3)
+const { init, enterTournament, createTournament, selectWinnersWhenInReview, commitCongaLine, createCommit, createSubmission } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 let platform, commit
@@ -24,7 +24,7 @@ contract('Submissions', async () => {
     
     let roundData = {
       start: 0,
-      duration: 60,
+      duration: 3600,
       review: 10,
       bounty: toWei(100)
     }
@@ -40,13 +40,8 @@ contract('Submissions', async () => {
     commit.accountNumber = 0
   })
 
-  it('Able to create a new initial commit for a tournament', async () => {
-    let commitsBefore = await commit.getInitialCommits()
+  it('Able to create a commit and submission for a tournament', async () => {
     let sHash = await createSubmission(t, '0x00', toWei(1), 1)
-    let commitsAfter = await commit.getInitialCommits()
-
-    assert.equal(commitsBefore.length + 1, commitsAfter.length, 'Commit creation for tournament should increase initial commit list size')
-
     let isS = await platform.isSubmission(sHash)
     assert.isTrue(isS, "Submission not stored in platform")
   })
@@ -63,8 +58,8 @@ contract('Submissions', async () => {
     let submissionHash = await createSubmission(t, parentHash, toWei(1), 1)
     let { commitHash } = await platform.getSubmission(submissionHash)
 
-    let commitChild = (await commitChildren(parentHash))[0]
-    assert.equal(commitChild, commitHash, 'Child commit should be same as what was submitted')
+    let theCommit = await commit.getCommit(commitHash)
+    assert.equal(theCommit.parentHash, parentHash, 'Commit parentHash should be parent commit')
   })
 
   it('Correct winning submission rewards on round', async function() {
@@ -174,7 +169,7 @@ contract('Submissions', async () => {
     // go to next round
     let newRound = {
       start: 0,
-      duration: 20,
+      duration: 3600,
       review: 20,
       bounty: web3.toWei(10)
     }
