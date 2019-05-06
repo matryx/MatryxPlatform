@@ -21,6 +21,7 @@ library LibTournament {
 
     event RoundCreated(address indexed tournament, uint256 roundIndex);
     event RoundUpdated(address indexed tournament, uint256 roundIndex);
+    event RoundWinnersSelected(address indexed tournament, uint256 roundIndex);
 
     event SubmissionCreated(address indexed tournament, bytes32 submissionHash, address indexed creator);
     event SubmissionRewarded(address indexed tournament, bytes32 submissionHash);
@@ -679,6 +680,8 @@ library LibTournament {
 
             createRound(self, address(this), info, data, newRound);
         }
+
+        emit RoundWinnersSelected(self, roundIndex);
     }
 
     /// @dev Updates the details of an upcoming round that has not yet started
