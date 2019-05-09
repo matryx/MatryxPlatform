@@ -1,0 +1,49 @@
+q = []
+
+q.push("system = contract(MatryxSystem.address, MatryxSystem)")
+q.push("system.createVersion(1)")
+q.push("system.setVersion(1)")
+
+q.push("system.setContract(1, stb('MatryxPlatform'), MatryxPlatform.address)")
+q.push("system.setContractType(MatryxPlatform.address, 1)")
+
+q.push("system.setContract(1, stb('MatryxCommit'), MatryxCommit.address)")
+q.push("system.setContractType(MatryxCommit.address, 2)")
+
+q.push("system.setContract(1, stb('LibPlatform'), LibPlatform.address)")
+q.push("system.setContract(1, stb('LibCommit'), LibCommit.address)")
+q.push("system.setContract(1, stb('LibTournament'), LibTournament.address)")
+
+q.push("system.setLibraryName(0, stb('LibPlatform'))")
+q.push("system.setLibraryName(1, stb('LibPlatform'))")
+q.push("system.setLibraryName(2, stb('LibCommit'))")
+q.push("system.setLibraryName(3, stb('LibTournament'))")
+
+q.push("system.addContractMethods(1, stb('LibCommit'), ['0x2cd23d7a'], ['0x0b1ddb95'], ['0x00', [0,3], [3]], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibCommit'), ['0xa99fa3e2','0x1c7cf44c','0xb66f39ad'], ['0x19b0cda0','0x9f596981','0xa9a983a3'], ['0x00', [0,3], []], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibCommit'), ['0x85db66e8'], ['0x4a1482dc'], ['0x00', [0,3], [1]], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibCommit'), ['0x777cfd5f'], ['0x1c4f0048'], ['0x00', [0,3], [1,5]], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibCommit'), ['0x29735a89','0xd1587a18','0x6c052cd8','0x8784ea96','0x8e739461'], ['0xa0c41de2','0x4f4abca8','0x2e44a1db','0x2d548a40','0xcbfd9f70'], ['0x00', [3], []], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibCommit'), ['0x2c9d9e9e'], ['0x1c7997d7'], ['0x00', [3], [0]], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibPlatform'), ['0x5a9b0b89'], ['0x2c27d013'], ['0x00', [0], []], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibPlatform'), ['0xbddb7c83'], ['0x0841f3f7'], ['0x00', [0,3], []], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibPlatform'), ['0xc8dfd591'], ['0x2ba215d8'], ['0x00', [0,3], [0]], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibPlatform'), ['0xb786ed91','0xe10f1b06','0x12b58349','0x078c51f0','0xf7f20cb3','0x756dd3a4','0x52c7c9e4'], ['0xf76c668e','0xcda2084d','0x7f279bd0','0x54b73af5','0x275111eb','0x348785e9','0xc71db8ba'], ['0x00', [3], []], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibTournament'), ['0x542fe6c2','0x4dc958e1','0xe1226bb1','0xe9fad8ee','0xe97dcb62','0xb554d538'], ['0xf7230424','0x32bbc3ae','0x13f957a0','0x22fb9c1e','0x19fe07db','0xcb80ac36'], ['0x00', [0,3], []], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibTournament'), ['0x9e4ce509','0xe7528e1f'], ['0x429f6bc5','0x9a0a9b66'], ['0x00', [0,3], [0]], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibTournament'), ['0x9999d2ae','0x88c3ffb0','0x66383d32','0xc642e7bf','0xb6b12e61','0xa84fa137','0x12065fe0','0x6c87da28','0x3c3ccc44','0x5a9b0b89','0x52c01fab','0x39900857','0xdca0f3ef','0xfbbf93a0','0x1865c57d'], ['0xed7c9de9','0xbf98435e','0xf064d1ae','0x98093da0','0x457ec7c4','0xc40137b1','0x8a1250dd','0x125ab97d','0xfab2d488','0xd8bf2551','0xb419874a','0xc28cd1fb','0x8a57f372','0xba90b857','0xb5413d67'], ['0x00', [3], []], { gasLimit: 3e6 })")
+q.push("system.addContractMethods(1, stb('LibTournament'), ['0xb48e492c'], ['0x4f18a63e'], ['0x00', [3], [0]], { gasLimit: 3e6 })")
+
+q.push("c = contract(MatryxCommit.address, IMatryxCommit)")
+q.push("p = contract(MatryxPlatform.address, IMatryxPlatform)")
+
+q.push("token = contract(network.tokenAddress, MatryxToken)")
+q.push("token.setReleaseAgent(network.accounts[0])")
+q.push("token.releaseTokenTransfer()")
+q.push("token.mint(network.accounts[0], toWei(1e4))")
+q.push("token.mint(network.accounts[1], toWei(1e4))")
+q.push("token.mint(network.accounts[2], toWei(1e4))")
+q.push("token.mint(network.accounts[3], toWei(1e4))")
+q.push("token.mint(network.accounts[4], toWei(1e4))")
+
+;(async () => { for (let cmd of q) try { await eval(cmd) } catch (err) { console.log(err) } })()

@@ -27,9 +27,7 @@
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Tournament Administration" href="tournament-admin.html" />
-    <link rel="prev" title="Diving into Matryx" href="getting-started.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -83,19 +81,13 @@
             
             
               <p class="caption"><span class="caption-text">API Documentation</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Diving into Matryx</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Participating in a Tournament</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#creating-a-submission">Creating a Submission</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#editing-your-submissions">Editing your Submissions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#exiting-a-tournament">Exiting a Tournament</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tournament-admin.html">Tournament Administration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="trust-and-reputation.html">Reputation System</a></li>
-<li class="toctree-l1"><a class="reference internal" href="source_faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="source_versions.html">Versions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="source/api.html">Source Code Documentation</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="source/entering-matryx.html">Entering Matryx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/commit-system.html">The Commit System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/bounty-system.html">The Matryx Bounty System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/marketplace.html">Matryx Marketplace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/versions.html">Versions</a></li>
 </ul>
 
             
@@ -164,88 +156,88 @@
 <h1>Participating in a Tournament<a class="headerlink" href="#participating-in-a-tournament" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="creating-a-submission">
 <h2>Creating a Submission<a class="headerlink" href="#creating-a-submission" title="Permalink to this headline">¶</a></h2>
-<p>To create a submission, you will first need to assemble all of your submission details and content as follows:</p>
+<p>To create a submission, you will first need to assemble all of your submission data as follows:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionData
 {
     bytes32[3] title;
-    bytes32[2] descriptionHash;
+    bytes32[2] descHash;
     bytes32[2] fileHash;
-    uint256 timeSubmitted;
-    uint256 timeUpdated;
-}
-</pre></div>
-</div>
-<p>Here you have the opportunity to cite any contributors or references in your submission and specify the intended reward distribution among all the contributors (expressed as a percentage or a proportion). This information should be included into the submission as follows:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ContributorsAndReferences
-{
+    uint256[] distribution;
     address[] contributors;
-    uint256[] contributorRewardDistribution;
     address[] references;
 }
 </pre></div>
 </div>
+<p>Here you have the opportunity to cite any contributors to your submission and specify the intended reward distribution among them (expressed as a percentage or a proportion). The first entry in the <code class="docutils literal notranslate"><span class="pre">distribution</span></code> array represents the percentage of the reward that will be assigned to the submission owner (yourself), and any subsequent entries represent the percentage of the reward that will be assigned to each of your contributors, in the same order as they appear in your <code class="docutils literal notranslate"><span class="pre">contributors</span></code> array.
+You can also cite other Matryx submissions in your submission’s <code class="docutils literal notranslate"><span class="pre">references</span></code> array by passing in their addresses.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The contributors and contributor reward distribution arrays must have the same number of entries.</p>
+<p class="last">The <code class="docutils literal notranslate"><span class="pre">distribution</span></code> array will always have one more entry than your <code class="docutils literal notranslate"><span class="pre">contributors</span></code> array, since the first entry in the <code class="docutils literal notranslate"><span class="pre">distribution</span></code> array includes information about the submission owner.</p>
 </div>
-<p>This is the <code class="docutils literal notranslate"><span class="pre">createSubmission</span></code> function signature:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>function createSubmission(submissionData, contributorsAndReferences)
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">THe addresses in your <code class="docutils literal notranslate"><span class="pre">references</span></code> array must be existing submissions on the Matryx platform.</p>
+</div>
+<p>This is the <code class="docutils literal notranslate"><span class="pre">createSubmission</span></code> function call:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.createSubmission(submissionData)
 </pre></div>
 </div>
+<p>You are now ready to start making original submissions to any Matryx tournament!</p>
 </div>
 <div class="section" id="editing-your-submissions">
 <h2>Editing your Submissions<a class="headerlink" href="#editing-your-submissions" title="Permalink to this headline">¶</a></h2>
-<p>As long as the current round remains open, you are able to edit any submissions you have made. To modify the data of your submisison, you can call the <code class="docutils literal notranslate"><span class="pre">updateData</span></code> function like this:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateData(submissionModificationData)
+<p>As long as the current round remains open, you are able to edit any submissions you have made in that round. To modify the data of your submission, you can call the <code class="docutils literal notranslate"><span class="pre">updateDetails</span></code> function as follows:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateDetails(submissionDetails)
 </pre></div>
 </div>
-<p>Where <code class="docutils literal notranslate"><span class="pre">SubmissionModificationData</span></code> is the following:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionModificationData
+<p>Where <code class="docutils literal notranslate"><span class="pre">submissionDetails</span></code> is the following:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct SubmissionDetails
 {
     bytes32[3] title;
-    bytes32[2] descriptionHash;
+    bytes32[2] descHash;
     bytes32[2] fileHash;
 }
 </pre></div>
 </div>
-<p>Similarly, you can update your submission’s contributors and references with the following calls:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.updateContributors(contributorsModificationData)
-mySubmission.updateReferences(referencesModificationData)
+<p>Similarly, you can add or remove contributors and references with the following calls:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>mySubmission.addContributorsAndReferences(contributors, distribution, references)
+mySubmission.removeContributorsAndReferences(contributors, references)
 </pre></div>
 </div>
-<p>Where <code class="docutils literal notranslate"><span class="pre">ContributorsModificationData</span></code> is</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ContributorsModificationData
-{
-    address[] contributorsToAdd;
-    uint256[] contributorRewardDistribution;
-    uint256[] contributorsToRemove;
-}
-</pre></div>
-</div>
-<p>and <code class="docutils literal notranslate"><span class="pre">ReferencesModificationData</span></code> is</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>struct ReferencesModificationData
-{
-    address[] referencesToAdd;
-    uint256[] referencesToRemove;
-}
-</pre></div>
+<p>You can add or remove contributors and references to your submission at any time.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The distribution values assigned to any contributors that you remove will be automatically removed from the distribution array as well.</p>
 </div>
 </div>
 <div class="section" id="exiting-a-tournament">
 <h2>Exiting a Tournament<a class="headerlink" href="#exiting-a-tournament" title="Permalink to this headline">¶</a></h2>
-<p>You can choose to exit an ongoing tournament at any time. When you exit, you can claim the entry fee that you paid when you first entered the tournament with this call:</p>
-<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.collectMyEntryFee()
+<p>You can choose to exit an ongoing tournament at any time with the following call:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.exit()
 </pre></div>
 </div>
+<p>When you exit the tournament, the entry fee that you paid when you first entered will be returned to you automatically.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">If you later decide to enter the tournament again, you will have to pay the current tournament entry fee before you’re able to make any submissions.</p>
+<p class="last">If you later decide to enter the tournament again, you will have to pay the current tournament entry fee before making any submissions.</p>
 </div>
-<p>If a tournament you are currently participating in happens to become Abandoned, you can collect your share of the remaining tournament bounty with the following call:</p>
+<p>If a tournament you are currently participating in happens to become Abandoned, you can collect your share of the remaining tournament bounty, as well as your original entry fee, with the following call:</p>
 <div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>tournament.withdrawFromAbandoned()
 </pre></div>
 </div>
-<p>Your tournament entry fee will also be returned to you when you make this call.</p>
+</div>
+<div class="section" id="viewing-other-submissions">
+<h2>Viewing Other Submissions<a class="headerlink" href="#viewing-other-submissions" title="Permalink to this headline">¶</a></h2>
+<p>In order to incentivize open collaboration between participants on the Matryx platform, all submissions are viewable to Matryx entrants after the round review period is over. However, in order to prevent inter-round plagiarism or inadequate credit attribution between different participants, a user has to first unlock a submission’s files in order to view them. The list of users that have unlocked a submission’s files are stored on the Matryx platform. This ensures that, in the event of a dispute over the originality of a piece of work, the platform data can prove whether or not a user has at least viewed another user’s submission files.</p>
+<p>To see what other people have been working on, you can make the following call on any submission:</p>
+<div class="highlight-Solidity notranslate"><div class="highlight"><pre><span></span>submission.unlockFile()
+</pre></div>
+</div>
+<p>The submission’s file hash will then become available to you.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The tournament owner doesn’t need to unlock the files of any submission in their tournament to view them, since they will need to see the files in order to select the round’s winners.</p>
+</div>
 </div>
 </div>
 
@@ -255,21 +247,12 @@ mySubmission.updateReferences(referencesModificationData)
           </div>
           <footer>
   
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="tournament-admin.html" class="btn btn-neutral float-right" title="Tournament Administration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="getting-started.html" class="btn btn-neutral" title="Diving into Matryx" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Max Howard, Sam Hessenauer.
+        &copy; Copyright 2018, Max Howard, Sam Hessenauer
 
     </p>
   </div>
@@ -288,21 +271,14 @@ mySubmission.updateReferences(referencesModificationData)
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.2',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
 
   
 

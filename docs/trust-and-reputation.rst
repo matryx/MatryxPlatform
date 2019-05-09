@@ -1,5 +1,0 @@
-Reputation System
-=================
-
-Stay Tuned...
-^^^^^^^^^^^^^

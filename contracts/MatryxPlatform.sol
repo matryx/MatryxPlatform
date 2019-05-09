@@ -1,435 +1,218 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import "../libraries/math/SafeMath.sol";
-import "../libraries/math/SafeMath128.sol";
-import "../interfaces/IMatryxToken.sol";
-import "../interfaces/IMatryxPeer.sol";
-import "../interfaces/IMatryxPlatform.sol";
-import "../interfaces/factories/IMatryxPeerFactory.sol";
-import "../interfaces/factories/IMatryxTournamentFactory.sol";
-import "../interfaces/IMatryxTournament.sol";
-import "../interfaces/IMatryxRound.sol";
-import "../interfaces/IMatryxSubmission.sol";
-import "./Ownable.sol";
+import "./SafeMath.sol";
+import "./IToken.sol";
+import "./MatryxSystem.sol";
+import "./LibTournament.sol";
 
-/// @title MatryxPlatform - The Matryx platform contract.
-/// @author Max Howard - <max@nanome.ai>, Sam Hessenauer - <sam@nanome.ai>
-contract MatryxPlatform is Ownable {
+contract MatryxPlatform {
     using SafeMath for uint256;
-    using SafeMath128 for uint128;
 
-    // TODO: condense and put in structs
-    // Matryx Addresses
-    address public matryxTokenAddress;
-    address public matryxPeerFactoryAddress;
-    address public matryxTournamentFactoryAddress;
-    address public matryxSubmissionFactoryAddress;
-    address public matryxRoundLibAddress;
-
-    //Contract Signatures to addresses
-    mapping(bytes32=>address) private contracts;
-
-    address[] public allTournaments;
-
-    // Category Data
-    bytes32[] public categoryList;
-    mapping(bytes32=>bool) categoryExists;
-    mapping(bytes32=>address[]) categoryToTournamentList;
-    mapping(bytes32=>mapping(address=>bool)) tournamentExistsInCategory;
-    mapping(bytes32=>uint256) emptyCountByCategory;
-    mapping(address=>CategoryInfo) tournamentAddressToCategoryInfo;
-
-    //Peer Mappings
-    mapping(address=>bool) public peerExists;
-    mapping(address=>address) public ownerToPeerAndPeerToOwner;
-    mapping(address=>mapping(address=>bool)) addressToOwnsSubmission;
-
-    // Tournament and Submission Mappings
-    mapping(address=>bool) tournamentExists;
-    mapping(address=>bool) submissionExists;
-    mapping(address=>address[]) ownerToTournamentArray;
-    mapping(address=>mapping(address=>bool)) entrantToOwnsTournament;
-    mapping(address=>address[]) ownerToSubmissionArray;
-    mapping(address=>mapping(address=>uint256_optional))  ownerToSubmissionToSubmissionIndex;
-
-    // Hyperparams
-    uint256_optional submissionGratitude = uint256_optional({exists: true, value: 2*10**17});
-
-    /*
-    * Structs
-    */
-
-    struct uint256_optional
-    {
-        bool exists;
-        uint256 value;
+    struct Info {
+        address system;
+        address token;
+        address owner;
     }
 
-    struct CategoryInfo
-    {
-        uint256 index;
-        bytes32 category;
+    struct Data {
+        uint256 totalBalance;                                        // total allocated mtx balance of the platform
+        mapping(address=>uint256) tournamentBalance;                 // maps tournament addresses to tournament balances
+        mapping(bytes32=>uint256) commitBalance;                     // maps commit hashes to commit mtx balances
+
+        mapping(address=>LibTournament.TournamentData) tournaments;  // maps tournament addresses to tournament structs
+        mapping(bytes32=>LibTournament.SubmissionData) submissions;  // maps submission identifier to submission struct
+
+        address[] allTournaments;                                    // all matryx tournament addresses
+
+        mapping(bytes32=>LibCommit.Commit) commits;                  // maps commit hashes to commits
+        mapping(bytes32=>LibCommit.Group) groups;                    // maps group hashes to group structs
+        mapping(bytes32=>bytes32) commitHashes;                      // maps content hashes to commit hashes
+        mapping(bytes32=>bytes32[]) commitToSubmissions;             // maps commits to submission created from them
+        mapping(bytes32=>LibCommit.CommitWithdrawalStats) commitWithdrawalStats; // maps commit hash to withdrawal stats
+
+        mapping(bytes32=>uint256) commitClaims;                      // timestamp of content hash claim
+
+        mapping(address=>bool) whitelist;                            // user whitelist
+        mapping(address=>bool) blacklist;                            // user blacklist
     }
 
-    /*
-    * Events
-    */
-    event TournamentCreated(bytes32 _discipline, address _owner, address _tournamentAddress, bytes32[3] _tournamentName, bytes32[2] _descriptionHash, uint256 _MTXReward, uint256 _entryFee);
-    event TournamentOpened(address _tournamentAddress, bytes32 _tournamentName_1, bytes32 _tournamentName_2, bytes32 _tournamentName_3, bytes32 _externalAddress_1, bytes32 _externalAddress_2, uint256 _MTXReward, uint256 _entryFee);
-    event TournamentClosed(address _tournamentAddress, uint256 _finalRoundNumber, uint256 _MTXReward);
-    event UserEnteredTournament(address _entrant, address _tournamentAddress);
-    event QueryID(string queryID);
+    Info info;                                                       // slot 0
+    Data data;                                                       // slot 3
+    address pendingOwner;
 
-    constructor(address _matryxTokenAddress, address _matryxPeerFactoryAddress, address _matryxTournamentFactoryAddress, address _matryxSubmissionFactoryAddress) public
-    {
-        matryxTokenAddress = _matryxTokenAddress;
-        matryxPeerFactoryAddress = _matryxPeerFactoryAddress;
-        matryxTournamentFactoryAddress = _matryxTournamentFactoryAddress;
-        matryxSubmissionFactoryAddress = _matryxSubmissionFactoryAddress;
+    constructor(address system, address token) public {
+        info.system = system;
+        info.token = token;
+        info.owner = msg.sender;
     }
 
+    /// @dev
+    /// 1) Uses msg.sender to ask MatryxSystem for the type of library this call should be forwarded to
+    /// 2) Uses this library type to lookup (in its own storage) the name of the library
+    /// 3) Uses this name to ask MatryxSystem for the address of the contract (under this platform's version)
+    /// 4) Uses name and signature to ask MatryxSystem for the data necessary to modify the incoming calldata
+    ///    so as to be appropriate for the associated library call
+    /// 5) Makes a delegatecall to the library address given by MatryxSystem with the library-appropriate calldata
+    function () external {
+        uint256 version = IMatryxSystem(info.system).getVersion();
+        bytes32 libName = IMatryxSystem(info.system).getLibraryName(msg.sender);
+        bool isForwarded = libName != bytes32("LibPlatform");
 
-    /// @dev Allows tournaments to invoke tournamentClosed events on the platform.
-    /// @param _finalRoundNumber Index of the round containing the winning submission.
-    function invokeTournamentClosedEvent(uint256 _finalRoundNumber, uint256 _MTXReward) public onlyTournament
-    {
-        emit TournamentClosed(msg.sender, _finalRoundNumber, _MTXReward);
-    }
-
-    /*
-    * Modifiers
-    */
-    modifier onlyTournament {
-        require(tournamentExists[msg.sender]);
-        _;
-    }
-
-    modifier onlyTournamentOrTournamentLib {
-        bool isTournament = tournamentExists[msg.sender];
-        bool isTournamentLib = getContractAddress(keccak256("LibTournamentEntrantMethods")) == msg.sender;
-
-        require(isTournament || isTournamentLib);
-        _;
-    }
-
-    modifier onlySubmission{
-        require(submissionExists[msg.sender]);
-        _;
-    }
-
-    modifier onlyPeerLinked(address _sender) {
-        require(hasPeer(_sender));
-        _;
-    }
-
-    modifier onlyTournamentOwnerOrPlatform(address _tournamentAddress){
-        require(msg.sender == _tournamentAddress || entrantToOwnsTournament[msg.sender][_tournamentAddress] || msg.sender == address(this));
-        _;
-    }
-
-    modifier notOwner(address _tournamentAddress) {
-        require(entrantToOwnsTournament[msg.sender][_tournamentAddress] == false);
-        _;
-    }
-
-    /*
-    * State Maintenance Methods
-    */
-
-    /// @dev Sets an address for a contract the platform should know about.
-    /// @param _nameHash Keccak256 hash of the name of the contract to give an address to.
-    /// @param _contractAddress Address to be assigned for the given contract name.
-    function setContractAddress(bytes32 _nameHash, address _contractAddress) public onlyOwner {
-        contracts[_nameHash] = _contractAddress;
-    }
-
-    /// @dev explicitly set the MatryxToken address
-    /// @param _matryxTokenAddress address of Matryx Token
-    function setTokenAddress(address _matryxTokenAddress) public onlyOwner {
-        matryxTokenAddress = _matryxTokenAddress;
-    }
-
-    /// @dev Gets the address of a contract the platform knows about.
-    /// @param _nameHash Keccak256 hash of the name of the contract to look for.
-    /// @return Address of the contract with the designated name.
-    function getContractAddress(bytes32 _nameHash) public returns (address contractAddress) {
-        return contracts[_nameHash];
-    }
-
-    /// @dev Updates tournament ownership data.
-    /// @param _owner address of the owner.
-    /// @param _tournament address of the tournament.
-    function updateUsersTournaments(address _owner, address _tournament) internal {
-        ownerToTournamentArray[_owner].push(_tournament);
-        entrantToOwnsTournament[_owner][_tournament] = true;
-    }
-
-    /// @dev Updates submission mappings.
-    /// @param _owner owner of the submission.
-    /// @param _submission the submission address
-    function updateSubmissions(address _owner, address _submission) public onlyTournamentOrTournamentLib {
-        ownerToSubmissionToSubmissionIndex[_owner][_submission] = uint256_optional({exists:true, value:ownerToSubmissionArray[_owner].length});
-        ownerToSubmissionArray[_owner].push(_submission);
-        addressToOwnsSubmission[_owner][_submission] = true;
-        submissionExists[_submission] = true;
-    }
-
-    /// @dev removes a submission from a tournament
-    /// @param _submissionAddress address of a particular MatryxSubmission
-    /// @param _tournamentAddress address of a particular MatryxTournament
-    function removeSubmission(address _submissionAddress, address _tournamentAddress) public {
-        require(tournamentExists[_tournamentAddress]);
-        require(submissionExists[_submissionAddress]);
-        require(addressToOwnsSubmission[msg.sender][_submissionAddress]);
-
-        address owner = Ownable(_submissionAddress).getOwner();
-        uint256 submissionIndex = ownerToSubmissionToSubmissionIndex[owner][_submissionAddress].value;
-
-        submissionExists[_submissionAddress] = false;
-        delete ownerToSubmissionArray[owner][submissionIndex];
-        delete ownerToSubmissionToSubmissionIndex[owner][_submissionAddress];
-
-        IMatryxTournament(_tournamentAddress).removeSubmission(_submissionAddress, owner);
-    }
-
-    /// @dev Associated a tournament with a specific cateogory (sorting and filtering purposes)
-    /// @param _tournamentAddress address of a particular MatryxTournament
-    /// @param _category hash the category that the tournament belongs to
-    function addTournamentToCategory(address _tournamentAddress, bytes32 _category) public onlyTournamentOwnerOrPlatform(_tournamentAddress) {
-        if(categoryExists[_category] == false)
-        {
-            categoryList.push(_category);
-            categoryExists[_category] = true;
+        assembly {
+            if isForwarded {
+                calldatacopy(0, 0x24, 0x20)                                     // get injected version from calldata
+                version := mload(0)                                             // overwrite version var
+            }
         }
 
-        if(tournamentExistsInCategory[_category][_tournamentAddress] == false)
-        {
-            tournamentExistsInCategory[_category][_tournamentAddress] = true;
-            tournamentAddressToCategoryInfo[_tournamentAddress].category = _category;
-            tournamentAddressToCategoryInfo[_tournamentAddress].index = (categoryToTournamentList[_category]).length;
-            categoryToTournamentList[_category].push(_tournamentAddress);
+        address libAddress = IMatryxSystem(info.system).getContract(version, libName);
+
+        assembly {
+            // constants
+            let offset := 0x100000000000000000000000000000000000000000000000000000000
+
+            let res
+            let ptr := mload(0x40)                                              // scratch space for calldata
+            let system := sload(info_slot)                                      // load info.system address
+
+            // get fnData from system
+            mstore(ptr, mul(0x3b15aabf, offset))                                // getContractMethod(uint256,bytes32,bytes32)
+            mstore(add(ptr, 0x04), version)                                     // arg 0 - version
+            mstore(add(ptr, 0x24), libName)                                     // arg 1 - library name
+            mstore(add(ptr, 0x44), 0)                                           // zero out uninitialized data
+            calldatacopy(add(ptr, 0x44), 0, 0x04)                               // arg 2 - fn selector
+            res := call(gas, system, 0, ptr, 0x64, 0, 0)                        // call system.getContractMethod
+            returndatacopy(ptr, 0, returndatasize)                              // copy fnData into ptr
+            if iszero(res) { revert(ptr, returndatasize) }                      // safety check
+            let ptr2 := add(ptr, mload(ptr))                                    // ptr2 is pointer to start of fnData
+
+            let m_injParams := add(ptr2, mload(add(ptr2, 0x20)))                // mem loc injected params
+            let injParams_len := mload(m_injParams)                             // num injected params
+            m_injParams := add(m_injParams, 0x20)                               // first injected param
+
+            let m_dynParams := add(ptr2, mload(add(ptr2, 0x40)))                // memory location of start of dynamic params
+            let dynParams_len := mload(m_dynParams)                             // num dynamic params
+            m_dynParams := add(m_dynParams, 0x20)                               // first dynamic param
+
+            // forward calldata to library
+            ptr := add(ptr, returndatasize)                                     // shift ptr to new scratch space
+            mstore(ptr, mload(ptr2))                                            // forward call with modified selector
+
+            ptr2 := add(ptr, 0x04)                                              // copy of ptr for keeping track of injected params
+
+            mstore(ptr2, address)                                               // inject platform
+            mstore(add(ptr2, 0x20), caller)                                     // inject msg.sender
+
+            let cdOffset := 0x04                                                // calldata offset, after signature
+
+            if isForwarded {
+                mstore(ptr2, caller)                                            // overwrite injected platform with sender
+                calldatacopy(add(ptr2, 0x20), 0x04, 0x20)                       // overwrite injected sender with address from forwarder
+                cdOffset := add(cdOffset, 0x40)                                 // shift calldata offset for injected address and version
+            }
+            ptr2 := add(ptr2, 0x40)                                             // shift ptr2 to account for injected addresses
+
+            for { let i := 0 } lt(i, injParams_len) { i := add(i, 1) } {        // loop through injected params and insert
+                let injParam := mload(add(m_injParams, mul(i, 0x20)))           // get injected param slot
+                mstore(ptr2, injParam)                                          // store injected params into next slot
+                ptr2 := add(ptr2, 0x20)                                         // shift ptr2 by a word for each injected
+            }
+
+            calldatacopy(ptr2, cdOffset, sub(calldatasize, cdOffset))           // copy calldata after injected data storage
+
+            for { let i := 0 } lt(i, dynParams_len) { i := add(i, 1) } {        // loop through params and update dynamic param locations
+                let idx := mload(add(m_dynParams, mul(i, 0x20)))                // get dynParam index in parameters
+                let loc := add(ptr2, mul(idx, 0x20))                            // get location in memory of dynParam
+                mstore(loc, add(mload(loc), mul(add(injParams_len, 2), 0x20)))  // shift dynParam location by num injected
+            }
+
+            // calculate size of forwarded call
+            let size := add(0x04, sub(calldatasize, cdOffset))                  // calldatasize minus injected
+            size := add(size, mul(add(injParams_len, 2), 0x20))                 // add size of injected
+
+            res := delegatecall(gas, libAddress, ptr, size, 0, 0)               // delegatecall to library
+            returndatacopy(ptr, 0, returndatasize)                              // copy return data into ptr for returning
+
+            if iszero(res) { revert(ptr, returndatasize) }                        // safety check
+            return(ptr, returndatasize)                                         // return forwarded call returndata
         }
     }
 
-    /// @dev Disassociated a tournament from a specific category
-    /// @param _tournamentAddress address of a particular MatryxTournament
-    /// @param _category hash of the category that the tournament belongs to
-    function removeTournamentFromCategory(address _tournamentAddress, bytes32 _category) public onlyTournamentOwnerOrPlatform(_tournamentAddress) {
-        if(tournamentExistsInCategory[_category][_tournamentAddress])
-        {
-            // It's there! Let's remove it
-            uint256 indexInCategoryList = tournamentAddressToCategoryInfo[_tournamentAddress].index;
-            tournamentExistsInCategory[_category][_tournamentAddress] = false;
-            categoryToTournamentList[_category][indexInCategoryList] = 0x0;
-            tournamentAddressToCategoryInfo[_tournamentAddress].index = 0;
-            emptyCountByCategory[_category] = emptyCountByCategory[_category].add(1);
+    modifier onlyOwner() {
+        require(msg.sender == info.owner, "Must be Platform owner");
+        _;
+    }
+
+    /// @dev Enables address to accept ownership of the platform
+    /// @param newOwner  New owner address
+    function transferOwnership(address newOwner) external onlyOwner {
+        require(newOwner != address(0));
+        pendingOwner = newOwner;
+    }
+
+    /// @dev Accepts ownership transfer
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner);
+        info.owner = pendingOwner;
+        pendingOwner = address(0);
+    }
+
+    /// @dev Sets the Token address
+    /// @param token  New token address
+    function upgradeToken(address token) external onlyOwner {
+        IToken(info.token).upgrade(data.totalBalance);
+
+        require(IToken(token).balanceOf(address(this)) == data.totalBalance, "Token address must match upgraded token");
+        info.token = token;
+    }
+
+    /// @dev Withdraws any unallocated ERC20 tokens from Platform
+    /// @param token  ERC20 token address to use
+    function withdrawTokens(address token) external onlyOwner {
+        uint256 balance = IToken(token).balanceOf(address(this));
+
+        // if current token, check if any extraneous tokens
+        if (token == info.token) {
+            balance = balance.sub(data.totalBalance);
         }
+
+        require(IToken(token).transfer(msg.sender, balance), "Transfer failed");
     }
+}
 
-    /// @dev Changes a tournament from one category to another
-    /// @param _tournamentAddress address of a particular MatryxTournament
-    /// @param _oldCategory hash of the category that the tournament previously belonged to
-    /// @param _newCategory hash of the category that the tournament will now belong to
-    function switchTournamentCategory(address _tournamentAddress, bytes32 _oldCategory, bytes32 _newCategory) public onlyTournamentOwnerOrPlatform(_tournamentAddress){
-        removeTournamentFromCategory(_tournamentAddress, _oldCategory);
-        addTournamentToCategory(_tournamentAddress, _newCategory);
-    }
+interface IMatryxPlatform {
+    event TournamentCreated(address indexed tournament, address indexed creator);
+    event TournamentUpdated(address indexed tournament);
+    event TournamentBountyAdded(address indexed tournament, address indexed donor, uint256 amount);
 
-    /*
-     * Getters
-     */
+    event RoundCreated(address indexed tournament, uint256 roundIndex);
+    event RoundUpdated(address indexed tournament, uint256 roundIndex);
+    event RoundWinnersSelected(address indexed tournament, uint256 roundIndex);
 
-    function getTournamentsByCategory(bytes32 _category) external view returns (address[]){
-        return categoryToTournamentList[_category];
-    }
+    event SubmissionCreated(address indexed tournament, bytes32 submissionHash, address indexed creator);
+    event SubmissionRewarded(address indexed tournament, bytes32 submissionHash);
 
-    function getCategoryCount(bytes32 _category) external view returns (uint256) {
-        return categoryToTournamentList[_category].length.sub(emptyCountByCategory[_category]);
-    }
+    event GroupMemberAdded(bytes32 indexed commitHash, address indexed user);
+    event CommitClaimed(bytes32 commitHash);
+    event CommitCreated(bytes32 indexed parentHash, bytes32 commitHash, address indexed creator, bool indexed isFork);
 
-    function getCategoryByIndex(uint256 _index) public view returns (bytes32){
-        return categoryList[_index];
-    }
+    function transferOwnership(address newOwner) external;
+    function acceptOwnership() external;
+    function upgradeToken(address token) external;
+    function withdrawTokens(address token) external;
 
-    function getAllCategories() public view returns (uint256, bytes32[]){
-        return (categoryList.length, categoryList);
-    }
+    function getInfo() external view returns (MatryxPlatform.Info memory);
+    function isTournament(address tournament) external view returns (bool);
+    function isCommit(bytes32 commitHash) external view returns (bool);
+    function isSubmission(bytes32 submissionHash) external view returns (bool);
 
-    /*
-    * Tournament Entry Methods
-    */
+    function getTotalBalance() external view returns (uint256);
 
-    /// @dev Enter the user into a tournament and charge the entry fee.
-    /// @param _tournamentAddress Address of the tournament to enter into.
-    /// @return _success Whether or not user was successfully entered into the tournament.
-    function enterTournament(address _tournamentAddress) public onlyPeerLinked(msg.sender) notOwner(_tournamentAddress) returns (bool _success){
-        require(tournamentExists[_tournamentAddress]);
+    function getTournamentCount() external view returns (uint256);
+    function getTournaments() external view returns (address[] memory);
+    function getSubmission(bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory);
 
-        IMatryxTournament tournament = IMatryxTournament(_tournamentAddress);
-        uint256 entryFee = tournament.getEntryFee();
-
-        require(tournament.enterUserInTournament(msg.sender));
-        emit UserEnteredTournament(msg.sender, _tournamentAddress);
-        return true;
-    }
-
-    /*
-    * Tournament Admin Methods
-    */
-
-    /// @dev Create a new tournament.
-    /// @param tournamentData Data to populate the new tournament with. Includes:
-    ///    category: Discipline the tournament falls under.
-    ///    title: Name of the new tournament.
-    ///    contentHash: Off-chain content hash of tournament details (ipfs hash)
-    ///    initialBounty: Total tournament reward in MTX.
-    ///    entryFee: Fee to charge participant upon entering into the tournament.
-    /// @param roundData Data to populate the first round of the tournament with. Includes:
-    ///    startTime: The start time (unix-epoch-based) of the first round.
-    ///    endTime: The end time (unix-epoch-based) of the first round.
-    ///    reviewPeriodDuration: The amount of the tournament owner has to determine the winners of the round.
-    ///    bounty: The reward for the first round's winners.
-    /// @return _tournamentAddress Address of the newly created tournament.
-    function createTournament(LibConstruction.TournamentData tournamentData, LibConstruction.RoundData roundData) public returns (address _tournamentAddress){
-        IMatryxTournamentFactory tournamentFactory = IMatryxTournamentFactory(matryxTournamentFactoryAddress);
-        address newTournament = tournamentFactory.createTournament(tournamentData, roundData, msg.sender);
-
-        emit TournamentCreated(tournamentData.category, msg.sender, newTournament, tournamentData.title, tournamentData.descriptionHash, tournamentData.initialBounty, tournamentData.entryFee);
-
-        require(IMatryxToken(matryxTokenAddress).transferFrom(msg.sender, newTournament, tournamentData.initialBounty));
-        IMatryxTournament(newTournament).sendBountyToRound(0, roundData.bounty);
-        // update data structures
-        allTournaments.push(newTournament);
-        tournamentExists[newTournament] = true;
-        updateUsersTournaments(msg.sender, newTournament);
-
-        addTournamentToCategory(newTournament, tournamentData.category);
-
-        return newTournament;
-    }
-
-    /*
-    * Access Control Methods
-    */
-
-    function createPeer() public returns (address) {
-        require(IMatryxToken(matryxTokenAddress).balanceOf(msg.sender) > 0);
-        require(ownerToPeerAndPeerToOwner[msg.sender] == 0x0);
-        IMatryxPeerFactory peerFactory = IMatryxPeerFactory(matryxPeerFactoryAddress);
-        address peer = peerFactory.createPeer(msg.sender);
-        peerExists[peer] = true;
-        ownerToPeerAndPeerToOwner[msg.sender] = peer;
-        ownerToPeerAndPeerToOwner[peer] = msg.sender;
-    }
-
-    function isPeer(address _peerAddress) public view returns (bool) {
-        return peerExists[_peerAddress];
-    }
-
-    function hasPeer(address _sender) public view returns (bool) {
-        return (ownerToPeerAndPeerToOwner[_sender] != 0x0);
-    }
-
-    function peerExistsAndOwnsSubmission(address _peer, address _reference) public view returns (bool) {
-        bool isAPeer = peerExists[_peer];
-        bool referenceIsSubmission = submissionExists[_reference];
-        bool peerOwnsSubmission = addressToOwnsSubmission[ownerToPeerAndPeerToOwner[_peer]][_reference];
-
-        return isAPeer && referenceIsSubmission && peerOwnsSubmission;
-    }
-
-    function peerAddress(address _sender) public view returns (address){
-        return ownerToPeerAndPeerToOwner[_sender];
-    }
-
-    function isSubmission(address _submissionAddress) public view returns (bool){
-        return submissionExists[_submissionAddress];
-    }
-
-    function isTournament(address _tournamentAddress) public view returns (bool){
-        return tournamentExists[_tournamentAddress];
-    }
-
-    /// @dev Returns whether or not the given tournament belongs to the sender.
-    /// @param _tournamentAddress Address of the tournament to check.
-    /// @return _isMine Whether or not the tournament belongs to the sender.
-    function getTournament_IsMine(address _tournamentAddress) public view returns (bool _isMine) {
-        require(tournamentExists[_tournamentAddress]);
-        Ownable tournament = Ownable(_tournamentAddress);
-        return (tournament.getOwner() == msg.sender);
-    }
-
-    /*
-    * Setter Methods
-    */
-
-    /// @dev              Set the relative amount of MTX to be delivered to a submission's
-    ///                   references
-    /// @param _gratitude Weight from 0 to 1 (18 decimal uint) specifying enforced submission
-    ///                   gratitude
-    function setSubmissionGratitude(uint256 _gratitude) public onlyOwner {
-        assert(_gratitude >= 0 && _gratitude <= (1*10**18));
-        submissionGratitude = uint256_optional({exists: true, value: _gratitude});
-    }
-
-    event TimeStamp(uint256 time);
-
-    function getNow() public view returns (uint256) {
-        emit TimeStamp(now);
-        return now;
-    }
-
-    /*
-    * Getter Methods
-    */
-
-    function getTokenAddress() public view returns (address) {
-        return matryxTokenAddress;
-    }
-
-    function getTournamentFactoryAddress() public view returns (address)
-    {
-        return matryxTournamentFactoryAddress;
-    }
-
-    /// @dev    Returns a weight from 0 to 1 (18 decimal uint) indicating
-    ///         how much of a submission's reward goes to its references.
-    /// @return Relative amount of MTX going to references of submissions under this tournament.
-    function getSubmissionGratitude() public view returns (uint256)
-    {
-        require(submissionGratitude.exists);
-        return submissionGratitude.value;
-    }
-
-    /// @dev    Returns addresses for submissions the sender has created.
-    /// @return Address array representing submissions.
-    function myTournaments() public view returns (address[])
-    {
-        return ownerToTournamentArray[msg.sender];
-    }
-
-    function mySubmissions() public view returns (address[])
-    {
-        return ownerToSubmissionArray[msg.sender];
-    }
-
-    /// @dev    Returns the total number of tournaments
-    /// @return _tournamentCount Total number of tournaments.
-    function tournamentCount() public view returns (uint256 _tournamentCount)
-    {
-        return allTournaments.length;
-    }
-
-    function getTournamentAtIndex(uint256 _index) public view returns (address _tournamentAddress)
-    {
-        require(_index >= 0);
-        require(_index < allTournaments.length);
-        return allTournaments[_index];
-    }
-
-    function getTournaments() public view returns (address[])
-    {
-        return allTournaments;
-    }
+    function setUserBlacklisted(address user, bool isBlacklisted) external;
+    function createTournament(LibTournament.TournamentDetails calldata, LibTournament.RoundDetails calldata) external returns (address);
 }
