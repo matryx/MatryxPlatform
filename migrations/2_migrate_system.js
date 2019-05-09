@@ -1,5 +1,5 @@
-var MatryxSystem = artifacts.require('MatryxSystem')
+const MatryxSystem = artifacts.require('MatryxSystem')
 
 module.exports = function(deployer) {
-  deployer.deploy(MatryxSystem, { overwrite: false })
+  deployer.deploy(MatryxSystem, { gas: 7e6, overwrite: false })
 }

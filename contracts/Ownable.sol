@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.7;
 
 
 /**
@@ -8,6 +8,7 @@ pragma solidity ^0.4.18;
  */
 contract Ownable {
     address public owner;
+    address pendingOwner;
 
     /**
      * @dev The Ownable constructor sets the original `owner` of the contract to the sender
@@ -45,6 +46,16 @@ contract Ownable {
     function transferOwnership(address newOwner) public onlyOwner
     {
         require(newOwner != address(0));
-        owner = newOwner;
+        pendingOwner = newOwner;
+    }
+
+    /**
+     * @dev Allows the pending owner to accept ownership transfer
+     */
+    function acceptOwnership() public
+    {
+        require(msg.sender == pendingOwner, "Must be the pending owner");
+        owner = pendingOwner;
+        pendingOwner = address(0);
     }
 }

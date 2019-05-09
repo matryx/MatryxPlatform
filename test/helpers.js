@@ -1,26 +1,24 @@
 const fs = require('fs')
-const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('../truffle/utils')
+const { setup, now, genId, genAddress, getMinedTx, timetravel, stringToBytes, Contract } = require('../truffle/utils')
 
 Contract.logLevel = 1
 
 module.exports = function (artifacts, web3) {
+  const toWei = n => web3.utils.toWei(n.toString())
+  web3.toWei = toWei
+
   const MatryxSystem = artifacts.require("MatryxSystem")
   const MatryxPlatform = artifacts.require("MatryxPlatform")
   const IMatryxPlatform = artifacts.require("IMatryxPlatform")
   const IMatryxTournament = artifacts.require("IMatryxTournament")
-  const IMatryxRound = artifacts.require("IMatryxRound")
-  const IMatryxSubmission = artifacts.require("IMatryxSubmission")
   const MatryxToken = artifacts.require("MatryxToken")
-  const MatryxUser = artifacts.require("MatryxUser")
-  const IMatryxUser = artifacts.require("IMatryxUser")
-  const LibUtils = artifacts.require('LibUtils')
-  const LibUser = artifacts.require('LibUser')
+  const MatryxCommit = artifacts.require("MatryxCommit")
+  const IMatryxCommit = artifacts.require("IMatryxCommit")
+  const LibCommit = artifacts.require('LibCommit')
   const LibPlatform = artifacts.require('LibPlatform')
   const LibTournament = artifacts.require('LibTournament')
-  const LibRound = artifacts.require('LibRound')
-  const LibSubmission = artifacts.require('LibSubmission')
 
-  let token, platform, wallet
+  let token, system, platform, commit, wallet
 
   async function init() {
     const contract = Contract
@@ -29,149 +27,97 @@ module.exports = function (artifacts, web3) {
       await eval(command)
     }
 
-    // console.log("token:", network.tokenAddress)
-    const data = await setup(artifacts, web3, 0, true)
-    platform = data.platform
-    token = data.token
-    return { platform, token }
+    return await setupContracts()
   }
 
-  async function createTournament(_title, _category, bounty, roundData, accountNumber) {
+  async function setupContracts() {
+    // console.log("token:", network.tokenAddress)
+    const data = await setup(artifacts, web3, 0, true)
+    system = data.system
+    platform = data.platform
+    commit = data.commit
+    token = data.token
+    return { system, platform, commit, token }
+  }
+
+  async function createTournament(content, bounty, roundData, accountNumber) {
     const { platform } = await setup(artifacts, web3, accountNumber, true)
 
-    const category = stringToBytes(_category)
-    const title = stringToBytes32(_title, 3)
-    const descHash = stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2)
-    const fileHash = stringToBytes32('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2)
     const tournamentData = {
-      category,
-      title,
-      descHash,
-      fileHash,
+      content,
       bounty,
-      entryFee: web3.toWei(2)
+      entryFee: toWei(2)
     }
 
     let tx = await platform.createTournament(tournamentData, roundData)
     await getMinedTx(tx.hash)
 
-    const address = (await platform.getTournaments(0, 0)).pop()
+    const address = (await platform.getTournaments()).pop()
     const tournament = Contract(address, IMatryxTournament, accountNumber)
 
     return tournament
   }
 
-  async function waitUntilClose(round) {
-    let roundEndTime = +(await round.getEnd())
-    let review = +(await round.getReview())
-    let timeTilClose = Math.max(0, roundEndTime + review - Date.now() / 1000)
-    timeTilClose = timeTilClose > 0 ? timeTilClose : 0
-
-    await sleep(timeTilClose * 1000)
+  async function waitUntilClose(tournament, roundIndex) {
+    let { start, duration, review } = await tournament.getRoundDetails(roundIndex)
+    let time = Math.max(0, (+start) + (+duration) + (+review) - await now())
+    await timetravel(time)
   }
 
-  async function waitUntilOpen(round) {
-    let roundStartTime = +(await round.getStart())
-    let timeTilOpen = Math.max(0, roundStartTime - Date.now() / 1000)
-    timeTilOpen = timeTilOpen > 0 ? timeTilOpen : 0
-
-    await sleep(timeTilOpen * 1000)
+  async function waitUntilOpen(tournament, roundIndex) {
+    let { start } = await tournament.getRoundDetails(roundIndex)
+    let time = Math.max(0, (+start) - await now())
+    await timetravel(time)
   }
 
-  const waitUntilInReview = async (round) => {
-    let roundEndTime = await round.getEnd()
-
-    let timeTilRoundInReview = roundEndTime - Date.now() / 1000
-    timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
-
-    await sleep(timeTilRoundInReview * 1000)
+  async function waitUntilInReview(tournament, roundIndex) {
+    let { start, duration } = await tournament.getRoundDetails(roundIndex)
+    let time = Math.max(0, (+start) + (+duration) - await now())
+    await timetravel(time)
   }
 
-  async function createSubmission(tournament, contribs, accountNumber) {
+  async function createSubmission(tournament, parent, value, accountNumber) {
     const tAccount = tournament.accountNumber
     const pAccount = platform.accountNumber
+    const cAccount = commit.accountNumber
     const tokAccount = token.accountNumber
 
     tournament.accountNumber = accountNumber
     platform.accountNumber = accountNumber
+    commit.accountNumber = accountNumber
     token.accountNumber = accountNumber
 
     await enterTournament(tournament, accountNumber)
 
-    const title = stringToBytes32('A submission ' + genId(6), 3)
-    const descHash = stringToBytes32('QmZVK8L7nFhbL9F1Ayv5NmieWAnHDm9J1AXeHh1A3EBDqK', 2)
-    const fileHash = stringToBytes32('QmfFHfg4NEjhZYg8WWYAzzrPZrCMNDJwtnhh72rfq3ob8g', 2)
+    const commitContent = genId(10)
 
-    const submissionData = {
-      title,
-      descHash,
-      fileHash
-    }
+    let account = tournament.wallet.address
+    let salt = "mmm salty"
+    let commitHash = web3.utils.soliditySha3(account, { t: 'bytes32', v: stb(salt) }, commitContent)
 
-    const noContribsAndRefs = {
-      contributors: new Array(0).fill(0).map(r => genAddress()),
-      distribution: new Array(1).fill(1),
-      references: new Array(0).fill(0).map(r => genAddress())
-    }
+    let tx = await commit.claimCommit(commitHash)
+    await getMinedTx(tx.hash)
+    await timetravel(1)
 
-    const contribsAndRefs = {
-      contributors: new Array(10).fill(0).map(r => genAddress()),
-      distribution: new Array(11).fill(1),
-      references: new Array(10).fill(0).map(r => genAddress())
-    }
+    const content = genId(10)
+    tx = await commit.createSubmission(tournament.address, content, parent, false, stb(salt), commitContent, value)
+    await getMinedTx(tx.hash)
 
-    if (contribs) {
-      let tx = await tournament.createSubmission({ ...submissionData, ...contribsAndRefs }, {gasLimit: 3e6})
-      await getMinedTx(tx.hash)
-    } else {
-      let tx = await tournament.createSubmission({ ...submissionData, ...noContribsAndRefs })
-      await getMinedTx(tx.hash)
-    }
-
-    const [_, roundAddress] = await tournament.getCurrentRound()
-    const round = Contract(roundAddress, IMatryxRound)
-    const submissions = await round.getSubmissions(0, 0)
-    const submissionAddress = submissions[submissions.length - 1]
-    const submission = Contract(
-      submissionAddress,
-      IMatryxSubmission,
-      accountNumber
-    )
+    const roundIndex = await tournament.getCurrentRoundIndex()
+    const { submissions } = await tournament.getRoundInfo(roundIndex)
+    const submission = submissions[submissions.length - 1]
 
     tournament.accountNumber = tAccount
     platform.accountNumber = pAccount
+    commit.accountNumber = cAccount
     token.accountNumber = tokAccount
 
     return submission
   }
 
-  async function updateSubmission(submission) {
-    const modData = {
-      title: stringToBytes32('AAAAAA', 3),
-      descHash: stringToBytes32('BBBBBB', 2),
-      fileHash: stringToBytes32('CCCCCC', 2)
-    }
-    let tx
-
-    tx = await submission.updateDetails(modData)
-    await getMinedTx(tx.hash)
-
-    const contribs = new Array(3).fill(0).map(() => genAddress())
-    const distribution = new Array(3).fill(1)
-
-    tx = await submission.addContributorsAndReferences(contribs, distribution, [])
-    await getMinedTx(tx.hash)
-  }
-
   async function selectWinnersWhenInReview(tournament, winners, rewardDistribution, roundData, selectWinnerAction) {
-    const [_, roundAddress] = await tournament.getCurrentRound()
-    const round = Contract(roundAddress, IMatryxRound, tournament.accountNumber)
-    const roundEndTime = await round.getEnd()
-
-    let timeTilRoundInReview = roundEndTime - Date.now() / 1000
-    timeTilRoundInReview = timeTilRoundInReview > 0 ? timeTilRoundInReview : 0
-
-    await sleep(timeTilRoundInReview * 1000)
+    let roundIndex = await tournament.getCurrentRoundIndex()
+    await waitUntilInReview(tournament, roundIndex)
 
     const tx = await tournament.selectWinners([winners, rewardDistribution, selectWinnerAction], roundData)
     await getMinedTx(tx.hash)
@@ -209,15 +155,60 @@ module.exports = function (artifacts, web3) {
     return isEnt
   }
 
+  async function claimCommit(salt, content, account) {
+    const cAccount = commit.accountNumber
+    commit.accountNumber = account
+
+    let commitHash = web3.utils.soliditySha3(commit.wallet.address, { t:'bytes32', v:salt }, content)
+
+    let tx = await commit.claimCommit(commitHash)
+    await getMinedTx(tx.hash)
+    await timetravel(1)
+
+    commit.accountNumber = cAccount
+  }
+
+  async function createCommit(parent, isFork, content, value, account) {
+    const cAccount = commit.accountNumber
+    commit.accountNumber = account
+
+    const salt = stringToBytes('NaCl')
+    await claimCommit(salt, content, account)
+    tx = await commit.createCommit(parent, isFork, salt, content, value)
+    await getMinedTx(tx.hash)
+
+    commit.accountNumber = cAccount
+
+    // return the newly created commit hash
+    let theCommit = await commit.getCommitByContent(content)
+    return theCommit.commitHash
+  }
+
+  async function commitCongaLine (root, length, account) {
+    const congaLine = [root]
+
+    let parent = root
+    for (let i = 0; i < length; i++) {
+      parent = await createCommit(parent, false, genId(10), toWei(1), account)
+      congaLine.push(parent)
+    }
+
+    return congaLine
+  }
+
   return {
     init,
+    setupContracts,
     createTournament,
     waitUntilClose,
     waitUntilOpen,
     waitUntilInReview,
     createSubmission,
-    updateSubmission,
     selectWinnersWhenInReview,
-    enterTournament
+    enterTournament,
+
+    claimCommit,
+    createCommit,
+    commitCongaLine
   }
 }

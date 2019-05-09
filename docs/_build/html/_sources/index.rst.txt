@@ -2,7 +2,9 @@
 Matryx Platform
 ================
 
-This documentation details the features of the Matryx Platform Smart Contract system. 
+This documentation details the features of the Matryx Platform Smart Contract system. You can check out the Matryx Platform source code here_.
+
+.. _here: https://github.com/matryx/MatryxPlatform
 
 .. _api-docs:
 
@@ -10,31 +12,12 @@ This documentation details the features of the Matryx Platform Smart Contract sy
    :maxdepth: 2
    :caption: API Documentation
 
-   getting-started
-   tournament-participating
-   tournament-admin
-   trust-and-reputation
-   source_faq
-   source_versions
+   source/entering-matryx
+   source/commit-system
+   source/bounty-system
+   source/marketplace
+   source/faq
+   source/versions
    source/api
 
 .. _dev-docs:
-
-.. .. toctree::
-..    :maxdepth: 2
-..    :caption: Developer Documentation
-
-..    changelog
-..    captains-log
-..    install
-..    architecture
-..    tests
-..    docs
-..    development/standards
-..    development/buildenvironments
-..    symlinks
-..    settings
-..    i18n
-..    issue-labels
-..    security
-..    api/index

@@ -2,6 +2,8 @@ const fs = require('fs')
 const chalk = require('chalk')
 
 const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes32, stringToBytes, Contract } = require('./utils')
+const toWei = n => web3.utils.toWei(n.toString())
+web3.toWei = toWei
 
 let MatryxTournament, MatryxRound, MatryxSubmission, platform, token, wallet
 let IMatryxTournament, IMatryxRound, IMatryxSubmission
@@ -28,7 +30,6 @@ const report = msg => {
 
 const createTournament = async (accountNumber) => {
   const tournamentData = {
-    category: stringToBytes('math'),
     title: stringToBytes32('Benchmark Tournament', 3),
     descHash: stringToBytes32('QmWmuZsJUdRdoFJYLsDBYUzm12edfW7NTv2CzAgaboj6ke', 2),
     fileHash: stringToBytes32('QmeNv8oumYobEWKQsu4pQJfPfdKq9fexP2nh12quGjThRT', 2),
@@ -115,7 +116,7 @@ const benchmarkSubmissions = async () => {
 
   gasUsed = []
   for (let i = 0; i < 10; i++) {
-    const txr = await createSubmission(t, 1, 0, 0)
+    const txr = await createSubmission(t, '0x00',  false, 1, 0, 0)
     gasUsed.push(+txr.gasUsed)
   }
 
@@ -126,7 +127,7 @@ const benchmarkSubmissions = async () => {
 
   gasUsed = []
   for (let i = 0; i < 5; i++) {
-    const txr = await createSubmission(t, 1, 5, 0)
+    const txr = await createSubmission(t, '0x00',  false, 1, 5, 0)
     gasUsed.push(+txr.gasUsed)
   }
 
@@ -135,7 +136,7 @@ const benchmarkSubmissions = async () => {
 
   gasUsed = []
   for (let i = 0; i < 5; i++) {
-    const txr = await createSubmission(t, 1, 0, 5)
+    const txr = await createSubmission(t, '0x00',  false, 1, 0, 5)
     gasUsed.push(+txr.gasUsed)
   }
 
@@ -144,7 +145,7 @@ const benchmarkSubmissions = async () => {
 
   gasUsed = []
   for (let i = 0; i < 5; i++) {
-    const txr = await createSubmission(t, 1, 5, 5)
+    const txr = await createSubmission(t, '0x00',  false, 1, 5, 5)
     gasUsed.push(+txr.gasUsed)
   }
 

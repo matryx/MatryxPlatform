@@ -1,5 +1,5 @@
-var Migrations = artifacts.require('./Migrations.sol')
+const Migrations = artifacts.require('./Migrations.sol')
 
 module.exports = function(deployer) {
-  deployer.deploy(Migrations, { overwrite: false })
+  deployer.deploy(Migrations, { gas: 7e6, overwrite: false })
 }

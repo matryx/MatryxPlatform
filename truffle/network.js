@@ -34,7 +34,7 @@ const setNetwork = id => {
     else console.log('bro check yo network')
 
     const accs = mnemonicHelper.getAccounts(mnemonic, 0, 10)
-    accounts = accs.map(acc => acc[0])
+    accounts = accs.map(acc => ethers.utils.getAddress(acc[0]))
     privateKeys = accs.map(acc => acc[1])
 }
 
