@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import "./MatryxSystem.sol";
@@ -29,6 +29,7 @@ contract MatryxForwarder {
             let res
 
             // forward method to MatryxPlatform, injecting msg.sender
+            if lt(calldatasize, 0x04) { revert(0, 0) }                          // prevent underflow
             calldatacopy(ptr, 0, 0x04)                                          // copy selector
             mstore(add(ptr, 0x04), caller)                                      // inject msg.sender
             mstore(add(ptr, 0x24), version)                                     // inject version

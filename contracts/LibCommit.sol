@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
@@ -9,9 +9,9 @@ import "./MatryxTournament.sol";
 library LibCommit {
     using SafeMath for uint256;
 
-    event GroupMemberAdded(bytes32 commitHash, address user);
+    event GroupMemberAdded(bytes32 indexed commitHash, address indexed user);
     event CommitClaimed(bytes32 commitHash);
-    event CommitCreated(bytes32 parentHash, bytes32 commitHash, address creator, bool isFork);
+    event CommitCreated(bytes32 indexed parentHash, bytes32 commitHash, address indexed creator, bool indexed isFork);
 
     struct Commit {
         address owner;
@@ -24,7 +24,6 @@ library LibCommit {
         uint256 totalValue;
         uint256 height;
         bytes32 parentHash;
-        bytes32[] children;
     }
 
     struct CommitWithdrawalStats {
@@ -40,36 +39,66 @@ library LibCommit {
     /// @dev Returns commit data for the given hash
     /// @param data        Platform data struct
     /// @param commitHash  Hash of the commit to return
-    function getCommit(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (Commit memory commit) {
+    function getCommit(
+        address,
+        address,
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash
+    )
+        public
+        view
+        returns (Commit memory commit)
+    {
         return data.commits[commitHash];
     }
 
     /// @dev Returns commit data for the given hash
     /// @param data        Platform data struct
     /// @param commitHash  Commit hash
-    function getBalance(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (uint256) {
+    function getBalance(
+        address,
+        address,
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash
+    )
+        public
+        view
+        returns (uint256)
+    {
         return data.commitBalance[commitHash];
     }
 
     /// @dev Returns commit data for the given content hash
     /// @param data         Platform data struct
     /// @param content  Content hash commit was created from
-    function getCommitByContent(address, address, MatryxPlatform.Data storage data, string memory content) public view returns (Commit memory commit) {
+    function getCommitByContent(
+        address,
+        address,
+        MatryxPlatform.Data storage data,
+        string memory content
+    )
+        public
+        view
+        returns (Commit memory commit)
+    {
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         bytes32 commitHash = data.commitHashes[lookupHash];
         return data.commits[commitHash];
     }
 
-    /// @dev Returns all initial commits
-    /// @param data    Platform data struct
-    function getInitialCommits(address, address, MatryxPlatform.Data storage data) public view returns (bytes32[] memory) {
-        return data.initialCommits;
-    }
-
     /// @dev Returns all group members
     /// @param data        Platform data struct
     /// @param commitHash  Commit from line of work
-    function getGroupMembers(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (address[] memory) {
+    function getGroupMembers(
+        address,
+        address,
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash
+    )
+        public
+        view
+        returns (address[] memory)
+    {
         bytes32 groupHash = data.commits[commitHash].groupHash;
         return data.groups[groupHash].members;
     }
@@ -77,12 +106,28 @@ library LibCommit {
     /// @dev Returns hashes of all Submissions that were made from this commit
     /// @param data        Platform data struct
     /// @param commitHash  Commit hash used for the submissions
-    function getSubmissionsForCommit(address, address, MatryxPlatform.Data storage data, bytes32 commitHash) public view returns (bytes32[] memory) {
+    function getSubmissionsForCommit(
+        address,
+        address,
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash
+    )
+        public
+        view
+        returns (bytes32[] memory)
+    {
         return data.commitToSubmissions[commitHash];
     }
 
     /// @dev Returns true if the user is allowed to use Matryx
-    function _canUseMatryx(MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address user) internal returns (bool) {
+    function _canUseMatryx(
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        address user
+    )
+        internal
+        returns (bool)
+    {
         if (data.blacklist[user]) return false;
         if (data.whitelist[user]) return true;
 
@@ -98,10 +143,20 @@ library LibCommit {
     /// @param data        Platform data struct
     /// @param commitHash  Commit that group is made for
     /// @param user        First user in the group
-    function _createGroup(MatryxPlatform.Data storage data, bytes32 commitHash, address user) internal returns (bytes32) {
+    function _createGroup(
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash,
+        address user
+    )
+        internal
+        returns (bytes32)
+    {
         bytes32 groupHash = keccak256(abi.encodePacked(commitHash));
+
         data.groups[groupHash].hasMember[user] = true;
         data.groups[groupHash].members.push(user);
+        emit GroupMemberAdded(commitHash, user);
+
         return groupHash;
     }
 
@@ -110,7 +165,16 @@ library LibCommit {
     /// @param data        Platform data struct
     /// @param commitHash  Commit from line of work
     /// @param user        Member to add to the group
-    function addGroupMember(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 commitHash, address user) public {
+    function addGroupMember(
+        address,
+        address sender,
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash,
+        address user
+    )
+        public
+    {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         require(data.commits[commitHash].owner != address(0), "Invalid commit");
 
@@ -129,7 +193,16 @@ library LibCommit {
     /// @param data        Platform data struct
     /// @param commitHash  Commit from line of work
     /// @param users       Members to add to the group
-    function addGroupMembers(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 commitHash, address[] memory users) public {
+    function addGroupMembers(
+        address,
+        address sender,
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash,
+        address[] memory users
+    )
+        public
+    {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         require(data.commits[commitHash].owner != address(0), "Invalid commit");
 
@@ -152,7 +225,15 @@ library LibCommit {
     /// @param sender      msg.sender to the Platform
     /// @param data        Platform data struct
     /// @param commitHash  Hash of (sender + salt + content)
-    function claimCommit(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 commitHash) public {
+    function claimCommit(
+        address,
+        address sender,
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash
+    )
+        public
+    {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         require(data.commitClaims[commitHash] == uint256(0), "Commit hash already claimed");
 
@@ -169,7 +250,19 @@ library LibCommit {
     /// @param salt         Salt that was used in claiming hash
     /// @param content      Content hash
     /// @param value        Commit value
-    function createCommit(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 parentHash, bool isFork, bytes32 salt, string memory content, uint256 value) public {
+    function createCommit(
+        address,
+        address sender,
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        bytes32 parentHash,
+        bool isFork,
+        bytes32 salt,
+        string memory content,
+        uint256 value
+    )
+        public
+    {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         bytes32 commitHash = keccak256(abi.encodePacked(sender, salt, content));
 
@@ -181,18 +274,32 @@ library LibCommit {
     /// @param info         Platform info struct
     /// @param data         Platform data struct
     /// @param tAddress     Tournament address to submit to
-    /// @param content      Submission title and description IPFS hash
+    /// @param subContent   Submission title and description IPFS hash
     /// @param parentHash   Parent commit hash
     /// @param isFork       If fork
     /// @param salt         Salt that was used in claiming hash
     /// @param commitContent  Commit content IPFS hash
     /// @param value        Author-determined commit value
-    function createSubmission(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, address tAddress, string memory content, bytes32 parentHash, bool isFork, bytes32 salt, string memory commitContent, uint256 value) public {
+    function createSubmission(
+        address,
+        address sender,
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        address tAddress,
+        string memory subContent,
+        bytes32 parentHash,
+        bool isFork,
+        bytes32 salt,
+        string memory commitContent,
+        uint256 value
+    )
+        public
+    {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         bytes32 commitHash = keccak256(abi.encodePacked(sender, salt, commitContent));
 
         _createCommit(sender, info, data, parentHash, commitHash, isFork, commitContent, value);
-        LibTournament.createSubmission(tAddress, sender, info, data, content, commitHash);
+        LibTournament.createSubmission(tAddress, sender, info, data, subContent, commitHash);
     }
 
     /// @dev Initializes a new commit
@@ -203,25 +310,31 @@ library LibCommit {
     /// @param isFork       If commit is fork of parent
     /// @param content      Commit content IPFS hash
     /// @param value        Author-determined commit value
-    function _createCommit(address owner, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 parentHash, bytes32 commitHash, bool isFork, string memory content, uint256 value) internal {
+    function _createCommit(
+        address owner,
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        bytes32 parentHash,
+        bytes32 commitHash,
+        bool isFork,
+        string memory content,
+        uint256 value
+    )
+        internal
+    {
         require(value > 0, "Cannot create a zero-value commit");
         require(data.commits[commitHash].owner == address(0), "Commit already exists");
         require(parentHash == bytes32(0) || data.commits[parentHash].owner != address(0), "Parent must be null or real commit");
 
+        if (parentHash != bytes32(0)) {
+            require(data.commits[parentHash].height < 5000, "Commit chain limit reached");
+        }
+
         uint256 claimTime = data.commitClaims[commitHash];
-        require(claimTime < now, "Commit must be claimed in a previous block");
+        require(claimTime > 0 && claimTime < now, "Commit must be claimed in a previous block");
 
         bytes32 lookupHash = keccak256(abi.encodePacked(content));
         require(data.commitHashes[lookupHash] == bytes32(0), "Commit already created from content");
-
-        // if fork, increase balance of parent
-        if (isFork) {
-            require(parentHash != bytes32(0), "Fork must have parent");
-            uint256 totalValue = data.commits[parentHash].totalValue;
-            data.totalBalance = data.totalBalance.add(totalValue);
-            data.commitBalance[parentHash] = data.commitBalance[parentHash].add(totalValue);
-            require(IToken(info.token).transferFrom(owner, address(this), totalValue));
-        }
 
         bytes32 groupHash;
         if (isFork || parentHash == bytes32(0)) {
@@ -244,23 +357,27 @@ library LibCommit {
         }
 
         // create commit
-        data.commits[commitHash].owner = owner;
-        data.commits[commitHash].timestamp = claimTime;
-        data.commits[commitHash].groupHash = groupHash;
-        data.commits[commitHash].commitHash = commitHash;
-        data.commits[commitHash].content = content;
-        data.commits[commitHash].value = value;
-        data.commits[commitHash].ownerTotalValue = ownerTotalValue;
-        data.commits[commitHash].totalValue = data.commits[parentHash].totalValue.add(value);
-        data.commits[commitHash].height = data.commits[parentHash].height + 1;
-        data.commits[commitHash].parentHash = parentHash;
+        Commit storage commit = data.commits[commitHash];
+        commit.owner = owner;
+        commit.timestamp = claimTime;
+        commit.groupHash = groupHash;
+        commit.commitHash = commitHash;
+        commit.content = content;
+        commit.value = value;
+        commit.ownerTotalValue = ownerTotalValue;
+        commit.totalValue = data.commits[parentHash].totalValue.add(value);
+        commit.height = data.commits[parentHash].height + 1;
+        commit.parentHash = parentHash;
 
         data.commitHashes[lookupHash] = commitHash;
 
-        if (parentHash == bytes32(0)) {
-            data.initialCommits.push(commitHash);
-        } else {
-            data.commits[parentHash].children.push(commitHash);
+        // if fork, increase balance of parent
+        if (isFork) {
+            require(parentHash != bytes32(0), "Fork must have parent");
+            uint256 totalValue = data.commits[parentHash].totalValue;
+            data.totalBalance = data.totalBalance.add(totalValue);
+            data.commitBalance[parentHash] = data.commitBalance[parentHash].add(totalValue);
+            require(IToken(info.token).transferFrom(owner, address(this), totalValue), "Transfer failed");
         }
 
         emit CommitCreated(parentHash, commitHash, owner, isFork);
@@ -271,7 +388,17 @@ library LibCommit {
     /// @param commitHash  Commit hash to look up the available reward
     /// @param user        User address
     /// @return            Amount of MTX the user can withdraw from the given commit
-    function getAvailableRewardForUser(address, address sender, MatryxPlatform.Data storage data, bytes32 commitHash, address user) public view returns (uint256) {
+    function getAvailableRewardForUser(
+        address,
+        address sender,
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash,
+        address user
+    )
+        public
+        view
+        returns (uint256)
+    {
         bytes32 latestUserCommit = _getLatestCommitForUser(data, commitHash, user);
         if (latestUserCommit == bytes32(0)) return 0;
 
@@ -292,7 +419,15 @@ library LibCommit {
     /// @param info        Platform info struct
     /// @param data        Platform data struct
     /// @param commitHash  Commit hash to look up the available reward
-    function withdrawAvailableReward(address, address sender, MatryxPlatform.Info storage info, MatryxPlatform.Data storage data, bytes32 commitHash) public {
+    function withdrawAvailableReward(
+        address,
+        address sender,
+        MatryxPlatform.Info storage info,
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash
+    )
+        public
+    {
         require(_canUseMatryx(info, data, sender), "Must be allowed to use Matryx");
         require(data.commits[commitHash].owner != address(0), "Commit does not exist");
         uint256 userShare = getAvailableRewardForUser(sender, sender, data, commitHash, sender);
@@ -313,7 +448,15 @@ library LibCommit {
     /// @param commitHash  Commit hash to look up the available reward
     /// @param user        User address
     /// @return            User's latest commit hash
-    function _getLatestCommitForUser(MatryxPlatform.Data storage data, bytes32 commitHash, address user) internal view returns (bytes32) {
+    function _getLatestCommitForUser(
+        MatryxPlatform.Data storage data,
+        bytes32 commitHash,
+        address user
+    )
+        internal
+        view
+        returns (bytes32)
+    {
         Commit storage c = data.commits[commitHash];
 
         // traverse up until root commit

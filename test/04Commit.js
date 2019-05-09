@@ -29,12 +29,7 @@ contract('MatryxCommit', async () => {
   })
 
   it('Able to make a commit', async () => {
-    let commitsBefore = await commit.getInitialCommits()
     let cHash = await createCommit('0x00', false, genId(16), toWei(1), 0)
-    let commitsAfter = await commit.getInitialCommits()
-
-    assert.equal(commitsAfter.length - commitsBefore.length, 1, 'New commit should exist')
-
     let isC = await platform.isCommit(cHash)
     assert.isTrue(isC, "Commit not stored in platform")
   })

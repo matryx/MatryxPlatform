@@ -1,5 +1,5 @@
 const fs = require('fs')
-const { setup, genId, genAddress, getMinedTx, sleep, stringToBytes, Contract } = require('../truffle/utils')
+const { setup, now, genId, genAddress, getMinedTx, timetravel, stringToBytes, Contract } = require('../truffle/utils')
 
 Contract.logLevel = 1
 
@@ -60,20 +60,20 @@ module.exports = function (artifacts, web3) {
 
   async function waitUntilClose(tournament, roundIndex) {
     let { start, duration, review } = await tournament.getRoundDetails(roundIndex)
-    let time = Math.max(0, (+start) + (+duration) + (+review) - Date.now() / 1000)
-    await sleep(time * 1000)
+    let time = Math.max(0, (+start) + (+duration) + (+review) - await now())
+    await timetravel(time)
   }
 
   async function waitUntilOpen(tournament, roundIndex) {
     let { start } = await tournament.getRoundDetails(roundIndex)
-    let time = Math.max(0, (+start) - Date.now() / 1000)
-    await sleep(time * 1000)
+    let time = Math.max(0, (+start) - await now())
+    await timetravel(time)
   }
 
   async function waitUntilInReview(tournament, roundIndex) {
     let { start, duration } = await tournament.getRoundDetails(roundIndex)
-    let time = Math.max(0, (+start) + (+duration) - Date.now() / 1000)
-    await sleep(time * 1000)
+    let time = Math.max(0, (+start) + (+duration) - await now())
+    await timetravel(time)
   }
 
   async function createSubmission(tournament, parent, value, accountNumber) {
@@ -97,6 +97,7 @@ module.exports = function (artifacts, web3) {
 
     let tx = await commit.claimCommit(commitHash)
     await getMinedTx(tx.hash)
+    await timetravel(1)
 
     const content = genId(10)
     tx = await commit.createSubmission(tournament.address, content, parent, false, stb(salt), commitContent, value)
@@ -162,6 +163,7 @@ module.exports = function (artifacts, web3) {
 
     let tx = await commit.claimCommit(commitHash)
     await getMinedTx(tx.hash)
+    await timetravel(1)
 
     commit.accountNumber = cAccount
   }
@@ -180,11 +182,6 @@ module.exports = function (artifacts, web3) {
     // return the newly created commit hash
     let theCommit = await commit.getCommitByContent(content)
     return theCommit.commitHash
-  }
-
-  async function commitChildren (commitHash) {
-    const theCommit = await commit.getCommit(commitHash)
-    return theCommit.children
   }
 
   async function commitCongaLine (root, length, account) {
@@ -212,7 +209,6 @@ module.exports = function (artifacts, web3) {
 
     claimCommit,
     createCommit,
-    commitChildren,
     commitCongaLine
   }
 }

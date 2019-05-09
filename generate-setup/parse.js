@@ -19,7 +19,7 @@ const libReg = /library (\w+)\s+\{(.+?)^\}/gms
 const structReg = /struct (\w+?)\s+\{(.+?)\}/gs
 const membersReg = /^\s+(\S+)\s+\w+;/gm
 const dynTypesReg = /.*\[\].*|^(?!address|bool|bytes\d+|u?int\d*)/
-const fnReg = /function (\w+)\((.*?)\).*/g
+const fnReg = /function (\w+)\(([\s\S]*?)\)[\s\S]*?[{;]/gm
 
 const wordTypesReg = /^(address|bool|bytes\d+|u?int\d*)$/
 const arrayType = /\[(\d*)\]/
@@ -130,11 +130,12 @@ while ((match = libReg.exec(source))) {
 
   while ((match = fnReg.exec(libContent))) {
     if (match[0].includes('internal')) continue
+    let [, fnName, fnArgs] = match
 
-    if (!match[2]) match[2] = ''
+    if (!fnArgs) fnArgs = ''
+    fnArgs = fnArgs.replace(/\s{2,}/g, ' ').trim()
 
-    const name = match[1]
-    const params = match[2].split(/, ?/).map(p => p.split(' '))
+    const params = fnArgs.split(/, ?/).map(p => p.split(' '))
     const injParams = params.filter(p => p.includes('storage')).map(p => slots[p[0]])
     const numInject = injParams.length
 
@@ -142,7 +143,7 @@ while ((match = libReg.exec(source))) {
       if (p[1] == 'storage') return `${p[0]} ${p[1]}`
       else return p[0]
     })
-    const toSig = `${name}(${toParams.join(',')})`
+    const toSig = `${fnName}(${toParams.join(',')})`
     const toSel = sha3(toSig).substr(0, 10)
 
     // slice 2 to ignore 2 addresses at start (self and sender)
@@ -151,7 +152,7 @@ while ((match = libReg.exec(source))) {
       const s = structs[type]
       return s !== undefined ? s.tuple : type
     })
-    const fromSig = `${name}(${fromParams.join(',')})`
+    const fromSig = `${fnName}(${fromParams.join(',')})`
     const fromSel = sha3(fromSig).substr(0, 10)
 
     // calculate dynamic param word indices, accounting for struct sizes
@@ -175,13 +176,13 @@ while ((match = libReg.exec(source))) {
       return c + 1
     }, 0)
 
-    console.log(`${libName}.${name}: inject ${numInject}, dynamic ${numDyn}${numDyn ? ` at ${dynParams.join(' ')}` : ''}`)
+    console.log(`${libName}.${fnName}: inject ${numInject}, dynamic ${numDyn}${numDyn ? ` at ${dynParams.join(' ')}` : ''}`)
     console.log(fromSel, fromSig)
     console.log(toSel, toSig)
     console.log(' ')
 
     if (!batch) {
-      const comment = `// ${libName.replace('Lib', 'Matryx')}.${name}`
+      const comment = `// ${libName.replace('Lib', 'Matryx')}.${fnName}`
       const fnData = `['${toSel}', [${injParams}], [${dynParams}]]`
       const call = `system.addContractMethod(${version}, stringToBytes('${libName}'), '${fromSel}', ${fnData})`
 

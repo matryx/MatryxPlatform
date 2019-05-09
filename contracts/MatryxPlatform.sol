@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
@@ -31,7 +31,6 @@ contract MatryxPlatform {
         mapping(bytes32=>bytes32[]) commitToSubmissions;             // maps commits to submission created from them
         mapping(bytes32=>LibCommit.CommitWithdrawalStats) commitWithdrawalStats; // maps commit hash to withdrawal stats
 
-        bytes32[] initialCommits;                                    // all commits without parents
         mapping(bytes32=>uint256) commitClaims;                      // timestamp of content hash claim
 
         mapping(address=>bool) whitelist;                            // user whitelist
@@ -40,6 +39,7 @@ contract MatryxPlatform {
 
     Info info;                                                       // slot 0
     Data data;                                                       // slot 3
+    address pendingOwner;
 
     constructor(address system, address token) public {
         info.system = system;
@@ -80,6 +80,7 @@ contract MatryxPlatform {
             mstore(ptr, mul(0x3b15aabf, offset))                                // getContractMethod(uint256,bytes32,bytes32)
             mstore(add(ptr, 0x04), version)                                     // arg 0 - version
             mstore(add(ptr, 0x24), libName)                                     // arg 1 - library name
+            mstore(add(ptr, 0x44), 0)                                           // zero out uninitialized data
             calldatacopy(add(ptr, 0x44), 0, 0x04)                               // arg 2 - fn selector
             res := call(gas, system, 0, ptr, 0x64, 0, 0)                        // call system.getContractMethod
             returndatacopy(ptr, 0, returndatasize)                              // copy fnData into ptr
@@ -143,11 +144,18 @@ contract MatryxPlatform {
         _;
     }
 
-    /// @dev Sets the owner of the platform
+    /// @dev Enables address to accept ownership of the platform
     /// @param newOwner  New owner address
-    function setPlatformOwner(address newOwner) external onlyOwner {
+    function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0));
-        info.owner = newOwner;
+        pendingOwner = newOwner;
+    }
+
+    /// @dev Accepts ownership transfer
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner);
+        info.owner = pendingOwner;
+        pendingOwner = address(0);
     }
 
     /// @dev Sets the Token address
@@ -174,22 +182,23 @@ contract MatryxPlatform {
 }
 
 interface IMatryxPlatform {
-    event TournamentCreated(address tournament, address creator);
-    event TournamentUpdated(address tournament);
-    event TournamentBountyAdded(address tournament, address donor, uint256 amount);
+    event TournamentCreated(address indexed tournament, address indexed creator);
+    event TournamentUpdated(address indexed tournament);
+    event TournamentBountyAdded(address indexed tournament, address indexed donor, uint256 amount);
 
-    event RoundCreated(address tournament, uint256 roundIndex);
-    event RoundUpdated(address tournament, uint256 roundIndex);
+    event RoundCreated(address indexed tournament, uint256 roundIndex);
+    event RoundUpdated(address indexed tournament, uint256 roundIndex);
+    event RoundWinnersSelected(address indexed tournament, uint256 roundIndex);
 
-    event SubmissionCreated(address tournament, bytes32 submissionHash, address creator);
-    event SubmissionRewarded(address tournament, bytes32 submissionHash);
+    event SubmissionCreated(address indexed tournament, bytes32 submissionHash, address indexed creator);
+    event SubmissionRewarded(address indexed tournament, bytes32 submissionHash);
 
-    event GroupMemberAdded(bytes32 commitHash, address user);
-
+    event GroupMemberAdded(bytes32 indexed commitHash, address indexed user);
     event CommitClaimed(bytes32 commitHash);
-    event CommitCreated(bytes32 parentHash, bytes32 commitHash, address creator, bool isFork);
+    event CommitCreated(bytes32 indexed parentHash, bytes32 commitHash, address indexed creator, bool indexed isFork);
 
-    function setPlatformOwner(address newOwner) external;
+    function transferOwnership(address newOwner) external;
+    function acceptOwnership() external;
     function upgradeToken(address token) external;
     function withdrawTokens(address token) external;
 
@@ -204,6 +213,6 @@ interface IMatryxPlatform {
     function getTournaments() external view returns (address[] memory);
     function getSubmission(bytes32 submissionHash) external view returns (LibTournament.SubmissionData memory);
 
-    function blacklist(address user) external;
+    function setUserBlacklisted(address user, bool isBlacklisted) external;
     function createTournament(LibTournament.TournamentDetails calldata, LibTournament.RoundDetails calldata) external returns (address);
 }

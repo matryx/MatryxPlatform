@@ -1,12 +1,12 @@
 const { shouldFail } = require('openzeppelin-test-helpers')
 
-const { setup } = require('../truffle/utils')
+const { setup, now } = require('../truffle/utils')
 const { init, createTournament, waitUntilClose, waitUntilOpen, createSubmission, selectWinnersWhenInReview, enterTournament } = require('./helpers')(artifacts, web3)
 const { accounts } = require('../truffle/network')
 
 let platform
 
-contract('Open Tournament Testing', function() {
+contract('Open Tournament Testing', function () {
   let t //tournament
 
   before(async () => {
@@ -16,7 +16,7 @@ contract('Open Tournament Testing', function() {
     // create the tournament
     roundData = {
       start: 0,
-      duration: 120,
+      duration: 3600,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -118,7 +118,7 @@ contract('Open Tournament Testing', function() {
   it('Unable to create a tournament with 0 bounty', async function() {
     let rData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 20,
       bounty: 0
     }
@@ -135,7 +135,7 @@ contract('Open Tournament Testing', function() {
   it('Unable to create a tournament with more round bounty than funds available', async function() {
     let rData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 20,
       bounty: toWei(20)
     }
@@ -192,7 +192,7 @@ contract('Open Tournament Testing', function() {
     t.accountNumber = 1
     await t.enter()
     await t.exit()
-    
+
     await enterTournament(t, 1)
     let isEnt = await t.isEntrant(accounts[1])
     assert.isTrue(isEnt, 'Unable to enter the tournament again.')
@@ -210,7 +210,7 @@ contract('On Hold Tournament Testing', function() {
     // create the tournament
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 10,
       bounty: web3.toWei(5)
     }
@@ -223,8 +223,8 @@ contract('On Hold Tournament Testing', function() {
     await selectWinnersWhenInReview(t, [s], [1], [0, 0, 0, 0], 0)
 
     roundData = {
-      start: Math.floor(Date.now() / 1000) + 20,
-      duration: 40,
+      start: await now() + 20,
+      duration: 3600,
       review: 5,
       bounty: web3.toWei(5)
     }
@@ -303,7 +303,7 @@ contract('Abandoned Tournament due to No Submissions Testing', function() {
     // create the tournament
     roundData = {
       start: 0,
-      duration: 5,
+      duration: 3600,
       review: 1,
       bounty: web3.toWei(5)
     }

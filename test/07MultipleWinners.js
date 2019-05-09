@@ -17,7 +17,7 @@ contract('Multiple Commits and Close Tournament', function() {
 
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -33,7 +33,7 @@ contract('Multiple Commits and Close Tournament', function() {
 
     await selectWinnersWhenInReview(t, submissions, submissions.map(s => 1), [0, 0, 0, 0], 2)
   })
-  
+
   beforeEach(async () => {
     snapshot = await network.provider.send("evm_snapshot", [])
   })
@@ -89,7 +89,7 @@ contract('Multiple Commits and Start Next Round', function() {
     await init()
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 60,
       bounty: web3.toWei(5)
     }
@@ -105,7 +105,7 @@ contract('Multiple Commits and Start Next Round', function() {
 
     let newRound = {
       start: 0,
-      duration: 50,
+      duration: 3600,
       review: 120,
       bounty: web3.toWei(5)
     }
@@ -180,7 +180,7 @@ contract('Multiple Commits and Do Nothing', function() {
     await init()
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 60,
       bounty: web3.toWei(5)
     }

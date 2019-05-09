@@ -12,7 +12,7 @@ contract('Platform Testing', () => {
   let t
   let roundData = {
     start: 0,
-    duration: 20,
+    duration: 3600,
     review: 10,
     bounty: web3.toWei(5)
   }
@@ -24,12 +24,12 @@ contract('Platform Testing', () => {
   })
 
   beforeEach(async () => {
-    snapshot = await network.provider.send("evm_snapshot")
+    snapshot = await network.provider.send('evm_snapshot')
     platform.accountNumber = 0
   })
 
   afterEach(async () => {
-    await network.provider.send("evm_revert", snapshot)
+    await network.provider.send('evm_revert', snapshot)
   })
 
   it('Able to get platform info', async () => {
@@ -45,14 +45,17 @@ contract('Platform Testing', () => {
 
   it('Unable to set platform owner from another account', async () => {
     platform.accountNumber = 2
-    let tx = platform.setPlatformOwner(accounts[2])
+    let tx = platform.transferOwnership(accounts[2])
     await shouldFail.reverting(tx)
   })
 
   it('Platform has 0 tournaments', async () => {
     let count = await platform.getTournamentCount()
     let tournaments = await platform.getTournaments()
-    assert.isTrue(count == 0 && tournaments.length == 0, 'Tournament count should be 0 and tournaments array should be empty.')
+    assert.isTrue(
+      count == 0 && tournaments.length == 0,
+      'Tournament count should be 0 and tournaments array should be empty.'
+    )
   })
 
   it('Able to create a tournament', async () => {
@@ -106,7 +109,7 @@ contract('Platform Testing', () => {
 
   it('Able to blacklist a user address', async () => {
     await setup(artifacts, web3, 3, true)
-    await platform.blacklist(accounts[3])
+    await platform.setUserBlacklisted(accounts[3], true)
 
     try {
       await createTournament('tournament', web3.toWei(10), roundData, 3)
@@ -119,14 +122,15 @@ contract('Platform Testing', () => {
 
   it('Only the platform owner can blacklist users', async () => {
     platform.accountNumber = 1
-    let tx = platform.blacklist(accounts[2])
+    let tx = platform.setUserBlacklisted(accounts[2], true)
     await shouldFail.reverting(tx)
   })
 
   it('Able to set a new platform owner', async () => {
-    await platform.setPlatformOwner(accounts[2])
+    await platform.transferOwnership(accounts[2])
+    platform.accountNumber = 2
+    await platform.acceptOwnership()
     let { owner } = await platform.getInfo()
-    assert.equal(owner, accounts[2], "Set platform owner failed")
+    assert.equal(owner, accounts[2], 'Set platform owner failed')
   })
-
 })

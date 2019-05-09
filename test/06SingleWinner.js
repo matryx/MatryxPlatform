@@ -9,7 +9,6 @@ let platform, commit, token
 contract('Winner Selection Permissions', function() {
   let t
   let s
-  let commitHash
 
   before(async () => {
     let data = await init()
@@ -19,7 +18,7 @@ contract('Winner Selection Permissions', function() {
 
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 20,
       bounty: web3.toWei(5)
     }
@@ -77,7 +76,7 @@ contract('Singleton Commit, Close Tournament', function() {
 
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 20,
       bounty: web3.toWei(5)
     }
@@ -163,7 +162,7 @@ contract('Singleton Commit, Start Next Round', function() {
 
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 20,
       bounty: web3.toWei(5)
     }
@@ -176,7 +175,7 @@ contract('Singleton Commit, Start Next Round', function() {
 
     let newRound = {
       start: 0,
-      duration: 50,
+      duration: 3600,
       review: 120,
       bounty: web3.toWei(5)
     }
@@ -277,7 +276,7 @@ contract('Singleton Commit, Do Nothing', function() {
 
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 20,
       bounty: web3.toWei(5)
     }
@@ -372,7 +371,7 @@ contract('Singleton Commit, Do Nothing, then Close Tournament', function() {
 
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 20,
       bounty: web3.toWei(5)
     }
@@ -469,7 +468,7 @@ contract('Singleton Commit, Do Nothing, then Start Next Round', function() {
 
     roundData = {
       start: 0,
-      duration: 30,
+      duration: 3600,
       review: 20,
       bounty: web3.toWei(5)
     }
