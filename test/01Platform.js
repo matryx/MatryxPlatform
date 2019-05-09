@@ -29,7 +29,7 @@ contract('Platform Testing', () => {
   })
 
   afterEach(async () => {
-    await network.provider.send('evm_revert', snapshot)
+    await network.provider.send('evm_revert', [snapshot])
   })
 
   it('Able to get platform info', async () => {
